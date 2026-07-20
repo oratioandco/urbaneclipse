@@ -1,0 +1,111 @@
+# =============================================================================
+# Urban Eclipse .gitignore
+# Stack is not yet locked (constitution TODO(STACK_CONFIRM)); this file covers
+# the likely stacks — macOS/Xcode/SwiftUI, Flutter/Dart, Node/React/TypeScript —
+# plus OS, editor, and secret artifacts. Trim what proves unused over time.
+# =============================================================================
+
+# ---- Secrets / environment (NEVER commit) -----------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
+**/*.local
+
+# ---- Per-developer agent / editor config (personal, not shared) -------------
+.claude/settings.local.json
+.vscode/
+.idea/
+.zed/
+*.swp
+*.swo
+*~
+
+# ---- macOS ------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# ---- Windows / Linux --------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---- Logs / caches / temp ---------------------------------------------------
+*.log
+.cache/
+.tmp/
+tmp/
+
+# =============================================================================
+# Node / React / TypeScript (web stack)
+# =============================================================================
+node_modules/
+.npm
+.yarn/cache
+.yarn/install-state.gz
+.pnp.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+*.tsbuildinfo
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+.turbo/
+.parcel-cache/
+storybook-static/
+
+# =============================================================================
+# Swift / Xcode / SwiftUI (Apple stack)
+# =============================================================================
+# Xcode (personal state + build output)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+DerivedData/
+build/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/xcode/package.xcuserdata/
+# NOTE: Package.resolved is intentionally NOT ignored (commit for apps).
+
+# CocoaPods / Carthage
+Pods/
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# =============================================================================
+# Flutter / Dart (mobile stack)
+# =============================================================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+coverage/
+# NOTE: pubspec.lock and .metadata are intentionally NOT ignored (commit for apps).
