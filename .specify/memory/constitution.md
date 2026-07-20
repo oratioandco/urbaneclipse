@@ -2,10 +2,11 @@
   ============================================================
   SYNC IMPACT REPORT
   ============================================================
-  Version change: (unratified template) → 1.0.0
-  Bump rationale: Initial ratification. The prior file was the
-  unfilled constitution-template.md (all placeholders). First
-  adoption of real project principles = MAJOR 1.0.0.
+  Version change: (unratified template) → 1.0.0 → 1.0.1
+  Bump rationale: 1.0.0 = initial ratification (MAJOR). 1.0.1 (PATCH,
+    2026-07-20) = non-semantic refinement: REPO_INIT resolved after
+    `git init` (root commit abfa806 on main); STACK_CONFIRM surfaced
+    into Governance follow-ups.
 
   Principles established (all new):
     I.   Test-Driven Development (NON-NEGOTIABLE)
@@ -32,8 +33,8 @@
     - .specify/templates/checklist-template.md ✅ no constitution refs
 
   Follow-up TODOs:
-    - TODO(REPO_INIT): Repository is not yet a git repo. `git init`
-      required to satisfy Principle VI. See Governance.
+    - RESOLVED 2026-07-20 (REPO_INIT): Repository initialized — root
+      commit abfa806 on main, .gitignore in place.
     - TODO(STACK_CONFIRM): Tech stack & design language in Section
       "Technology & Stack Constraints" were inferred from the active
       agent environment, not the user's explicit instruction. Confirm
@@ -241,8 +242,10 @@ Eclipse. It is the single source of truth for project non-negotiables.
 
 **Open follow-ups** (tracked here until resolved):
 
-- `TODO(REPO_INIT)`: Run `git init`, add a `.gitignore`, and make the
-  initial commit so Principle VI applies. Repository must be on a
-  branch-per-feature, Conventional-Commits footing from the first commit.
+- `RESOLVED 2026-07-20 (REPO_INIT)`: Repository initialized — root commit
+  `abfa806` on `main`, `.gitignore` in place. Principle VI now applies.
+- `TODO(STACK_CONFIRM)`: Confirm or amend the Technology & Stack
+  Constraints section (inferred from the agent environment, not explicit
+  user instruction at ratification).
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-20
+**Version**: 1.0.1 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-20
