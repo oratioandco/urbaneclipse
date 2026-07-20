@@ -2,11 +2,15 @@
   ============================================================
   SYNC IMPACT REPORT
   ============================================================
-  Version change: (unratified template) → 1.0.0 → 1.0.1
+  Version change: (unratified template) → 1.0.0 → 1.0.1 → 1.1.0
   Bump rationale: 1.0.0 = initial ratification (MAJOR). 1.0.1 (PATCH,
-    2026-07-20) = non-semantic refinement: REPO_INIT resolved after
-    `git init` (root commit abfa806 on main); STACK_CONFIRM surfaced
-    into Governance follow-ups.
+    2026-07-20) = REPO_INIT resolved after `git init` (root commit
+    abfa806 on main). 1.1.0 (MINOR, 2026-07-20) = Technology & Stack
+    Constraints materially revised: scoped web-only (mobile removed),
+    stack confirmed from the founding feature "Plaster Void" (Astro,
+    React, CesiumJS, suncalc, nanostores, Tailwind), design language
+    corrected to the project's plaster aesthetic, agent-env artifact
+    removed. STACK_CONFIRM resolved.
 
   Principles established (all new):
     I.   Test-Driven Development (NON-NEGOTIABLE)
@@ -18,8 +22,8 @@
 
   Sections established:
     - Core Principles (6)
-    - Technology & Stack Constraints   (inferred from agent env,
-      freely amendable — NOT from explicit user input)
+    - Technology & Stack Constraints   (web-only; confirmed from the
+      founding feature "Plaster Void" in v1.1.0)
     - Development Workflow & Quality Gates
     - Governance
 
@@ -35,10 +39,9 @@
   Follow-up TODOs:
     - RESOLVED 2026-07-20 (REPO_INIT): Repository initialized — root
       commit abfa806 on main, .gitignore in place.
-    - TODO(STACK_CONFIRM): Tech stack & design language in Section
-      "Technology & Stack Constraints" were inferred from the active
-      agent environment, not the user's explicit instruction. Confirm
-      or amend at next review.
+    - RESOLVED 2026-07-20 (STACK_CONFIRM): Stack confirmed from the
+      founding feature "Plaster Void" (specs/001-telephoto-los-planner);
+      section scoped to web-only in v1.1.0.
   ============================================================
 -->
 
@@ -166,28 +169,32 @@ repository history is a readable narrative of the project.
 - Small, frequent commits are preferred over large end-of-day dumps.
 
 **Rationale**: A clean, reviewable history makes bugs bisectable,
-changes revertible, and collaboration safe. NOTE: this repository is
-not yet `git init`'d — see Governance follow-up.
+changes revertible, and collaboration safe.
 
 ## Technology & Stack Constraints
 
-> These constraints reflect the current agreed working stack for
-> Urban Eclipse. They were inferred from the active development
-> environment and the project location (`Developer/StudioProjects/`,
-> the Xcode default), not from explicit user instruction at
-> ratification. They are freely amendable under the Governance
-> procedure below.
+> Urban Eclipse is a **web-only** project. The stack below is confirmed
+> by the founding feature, the Telephoto Line-of-Sight Planner
+> ("Plaster Void", `specs/001-telephoto-los-planner`), and is locked:
+> do not deviate without a documented technical blocker. Mobile/native
+> targets are out of scope.
 
-- **Web**: React + TypeScript + Tailwind CSS as the default web stack.
-- **Mobile / native**: SwiftUI (Apple platforms) and Flutter (cross-
-  platform) as the default mobile stacks. Use the most specific tool
-  for the target; do not mix without justification.
-- **Design language**: "Wellness minimalist" / Kinfolk-style aesthetic —
-  warm earthy palette (muted terracotta, sage, warm sand, soft cream),
-  generous whitespace, editorial typography, organic shapes and soft
-  cinematic lighting in visual references.
-- **Never configured for**: Do not emit configuration, references, or
-  instructions targeting Cursor or Luma AI.
+- **Application framework**: Astro. Pages are server-rendered shells;
+  interactive UI ships as Astro Islands hydrated client-side only.
+- **UI components**: React, mounted via `client:only` so no component
+  HTML is ever produced on the server.
+- **3D / WebGL engine**: CesiumJS. All 3D components MUST be strictly
+  isolated from server-side rendering (client-only island).
+- **Ephemeris**: `suncalc` for Sun/Moon azimuth, altitude, and
+  photographic-hour phases.
+- **State management**: `nanostores` (with its React binding) as the
+  cross-island state layer.
+- **Styling**: Tailwind CSS.
+- **Language**: TypeScript end-to-end.
+- **Design language**: art-directed, non-realistic "plaster / clay
+  model" aesthetic — monochrome white geometry in a hazy, grainy void,
+  never a conventional satellite/GIS map look. Per-feature art direction
+  (colors, shader intent) lives in the feature spec.
 - **Dependencies**: New dependencies MUST be justified (purpose,
   maintenance status, license) and verified present in the manifest
   before use (Principle IV). Prefer the standard library and existing
@@ -244,8 +251,8 @@ Eclipse. It is the single source of truth for project non-negotiables.
 
 - `RESOLVED 2026-07-20 (REPO_INIT)`: Repository initialized — root commit
   `abfa806` on `main`, `.gitignore` in place. Principle VI now applies.
-- `TODO(STACK_CONFIRM)`: Confirm or amend the Technology & Stack
-  Constraints section (inferred from the agent environment, not explicit
-  user instruction at ratification).
+- `RESOLVED 2026-07-20 (STACK_CONFIRM)`: Stack confirmed from the founding
+  feature "Plaster Void" (`specs/001-telephoto-los-planner`); Technology
+  & Stack Constraints scoped to web-only (v1.1.0).
 
-**Version**: 1.0.1 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-20
+**Version**: 1.1.0 | **Ratified**: 2026-07-20 | **Last Amended**: 2026-07-20
