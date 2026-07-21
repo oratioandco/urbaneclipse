@@ -55,16 +55,31 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
     });
   });
 
-  // ---- Rule 2: GLSL ES 1.00 — texture2D(...), not texture(...). ----
-  describe('rule 2: GLSL ES 1.00 sampling (texture2D, not texture())', () => {
-    it('samples colorTexture with texture2D(...)', () => {
-      expect(src).toContain('texture2D(colorTexture');
+  // ---- Rule 2: GLSL ES 3.00 — texture(...), not texture2D(...). ----
+  // Cesium 1.143 compiles PostProcessStage shaders as `#version 300 es`
+  // (confirmed via the BlackAndWhite stock stage at
+  // node_modules/cesium/Build/CesiumUnminified/index.cjs:230817). The legacy
+  // GLSL ES 1.00 `texture2D` sampler is removed; use `texture(sampler, uv)`.
+  describe('rule 2: GLSL ES 3.00 sampling (texture, not texture2D())', () => {
+    it('samples colorTexture with texture(...)', () => {
+      expect(src).toContain('texture(colorTexture');
     });
-    it('does not use the GLSL ES 3.00 texture() sampler overload', () => {
-      // "texture2D" legitimately embeds the substring "texture"; match the bare
-      // GLSL3 call form `texture(` only when not preceded by a word char, so
-      // sampler variable names (colorTexture / depthTexture) do not false-match.
-      expect(src).not.toMatch(/[^a-zA-Z0-9_]texture\(/);
+    it('does not use the removed GLSL ES 1.00 texture2D() sampler', () => {
+      // GLSL ES 3.00 dropped texture2D / texture3D / textureCube; Cesium does
+      // NOT auto-convert them, so their presence fails shader compilation.
+      expect(src).not.toMatch(/texture2D\s*\(/);
+    });
+    it('declares the varying as `in vec2` (GLSL ES 3.00), not `varying`', () => {
+      // `varying` is a reserved word in GLSL ES 3.00 — using it is a hard
+      // compile error ("Illegal use of reserved word").
+      expect(src).toContain('in vec2 v_textureCoordinates');
+      expect(src).not.toMatch(/\bvarying\b/);
+    });
+    it('writes to out_FragColor (Cesium-injected output), not gl_FragColor', () => {
+      // Cesium injects `layout(location = 0) out vec4 out_FragColor;` and
+      // rewrites it back to gl_FragColor for the GLSL ES 1.00 fallback path.
+      expect(src).toContain('out_FragColor');
+      expect(src).not.toMatch(/gl_FragColor/);
     });
   });
 
@@ -104,8 +119,8 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       expect(src).toContain('uniform sampler2D colorTexture');
       expect(src).toContain('uniform sampler2D depthTexture');
     });
-    it('declares the v_textureCoordinates varying', () => {
-      expect(src).toContain('varying vec2 v_textureCoordinates');
+    it('declares the v_textureCoordinates stage input (in vec2)', () => {
+      expect(src).toContain('in vec2 v_textureCoordinates');
     });
     it('reads depth via czm_readDepth(depthTexture, v_textureCoordinates)', () => {
       expect(src).toContain('czm_readDepth(depthTexture, v_textureCoordinates)');

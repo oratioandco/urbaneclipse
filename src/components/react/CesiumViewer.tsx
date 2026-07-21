@@ -6,27 +6,52 @@
  * Principle I/IV; enforced by tests/unit/ssr-graph-guard.test.ts).
  *
  * The scene renders the SELF-HOSTED local 3D Tiles tileset served at
- * `/test_tile/tileset.json` (copied into public/test_tile). It needs NO Cesium Ion
+ * `/berlin/tileset.json` (copied into public/berlin). It needs NO Cesium Ion
  * token: the plaster void omits World Terrain and base imagery, so no Ion asset is
  * requested. The PUBLIC_CESIUM_ION_TOKEN env var is read defensively and applied only
  * if present — it never crashes when absent.
+ *
+ * Integration points:
+ *   - Plaster post-process: viewer.scene.postProcessStages.add(createStudioEnvironmentStage)
+ *     after the viewer is built (US2). depthTestAgainstTerrain stays TRUE so the
+ *     shader's depth texture actually separates geometry from the void.
+ *   - US1 occlusion: after tileset readiness, observer=OBSERVER_DEFAULT and
+ *     target=TARGET_DEFAULT drive computeOcclusion, whose result drives both the
+ *     store (commitOcclusion) and the observer→target polyline colour. Height-store
+ *     listeners recompute on slider change; dateTime is intentionally NOT wired
+ *     (occlusion is time-independent — see src/store.ts).
  */
 import { useEffect, useRef } from 'react';
+import type * as CesiumType from 'cesium';
 // Cesium is served as a UMD GLOBAL (window.Cesium) by vite-plugin-cesium + the
 // /cesium/Cesium.js tag injected in index.astro. We use the global at runtime — NOT
 // `import * as Cesium from 'cesium'` — so Vite never loads the npm cesium ESM in dev
 // (which breaks on Cesium's CommonJS deps: mersenne-twister default-export error / 504).
 // `import type` is fully erased at build, so this introduces no runtime dependency.
-import type * as CesiumType from 'cesium';
 const Cesium = (window as unknown as { Cesium: typeof CesiumType }).Cesium;
 
-// Local tileset is served by Astro from public/ at '/test_tile/tileset.json'.
-// (data/ itself is NOT web-served; a build/cp step mirrors data/test_tile -> public/test_tile.)
-const TILESET_URL = '/test_tile/tileset.json';
+import { createStudioEnvironmentStage } from '../../cesium/shaders/studioEnvironment.js';
+import {
+  computeOcclusion,
+  drawLineOfSight,
+  type LatLonHeight,
+  type OcclusionState,
+} from '../../cesium/lineOfSight.js';
+import {
+  observerHeight,
+  targetHeight,
+  commitOcclusion,
+} from '../../store.js';
+import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
+import ControlPanel from './ControlPanel.js';
+
+// Combined Mitte+Fi+Li tileset, mirrored into public/berlin/ from data/berlin/.
+const TILESET_URL = '/berlin/tileset.json';
 
 // Tileset root transform translation (ECEF), from data/test_tile/tileset.json.
 // Used as a fallback camera target if the tileset's bounding sphere isn't populated yet.
-// (Re-sync if the converter re-runs: `grep -o '"transform":\[\.\.\.\]' data/test_tile/tileset.json`.)
+// (Berlin tileset's root bounding-volume centre is in the same neighbourhood; this is
+// only consulted before the root content loads.)
 const TILESET_ECEF_CENTER = new Cesium.Cartesian3(3782802.4642903516, 902286.4677665455, 5038573.502874194);
 
 export default function CesiumViewer(): JSX.Element {
@@ -90,6 +115,13 @@ export default function CesiumViewer(): JSX.Element {
     viewer.clock.currentTime = Cesium.JulianDate.fromDate(new Date('2026-07-21T08:00:00Z'));
     viewer.clock.shouldAnimate = false;
 
+    // --- Plaster post-process (US2) --------------------------------------------
+    // Depth-haze + film-grain stage from src/cesium/shaders/studioEnvironment.ts.
+    // depthTestAgainstTerrain MUST stay true (set above): the shader reads the depth
+    // texture to separate geometry from the void, and that depth is only populated
+    // correctly when the globe is part of the depth test.
+    scene.postProcessStages.add(createStudioEnvironmentStage(Cesium));
+
     // --- Local self-hosted tileset ---------------------------------------------
     // Cesium3DTileset.fromUrl is the non-deprecated factory (the ctor is deprecated
     // since 1.107). It resolves once the root tile metadata is loaded.
@@ -101,7 +133,15 @@ export default function CesiumViewer(): JSX.Element {
         tileset.style = new Cesium.Cesium3DTileStyle({ color: "color('#ffffff')" });
         tileset.shadows = Cesium.ShadowMode.ENABLED;
         // Debug hook for headless scene-state inspection (scripts/diagnose.mjs).
-        (window as unknown as { __cesium?: unknown }).__cesium = { viewer, tileset };
+        (window as unknown as { __cesium?: unknown }).__cesium = {
+          viewer,
+          tileset,
+          // lastOcclusion is updated by recomputeOcclusion() below. Initialised to
+          // 'unknown' so the diagnostic can distinguish "not yet computed" from a
+          // genuine 'clear' result.
+          lastOcclusion: 'unknown' as OcclusionState,
+          postProcessStages: scene.postProcessStages,
+        };
 
         // --- Camera: frame the tileset robustly ----------------------------------
         // viewer.zoomTo flies the camera to optimally view the tileset's bounding volume,
@@ -110,6 +150,78 @@ export default function CesiumViewer(): JSX.Element {
         // (which placed the camera outside the frustum and silently culled the tileset).
         // Oblique pitch (-35deg) for the studio architectural-model look.
         void viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-35), 0));
+
+        // --- US1 line-of-sight occlusion ----------------------------------------
+        // Time-independent (see store.ts invariant): never recompute on dateTime.
+        // Recompute when heights change (slider) or once the tileset finishes loading.
+        let polylineEntity: CesiumType.Entity | undefined;
+
+        const recompute = () => {
+          if (disposed || viewer.isDestroyed()) return;
+          // Lat/lon come from the Berlin defaults (Lichtenberger Brücke → Fernsehturm).
+          // Heights are slider-driven in the store; defaults are 1.5 m / 210 m which
+          // match OBSERVER_DEFAULT.heightAboveGround / TARGET_DEFAULT.heightAboveGround,
+          // so we read the store directly (no double-count of the default).
+          // Globe has NO terrain (baseLayer:false + no World Terrain), so ground ≈ 0
+          // and height-above-ground ≈ height-above-ellipsoid.
+          const observer: LatLonHeight = {
+            lat: OBSERVER_DEFAULT.lat,
+            lon: OBSERVER_DEFAULT.lon,
+            height: observerHeight.get(),
+          };
+          const target: LatLonHeight = {
+            lat: TARGET_DEFAULT.lat,
+            lon: TARGET_DEFAULT.lon,
+            height: targetHeight.get(),
+          };
+
+          const result = computeOcclusion(viewer, observer, target);
+          polylineEntity = drawLineOfSight(
+            viewer,
+            observer,
+            target,
+            result.state,
+            polylineEntity,
+          );
+          (window as unknown as { __cesium?: { lastOcclusion?: OcclusionState } }).__cesium!.lastOcclusion =
+            result.state;
+          // commitOcclusion treats 'occluded' OR 'marginal' as blocked.
+          commitOcclusion(result.state === 'occluded' || result.state === 'marginal');
+        };
+
+        // Initial compute: defer until tilesLoaded so we don't read an empty scene.
+        // tilesLoaded transitions to true exactly once, when the load queue drains.
+        const runWhenLoaded = () => {
+          if (tileset.tilesLoaded) {
+            recompute();
+            return true;
+          }
+          return false;
+        };
+        if (!runWhenLoaded()) {
+          // Poll until first loaded. tileset does not emit a 'tilesLoaded' event in
+          // 1.143 — the boolean is updated each frame, so a rAF poll is the simplest
+          // reliable gate. Use the BROWSER's requestAnimationFrame — Cesium does
+          // not export its own alias in 1.143 (Cesium.requestAnimationFrame is
+          // undefined at runtime).
+          const poll = () => {
+            if (disposed || viewer.isDestroyed()) return;
+            if (runWhenLoaded()) return;
+            requestAnimationFrame(poll);
+          };
+          requestAnimationFrame(poll);
+        }
+
+        // Recompute on slider changes (heights). Each .listen fires once per change.
+        const unsubOh = observerHeight.listen(recompute);
+        const unsubTh = targetHeight.listen(recompute);
+
+        // Stash unsubs on the viewer for cleanup; Cesium doesn't own them so we
+        // can't piggyback on viewer.destroy().
+        (viewer as unknown as { __cleanupFns?: Array<() => void> }).__cleanupFns = [
+          () => unsubOh?.(),
+          () => unsubTh?.(),
+        ];
       })
       .catch((err: unknown) => {
         if (!disposed) {
@@ -123,11 +235,31 @@ export default function CesiumViewer(): JSX.Element {
       disposed = true;
       const v = viewerRef.current;
       if (v && !v.isDestroyed()) {
+        // Run any stashed non-Cesium cleanups (store listeners) before destroying.
+        const fns = (v as unknown as { __cleanupFns?: Array<() => void> }).__cleanupFns;
+        if (Array.isArray(fns)) {
+          for (const fn of fns) {
+            try {
+              fn();
+            } catch {
+              /* ignore — best-effort unsub */
+            }
+          }
+        }
         v.destroy();
       }
       viewerRef.current = null;
     };
   }, []);
 
-  return <div id="cesium-container" ref={containerRef} />;
+  return (
+    <>
+      <div id="cesium-container" ref={containerRef} />
+      <ControlPanel />
+    </>
+  );
 }
+
+// Keep the TS-import-only symbol live so verbatimModuleSyntax / isolatedModules keep
+// the import side-effect-free. (No runtime use; pure type-only.)
+void TILESET_ECEF_CENTER;

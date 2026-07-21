@@ -9,9 +9,14 @@
  *
  * Background / spec: research.md §6 "Art Direction — Plaster Void". The GLSL
  * follows the spec's plaster intent but applies the 4 correctness fixes from
- * that critique:
- *   1. NO `#version` / `precision` — Cesium injects them (and all `czm_*`).
- *   2. `texture2D(...)` (GLSL ES 1.00), never `texture(...)`.
+ * that critique. Verified against Cesium 1.143 runtime conventions
+ * (node_modules/cesium/Build/CesiumUnminified/index.cjs:230817 BlackAndWhite)
+ * which compiles post-process stages as `#version 300 es` (GLSL ES 3.00):
+ *   1. NO `#version` / `precision` — Cesium injects them (and all `czm_*`,
+ *      plus `layout(location = 0) out vec4 out_FragColor;` which we write to).
+ *   2. GLSL ES 3.00 sampling: `texture(sampler, uv)` (NOT `texture2D(...)`),
+ *      and `in vec2 v_textureCoordinates;` (NOT `varying`), and write to
+ *      `out_FragColor` (NOT `gl_FragColor`).
  *   3. Background via epsilon `depth > 0.9999`, NEVER `depth == 1.0`
  *      (logarithmic-depth distant geometry samples arbitrarily close to 1.0).
  *   4. Fog from eye-space distance in METERS via
@@ -51,8 +56,8 @@ const DEFAULTS = {
 };
 
 /**
- * Format a JS number as a valid GLSL ES 1.00 float literal (must contain a
- * decimal point; an integer like 3000 becomes 3000.0).
+ * Format a JS number as a valid GLSL float literal (must contain a decimal
+ * point; an integer like 3000 becomes 3000.0).
  */
 function glslFloat(n: number): string {
   if (!Number.isFinite(n)) {
@@ -62,13 +67,14 @@ function glslFloat(n: number): string {
 }
 
 /**
- * Build the "Plaster Void" depth-haze + film-grain GLSL ES fragment source for
- * a Cesium PostProcessStage. The configurable values are BAKED INTO the source
- * as float/vec3 literals (so the stage can be created with `uniforms: {}`).
+ * Build the "Plaster Void" depth-haze + film-grain GLSL ES 3.00 fragment source
+ * for a Cesium PostProcessStage. The configurable values are BAKED INTO the
+ * source as float/vec3 literals (so the stage can be created with `uniforms: {}`).
  *
- * Cesium auto-injects `#version`, `precision`, and every `czm_*` built-in
- * (`czm_readDepth`, `czm_windowToEyeCoordinates`, `czm_frameNumber`) — do NOT
- * redeclare those here.
+ * Cesium auto-injects `#version 300 es`, `precision`, every `czm_*` built-in
+ * (`czm_readDepth`, `czm_windowToEyeCoordinates`, `czm_frameNumber`), and the
+ * `layout(location = 0) out vec4 out_FragColor;` declaration — do NOT redeclare
+ * those here.
  */
 export function buildStudioEnvironmentShaderSource(
   opts?: StudioEnvironmentOptions,
@@ -83,12 +89,13 @@ export function buildStudioEnvironmentShaderSource(
   const hazeB = glslFloat(hazeColor[2]);
 
   return [
-    '// Plaster Void: depth-haze + film-grain post-process (GLSL ES 1.00).',
-    '// Cesium injects the GLSL version + precision and all czm_* built-ins.',
+    '// Plaster Void: depth-haze + film-grain post-process (GLSL ES 3.00).',
+    '// Cesium injects the version + precision, all czm_* built-ins, and the',
+    '// layout(location=0) out vec4 out_FragColor declaration we write to below.',
     'uniform sampler2D colorTexture;',
     'uniform sampler2D depthTexture;',
     '',
-    'varying vec2 v_textureCoordinates;',
+    'in vec2 v_textureCoordinates;',
     '',
     'void main() {',
     '  // Plaster-void haze + grain parameters, baked from build opts.',
@@ -97,7 +104,7 @@ export function buildStudioEnvironmentShaderSource(
     `  vec3 hazeColor = vec3(${hazeR}, ${hazeG}, ${hazeB});`,
     `  float grainAmount = ${glslFloat(grainAmount)};`,
     '',
-    '  vec4 color = texture2D(colorTexture, v_textureCoordinates);',
+    '  vec4 color = texture(colorTexture, v_textureCoordinates);',
     '  float depth = czm_readDepth(depthTexture, v_textureCoordinates);',
     '',
     '  // Fix #3: background via epsilon, never an exact one-point depth test.',
@@ -105,7 +112,7 @@ export function buildStudioEnvironmentShaderSource(
     '  // far plane; the 0.9999 epsilon avoids flicker at the horizon.',
     '  if (depth > 0.9999) {',
     '    // Pure background (the sky void): flat haze, no fog ramp, no grain.',
-    '    gl_FragColor = vec4(hazeColor, color.a);',
+    '    out_FragColor = vec4(hazeColor, color.a);',
     '    return;',
     '  }',
     '',
@@ -120,7 +127,7 @@ export function buildStudioEnvironmentShaderSource(
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
     '  result += (grain - 0.5) * grainAmount;',
     '',
-    '  gl_FragColor = vec4(result, color.a);',
+    '  out_FragColor = vec4(result, color.a);',
     '}',
     '',
   ].join('\n');

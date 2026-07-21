@@ -115,6 +115,7 @@ data/
 
 # Generated 3D Tiles served to the app (regenerate via converter + cp; not committed)
 public/test_tile/
+public/berlin/
 
 # Python tooling (CityGML -> 3D Tiles converter pipeline)
 .venv/
