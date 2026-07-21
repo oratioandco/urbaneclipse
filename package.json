@@ -1,0 +1,22 @@
+{
+  "name": "urbaneclipse",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@nanostores/react": "^1.1.0",
+    "nanostores": "^1.4.1",
+    "proj4": "^2.20.9",
+    "suncalc": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/proj4": "^2.19.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

@@ -29,9 +29,9 @@ Single Astro web app (repo root): `src/{pages,components/react,workers,cesium/sh
 - [ ] T001 Create project directory structure per [plan.md](./plan.md) (src/{pages,components/react,workers,cesium/shaders,lib,styles,data}, scripts/, tests/{unit,worker,e2e}, public/)
 - [ ] T002 Initialize Astro + React + TypeScript project in package.json — deps: astro, @astrojs/react, react, react-dom, cesium, suncalc, nanostores, @nanostores/react, tailwindcss, proj4; devDeps: typescript, vitest, jsdom, @playwright/test, vite, vite-plugin-cesium
 - [ ] T003 [P] Configure astro.config.mjs + vite.config.ts — `vite-plugin-cesium()`, `ssr.external:['cesium']`, `optimizeDeps.exclude:['cesium']`, `output:'static'`
-- [ ] T004 [P] Configure tsconfig.json — strict, `module:ESNext`, `moduleResolution:Bundler`, `skipLibCheck:true`, `types:[]` (NO `@types/cesium`)
+- [x] T004 [P] Configure tsconfig.json — strict, `module:ESNext`, `moduleResolution:Bundler`, `skipLibCheck:true`, `types:[]` (NO `@types/cesium`)
 - [ ] T005 [P] Configure Tailwind entry (`@tailwindcss/vite` or `@astrojs/tailwind`) in vite.config.ts + scope/disable Preflight over Cesium widget DOM (credits/timeline/animation)
-- [ ] T006 [P] Add .env.example with `PUBLIC_CESIUM_ION_TOKEN=` placeholder + document the `import.meta.env.PUBLIC_*` accessor (.env stays gitignored — never committed)
+- [x] T006 [P] Add .env.example with `PUBLIC_CESIUM_ION_TOKEN=` placeholder + document the `import.meta.env.PUBLIC_*` accessor (.env stays gitignored — never committed)
 - [ ] T007 [P] Setup vitest (vitest.config.ts, jsdom env) + playwright (playwright.config.ts) + package.json scripts (dev, build, preview, test, test:e2e)
 - [ ] T008 Create src/pages/index.astro shell mounting `<CesiumViewer client:only="react" />` with a fallback slot — NO `cesium` import in the `.astro` frontmatter
 
@@ -43,14 +43,14 @@ Single Astro web app (repo root): `src/{pages,components/react,workers,cesium/sh
 
 **⚠️ CRITICAL**: No user-story work begins until this phase is complete. Pure-logic tasks here do NOT require the building data; the Cesium-integration tasks (and downstream US1–US3 Cesium work) do (see T024).
 
-- [ ] T009 [P] Write source-graph guard test tests/unit/ssr-graph-guard.test.ts — FAIL if any file under src/pages/** or src/layouts/** imports `'cesium'` (allow-list src/cesium/** and src/components/react/**)
-- [ ] T010 [P] Write failing store tests tests/unit/store.test.ts — initial values; read-only `isOccluded` (`.set` throws/absent); `commitOcclusion` equality guard; `setDateTimeScrubbing` rAF coalesce (fake timers); dependency-direction (dateTime→updateSunClock not recomputeOcclusion; height→recomputeOcclusion not updateSunClock)
-- [ ] T011 Implement src/store.ts — `dateTime`, `observerHeight`, `targetHeight` atoms; private `_isOccludedSource` + `isOccluded = computed(...)`; `commitOcclusion(v)`; `setDateTimeScrubbing` rAF-coalesced — to pass T010
-- [ ] T012 [P] Define Berlin constants src/lib/berlin.ts — observer default (52.5106, 13.4652, 1.5 m), target default (52.5208, 13.4093, 210 m ⚠️ VERIFY ~368), Berlin bounds, `SourceCRS`/`HeightDatum` enums, plaster/void colors (#f4f4f4)
-- [ ] T013 [P] Write failing CRS-transform tests tests/unit/coords.test.ts — `transformCoord` EPSG:25832→4326 near-identity (fixture); EPSG:31468→4326 DHDN datum-shift regression (precomputed reference)
-- [ ] T014 Implement src/lib/coords.ts — `transformCoord` via proj4; define EPSG:25832 + EPSG:31468 (with `+towgs84`) — to pass T013
-- [ ] T015 [P] Write failing scene-math tests tests/unit/sceneMath.test.ts — `greatCircleBearing` (observer→target ~290–300°, reverse ~110–120°, cardinals); `viewerOptions()` all widgets `===false`; `telephotoFrustum(fovDeg,aspect)`
-- [ ] T016 Implement src/lib/sceneMath.ts — `greatCircleBearing`, `cameraOrientation`, `cameraDestinationCarto`, `viewerOptions`, `telephotoFrustum` — to pass T015
+- [x] T009 [P] Write source-graph guard test tests/unit/ssr-graph-guard.test.ts — FAIL if any file under src/pages/** or src/layouts/** imports `'cesium'` (allow-list src/cesium/** and src/components/react/**)
+- [x] T010 [P] Write failing store tests tests/unit/store.test.ts — initial values; read-only `isOccluded` (`.set` throws/absent); `commitOcclusion` equality guard; `setDateTimeScrubbing` rAF coalesce (fake timers); dependency-direction (dateTime→updateSunClock not recomputeOcclusion; height→recomputeOcclusion not updateSunClock)
+- [x] T011 Implement src/store.ts — `dateTime`, `observerHeight`, `targetHeight` atoms; private `_isOccludedSource` + `isOccluded = computed(...)`; `commitOcclusion(v)`; `setDateTimeScrubbing` rAF-coalesced — to pass T010
+- [x] T012 [P] Define Berlin constants src/lib/berlin.ts — observer default (52.5106, 13.4652, 1.5 m), target default (52.5208, 13.4093, 210 m ⚠️ VERIFY ~368), Berlin bounds, `SourceCRS`/`HeightDatum` enums, plaster/void colors (#f4f4f4)
+- [x] T013 [P] Write failing CRS-transform tests tests/unit/coords.test.ts — `transformCoord` EPSG:25832→4326 near-identity (fixture); EPSG:31468→4326 DHDN datum-shift regression (precomputed reference)
+- [x] T014 Implement src/lib/coords.ts — `transformCoord` via proj4; define EPSG:25832 + EPSG:31468 (with `+towgs84`) — to pass T013
+- [x] T015 [P] Write failing scene-math tests tests/unit/sceneMath.test.ts — `greatCircleBearing` (observer→target ~290–300°, reverse ~110–120°, cardinals); `viewerOptions()` all widgets `===false`; `telephotoFrustum(fovDeg,aspect)`
+- [x] T016 Implement src/lib/sceneMath.ts — `greatCircleBearing`, `cameraOrientation`, `cameraDestinationCarto`, `viewerOptions`, `telephotoFrustum` — to pass T015
 - [ ] T017 Implement src/cesium/bootstrap.ts — client-only module setting `Cesium.Ion.defaultAccessToken = import.meta.env.PUBLIC_CESIUM_ION_TOKEN` as a top-level side effect BEFORE any Viewer/IonResource; import `cesium/Widgets/widgets.css`
 - [ ] T018 Implement src/components/react/CesiumViewer.tsx shell — `useEffect` → `new Cesium.Viewer(container, viewerOptions())` with ref guard (React 18 StrictMode double-mount), terrain via `CesiumWorldTerrain.fromUrl`, `viewer.destroy()` cleanup; render the container div
 - [ ] T019 Implement src/cesium/scene.ts — load src/data/buildings.json → `Cesium3DTileset.fromUrl` (Ion assetId OR self-hosted url); `scene.primitives.add(tileset)`; `camera.setView` at observer (terrain height + eye) heading=`greatCircleBearing`, narrow fov; `tilesLoaded` gate helper
