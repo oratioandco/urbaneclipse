@@ -1,0 +1,14 @@
+# Keep the Docker build context small — exclude everything not needed to build the app.
+node_modules
+.venv
+.git
+.astro
+dist
+# The full datasets (gitignored, too large): CityGML source + full 236-tile tileset.
+data
+public/berlin
+public/test_tile
+# Local env (secrets — passed via Coolify build env, not the image).
+.env
+*.log
+.DS_Store
