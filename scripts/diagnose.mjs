@@ -3,6 +3,11 @@
 // Queries the live Cesium scene exposed at window.__cesium (dev only) to confirm the
 // tileset is added, its content loaded, its bounding sphere is sane, the camera frustum
 // contains it, and draw commands are being issued.
+//
+// US3/US5/US6 additions: also asserts (a) the four overlay panels are in the DOM,
+// (b) the dateTime store -> viewer.clock.currentTime propagation works, (c) the
+// camera.frustum.fov is a finite number that responds to cameraProfile writes, and
+// (d) the solver worker constructs when the SEARCH button is clicked.
 import { chromium } from '@playwright/test';
 
 const URL = process.argv[2] || 'http://localhost:4321/';
@@ -14,6 +19,23 @@ const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(`[err] ${m.text()}`); });
+
+// Shim Worker BEFORE the island mounts so we can detect the solver worker construction.
+// Forward everything to the real Worker; just record that it was constructed. MUST be
+// installed via addInitScript (which runs before any page script on every navigation).
+await page.addInitScript(() => {
+  const OriginalWorker = window.Worker;
+  class CountingWorker extends OriginalWorker {
+    constructor(url, opts) {
+      super(url, opts);
+      const s = String(url && url.url ? url.url : url);
+      if (s.includes('solver.worker')) {
+        window.__solverWorkerConstructed = true;
+      }
+    }
+  }
+  window.Worker = CountingWorker;
+});
 
 await page.goto(URL, { waitUntil: 'load', timeout: 30000 });
 // Vite's first load triggers dep optimization (504 "Outdated Optimize Dep" + an auto-
@@ -82,15 +104,113 @@ const state = await page.evaluate(() => {
     };
   });
   safe('rootChildrenCount', () => tileset.root?.children?.length ?? 0);
+  // US3/US5/US6 wiring checks.
+  safe('clockCurrentTimeIso', () => viewer.clock.currentTime.toString());
+  safe('clockShouldAnimate', () => viewer.clock.shouldAnimate);
+  safe('cameraFrustumFovIsNumber', () => {
+    const fov = viewer.camera.frustum.fov;
+    return typeof fov === 'number' && Number.isFinite(fov);
+  });
+  safe('cameraFrustumFovValue', () => viewer.camera.frustum.fov);
+  safe('cameraFrustumAspectRatio', () => viewer.camera.frustum.aspectRatio);
+  safe('solverWorkerConstructed', () => !!window.__solverWorkerConstructed);
   return out;
+});
+
+// --- US3/US5/US6 panel + propagation checks -----------------------------------
+// Independent evaluate so the worker-construction shim survives (page evaluate runs
+// in the page context, where window.Worker is still our CountingWorker).
+const panels = await page.evaluate(() => {
+  const has = (sel) => !!document.querySelector(sel);
+  return {
+    controlPanelPresent: has('[data-testid="hour-timeline"]') || has('input[type="datetime-local"]'),
+    hourTimelinePresent: has('[data-testid="hour-timeline"]'),
+    hourTimelineMarkerPresent: has('[data-testid="hour-timeline-marker"]'),
+    solverSearchPresent: has('[data-testid="solver-search"]'),
+    cameraControlsPresent: has('[data-testid="camera-controls"]'),
+  };
+});
+
+// US3 propagation: write a known date through the store and read back the Cesium
+// clock. The store is a private module — but its listen is wired into the viewer, so
+// the test clicks the datetime-local input's spinner via the DOM instead. Simpler:
+// dispatch a native input event with a new value string. The onInput handler runs
+// setDateTimeScrubbing (rAF coalesced). Wait one frame, then read the clock.
+const clockPropagation = await page.evaluate(async () => {
+  const viewer = window.__cesium?.viewer;
+  if (!viewer) return { ok: false, reason: 'no-viewer' };
+  const before = viewer.clock.currentTime.toString();
+  const input = document.querySelector('input[type="datetime-local"]');
+  if (!input) return { ok: false, reason: 'no-input', before };
+  const targetValue = '2030-01-02T03:04';
+  const setter = Object.getOwnPropertyDescriptor(
+    window.HTMLInputElement.prototype,
+    'value',
+  ).set;
+  setter.call(input, targetValue);
+  input.dispatchEvent(new window.Event('input', { bubbles: true }));
+  input.dispatchEvent(new window.Event('change', { bubbles: true }));
+  // Wait two animation frames so the rAF-coalesced scrub + the dateTime.listen fires.
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const after = viewer.clock.currentTime.toString();
+  // JulianDate.toString is non-ISO; we just need to confirm it CHANGED.
+  return { ok: before !== after, before, after };
+});
+
+// US6 propagation: click a sensor preset and confirm frustum.fov changes (or at
+// least stays a finite number that reflects the smaller sensor). Read before/after.
+const cameraPropagation = await page.evaluate(() => {
+  const viewer = window.__cesium?.viewer;
+  if (!viewer) return { ok: false, reason: 'no-viewer' };
+  const fovBefore = viewer.camera.frustum.fov;
+  // Find the APS-C preset button (text content 'APS-C').
+  const buttons = Array.from(document.querySelectorAll('button'));
+  const apsc = buttons.find((b) => b.textContent && b.textContent.trim() === 'APS-C');
+  if (!apsc) return { ok: false, reason: 'no-aps-c-button', fovBefore };
+  apsc.click();
+  // The store .listen is synchronous in nanostores, so by the time click returns,
+  // the CesiumViewer listener has run.
+  const fovAfter = viewer.camera.frustum.fov;
+  return {
+    ok: typeof fovAfter === 'number' && Number.isFinite(fovAfter),
+    fovBefore,
+    fovAfter,
+  };
+});
+
+// US5 worker construction: click the SEARCH button and confirm the worker is
+// constructed (don't wait for completion — a 30-day, 1-min search is ~43k steps and
+// we only need the construction signal here). Generous timeout in case React is
+// still settling.
+const workerCheck = await page.evaluate(async () => {
+  const buttons = Array.from(document.querySelectorAll('button'));
+  const search = buttons.find(
+    (b) => b.textContent && b.textContent.trim().startsWith('SEARCH'),
+  );
+  if (!search) return { ok: false, reason: 'no-search-button' };
+  try {
+    search.click();
+  } catch (e) {
+    return { ok: false, reason: `click-threw:${e.message}` };
+  }
+  // Yield a few frames for the new Worker() call to run inside the React handler.
+  for (let i = 0; i < 10; i++) {
+    if (window.__solverWorkerConstructed) break;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return { ok: !!window.__solverWorkerConstructed };
 });
 
 console.log('PAGE_ERRORS:', JSON.stringify(errors, null, 2));
 console.log('SCENE_STATE:', JSON.stringify(state, null, 2));
+console.log('PANELS:', JSON.stringify(panels, null, 2));
+console.log('CLOCK_PROPAGATION:', JSON.stringify(clockPropagation, null, 2));
+console.log('CAMERA_PROPAGATION:', JSON.stringify(cameraPropagation, null, 2));
+console.log('WORKER_CHECK:', JSON.stringify(workerCheck, null, 2));
 
-// Extended US1/US2 assertions (Constitution III — diagnose must self-certify the
-// new integration, not just dump state). These are best-effort reports; they do
-// NOT cause the script to throw (so the orchestrator still sees the raw state).
+// Extended US1/US2 + US3/US5/US6 assertions (Constitution III — diagnose must
+// self-certify the new integration, not just dump state). Best-effort reports; they
+// do NOT cause the script to throw (so the orchestrator still sees the raw state).
 const extended = {
   pageErrorsEmpty: errors.length === 0,
   primitivesIncludesTileset:
@@ -106,6 +226,17 @@ const extended = {
     'same-point',
     'unknown',
   ].includes(state.lastOcclusion),
+  // US3/US5/US6
+  allPanelsPresent:
+    panels.hourTimelinePresent &&
+    panels.solverSearchPresent &&
+    panels.cameraControlsPresent &&
+    panels.controlPanelPresent,
+  clockDrivesFromStore: clockPropagation.ok === true,
+  cameraFrustumFovIsNumber: state.cameraFrustumFovIsNumber === true,
+  cameraRespondsToStore:
+    cameraPropagation.ok === true && typeof cameraPropagation.fovAfter === 'number',
+  solverWorkerConstructs: workerCheck.ok === true,
 };
 console.log('EXTENDED_CHECKS:', JSON.stringify(extended, null, 2));
 

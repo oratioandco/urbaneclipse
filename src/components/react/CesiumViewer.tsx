@@ -19,7 +19,15 @@
  *     target=TARGET_DEFAULT drive computeOcclusion, whose result drives both the
  *     store (commitOcclusion) and the observer→target polyline colour. Height-store
  *     listeners recompute on slider change; dateTime is intentionally NOT wired
- *     (occlusion is time-independent — see src/store.ts).
+ *     to occlusion (occlusion is time-independent — see src/store.ts).
+ *   - US3 time-scrub: a dateTime.listen updates viewer.clock.currentTime so Cesium's
+ *     built-in sun position + shadows follow the suncalc-authored time (Strategy B:
+ *     drive the native clock; do NOT recompute occlusion on time changes).
+ *   - US6 camera: a cameraProfile.listen recomputes viewer.camera.frustum.fov via
+ *     fovToCesium(computeHorizontalFov(sensor, focal*zoom), aspectRatio). Cesium 1.143
+ *     PerspectiveFrustum.fov is documented as: horizontal FOV when width >= height,
+ *     otherwise vertical. fovToCesium already returns hfov unchanged for aspect>=1
+ *     (the landscape scene case), so we pass its result straight through.
  */
 import { useEffect, useRef } from 'react';
 import type * as CesiumType from 'cesium';
@@ -38,12 +46,18 @@ import {
   type OcclusionState,
 } from '../../cesium/lineOfSight.js';
 import {
+  dateTime,
   observerHeight,
   targetHeight,
   commitOcclusion,
+  cameraProfile,
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
+import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
 import ControlPanel from './ControlPanel.js';
+import HourTimeline from './HourTimeline.js';
+import SolverSearch from './SolverSearch.js';
+import CameraControls from './CameraControls.js';
 
 // Combined Mitte+Fi+Li tileset, mirrored into public/berlin/ from data/berlin/.
 const TILESET_URL = '/berlin/tileset.json';
@@ -111,9 +125,47 @@ export default function CesiumViewer(): JSX.Element {
     viewer.shadows = true;
     scene.globe.enableLighting = true;
     scene.globe.depthTestAgainstTerrain = true;
-    // Morning sun -> low angle -> long shadows + strong facade shading.
-    viewer.clock.currentTime = Cesium.JulianDate.fromDate(new Date('2026-07-21T08:00:00Z'));
+    // Morning sun -> low angle -> long shadows + strong facade shading. INITIAL seed
+    // only — the dateTime listener below keeps viewer.clock.currentTime in sync with
+    // the store (US3), so the user-driven time always wins after mount.
+    viewer.clock.currentTime = Cesium.JulianDate.fromDate(dateTime.get());
     viewer.clock.shouldAnimate = false;
+
+    // --- US3 time-scrub listener (Strategy B) -------------------------------------
+    // Drive Cesium's native clock from the dateTime store: every store change (slider
+    // scrub, datetime-local input, solver result click) pushes the new instant into
+    // viewer.clock.currentTime, which Cesium uses to position the sun + cast shadows.
+    // shouldAnimate stays FALSE: we are NOT playing the clock; we are pinning it.
+    // Time-independent: occlusion is NEVER recomputed here (see store.ts invariant).
+    const applyDateTime = (dt: Date) => {
+      if (disposed || viewer.isDestroyed()) return;
+      viewer.clock.currentTime = Cesium.JulianDate.fromDate(dt);
+      viewer.scene.requestRender();
+    };
+    applyDateTime(dateTime.get());
+    const unsubDateTime = dateTime.listen(applyDateTime);
+
+    // --- US6 camera profile listener ---------------------------------------------
+    // Translate the authored sensor + focal + zoom into a PerspectiveFrustum.fov.
+    // Cesium 1.143 docs: PerspectiveFrustum.fov is the horizontal FOV when width >=
+    // height, otherwise vertical. fovToCesium returns hfov unchanged for landscape
+    // (the only case this plaster-void viewport exercises), so we assign it directly.
+    // The frustum is replaced in-place: viewer.camera.frustum is always a
+    // PerspectiveFrustum by default (no orthographic switch in this app).
+    const applyCamera = () => {
+      if (disposed || viewer.isDestroyed()) return;
+      const { sensorWidth, focalLength, zoom } = cameraProfile.get();
+      const canvas = viewer.canvas as HTMLCanvasElement;
+      const aspectRatio =
+        canvas.height > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
+      const hfov = computeHorizontalFov(sensorWidth, focalLength * zoom);
+      const frustum = viewer.camera.frustum as CesiumType.PerspectiveFrustum;
+      frustum.fov = fovToCesium(hfov, aspectRatio);
+      frustum.aspectRatio = aspectRatio;
+      viewer.scene.requestRender();
+    };
+    applyCamera();
+    const unsubCamera = cameraProfile.listen(applyCamera);
 
     // --- Plaster post-process (US2) --------------------------------------------
     // Depth-haze + film-grain stage from src/cesium/shaders/studioEnvironment.ts.
@@ -217,10 +269,14 @@ export default function CesiumViewer(): JSX.Element {
         const unsubTh = targetHeight.listen(recompute);
 
         // Stash unsubs on the viewer for cleanup; Cesium doesn't own them so we
-        // can't piggyback on viewer.destroy().
+        // can't piggyback on viewer.destroy(). Includes the US3 (dateTime) + US6
+        // (cameraProfile) listeners created above the tileset callback so the cleanup
+        // array is the single source of truth for ALL store subscriptions.
         (viewer as unknown as { __cleanupFns?: Array<() => void> }).__cleanupFns = [
           () => unsubOh?.(),
           () => unsubTh?.(),
+          () => unsubDateTime?.(),
+          () => unsubCamera?.(),
         ];
       })
       .catch((err: unknown) => {
@@ -256,6 +312,9 @@ export default function CesiumViewer(): JSX.Element {
     <>
       <div id="cesium-container" ref={containerRef} />
       <ControlPanel />
+      <HourTimeline />
+      <SolverSearch />
+      <CameraControls />
     </>
   );
 }

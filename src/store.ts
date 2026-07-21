@@ -13,6 +13,39 @@ export const dateTime = atom<Date>(new Date());
 export const observerHeight = atom<number>(1.5);
 export const targetHeight = atom<number>(210);
 
+// --- US6 camera profile -----------------------------------------------------
+// Sensor + lens model authored by CameraControls; consumed by the CesiumViewer
+// island to drive viewer.camera.frustum.fov via fovToCesium(computeHorizontalFov(...)).
+// Defaults model a full-frame camera at 600 mm with no zoom boost (the US6 spec).
+export interface CameraProfile {
+  sensorWidth: number; // mm
+  focalLength: number; // mm (prime, before zoom)
+  zoom: number; // dimensionless multiplier on focalLength
+}
+export const cameraProfile = atom<CameraProfile>({
+  sensorWidth: 36,
+  focalLength: 600,
+  zoom: 1,
+});
+
+// --- US5 solver state -------------------------------------------------------
+// Worker -> store handshake. Status transitions:
+//   idle -> running (search started) -> done|error (terminal)
+// `matches` is the list of alignment instants found by the solver worker; empty until
+// a search completes with at least one match. `progress` is 0..1.
+export type SolverStatus = 'idle' | 'running' | 'done' | 'error';
+export interface SolverState {
+  status: SolverStatus;
+  progress: number;
+  matches: Date[];
+  error?: string;
+}
+export const solverState = atom<SolverState>({
+  status: 'idle',
+  progress: 0,
+  matches: [],
+});
+
 // `isOccluded` is READ-ONLY BY TYPE: a private source atom exported under the
 // `ReadableAtom<boolean>` type (no `.set` visible to consumers). The sole writer is
 // commitOcclusion(). (nanostores 1.4 `computed` does not enforce read-only at runtime,
