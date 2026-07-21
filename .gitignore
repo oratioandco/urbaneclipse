@@ -112,3 +112,8 @@ coverage/
 
 # ---- Project data (CityGML + generated 3D Tiles; large, never commit) ----
 data/
+
+# Python tooling (CityGML -> 3D Tiles converter pipeline)
+.venv/
+__pycache__/
+*.pyc

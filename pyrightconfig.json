@@ -1,0 +1,9 @@
+{
+  "include": ["scripts"],
+  "exclude": [".venv", "node_modules", "data"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.14",
+  "reportMissingImports": "error",
+  "reportMissingModuleSource": "warning"
+}
