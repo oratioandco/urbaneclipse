@@ -16,6 +16,10 @@ page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(`[err] ${m.text()}`); });
 
 await page.goto(URL, { waitUntil: 'load', timeout: 30000 });
+// Vite's first load triggers dep optimization (504 "Outdated Optimize Dep" + an auto-
+// reload in a real browser). Wait for it, then reload for a clean load past the transition.
+await page.waitForTimeout(6000);
+await page.reload({ waitUntil: 'load', timeout: 30000 });
 // Let the tileset resolve + root content stream.
 await page.waitForTimeout(15000);
 
