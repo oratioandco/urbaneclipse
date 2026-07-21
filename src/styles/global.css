@@ -1,0 +1,11 @@
+/* Tailwind v4 entry — processed by @tailwindcss/vite (see astro.config.mjs). */
+@import 'tailwindcss';
+
+/* Plaster-void base: neutral page background behind the Cesium canvas. */
+html,
+body,
+:root {
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}

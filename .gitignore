@@ -113,7 +113,13 @@ coverage/
 # ---- Project data (CityGML + generated 3D Tiles; large, never commit) ----
 data/
 
+# Generated 3D Tiles served to the app (regenerate via converter + cp; not committed)
+public/test_tile/
+
 # Python tooling (CityGML -> 3D Tiles converter pipeline)
 .venv/
 __pycache__/
 *.pyc
+
+# Astro build cache
+.astro/
