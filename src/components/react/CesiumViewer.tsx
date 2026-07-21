@@ -12,7 +12,13 @@
  * if present — it never crashes when absent.
  */
 import { useEffect, useRef } from 'react';
-import * as Cesium from 'cesium';
+// Cesium is served as a UMD GLOBAL (window.Cesium) by vite-plugin-cesium + the
+// /cesium/Cesium.js tag injected in index.astro. We use the global at runtime — NOT
+// `import * as Cesium from 'cesium'` — so Vite never loads the npm cesium ESM in dev
+// (which breaks on Cesium's CommonJS deps: mersenne-twister default-export error / 504).
+// `import type` is fully erased at build, so this introduces no runtime dependency.
+import type * as CesiumType from 'cesium';
+const Cesium = (window as unknown as { Cesium: typeof CesiumType }).Cesium;
 
 // Local tileset is served by Astro from public/ at '/test_tile/tileset.json'.
 // (data/ itself is NOT web-served; a build/cp step mirrors data/test_tile -> public/test_tile.)
@@ -74,6 +80,16 @@ export default function CesiumViewer(): JSX.Element {
     scene.globe.baseColor = Cesium.Color.fromCssColorString('#f4f4f4');
     scene.imageryLayers.removeAll();
 
+    // Studio lighting + harsh shadows so the white plaster geometry actually reads
+    // against the white void (US2 art-direction). WITHOUT this, white-on-white is
+    // invisible — the buildings must be lit + cast shadows to be seen.
+    viewer.shadows = true;
+    scene.globe.enableLighting = true;
+    scene.globe.depthTestAgainstTerrain = true;
+    // Morning sun -> low angle -> long shadows + strong facade shading.
+    viewer.clock.currentTime = Cesium.JulianDate.fromDate(new Date('2026-07-21T08:00:00Z'));
+    viewer.clock.shouldAnimate = false;
+
     // --- Local self-hosted tileset ---------------------------------------------
     // Cesium3DTileset.fromUrl is the non-deprecated factory (the ctor is deprecated
     // since 1.107). It resolves once the root tile metadata is loaded.
@@ -83,6 +99,9 @@ export default function CesiumViewer(): JSX.Element {
         viewer.scene.primitives.add(tileset);
         // Uniform matte white geometry — the plaster/clay model look.
         tileset.style = new Cesium.Cesium3DTileStyle({ color: "color('#ffffff')" });
+        tileset.shadows = Cesium.ShadowMode.ENABLED;
+        // Debug hook for headless scene-state inspection (scripts/diagnose.mjs).
+        (window as unknown as { __cesium?: unknown }).__cesium = { viewer, tileset };
 
         // --- Camera: frame the tileset robustly ----------------------------------
         // viewer.zoomTo flies the camera to optimally view the tileset's bounding volume,

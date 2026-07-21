@@ -24,6 +24,10 @@ export default defineConfig({
       external: ['cesium'],
     },
     optimizeDeps: {
+      // Cesium is consumed as a UMD GLOBAL (window.Cesium) — see
+      // src/components/react/CesiumViewer.tsx — NOT imported as a module, so it stays out
+      // of Vite's dep-optimization entirely. (Importing the npm cesium ESM breaks dev on
+      // Cesium's CommonJS deps: mersenne-twister default-export error, then 504 loops.)
       exclude: ['cesium'],
     },
   },
