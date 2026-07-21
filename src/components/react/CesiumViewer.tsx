@@ -84,27 +84,13 @@ export default function CesiumViewer(): JSX.Element {
         // Uniform matte white geometry — the plaster/clay model look.
         tileset.style = new Cesium.Cesium3DTileStyle({ color: "color('#ffffff')" });
 
-        // --- Camera: setView at the tileset's bounding region -------------------
-        // Derive a lon/lat/height from the tileset's bounding sphere (ECEF center),
-        // falling back to the known tileset transform translation if unavailable.
-        const bs = tileset.boundingSphere;
-        const center = bs ? bs.center : TILESET_ECEF_CENTER;
-        const radius = bs ? bs.radius : 500;
-        const carto = Cesium.Cartographic.fromCartesian(center);
-        // Hover ~2x the bounding radius above the tileset, looking slightly down.
-        const height = carto.height + radius * 2.0 + 150;
-        viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(
-            Cesium.Math.toDegrees(carto.longitude),
-            Cesium.Math.toDegrees(carto.latitude),
-            height,
-          ),
-          orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-25),
-            roll: 0,
-          },
-        });
+        // --- Camera: frame the tileset robustly ----------------------------------
+        // viewer.zoomTo flies the camera to optimally view the tileset's bounding volume,
+        // GUARANTEEING the frustum contains it so Cesium selects the root tile and fetches
+        // its content (tile.b3dm). Replaces fragile hand-rolled ECEF->carto camera math
+        // (which placed the camera outside the frustum and silently culled the tileset).
+        // Oblique pitch (-35deg) for the studio architectural-model look.
+        void viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-35), 0));
       })
       .catch((err: unknown) => {
         if (!disposed) {
