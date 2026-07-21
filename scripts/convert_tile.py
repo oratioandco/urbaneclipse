@@ -5,17 +5,18 @@ Pipeline
 --------
 1. ``scripts.parse_citygml.parse_tile(source)`` parses the
    ``LoD2_<x>_<y>.zip`` (or its inner ``LoD2_33_<x>_<y>_<n>_BE.xml``) into one
-   triangle mesh per ``bldg:Building`` (fan triangulation, EPSG:25833,
-   interior rings skipped, vertices not deduplicated - see that module's
-   docstring for the known PITFALLS).
+   triangle mesh per ``bldg:Building`` (earcut triangulation with interior
+   rings / holes, EPSG:25833, vertices deduplicated per building ~1 mm - see
+   that module's docstring).
 2. All buildings are merged into a single triangle mesh (the material is a
    uniform WHITE, so there is no per-building material benefit to keeping
    separate primitives).  Triangle indices are offset by the running vertex
    count so they stay valid in the merged buffer.
-3. Vertices are reprojected EPSG:25833 (ETRS89 / UTM 33N) -> EPSG:4978
-   (WGS84 geocentric / ECEF) via ``pyproj.Transformer`` with ``always_xy=True``;
-   Z is passed through unchanged.
-4. Because ECEF coordinates are large (~3.78e6 m) and glTF POSITIONs are
+3. The Berlin geoid undulation (~+39.5 m) is added to Z so DHHN2016 normal
+   heights become WGS84-ellipsoidal heights (an approximation; see below).
+4. Vertices are reprojected EPSG:25833 (ETRS89 / UTM 33N) -> EPSG:4978
+   (WGS84 geocentric / ECEF) via ``pyproj.Transformer`` with ``always_xy=True``.
+5. Because ECEF coordinates are large (~3.78e6 m) and glTF POSITIONs are
    float32 (~7 significant digits), the tile is stored *relative to a center*
    (RTC, "relative-to-center"): the merged vertices become ``ECEF - center``
    in float32, and the center is carried by the root Tile's ``transform``
@@ -23,15 +24,20 @@ Pipeline
    tiler.  The LOCAL boundingVolumeBox is derived from the centered vertices
    and, per the 3D Tiles spec, the root transform maps it to world (ECEF).
 
-HEIGHT DATUM CAVEAT (known follow-up, NOT fixed here):
+HEIGHT DATUM (geoid -> ellipsoid, applied here as an APPROXIMATION):
    CityGML Z is a DHHN2016 *normal height* (above the geoid / sea level),
-   while Cesium's WGS84 ellipsoid is the reference for EPSG:4978.  The geoid
-   in Berlin sits ~33-37 m above the ellipsoid, so buildings will render
-   ~30-40 m below their visual ground in Cesium until a geoid->ellipsoid
-   correction (e.g. via ``pyproj`` with the ETRS89 -> WGS84 + geoid grid, or a
-   per-tile constant offset) is applied.  pyproj's plain
-   ``EPSG:25833 -> EPSG:4978`` transform treats the input Z as ellipsoidal,
-   which is the approximation we knowingly make here.
+   while Cesium's WGS84 ellipsoid is the reference for EPSG:4978.  pyproj's
+   plain ``EPSG:25833 -> EPSG:4978`` transform treats the input Z as
+   ellipsoidal, so we must first convert normal height -> ellipsoidal height
+   by adding the geoid undulation N (h = H + N).  In Berlin the ETRS89 geoid
+   (GCG2016 / close to EGG97) sits ~+39 to +40 m above the ellipsoid; we apply
+   a single tile-wide constant ``GEOID_UNDULATION_BERLIN = 39.5`` m.
+
+   This is an APPROXIMATION: the real geoid undulation varies by ~+-0.5 m
+   across a 1 km tile and across the city.  A precise per-vertex correction
+   from the BKG geoid grid (GCG2016) is a later refinement; until then
+   buildings sit within ~1 m of their true ellipsoidal height (vs ~39 m low
+   with no correction at all).
 
 Material: uniform WHITE baked into the glTF - ``baseColorFactor=[1,1,1,1]``,
 ``metallicFactor=0``, ``roughnessFactor=1``, ``alphaMode=OPAQUE``,
@@ -70,6 +76,13 @@ from py3dtiles.tileset.content.b3dm import B3dm  # noqa: E402
 # Target CRS = WGS84 geocentric (Earth-centered, Earth-fixed).
 SOURCE_CRS = "EPSG:25833"
 TARGET_CRS = "EPSG:4978"
+
+# Berlin geoid undulation (ETRS89 geoid height above the GRS80/WGS84
+# ellipsoid), used to lift DHHN2016 normal heights H to ellipsoidal heights
+# h = H + N before the ECEF reprojection.  ~+39.5 m is a tile-wide constant
+# approximation of the GCG2016 / EGG97 geoid across Berlin; the precise
+# per-vertex grid correction is a later refinement (see module docstring).
+GEOID_UNDULATION_BERLIN = 39.5
 
 # Default Fernsehturm tile, used when no source is given on the CLI.
 DEFAULT_TILE = Path(__file__).resolve().parent.parent / "data" / "citygml" / "LoD2_392_5820.zip"
@@ -146,7 +159,14 @@ def convert(source: Path, out_dir: Path) -> dict:
     n_verts = int(verts_utm.shape[0])
     n_tris = int(tris.shape[0])
 
-    # 3. Reproject to ECEF.
+    # 3. Vertical datum: lift DHHN2016 normal heights to WGS84-ellipsoidal
+    #    heights by adding the Berlin geoid undulation (tile-wide constant
+    #    approximation; see module docstring).  Must happen BEFORE the ECEF
+    #    reprojection, which treats Z as ellipsoidal.
+    verts_utm = verts_utm.copy()
+    verts_utm[:, 2] += GEOID_UNDULATION_BERLIN
+
+    # 4. Reproject to ECEF.
     verts_ecef = to_ecef(verts_utm)
 
     # 4. Relative-to-center: center = midpoint of ECEF min/max (keeps the
