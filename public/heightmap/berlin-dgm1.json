@@ -2,26 +2,26 @@
   "format": "plaster-void-heightmap",
   "version": 1,
   "binary": "berlin-dgm1.bin",
-  "byteLength": 558250,
+  "byteLength": 724280,
   "dtype": "int16",
   "byteOrder": "little",
   "scale": 0.1,
   "offset": 0.0,
   "nodata": -32768,
-  "width": 725,
-  "height": 385,
+  "width": 953,
+  "height": 380,
   "rowOrder": "south-to-north",
   "colOrder": "west-to-east",
   "index": "row * width + col",
   "crs": "EPSG:4326",
   "bbox": {
     "lonMin": 13.361066222368226,
-    "latMin": 52.5022168289567,
-    "lonMax": 13.467925077272614,
+    "latMin": 52.50264683471231,
+    "lonMax": 13.501555326397026,
     "latMax": 52.53671451596954
   },
-  "dLon": 0.00014759510345909954,
-  "dLat": 8.983772659595009e-05,
+  "dLon": 0.00014757258826554657,
+  "dLat": 8.98883410481109e-05,
   "approxSpacingMetres": 10.0,
   "heightUnit": "metre",
   "heightType": "orthometric",
@@ -31,18 +31,18 @@
     "appliedByConvertTile": 39.5,
     "gcg2016": {
       "model": "GCG2016 (BKG, via PROJ grid de_bkg_gcg2016)",
-      "min": 39.147,
-      "max": 39.381,
-      "mean": 39.262,
+      "min": 39.102,
+      "max": 39.38,
+      "mean": 39.239,
       "note": "informational -- NOT applied to the samples"
     }
   },
   "stats": {
     "minHeight": 16.85,
     "maxHeight": 90.5,
-    "meanHeight": 38.76,
+    "meanHeight": 40.77,
     "p0_5Height": 30.75,
-    "p99_5Height": 63.97,
+    "p99_5Height": 61.38,
     "nodataCount": 0
   },
   "source": {
@@ -60,7 +60,9 @@
       "DGM1_394_5818.zip",
       "DGM1_394_5820.zip",
       "DGM1_396_5818.zip",
-      "DGM1_396_5820.zip"
+      "DGM1_396_5820.zip",
+      "DGM1_398_5818.zip",
+      "DGM1_398_5820.zip"
     ],
     "license": "Datenlizenz Deutschland - Zero - Version 2.0",
     "licenseUrl": "https://www.govdata.de/dl-de/zero-2-0",
@@ -68,5 +70,5 @@
   },
   "resampling": "mean of 1 m DGM1 postings in a 10 m box per node",
   "generatedBy": "scripts/build_heightmap.py",
-  "generatedAt": "2026-07-22T00:58:14Z"
+  "generatedAt": "2026-07-22T05:10:12Z"
 }

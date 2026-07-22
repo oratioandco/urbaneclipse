@@ -42,9 +42,9 @@ berlin-core subset.
 
 That box is then EXPANDED to contain ``REFERENCE_POINTS`` (below) and snapped
 out to the enclosing 2 km DGM1 sheet grid.  The expansion matters: the default
-observer on the Lichtenberger Bruecke (52.5106, 13.4652 -> E 395841,
-N 5818938) lies ~1.8 km EAST of the berlin-core building AOI, so a heightmap
-built from the building bounds alone would not cover the observer at all.
+observer on the Lichtenberger Bruecke (52.5113, 13.4988) lies well EAST of the
+berlin-core building AOI, so a heightmap built from the building bounds alone
+would not cover the observer at all.
 
 Result for the current berlin-core subset: 10 sheets,
 E 388/390/392/394/396 km x N 5818/5820 km.
@@ -87,8 +87,12 @@ SHEET_KM = 2  # DGM1 sheet size in km (EPSG:25833)
 #: Points the heightmap MUST cover, (label, lat, lon).  The AOI derived from
 #: the LoD2 tileset is expanded to contain all of them (plus --margin).
 REFERENCE_POINTS: tuple[tuple[str, float, float], ...] = (
-    ("observer (Lichtenberger Bruecke)", 52.5106, 13.4652),
-    ("Fernsehturm", 52.5208, 13.4093),
+    # CORRECTED 2026-07-21: (52.5106, 13.4652) is NOT the Lichtenberger Bruecke --
+    # it is a street-level point in the Boxhagener Kiez ~2.3 km west, with no bridge
+    # within 250 m (DGM1 and DOM1 both read 36.3 m there).  The real bridge is at
+    # (52.5113, 13.4988), which fell OUTSIDE the previous AOI's eastern edge.
+    ("observer (Lichtenberger Bruecke)", 52.5113, 13.4988),
+    ("Fernsehturm", 52.520815, 13.409419),
 )
 
 USER_AGENT = "plaster-void-dgm1-fetch/1.0 (+offline data prep)"
