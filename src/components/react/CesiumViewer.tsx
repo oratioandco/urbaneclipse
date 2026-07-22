@@ -53,6 +53,10 @@ import {
   cameraProfile,
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
+import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
+import { resolveObserverHeight, resolveTargetHeight } from '../../lib/sceneHeights.js';
+import { loadHeightmap } from '../../cesium/loadHeightmap.js';
+import { BERLIN_GROUND_ORTHOMETRIC_FALLBACK } from '../../lib/elevation.js';
 import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
 import ControlPanel, { type ScenePhase } from './ControlPanel.js';
 import HourTimeline from './HourTimeline.js';
@@ -85,6 +89,15 @@ export default function CesiumViewer(): JSX.Element {
   const [scenePhase, setScenePhase] = useState<ScenePhase>('connecting');
   const [sceneError, setSceneError] = useState<string | undefined>(undefined);
   const [sceneSlow, setSceneSlow] = useState(false);
+
+  // DGM1 ground sampler. A ref rather than state: the occlusion recompute reads it
+  // imperatively from inside the Cesium lifecycle, and a re-render must not remount
+  // the viewer. Null until loaded (or if loading fails), in which case
+  // resolveObserverHeight degrades to the Berlin mean and reports 'fallback'.
+  const groundSamplerRef = useRef<((lat: number, lon: number) => number | undefined) | null>(
+    null,
+  );
+  const [groundWarning, setGroundWarning] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -245,21 +258,45 @@ export default function CesiumViewer(): JSX.Element {
 
         const recompute = () => {
           if (disposed || viewer.isDestroyed()) return;
-          // Lat/lon come from the Berlin defaults (Lichtenberger Brücke → Fernsehturm).
-          // Heights are slider-driven in the store; defaults are 1.5 m / 210 m which
-          // match OBSERVER_DEFAULT.heightAboveGround / TARGET_DEFAULT.heightAboveGround,
-          // so we read the store directly (no double-count of the default).
-          // Globe has NO terrain (baseLayer:false + no World Terrain), so ground ≈ 0
-          // and height-above-ground ≈ height-above-ellipsoid.
+
+          // VERTICAL DATUM (the fix for the 72 m bug).
+          //
+          // The globe has NO terrain (baseLayer:false, no World Terrain), so it is a
+          // bare ellipsoid at height 0 — but the BUILDINGS are baked ~73.5 m up, because
+          // scripts/convert_tile.py lifts DHHN2016 normal heights to WGS84 ellipsoidal
+          // by adding the 39.5 m geoid undulation. Feeding the store's heights straight
+          // to Cesium (as this used to) put the observer ~72 m BELOW every building base.
+          //
+          // The store now holds human-facing values — eye height above the surface you
+          // stand on, and height up the target above ITS OWN base — which are converted
+          // here, applying the geoid exactly once. Ground comes from the DGM1 heightmap;
+          // a curated viewpoint's surveyed deck elevation wins over it, because DGM1 is
+          // bare-earth terrain and would return the rail cutting 8.8 m below the bridge.
+          const sample = groundSamplerRef.current ?? (() => undefined);
+
+          const obs = resolveObserverHeight(
+            OBSERVER_DEFAULT.lat,
+            OBSERVER_DEFAULT.lon,
+            observerHeight.get(),
+            sample,
+            LICHTENBERGER_BRUECKE,
+          );
+          const tgt = resolveTargetHeight(
+            TARGET_DEFAULT.lat,
+            TARGET_DEFAULT.lon,
+            targetHeight.get(),
+            sample,
+          );
+
           const observer: LatLonHeight = {
             lat: OBSERVER_DEFAULT.lat,
             lon: OBSERVER_DEFAULT.lon,
-            height: observerHeight.get(),
+            height: obs.ellipsoidalHeight,
           };
           const target: LatLonHeight = {
             lat: TARGET_DEFAULT.lat,
             lon: TARGET_DEFAULT.lon,
-            height: targetHeight.get(),
+            height: tgt.ellipsoidalHeight,
           };
 
           const result = computeOcclusion(viewer, observer, target);
@@ -270,14 +307,52 @@ export default function CesiumViewer(): JSX.Element {
             result.state,
             polylineEntity,
           );
-          (window as unknown as { __cesium?: { lastOcclusion?: OcclusionState } }).__cesium!.lastOcclusion =
-            result.state;
+          const dbg = (
+            window as unknown as {
+              __cesium?: {
+                lastOcclusion?: OcclusionState;
+                observerEllipsoidalHeight?: number;
+                targetEllipsoidalHeight?: number;
+                groundSource?: string;
+                targetGroundSource?: string;
+                targetSurfaceOrthometric?: number;
+                heightmapReady?: boolean;
+              };
+            }
+          ).__cesium!;
+          dbg.lastOcclusion = result.state;
+          // Exposed for scripts/diagnose.mjs: the datum fix is invisible in pixels, so
+          // it is verified objectively from scene state instead.
+          dbg.observerEllipsoidalHeight = obs.ellipsoidalHeight;
+          dbg.targetEllipsoidalHeight = tgt.ellipsoidalHeight;
+          dbg.groundSource = obs.surfaceSource;
+          dbg.targetGroundSource = tgt.surfaceSource;
+          dbg.targetSurfaceOrthometric = tgt.surfaceOrthometric;
+          dbg.heightmapReady = groundSamplerRef.current !== null;
           // commitOcclusion treats 'occluded' OR 'marginal' as blocked.
           commitOcclusion(result.state === 'occluded' || result.state === 'marginal');
           // First real occlusion result -> the verdict shown in ControlPanel is now
           // backed by loaded geometry, so promote the phase out of 'streaming'.
           setPhase('ready');
         };
+
+        // --- DGM1 ground elevation ----------------------------------------------
+        // Loaded in parallel with the tiles. Occlusion is recomputed once it lands so
+        // the first verdict is not silently based on the fallback elevation.
+        void loadHeightmap().then((res) => {
+          if (disposed) return;
+          if (res.sampleGround) {
+            groundSamplerRef.current = res.sampleGround;
+            recompute();
+          } else {
+            // Never silent (FR-013): without real ground the sightline is computed
+            // from an assumed Berlin mean and can be several metres out.
+            setGroundWarning(
+              `ground elevation unavailable (${res.error ?? 'unknown error'}) — ` +
+                `using the ${BERLIN_GROUND_ORTHOMETRIC_FALLBACK} m Berlin mean`,
+            );
+          }
+        });
 
         // Initial compute: defer until tilesLoaded so we don't read an empty scene.
         // tilesLoaded transitions to true exactly once, when the load queue drains.
@@ -361,6 +436,7 @@ export default function CesiumViewer(): JSX.Element {
       <div className="pv-overlay">
         <div className="pv-rail pv-rail--left">
           <ControlPanel
+            groundWarning={groundWarning}
             scenePhase={scenePhase}
             sceneError={sceneError}
             sceneSlow={sceneSlow}

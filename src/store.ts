@@ -11,8 +11,22 @@ import { log } from './lib/log';
  */
 
 export const dateTime = atom<Date>(new Date());
+
+/**
+ * SEMANTICS (changed with the vertical-datum fix — see src/lib/sceneHeights.ts):
+ *
+ *   observerHeight — EYE HEIGHT above the surface you are standing on, metres.
+ *   targetHeight   — height up the target ABOVE ITS OWN BASE, metres.
+ *
+ * Neither is a height above the WGS84 ellipsoid. They used to be passed to Cesium
+ * verbatim, which put the observer ~72 m underground because the buildings are baked
+ * ~73.5 m up (DHHN2016 ground + the 39.5 m geoid lift). Convert via
+ * resolveObserverHeight / resolveTargetHeight — never hand these to Cesium directly.
+ */
 export const observerHeight = atom<number>(1.5);
-export const targetHeight = atom<number>(210);
+/** Default is the Fernsehturm's full 368.03 m, matching TARGET_DEFAULT in lib/berlin.ts
+ *  (it was 210 m, roughly the observation deck, leaving the target ~158 m short). */
+export const targetHeight = atom<number>(368.03);
 
 // --- US6 camera profile -----------------------------------------------------
 // Sensor + lens model authored by CameraControls; consumed by the CesiumViewer
@@ -107,7 +121,9 @@ interface PersistedPrefs {
 // (observerHeight/targetHeight clamp bounds) so a corrupted or hand-edited
 // localStorage payload can never resurrect a NaN/negative/absurd height.
 const MAX_OBSERVER_HEIGHT_M = 100;
-const MAX_TARGET_HEIGHT_M = 400;
+// 450 m, not 400: the Fernsehturm alone is 368.03 m and the slider must not clamp its
+// own default. Kept as a sanity ceiling against corrupt persisted values.
+const MAX_TARGET_HEIGHT_M = 450;
 
 function isFiniteNumber(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);

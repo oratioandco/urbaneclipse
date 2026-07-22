@@ -89,7 +89,7 @@ describe('store persistence — rehydrate validation (T058)', () => {
 
     const store = await import('../../src/store');
     expect(store.observerHeight.get()).toBe(1.5);
-    expect(store.targetHeight.get()).toBe(210);
+    expect(store.targetHeight.get()).toBe(368.03);
     expect(store.cameraProfile.get()).toEqual({ sensorWidth: 36, focalLength: 600, zoom: 1 });
   });
 
@@ -114,7 +114,7 @@ describe('store persistence — rehydrate validation (T058)', () => {
     const store = await import('../../src/store');
     // Rejected fields fall back to the module defaults.
     expect(store.observerHeight.get()).toBe(1.5);
-    expect(store.targetHeight.get()).toBe(210);
+    expect(store.targetHeight.get()).toBe(368.03);
     // dateTime falls back to "now" — assert it's a valid Date, not the bogus string.
     expect(store.dateTime.get()).toBeInstanceOf(Date);
     expect(Number.isNaN(store.dateTime.get().getTime())).toBe(false);

@@ -43,6 +43,12 @@ export interface ControlPanelProps {
   sceneError?: string;
   /** True when the scene has been streaming unusually long — surfaced as a warning. */
   sceneSlow?: boolean;
+  /**
+   * Set when the DGM1 ground heightmap could not be loaded, so heights fall back to
+   * the Berlin mean. Surfaced in words: a sightline computed from assumed ground can
+   * be several metres out, and must not look as authoritative as a real sample.
+   */
+  groundWarning?: string;
 }
 
 /**
@@ -69,6 +75,7 @@ export default function ControlPanel({
   scenePhase = 'ready',
   sceneError,
   sceneSlow = false,
+  groundWarning,
 }: ControlPanelProps = {}): JSX.Element {
   const oh = useStore(observerHeight);
   const th = useStore(targetHeight);
@@ -123,7 +130,7 @@ export default function ControlPanel({
 
       <div className="pv-field">
         <div className="pv-field__line">
-          <span className="pv-label">Observer</span>
+          <span className="pv-label">Eye above deck</span>
           <span className="pv-value">{oh.toFixed(1)} m</span>
         </div>
         <input
@@ -144,7 +151,7 @@ export default function ControlPanel({
 
       <div className="pv-field">
         <div className="pv-field__line">
-          <span className="pv-label">Target</span>
+          <span className="pv-label">Target above base</span>
           <span className="pv-value">{th.toFixed(0)} m</span>
         </div>
         <input
@@ -152,14 +159,14 @@ export default function ControlPanel({
           type="range"
           aria-label="Target height in metres"
           min={1}
-          max={400}
+          max={450}
           step={1}
           value={th}
           onChange={(e) => targetHeight.set(parseFloat(e.currentTarget.value))}
         />
         <div className="pv-scale">
           <span>1</span>
-          <span>400 m</span>
+          <span>450 m</span>
         </div>
       </div>
 
@@ -195,6 +202,18 @@ export default function ControlPanel({
             : 'The sightline verdict stays UNKNOWN until the building geometry has streamed in.'}
         </div>
       )}
+
+      {/* Ground elevation is load-bearing: heights are measured from the terrain, so a
+          missing heightmap silently shifts the whole sightline. Say so explicitly. */}
+      {groundWarning ? (
+        <div className="pv-msg pv-msg--warn" role="status">
+          <strong className="pv-msg__title">Approximate ground elevation</strong>
+          Terrain heights could not be loaded, so the observer and target sit on an
+          assumed Berlin mean rather than measured ground. Heights may be several
+          metres out.
+          <span className="pv-msg__detail">{groundWarning}</span>
+        </div>
+      ) : null}
     </section>
   );
 }
