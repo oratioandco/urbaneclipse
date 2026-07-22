@@ -188,11 +188,22 @@ details, including the exact geometry/datum fixes applied, are in
 tileset), `public/berlin/` (the full 236-tile tileset mirrored for local dev), and
 `public/test_tile/` are all gitignored — regenerate them locally with the scripts
 above if you need the full scene. `public/berlin-core/` (the deploy subset) **is**
-committed, since Coolify builds from a git clone with no separate data volume.
+committed, so the image always has a usable scene even with no data volume attached.
 
-The app reads the tileset URL from `PUBLIC_TILESET_URL` (defaulting to
-`/berlin-core/tileset.json`); set it to `/berlin/tileset.json` in `.env` to use the
-full local dataset instead of the committed core subset.
+**Deployed tile hosting.** The full city (924 tiles / 545 MB) is far too large for git
+or the Docker image, so in production it lives on the Hetzner Coolify host and is
+mounted into nginx's docroot via a Coolify persistent volume
+(`/data/plastervoid/tiles/berlin-full` -> `/usr/share/nginx/html/berlin-full`). It is
+therefore served from the **same origin** as the app, so no CORS is involved at all.
+Sync it with `scripts/sync_tiles_hetzner.sh` (needs Tailscale — the Hetzner firewall
+exposes only 80/443 publicly). See [scripts/README.md](./scripts/README.md).
+
+The app reads the tileset URL from `PUBLIC_TILESET_URL`. Astro bakes `PUBLIC_*` at
+build time, so it is set by the **Dockerfile** (`ARG PUBLIC_TILESET_URL`, defaulting to
+`/berlin-full/tileset.json` for deploys) rather than at runtime. Locally, set it in
+`.env` — `/berlin/tileset.json` for the full 236-tile dev set, or leave it unset to use
+the committed core subset. If the tileset 404s the app says so explicitly rather than
+rendering an empty void.
 
 ## Verification tooling
 
