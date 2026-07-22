@@ -78,6 +78,61 @@ export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
   ];
 }
 
+/** ECEF metres -> geodetic (deg, deg, ellipsoidal m), via Bowring's method. */
+export function ecefToGeodetic(x: number, y: number, z: number): {
+  lat: number;
+  lon: number;
+  height: number;
+} {
+  const B = A * (1 - F);
+  const ep2 = (A * A - B * B) / (B * B);
+  const p = Math.hypot(x, y);
+  const th = Math.atan2(z * A, p * B);
+  const lat = Math.atan2(
+    z + ep2 * B * Math.sin(th) ** 3,
+    p - E2 * A * Math.cos(th) ** 3,
+  );
+  const N = A / Math.sqrt(1 - E2 * Math.sin(lat) ** 2);
+  // Near the poles p -> 0 and p/cos(lat) degenerates; fall back to the z form.
+  const height =
+    Math.abs(Math.cos(lat)) > 1e-9
+      ? p / Math.cos(lat) - N
+      : z / Math.sin(lat) - N * (1 - E2);
+  return { lat: lat * DEG, lon: Math.atan2(y, x) * DEG, height };
+}
+
+/**
+ * Offset a geodetic position by a local horizontal bearing and distance.
+ *
+ * Goes through ENU -> ECEF -> geodetic rather than using a flat-earth or spherical
+ * formula, so the result stays metre-accurate at the multi-kilometre ranges this
+ * app works at.
+ */
+export function offsetGeodetic(
+  lat: number,
+  lon: number,
+  height: number,
+  bearingDeg: number,
+  distanceM: number,
+): { lat: number; lon: number; height: number } {
+  const b = bearingDeg * RAD;
+  const e = Math.sin(b) * distanceM;
+  const n = Math.cos(b) * distanceM;
+
+  const sφ = Math.sin(lat * RAD);
+  const cφ = Math.cos(lat * RAD);
+  const sλ = Math.sin(lon * RAD);
+  const cλ = Math.cos(lon * RAD);
+
+  // ENU -> ECEF rotation (transpose of ecefToENU), u = 0.
+  const dx = -sλ * e - sφ * cλ * n;
+  const dy = cλ * e - sφ * sλ * n;
+  const dz = cφ * n;
+
+  const o = geodeticToECEF(lat, lon, height);
+  return ecefToGeodetic(o[0] + dx, o[1] + dy, o[2] + dz);
+}
+
 /** Az/alt of a target as seen from an observer, both geodetic. Exact (ellipsoidal). */
 export function azAltTo(
   observer: ObserverGeodetic,
