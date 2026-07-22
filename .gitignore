@@ -124,3 +124,7 @@ __pycache__/
 
 # Astro build cache
 .astro/
+
+# Playwright E2E artifacts
+test-results/
+playwright-report/
