@@ -277,11 +277,17 @@ was only 0.4 m, so **±0.3 m** is a fair error bar on the deck value.
 
 ---
 
-## Publishing the full Berlin tileset to Cloudflare R2
+## Publishing the full Berlin tileset (Hetzner + Coolify)
 
 The committed `public/berlin-core/` subset (20 tiles, 28 MB) ships inside the Docker
-image. The full city is far too large for that, so it is hosted in object storage and
-streamed — 3D Tiles fetches only what is in view.
+image. The full city is far too large for that, so it lives on the Hetzner host and is
+served from a Docker volume mounted into the app's nginx docroot.
+
+**Why not object storage.** The tiles are served from the SAME ORIGIN as the app
+(`https://<app>/berlin-full/...`), so there is no CORS configuration to get wrong, no
+second provider, and traffic is covered by the server's existing allowance. Note the
+Hetzner Storage Box on this account (`u591347.your-storagebox.de`) is SFTP-only backup
+storage with no public HTTP and no CORS control — it cannot serve tiles to a browser.
 
 ### 1. Convert the whole city
 
@@ -290,73 +296,55 @@ streamed — 3D Tiles fetches only what is in view.
 ```
 
 Resumable and idempotent: a tile whose `.b3dm` is newer than its source zip is reused,
-so an interrupted run continues where it left off. Add `--force` to reconvert.
-Produces **924 tiles / 543 MB** from the 925 source zips (one contains no buildings).
-Takes roughly 15-20 minutes. `data/` is gitignored — this output is never committed.
+so an interrupted run continues where it left off. Produces **924 tiles / 545 MB** from
+the 925 source zips (one contains no buildings). ~15-20 minutes. `data/` is gitignored.
 
-Use `--dry-run` to see the selection without doing work. The default (no `--all`)
-still selects the original 236 central tiles.
+The default (no `--all`) still selects the original 236 central tiles.
 
-### 2. Create the bucket (manual, Cloudflare dashboard)
-
-These steps cannot be automated and must be done once by the account owner:
-
-1. **R2 → Create bucket** (e.g. `urbaneclipse-tiles`). Pick a location hint near your
-   users; select the EU jurisdiction if data residency matters.
-2. **R2 → Manage API tokens → Create API token**, permission **Object Read & Write**,
-   scoped to that bucket. Copy the Access Key ID and Secret Access Key — the secret is
-   shown only once.
-3. Note your **Account ID** from the R2 overview page.
-4. **Enable public access**: either turn on the r2.dev development URL (fine for
-   testing, rate-limited and not for production) or attach a **custom domain** under
-   the bucket's Settings → Public access. A custom domain is strongly preferred — it is
-   CDN-backed and has no rate limit.
-5. **Add a CORS policy** under the bucket's Settings → CORS policy. Cesium fetches
-   tiles with `fetch()` from your app's origin, so without this every tile request
-   fails with an opaque CORS error:
-
-```json
-[
-  {
-    "AllowedOrigins": ["https://your-app-domain.example"],
-    "AllowedMethods": ["GET", "HEAD"],
-    "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag", "Content-Length"],
-    "MaxAgeSeconds": 86400
-  }
-]
-```
-
-Replace `AllowedOrigins` with your real origin(s); add `http://localhost:4321` while
-developing locally.
-
-### 3. Configure credentials
-
-Copy the R2 keys into `.env` (see `.env.example`). `.env` is gitignored — never commit
-it. Real environment variables take precedence over `.env`.
-
-### 4. Upload
+### 2. Sync to the host
 
 ```bash
-# Always check first — works with NO credentials:
-.venv/bin/python scripts/upload_tiles.py data/berlin-full --dry-run
-
-# Then publish:
-.venv/bin/python scripts/upload_tiles.py data/berlin-full --prefix berlin-full -j 16
+scripts/sync_tiles_hetzner.sh
 ```
 
-Unchanged objects are skipped by comparing a local checksum against the remote ETag,
-so re-publishing after a partial reconversion only uploads what changed. `.b3dm` files
-get a one-year immutable `Cache-Control` (tile content never mutates under a given
-name); `tileset.json` gets a short TTL so a republish is picked up promptly.
+Requires **Tailscale** — the Hetzner firewall exposes only 80/443/ICMP publicly, so SSH
+is Tailscale-only. Uses compressed, resumable rsync; expect ~20-40 minutes for a cold
+545 MB sync (the path is latency-bound at ~160 ms RTT), and only changed tiles
+thereafter. The script verifies the remote tile count matches and exits non-zero if not.
 
-### 5. Point the app at it
+### 3. Coolify wiring (already applied — documented for rebuilds)
 
-Set in the deployment environment (Coolify), **not** in git:
+A persistent volume maps the host directory into the nginx docroot:
 
+| | |
+|---|---|
+| host path | `/data/plastervoid/tiles/berlin-full` |
+| mount path | `/usr/share/nginx/html/berlin-full` |
+| name | `plastervoid-berlin-tiles` |
+
+```bash
+coolify app storage create <app-uuid> --type persistent \
+  --name plastervoid-berlin-tiles \
+  --host-path /data/plastervoid/tiles/berlin-full \
+  --mount-path /usr/share/nginx/html/berlin-full
 ```
-PUBLIC_TILESET_URL=https://<your-r2-domain>/berlin-full/tileset.json
+
+The tileset URL is set by the **Dockerfile** rather than a Coolify env var, so it is
+version-controlled and reproducible:
+
+```dockerfile
+ARG PUBLIC_TILESET_URL="/berlin-full/tileset.json"
 ```
 
-Unset, the app falls back to the committed `/berlin-core/tileset.json`, so a missing
-or broken bucket degrades to the small local subset rather than an empty scene.
+Astro bakes `PUBLIC_*` at build time, so changing it requires a rebuild, not a restart.
+To build an image serving only the committed subset:
+`--build-arg PUBLIC_TILESET_URL=/berlin-core/tileset.json`.
+
+`nginx.conf` gives `/berlin-full/`, `/berlin-core/` and `/heightmap/` an explicit
+`try_files $uri =404`. Without it the SPA fallback would answer a missing tile with
+`index.html` at HTTP 200, and Cesium would try to parse HTML as b3dm — an opaque
+failure that looks like corrupt geometry rather than a missing file.
+
+If the volume is empty or unmounted, `tileset.json` 404s and the app reports
+"Building data unavailable" with the URL and status, rather than rendering an empty void.
+

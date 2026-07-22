@@ -10,7 +10,13 @@ RUN npm ci
 COPY . .
 # PUBLIC_* env (e.g. the optional Cesium Ion token) is baked at build time by Astro.
 ARG PUBLIC_CESIUM_ION_TOKEN=""
-ARG PUBLIC_TILESET_URL="/berlin-core/tileset.json"
+# Full Berlin (924 tiles / 545 MB) is served from a Docker volume mounted at
+# /usr/share/nginx/html/berlin-full on the Hetzner host — SAME ORIGIN as the app, so no
+# CORS is involved at all. The tiles are far too large for the image or for git, so
+# they are synced to the host separately (see scripts/README.md).
+# Override with --build-arg PUBLIC_TILESET_URL=/berlin-core/tileset.json to build an
+# image that serves only the committed 20-tile subset.
+ARG PUBLIC_TILESET_URL="/berlin-full/tileset.json"
 ENV PUBLIC_CESIUM_ION_TOKEN=$PUBLIC_CESIUM_ION_TOKEN
 ENV PUBLIC_TILESET_URL=$PUBLIC_TILESET_URL
 RUN npm run build
