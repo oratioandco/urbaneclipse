@@ -107,3 +107,170 @@ Status vs the original PoC limitations:
   with earcut triangulation (holes), per-building ~1 mm vertex dedup, degenerate-tri drop.
 - `convert_tile.py` — geoid offset (+39.5 m) + CRS 25833→ECEF + RTC +
   white-material b3dm/tileset emission via py3dtiles.
+- `fetch_dgm1.py` — downloads Berlin ATKIS DGM1 (1 m terrain) sheets for the AOI.
+- `build_heightmap.py` — DGM1 → compact int16 lon/lat heightmap for runtime sampling.
+
+---
+
+# Ground-elevation heightmap (DGM1 → browser asset)
+
+## Why
+
+The scene has **no Cesium terrain provider** — the globe is a bare WGS84
+ellipsoid at height 0 — while `convert_tile.py` lifts the LoD2 buildings to
+*ellipsoidal* heights (DHHN2016 + 39.5 m). Berlin ground is ~34 m DHHN2016 ≈
+**73.5 m ellipsoidal**, so anything that assumes "ground ≈ 0" places the
+observer ~72 m below the actual street. This pipeline supplies the real ground
+elevation so the observer can be planted correctly.
+
+## Source (verified reachable 2026-07, no auth)
+
+| | |
+|---|---|
+| Dataset | **ATKIS® DGM1 Berlin** — 1 m *bare-earth* digital terrain model |
+| ATOM feed | `https://gdi.berlin.de/data/dgm1/atom` → `0.atom` → per-sheet zips |
+| Sheet URL | `https://gdi.berlin.de/data/dgm1/atom/DGM1_<E_km>_<N_km>.zip` |
+| Tiling | 2 km × 2 km, named by SW corner in whole (even) km |
+| Payload | one `dgm1_33_<E>_<N>_2_be.xyz` — ASCII `E N H`, 1 m posting, cell **centres** (`…​.500`), 4 M lines / ~120 MB per sheet (~17 MB zipped) |
+| CRS | **EPSG:25833** (ETRS89 / UTM 33N) — *identical to the LoD2 CityGML, not 25832* |
+| Vertical datum | **DHHN2016** normal heights (NHN) — *identical to the LoD2 CityGML* |
+| Accuracy | ±10 cm + 5 % of grid spacing in flat open terrain (95 %) |
+| License | Datenlizenz Deutschland – Zero – 2.0 (`https://www.govdata.de/dl-de/zero-2-0`) |
+
+A companion **DOM1** *surface* model (same tiling/CRS/datum, includes bridges,
+buildings and vegetation) lives at `https://gdi.berlin.de/data/dom/atom` — note
+its member file is `*.txt`, not `*.xyz`. It is not part of this pipeline, but it
+is the right source if a *deck* elevation (bridge, roof) is ever needed rather
+than bare earth.
+
+## Usage
+
+```bash
+# 1. download the DGM1 sheets covering the AOI (into gitignored data/)
+./.venv/bin/python scripts/fetch_dgm1.py
+
+# 2. build the compact heightmap asset
+./.venv/bin/python scripts/build_heightmap.py \
+    --probe 52.5106,13.4652 --probe 52.5208,13.4093
+
+# 3. mirror the (small) asset into public/ so Astro serves it at /heightmap/*
+cp -r data/heightmap public/heightmap
+```
+
+Same manual-sync convention as `public/berlin-core`: `data/` is gitignored and
+not web-served, `public/` is served at the web root. **Unlike the b3dm tiles,
+the heightmap is small enough to commit** (~0.7 MB), so `public/heightmap/`
+should be checked in; the ~170 MB of raw `data/dgm1/*.zip` must **not** be.
+
+## AOI
+
+`fetch_dgm1.py` derives the AOI from the `tile_<E>_<N>.b3dm` children of
+`public/berlin-core/tileset.json` (E 389–394 km / N 5818–5822 km) and then
+**expands it to contain `REFERENCE_POINTS`**. This matters: the default observer
+coordinate (52.5106, 13.4652 → E 395841) is ~1.8 km **east** of the berlin-core
+building AOI, so a heightmap built from the building bounds alone would not
+cover the observer at all. Result: 10 sheets, E 388/390/392/394/396 ×
+N 5818/5820.
+
+`build_heightmap.py` then clamps its grid to whatever sheets actually exist, and
+uses the largest lon/lat box **inscribed** in that UTM coverage (a
+circumscribing box would have nodata corners).
+
+## Output format
+
+`data/heightmap/berlin-dgm1.json` (header) + `berlin-dgm1.bin` (raw samples).
+
+```
+int16 little-endian, width*height samples, row-major, no padding
+height_m = value * scale + offset      (scale 0.1 m, offset 0.0)
+nodata   = -32768
+index    = row * width + col
+row 0    = SOUTH (latMin), increasing north
+col 0    = WEST  (lonMin), increasing east
+lon(col) = lonMin + col*dLon,  lat(row) = latMin + row*dLat
+```
+
+Regular in **EPSG:4326** on purpose: the browser samples it with a plain
+bilinear lookup on lon/lat, no reprojection at runtime. Each node is the *mean*
+of the 1 m DGM1 postings in its cell (box decimation → anti-aliased, so a single
+lamppost-sized pit cannot dominate a node).
+
+## Vertical datum — the load-bearing part
+
+Samples are **ORTHOMETRIC DHHN2016 (NHN) metres**. The geoid undulation is
+deliberately **not** baked in; it is reported in the header so the consumer
+applies exactly the convention `convert_tile.py` used for the buildings:
+
+```
+h_ellipsoidal = sample + header.geoidUndulation.appliedByConvertTile   // 39.5
+```
+
+DGM1 and the Berlin LoD2 CityGML share DHHN2016, so **ground and building bases
+are in the same vertical datum with no shift** — that is what makes a single
+constant safe.
+
+The header also carries `geoidUndulation.gcg2016`, the *true* BKG GCG2016
+undulation over the AOI, obtained through PROJ (`EPSG:4326+7837 → EPSG:4979`,
+`PROJ_NETWORK=ON`, grid fetched from the PROJ CDN). Measured over this AOI:
+**39.147 – 39.381 m, mean 39.262** — i.e. the hardcoded 39.5 m is
+~**0.24 m too high**, and the true undulation varies only ~0.23 m across the
+whole 7 × 4 km AOI. Replacing the constant with a per-vertex GCG2016 lookup in
+`convert_tile.py` is entirely practical (one `pyproj.Transformer` call on the
+vertex array, grid auto-downloaded by PROJ) but is worth <0.3 m — and if it is
+done it must be done in `convert_tile.py` **and** here together, or ground and
+buildings will disagree.
+
+## Verified output (2026-07 run)
+
+| | |
+|---|---|
+| Grid | 725 × 385 = 279,125 nodes, ~10 m spacing |
+| `berlin-dgm1.bin` | **558,250 bytes** (0.53 MiB) — well under the 2 MB budget |
+| `berlin-dgm1.json` | 2,139 bytes |
+| bbox | lon 13.36107 – 13.46793, lat 52.50222 – 52.53671 |
+| Heights | 16.85 – 90.50 m DHHN2016, mean 38.76, p0.5 30.75 / p99.5 63.97 |
+| nodata nodes | **0** |
+| Build time | ~14 s from the cached sheets |
+
+Sampled cross-checks against independently published elevations:
+
+| Point | Heightmap (DHHN2016) | Published | Δ |
+|---|---|---|---|
+| Volkspark Friedrichshain, Gr. Bunkerberg | **78.10 m** | ~78 m | ~0.1 m |
+| Volkspark Prenzlauer Berg summit | **90.50 m** | ~91 m | ~0.5 m |
+| Fernsehturm base (52.5208, 13.4093) | **35.31 m** | LoD2 building ground Z 34.6 m | 0.7 m |
+| Spree at Museumsinsel (lowest node) | **30.80 m** | Spree/Oberwasser ~31 m | ~0.2 m |
+| Viktoriapark Kreuzberg summit (raw DGM1, outside AOI) | **65.92 m** | 66 m | ~0.1 m |
+| Großer Müggelberg (raw DGM1 sheet max, outside AOI) | **114.66 m** | 114.7 m | 0.04 m |
+
+The 16.85 m minimum is a real, ~18 m deep man-made pit near
+Ida-von-Arnim-Straße (Charitéviertel) — the DGM1 models excavations; it is not a
+datum error. That is why the plausibility gate is applied to the 0.5/99.5
+percentiles rather than the absolute extremes.
+
+## Note on the "Lichtenberger Brücke" observer coordinate
+
+The default observer coordinate **(52.5106, 13.4652) is not on the Lichtenberger
+Brücke.** It is a street-level point in the Boxhagener Kiez, Friedrichshain
+(Wismarplatz / Weserstraße), ~2.3 km west of the actual bridge. Both DGM1
+(terrain) and DOM1 (surface) read **≈ 36.3 m** there — identical, i.e. no
+elevated structure exists at that spot.
+
+The real Lichtenberger Brücke (Frankfurter Allee over the Lichtenberg rail
+corridor) is at ≈ **52.5113, 13.4988**. Derived from DOM1/DGM1 (2 m boxes along
+the deck centreline):
+
+| | DHHN2016 |
+|---|---|
+| Deck crest (mid-span, DOM1) | **48.1 – 48.3 m** |
+| Deck at west ramp / east ramp | 46.1 m / 46.7 m |
+| Bare ground / rail level beneath (DGM1) | **39.3 m** |
+| Deck above rail level | ~8.8 m |
+
+So a person standing mid-span has their feet at ~48.2 m DHHN2016 (≈ 87.7 m
+ellipsoidal with +39.5) and their eyes at ~49.8 m (≈ 89.3 m ellipsoidal).
+No surveyed deck elevation could be found in any public source; these figures
+are derived from the 1 m airborne-laser DOM1, whose stated accuracy is ±10 cm
+plus whatever the laser hit (railings, vehicles) — the mid-span p05–p95 spread
+was only 0.4 m, so **±0.3 m** is a fair error bar on the deck value.
+

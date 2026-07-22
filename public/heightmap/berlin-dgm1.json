@@ -1,0 +1,72 @@
+{
+  "format": "plaster-void-heightmap",
+  "version": 1,
+  "binary": "berlin-dgm1.bin",
+  "byteLength": 558250,
+  "dtype": "int16",
+  "byteOrder": "little",
+  "scale": 0.1,
+  "offset": 0.0,
+  "nodata": -32768,
+  "width": 725,
+  "height": 385,
+  "rowOrder": "south-to-north",
+  "colOrder": "west-to-east",
+  "index": "row * width + col",
+  "crs": "EPSG:4326",
+  "bbox": {
+    "lonMin": 13.361066222368226,
+    "latMin": 52.5022168289567,
+    "lonMax": 13.467925077272614,
+    "latMax": 52.53671451596954
+  },
+  "dLon": 0.00014759510345909954,
+  "dLat": 8.983772659595009e-05,
+  "approxSpacingMetres": 10.0,
+  "heightUnit": "metre",
+  "heightType": "orthometric",
+  "verticalDatum": "DHHN2016 (normal heights, NHN)",
+  "toEllipsoidal": "h_wgs84 = sample + geoidUndulation.appliedByConvertTile",
+  "geoidUndulation": {
+    "appliedByConvertTile": 39.5,
+    "gcg2016": {
+      "model": "GCG2016 (BKG, via PROJ grid de_bkg_gcg2016)",
+      "min": 39.147,
+      "max": 39.381,
+      "mean": 39.262,
+      "note": "informational -- NOT applied to the samples"
+    }
+  },
+  "stats": {
+    "minHeight": 16.85,
+    "maxHeight": 90.5,
+    "meanHeight": 38.76,
+    "p0_5Height": 30.75,
+    "p99_5Height": 63.97,
+    "nodataCount": 0
+  },
+  "source": {
+    "dataset": "ATKIS(R) DGM1 Berlin (1 m digital terrain model, bare earth)",
+    "provider": "Senatsverwaltung fuer Stadtentwicklung, Bauen und Wohnen Berlin",
+    "endpoint": "https://gdi.berlin.de/data/dgm1/atom",
+    "sourceCrs": "EPSG:25833 (ETRS89 / UTM zone 33N)",
+    "sheets": [
+      "DGM1_388_5818.zip",
+      "DGM1_388_5820.zip",
+      "DGM1_390_5818.zip",
+      "DGM1_390_5820.zip",
+      "DGM1_392_5818.zip",
+      "DGM1_392_5820.zip",
+      "DGM1_394_5818.zip",
+      "DGM1_394_5820.zip",
+      "DGM1_396_5818.zip",
+      "DGM1_396_5820.zip"
+    ],
+    "license": "Datenlizenz Deutschland - Zero - Version 2.0",
+    "licenseUrl": "https://www.govdata.de/dl-de/zero-2-0",
+    "attribution": "Geoportal Berlin / ATKIS DGM1"
+  },
+  "resampling": "mean of 1 m DGM1 postings in a 10 m box per node",
+  "generatedBy": "scripts/build_heightmap.py",
+  "generatedAt": "2026-07-22T00:58:14Z"
+}
