@@ -59,6 +59,8 @@ import {
   setObserverPosition,
   setTargetPosition,
   solverBody,
+  searchArea,
+  setSearchArea,
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
@@ -447,12 +449,17 @@ export default function CesiumViewer(): JSX.Element {
             return;
           }
 
-          // setObserver/TargetPosition reject implausible coordinates; a ray that
+          // setObserver/Target/SearchArea reject implausible coordinates; a ray that
           // grazes the horizon can return a point on the far side of the globe.
           const ok =
             mode === 'observer'
               ? setObserverPosition({ lat: picked.lat, lon: picked.lon })
-              : setTargetPosition({ lat: picked.lat, lon: picked.lon });
+              : mode === 'target'
+                ? setTargetPosition({ lat: picked.lat, lon: picked.lon })
+                : setSearchArea({
+                    center: { lat: picked.lat, lon: picked.lon },
+                    radiusM: searchArea.get()?.radiusM ?? 400,
+                  });
 
           if (!ok) {
             setPickError('That point is outside Berlin — the pick was ignored.');
@@ -524,6 +531,36 @@ export default function CesiumViewer(): JSX.Element {
           viewer.scene.requestRender();
         };
 
+        // --- Search-area overlay --------------------------------------------------
+        const AREA_ENTITY_ID = 'pv-search-area';
+        const applyArea = () => {
+          if (disposed || viewer.isDestroyed()) return;
+          const existing = viewer.entities.getById(AREA_ENTITY_ID);
+          if (existing) viewer.entities.remove(existing);
+
+          const a = searchArea.get();
+          if (!a) return;
+
+          viewer.entities.add({
+            id: AREA_ENTITY_ID,
+            position: Cesium.Cartesian3.fromDegrees(a.center.lon, a.center.lat),
+            ellipse: {
+              semiMajorAxis: a.radiusM,
+              semiMinorAxis: a.radiusM,
+              material: Cesium.Color.fromCssColorString('#8a6410').withAlpha(0.12),
+              outline: true,
+              outlineColor: Cesium.Color.fromCssColorString('#8a6410').withAlpha(0.7),
+              outlineWidth: 2,
+              // Draped on the globe so it reads as a footprint on the ground rather
+              // than a disc floating at an arbitrary height.
+              heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            },
+          });
+          viewer.scene.requestRender();
+        };
+        const unsubArea = searchArea.listen(applyArea);
+        applyArea();
+
         const unsubDiscTime = dateTime.listen(applyDisc);
         const unsubDiscBody = solverBody.listen(applyDisc);
         applyDisc();
@@ -540,6 +577,7 @@ export default function CesiumViewer(): JSX.Element {
         });
         const unsubTgtPos = targetPosition.listen(() => { recompute(); applyViewMode(); });
         cleanupPlacement = () => {
+          unsubArea();
           unsubDiscTime();
           unsubDiscBody();
           unsubViewMode();

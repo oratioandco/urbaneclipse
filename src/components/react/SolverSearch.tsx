@@ -46,6 +46,8 @@ import {
   targetPosition,
   solverBody,
   viewMode,
+  searchArea,
+  setObserverPosition,
 } from '../../store.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
 import { findViewpoint } from '../../lib/viewpoints.js';
@@ -72,10 +74,18 @@ function currentObserver(
   return { lat: pos.lat, lon: pos.lon, ellipsoidalHeight: r.ellipsoidalHeight };
 }
 
+/** Area-mode results additionally carry the position you must stand at. */
+interface AreaCandidate extends FixedCandidate {
+  position?: { lat: number; lon: number };
+  distanceM?: number;
+  withinArea?: boolean;
+}
+
 interface WorkerOut {
   kind: 'progress' | 'result' | 'done' | 'error';
+  mode?: 'area';
   progress?: number;
-  matches?: FixedCandidate[];
+  matches?: AreaCandidate[];
   message?: string;
 }
 
@@ -88,14 +98,15 @@ export default function SolverSearch(): JSX.Element {
   const dt = useStore(dateTime);
   const eyeHeight = useStore(observerHeight);
   const body = useStore(solverBody);
+  const area = useStore(searchArea);
   const obsPos = useStore(observerPosition);
   const tgtPos = useStore(targetPosition);
   const workerRef = useRef<Worker | null>(null);
   // useState drives the visible list; the matching ref holds the SAME accumulator the
   // worker callbacks mutate without re-renders (the closure inside onmessage captures
   // the ref, not a stale `accumulated` snapshot).
-  const [visible, setVisible] = useState<FixedCandidate[]>([]);
-  const accumulatedRef = useRef<FixedCandidate[]>([]);
+  const [visible, setVisible] = useState<AreaCandidate[]>([]);
+  const accumulatedRef = useRef<AreaCandidate[]>([]);
 
   // Distinguishes "never searched" from "searched, cancelled" so the idle panel can
   // say which one it is (T059 — no ambiguous blank state).
@@ -212,15 +223,23 @@ export default function SolverSearch(): JSX.Element {
     end.setMonth(end.getMonth() + WINDOW_MONTHS);
     worker.postMessage({
       kind: 'start',
+      // With an area set, SOLVE for where to stand; otherwise sweep time where the
+      // observer already is.
+      mode: area ? 'area' : 'fixed',
       body,
       start: now,
       end,
-      stepMin: 1,
+      // Area mode solves a position per instant, which is heavier than the fixed sweep's
+      // bounds pre-filter, so it steps coarser over the same 12 months.
+      stepMin: area ? 5 : 1,
       observer: currentObserver(obsPos, eyeHeight),
       landmarkId: 'fernsehturm',
       wanted: ['full', 'partial'],
       minAltitudeDeg: 0,
       limit: 200,
+      area: area ?? undefined,
+      featureHeightAgl: SPHERE_AGL,
+      eyeHeight,
     });
   };
 
@@ -235,7 +254,12 @@ export default function SolverSearch(): JSX.Element {
 
   // Click a result: scrub dateTime to that instant (Strategy B: drives the Cesium
   // clock and the timeline marker via the existing dateTime store listener).
-  const chooseMatch = (d: Date): void => {
+  const chooseMatch = (d: Date, position?: { lat: number; lon: number }): void => {
+    // In area mode the answer is a PLACE as well as a time — move the observer there
+    // so the preview shows the shot from where you would actually stand.
+    if (position) {
+      setObserverPosition({ lat: position.lat, lon: position.lon });
+    }
     // Scrub to the instant AND switch to the preview, so picking a result shows the
     // actual composition rather than only moving a clock the user cannot see.
     dateTime.set(d);
@@ -339,6 +363,19 @@ export default function SolverSearch(): JSX.Element {
         </button>
       </div>
 
+      {area && (
+        <div className="pv-msg" role="status">
+          <strong className="pv-msg__title">Searching your area</strong>
+          Looking for compositions reachable within {area.radiusM.toFixed(0)} m of your
+          chosen spot. Results marked “outside area” are the nearest that DO work —
+          knowing you would have to walk 300 m beats being told there is nothing.
+          Clicking a result moves the observer there and shows the shot.
+          {' '}A full cover needs you within{' '}
+          {(feas.maxRangeForFullM / 1000).toFixed(2)} km of the tower, so the solver
+          will only offer one if it can place you that close.
+        </div>
+      )}
+
       {!targetIsTower && (
         <div className="pv-msg pv-msg--warn" role="status">
           <strong className="pv-msg__title">Search still targets the Fernsehturm</strong>
@@ -352,7 +389,10 @@ export default function SolverSearch(): JSX.Element {
       {/* THE headline planning fact, stated before any search runs: from this bridge
           the tower is narrower than the disc, so a FULL cover is impossible at any
           date or time. Better to say so than to let the user hunt for it forever. */}
-      {!feas.fullPossible && (
+      {/* Only meaningful in FIXED mode. In area mode the solver may legitimately move
+          you closer than this limit, so showing "impossible" alongside FULL results
+          would flatly contradict the list underneath. */}
+      {!area && !feas.fullPossible && (
         <div className="pv-msg pv-msg--warn" role="status">
           <strong className="pv-msg__title">Full eclipse impossible from here</strong>
           The tower spans {feas.landmarkWidthDeg.toFixed(3)}° at{' '}
@@ -415,7 +455,9 @@ export default function SolverSearch(): JSX.Element {
 
       {noMatches && (
         <div className="pv-msg pv-msg--warn" role="status">
-          <strong className="pv-msg__title">No transits found</strong>
+          <strong className="pv-msg__title">
+            {area ? 'Nothing found for this area' : 'No transits found'}
+          </strong>
           The sweep completed successfully but the {body} never passed behind the tower
           during the next {WINDOW_MONTHS} months. This is a real result, not an error.
           From this bridge the tower's tip sits only ~{sphere.alt.toFixed(1)}° above the
@@ -440,7 +482,7 @@ export default function SolverSearch(): JSX.Element {
                     type="button"
                     className="pv-list__item"
                     aria-current={active}
-                    onClick={() => chooseMatch(d)}
+                    onClick={() => chooseMatch(d, c.position)}
                   >
                     <span className="pv-list__ord">
                       {String(i + 1).padStart(2, '0')}
@@ -450,8 +492,10 @@ export default function SolverSearch(): JSX.Element {
                       {c.kind === 'full'
                         ? 'FULL'
                         : `${Math.round(c.coveredFraction * 100)}%`}
-                      {' · '}
-                      {c.bodyAlt.toFixed(1)}°
+                      {c.distanceM !== undefined
+                        ? ` · ${(c.distanceM / 1000).toFixed(2)} km`
+                        : ` · ${c.bodyAlt.toFixed(1)}°`}
+                      {c.withinArea === false ? ' · outside area' : ''}
                     </span>
                   </button>
                 </li>

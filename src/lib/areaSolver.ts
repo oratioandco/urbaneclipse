@@ -94,6 +94,44 @@ export interface Candidate {
   withinArea: boolean;
 }
 
+/**
+ * Approximate a circular search area as a polygon.
+ *
+ * "Somewhere within N metres of here" is how a photographer actually thinks about a
+ * reachable area — a stretch of bridge, a park, a block — and it is far easier to place
+ * than a hand-drawn polygon. isInsideArea works on polygons, so the circle is converted
+ * once here rather than special-cased throughout.
+ *
+ * Longitude degrees are scaled by cos(lat) so the shape is a true circle on the ground
+ * rather than an ellipse stretched east-west (at Berlin's latitude that error would be
+ * ~64%).
+ */
+export function circleToPolygon(
+  center: LatLon,
+  radiusM: number,
+  segments = 48,
+): LatLon[] {
+  if (!Number.isFinite(radiusM) || radiusM <= 0) {
+    throw new RangeError(`radius must be a finite positive number, received ${radiusM}`);
+  }
+  if (!Number.isFinite(center.lat) || !Number.isFinite(center.lon)) {
+    throw new RangeError('circle centre must be finite');
+  }
+
+  const dLat = radiusM / 111_320;
+  const dLon = radiusM / (111_320 * Math.cos((center.lat * Math.PI) / 180));
+
+  const out: LatLon[] = [];
+  for (let i = 0; i < segments; i++) {
+    const t = (2 * Math.PI * i) / segments;
+    out.push({
+      lat: center.lat + dLat * Math.sin(t),
+      lon: center.lon + dLon * Math.cos(t),
+    });
+  }
+  return out;
+}
+
 /** Ray-casting point-in-polygon. Returns false for degenerate polygons. */
 export function isInsideArea(pos: LatLon, area: LatLon[]): boolean {
   if (area.length < 3) return false;
@@ -230,14 +268,25 @@ export interface SearchRequest extends SolveOptions {
 }
 
 /**
- * Rank candidates. Full occultations first, then by how much of the disc is covered;
- * for adjacent framings, closer to the silhouette is better.
+ * Rank candidates.
+ *
+ * REACHABILITY DOMINATES. A merely-good composition you can actually walk to beats a
+ * perfect one you cannot: the whole point of giving the solver an area is to respect
+ * it. Out-of-area candidates are still returned — "nothing inside your area works, but
+ * here is the nearest spot that does" is far more useful than an empty list — they
+ * simply rank below everything reachable.
+ *
+ * Within each group: full first, then by covered fraction; for adjacent framings,
+ * closer to the silhouette is better.
  */
 function score(c: Candidate): number {
-  if (c.kind === 'full') return 1000;
-  if (c.kind === 'partial') return 100 + c.coveredFraction * 100;
-  if (c.kind === 'adjacent') return 50 - Math.min(c.separationDeg, 50);
-  return 0;
+  let s: number;
+  if (c.kind === 'full') s = 1000;
+  else if (c.kind === 'partial') s = 100 + c.coveredFraction * 100;
+  else if (c.kind === 'adjacent') s = 50 - Math.min(c.separationDeg, 50);
+  else s = 0;
+
+  return c.withinArea ? s + 10_000 : s;
 }
 
 /**

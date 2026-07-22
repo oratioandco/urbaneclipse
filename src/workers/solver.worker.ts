@@ -24,7 +24,18 @@
  * north-based clockwise, altitude refraction-corrected. Handled in lib/bodyPosition.ts.
  */
 import { sampleBody, type Body } from '../lib/bodyPosition.js';
-import { findOccultationsAtPosition, type FixedCandidate } from '../lib/areaSolver.js';
+import {
+  findOccultationsAtPosition,
+  findCompositions,
+  circleToPolygon,
+  type FixedCandidate,
+  type Candidate,
+} from '../lib/areaSolver.js';
+import {
+  createHeightmap,
+  sampleGroundOrthometric,
+  type HeightmapHeader,
+} from '../lib/heightmap.js';
 import { FERNSEHTURM, type RevolutionLandmark } from '../lib/landmarks.js';
 import type { ObserverGeodetic } from '../lib/silhouette.js';
 import type { OccultationKind } from '../lib/occultation.js';
@@ -34,6 +45,8 @@ declare const self: DedicatedWorkerGlobalScope;
 
 interface StartMessage {
   kind: 'start';
+  /** 'fixed' sweeps time at the observer; 'area' also SOLVES where to stand. */
+  mode?: 'fixed' | 'area';
   body: Body;
   start: Date | string;
   end: Date | string;
@@ -44,6 +57,16 @@ interface StartMessage {
   wanted?: OccultationKind[];
   minAltitudeDeg?: number;
   limit?: number;
+  /** Area mode: reachable camera area, and the aim point up the landmark. */
+  area?: { center: { lat: number; lon: number }; radiusM: number };
+  featureHeightAgl?: number;
+  eyeHeight?: number;
+  /**
+   * DGM1 grid, transferred from the main thread so solved positions use REAL ground.
+   * Without it every solved position falls back to the Berlin mean, and at ~6 km a
+   * few metres of elevation error is already comparable to the 0.05 deg tolerance.
+   */
+  heightmap?: { header: HeightmapHeader; samples: Int16Array };
 }
 interface CancelMessage {
   kind: 'cancel';
@@ -87,6 +110,50 @@ async function runSearch(msg: StartMessage): Promise<void> {
   const stepMinutes = msg.stepMin ?? 1;
   const totalMs = end.getTime() - start.getTime();
   const chunkMs = CHUNK_DAYS * 86_400_000;
+
+  // Area mode solves a POSITION per instant, so it needs ground elevation there.
+  let ground: (p: { lat: number; lon: number }) => number | undefined = () => undefined;
+  if (msg.heightmap) {
+    try {
+      const map = createHeightmap(msg.heightmap.header, msg.heightmap.samples);
+      ground = (p) => sampleGroundOrthometric(map, p.lat, p.lon);
+    } catch (e) {
+      // A bad grid must not silently degrade accuracy without saying so.
+      self.postMessage({
+        kind: 'error',
+        message: `heightmap rejected: ${e instanceof Error ? e.message : String(e)}`,
+      });
+      return;
+    }
+  }
+
+  if (msg.mode === 'area') {
+    if (!msg.area) {
+      self.postMessage({ kind: 'error', message: 'area mode requires an area' });
+      return;
+    }
+    const polygon = circleToPolygon(msg.area.center, msg.area.radiusM);
+    const found: Candidate[] = findCompositions({
+      landmark,
+      featureHeightAgl: msg.featureHeightAgl ?? 213,
+      eyeHeight: msg.eyeHeight ?? 1.5,
+      ground,
+      area: polygon,
+      start,
+      end,
+      stepMinutes,
+      bodyAt: (t) => sampleBody(msg.body, t, msg.area!.center.lat, msg.area!.center.lon),
+      wanted: msg.wanted ?? ['full', 'partial'],
+      // Report near misses too: "no position inside your area works, but here is where
+      // it does" is far more useful than an empty list.
+      requireWithinArea: false,
+      limit: msg.limit ?? 200,
+    });
+
+    self.postMessage({ kind: 'progress', progress: 1 });
+    self.postMessage({ kind: 'done', mode: 'area', matches: found });
+    return;
+  }
 
   const all: FixedCandidate[] = [];
 

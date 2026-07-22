@@ -60,7 +60,49 @@ export const solverBody = atom<SolverBody>('sun');
 export const viewMode = atom<ViewMode>('preview');
 
 /** What a click in MAP mode places. 'none' disables picking so the map can be panned. */
-export type PickMode = 'none' | 'observer' | 'target';
+export type PickMode = 'none' | 'observer' | 'target' | 'area';
+
+/**
+ * A reachable camera AREA: everywhere within `radiusM` of `center`.
+ *
+ * Expressed as a centre plus radius rather than a drawn polygon because that is how a
+ * photographer actually describes reach — "anywhere along this bridge", "somewhere in
+ * this park" — and it is far quicker to place. It is converted to a polygon
+ * (circleToPolygon) only where the geometry needs one.
+ *
+ * null means "no area": the solver then reports where you would have to stand without
+ * constraining it.
+ */
+export interface SearchArea {
+  center: { lat: number; lon: number };
+  radiusM: number;
+}
+export const searchArea = atom<SearchArea | null>(null);
+
+/** Clamp bounds for the area radius, metres. Below ~25 m an area is effectively a
+ *  point; above ~5 km it stops describing anywhere you can actually walk. */
+export const AREA_RADIUS_MIN_M = 25;
+export const AREA_RADIUS_MAX_M = 5000;
+
+export function setSearchArea(area: SearchArea | null): boolean {
+  if (area === null) {
+    searchArea.set(null);
+    return true;
+  }
+  if (!isPlausibleBerlinPosition(area.center)) {
+    log.warn('store', 'search area rejected: centre outside Berlin', area.center);
+    return false;
+  }
+  if (!Number.isFinite(area.radiusM) || area.radiusM <= 0) {
+    log.warn('store', 'search area rejected: bad radius', { radiusM: area.radiusM });
+    return false;
+  }
+  searchArea.set({
+    center: area.center,
+    radiusM: Math.min(AREA_RADIUS_MAX_M, Math.max(AREA_RADIUS_MIN_M, area.radiusM)),
+  });
+  return true;
+}
 export const pickMode = atom<PickMode>('none');
 
 export const observerPosition = atom<ScenePosition>({

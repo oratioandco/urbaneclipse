@@ -11,6 +11,7 @@ import {
   evaluateCandidate,
   findCompositions,
   isInsideArea,
+  circleToPolygon,
   feasibility,
   type GroundProvider,
   type BodySample,
@@ -304,5 +305,96 @@ describe('feasibility', () => {
     const f = feasibility(FERNSEHTURM, { distanceKm: 149.6e6, radiusKm: SUN_RADIUS_KM }, 6160);
     expect(f.fullPossible).toBe(false);
     expect(f.maxRangeForFullM).toBeCloseTo(3441, -2);
+  });
+});
+
+describe('circleToPolygon', () => {
+  const centre = { lat: 52.5113, lon: 13.4988 };
+
+  it('produces points at the requested radius, not an east-west ellipse', () => {
+    // Longitude degrees are ~64% shorter than latitude degrees at Berlin. Failing to
+    // scale by cos(lat) would stretch the area badly in the east-west direction.
+    const poly = circleToPolygon(centre, 500);
+    const mPerDegLat = 111_320;
+    const mPerDegLon = 111_320 * Math.cos((centre.lat * Math.PI) / 180);
+
+    for (const p of poly) {
+      const dy = (p.lat - centre.lat) * mPerDegLat;
+      const dx = (p.lon - centre.lon) * mPerDegLon;
+      expect(Math.hypot(dx, dy)).toBeCloseTo(500, 0);
+    }
+  });
+
+  it('contains its centre and excludes points beyond the radius', () => {
+    const poly = circleToPolygon(centre, 300);
+    expect(isInsideArea(centre, poly)).toBe(true);
+
+    // ~1 km north — comfortably outside a 300 m circle.
+    expect(isInsideArea({ lat: centre.lat + 0.009, lon: centre.lon }, poly)).toBe(false);
+  });
+
+  it('rejects a non-positive or non-finite radius', () => {
+    expect(() => circleToPolygon(centre, 0)).toThrow();
+    expect(() => circleToPolygon(centre, -10)).toThrow();
+    expect(() => circleToPolygon(centre, NaN)).toThrow();
+  });
+
+  it('rejects a non-finite centre', () => {
+    expect(() => circleToPolygon({ lat: NaN, lon: 13.4 }, 100)).toThrow();
+  });
+
+  it('more segments approximate the circle more closely', () => {
+    // Area of an inscribed regular n-gon approaches pi r^2 as n grows.
+    const area = (poly: { lat: number; lon: number }[]) => {
+      let a = 0;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        a += poly[j].lon * poly[i].lat - poly[i].lon * poly[j].lat;
+      }
+      return Math.abs(a / 2);
+    };
+    expect(area(circleToPolygon(centre, 500, 64))).toBeGreaterThan(
+      area(circleToPolygon(centre, 500, 8)),
+    );
+  });
+});
+
+describe('ranking prefers reachable results', () => {
+  const base = {
+    landmark: FERNSEHTURM,
+    featureHeightAgl: SPHERE_AGL,
+    eyeHeight: 1.5,
+    ground: FLAT_GROUND,
+  };
+
+  it('puts within-area candidates above better-but-unreachable ones', () => {
+    // Sweep a range of body altitudes so solved positions land at many distances, with
+    // an area covering only some of them.
+    const bodyAt = (t: Date): BodySample => {
+      const h = (t.getTime() - Date.UTC(2026, 7, 1)) / 3_600_000;
+      return moon(270, 2 + h * 3);
+    };
+    // A ring roughly 6 km east of the tower — where the LOW-altitude (partial-only)
+    // solutions land, not the high-altitude full ones.
+    const far = circleToPolygon({ lat: FERNSEHTURM.lat, lon: FERNSEHTURM.lon + 0.09 }, 1500);
+
+    const res = findCompositions({
+      ...base,
+      area: far,
+      start: new Date(Date.UTC(2026, 7, 1, 0, 0)),
+      end: new Date(Date.UTC(2026, 7, 1, 9, 0)),
+      stepMinutes: 15,
+      bodyAt,
+      requireWithinArea: false,
+      limit: 200,
+    });
+
+    const firstOutside = res.findIndex((c) => !c.withinArea);
+    const lastInside = res.map((c) => c.withinArea).lastIndexOf(true);
+
+    // If both groups are present, every reachable one must precede every unreachable one.
+    if (firstOutside !== -1 && lastInside !== -1) {
+      expect(lastInside).toBeLessThan(firstOutside);
+    }
+    expect(res.length).toBeGreaterThan(0);
   });
 });

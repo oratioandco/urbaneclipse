@@ -15,6 +15,10 @@ import {
   targetPosition,
   setObserverPosition,
   setTargetPosition,
+  searchArea,
+  setSearchArea,
+  AREA_RADIUS_MIN_M,
+  AREA_RADIUS_MAX_M,
   type PickMode,
 } from '../../store.js';
 import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
@@ -41,6 +45,7 @@ export default function PlacementControls({
   const pick = useStore(pickMode);
   const obs = useStore(observerPosition);
   const tgt = useStore(targetPosition);
+  const area = useStore(searchArea);
 
   const arm = (which: Exclude<PickMode, 'none'>): void => {
     // Placing requires seeing the map; switch there automatically rather than arming
@@ -144,6 +149,54 @@ export default function PlacementControls({
         </button>
       </div>
 
+      {/* SEARCH AREA — "anywhere I can reach", which is what actually unlocks the
+          solver's where-to-stand answer. A centre plus radius, because that is how
+          reach is described in practice and it is far quicker to place than a polygon. */}
+      <div className="pv-btn-row">
+        <button
+          type="button"
+          onClick={() => arm('area')}
+          className={`pv-btn ${pick === 'area' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={pick === 'area'}
+        >
+          {pick === 'area' ? 'Click map…' : area ? 'Move area' : 'Set search area'}
+        </button>
+        {area && (
+          <button
+            type="button"
+            onClick={() => setSearchArea(null)}
+            className="pv-btn pv-btn--quiet"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {area && (
+        <div className="pv-field">
+          <div className="pv-field__line">
+            <span className="pv-label">Area radius</span>
+            <span className="pv-value">{area.radiusM.toFixed(0)} m</span>
+          </div>
+          <input
+            className="pv-range"
+            type="range"
+            aria-label="Search area radius in metres"
+            min={AREA_RADIUS_MIN_M}
+            max={AREA_RADIUS_MAX_M}
+            step={25}
+            value={area.radiusM}
+            onChange={(e) =>
+              setSearchArea({ center: area.center, radiusM: parseFloat(e.currentTarget.value) })
+            }
+          />
+          <div className="pv-scale">
+            <span>{AREA_RADIUS_MIN_M}</span>
+            <span>{AREA_RADIUS_MAX_M} m</span>
+          </div>
+        </div>
+      )}
+
       <div className="pv-btn-row">
         <button type="button" onClick={reset} className="pv-btn pv-btn--quiet">
           Reset to Brücke → Turm
@@ -153,10 +206,13 @@ export default function PlacementControls({
       {pick !== 'none' && (
         <div className="pv-msg" role="status">
           <strong className="pv-msg__title">
-            Placing the {pick === 'observer' ? 'observer' : 'target'}
+            {pick === 'area'
+              ? 'Placing the search area'
+              : `Placing the ${pick === 'observer' ? 'observer' : 'target'}`}
           </strong>
-          Click anywhere on the model to place it. Elevation is read from the DGM1
-          terrain automatically. Click the button again to cancel.
+          {pick === 'area'
+            ? 'Click the map to centre your reachable area, then set its radius. The solver will look for compositions you can actually walk to.'
+            : 'Click anywhere on the model to place it. Elevation is read from the DGM1 terrain automatically. Click the button again to cancel.'}
         </div>
       )}
 
