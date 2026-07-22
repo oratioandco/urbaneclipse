@@ -39,7 +39,11 @@ import type * as CesiumType from 'cesium';
 // `import type` is fully erased at build, so this introduces no runtime dependency.
 const Cesium = (window as unknown as { Cesium: typeof CesiumType }).Cesium;
 
-import { createStudioEnvironmentStage } from '../../cesium/shaders/studioEnvironment.js';
+import {
+  createStudioEnvironmentStage,
+  defaultStudioEnvironmentState,
+  updateStudioUniforms,
+} from '../../cesium/shaders/studioEnvironment.js';
 import {
   computeOcclusion,
   drawLineOfSight,
@@ -78,6 +82,7 @@ import { findViewpoint } from '../../lib/viewpoints.js';
 import {
   upsertCelestialDisc,
   removeCelestialDisc,
+  CELESTIAL_DISC_ID,
 } from '../../cesium/celestialDisc.js';
 import {
   BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
@@ -275,7 +280,8 @@ export default function CesiumViewer(): JSX.Element {
     // depthTestAgainstTerrain MUST stay true (set above): the shader reads the depth
     // texture to separate geometry from the void, and that depth is only populated
     // correctly when the globe is part of the depth test.
-    const studioStage = createStudioEnvironmentStage(Cesium);
+    const studioState = defaultStudioEnvironmentState();
+    const studioStage = createStudioEnvironmentStage(Cesium, studioState);
     scene.postProcessStages.add(studioStage);
 
     // --- Local self-hosted tileset ---------------------------------------------
@@ -531,6 +537,7 @@ export default function CesiumViewer(): JSX.Element {
           if (viewMode.get() !== 'preview') {
             removeCelestialDisc(viewer);
             setDiscState(undefined);
+            studioState.sunVisible = 0; // no bloom off the preview
             return;
           }
           const sample = groundSamplerRef.current ?? (() => undefined);
@@ -547,9 +554,41 @@ export default function CesiumViewer(): JSX.Element {
               dateTime.get(),
             );
             setDiscState(st);
+
+            // Drive the studio sky bloom from the SAME body position as the disc, so
+            // the glow sits exactly where the sun/moon is — behind the tower at a real
+            // transit. Projecting the disc's world position keeps the bloom anchored as
+            // the camera orbits or the clock scrubs.
+            const canvas = viewer.canvas as HTMLCanvasElement;
+            studioState.aspect =
+              canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1.6;
+            const body = solverBody.get();
+            studioState.glowColor = body === 'moon' ? [0.9, 0.92, 0.98] : [1.0, 0.9, 0.72];
+            studioState.glowStrength = body === 'moon' ? 0.45 : 0.95;
+            studioState.skyTop = body === 'moon' ? [0.6, 0.64, 0.74] : [0.8, 0.83, 0.89];
+
+            const disc = viewer.entities.getById(CELESTIAL_DISC_ID);
+            const worldPos = st.visible
+              ? disc?.position?.getValue(viewer.clock.currentTime)
+              : undefined;
+            const win = worldPos
+              ? Cesium.SceneTransforms.worldToWindowCoordinates(scene, worldPos)
+              : undefined;
+            if (win && canvas.clientWidth > 0 && canvas.clientHeight > 0) {
+              studioState.sunUv = [
+                win.x / canvas.clientWidth,
+                1 - win.y / canvas.clientHeight,
+              ];
+              studioState.sunVisible = 1;
+            } else {
+              studioState.sunVisible = 0;
+            }
+            updateStudioUniforms(Cesium, studioStage, studioState);
           } catch (err) {
             // Never let a drawing failure take down the scene; report it instead.
             setDiscState(undefined);
+            studioState.sunVisible = 0;
+            updateStudioUniforms(Cesium, studioStage, studioState);
             console.error('[CesiumViewer] celestial disc failed', err);
           }
           viewer.scene.requestRender();

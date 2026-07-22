@@ -47,12 +47,18 @@ export interface StudioEnvironmentOptions {
   grainAmount?: number;
 }
 
-/** Default plaster-void haze parameters (sensible; not asserted by contract). */
+/** Default plaster-void haze parameters (sensible; not asserted by contract).
+ *
+ *  Tuned so a landmark ~6 km out (the Fernsehturm from the Lichtenberger Brücke) is
+ *  only lightly hazed (fog ~0.29) rather than washed to invisibility — it must read
+ *  as a silhouette against the sky, not vanish into it. `hazeColor` is the warm, bright
+ *  HORIZON tint; the sky darkens/cools toward the top via the `u_skyTop` uniform, and
+ *  a warm sun/moon bloom is added around `u_sunUv`. */
 const DEFAULTS = {
-  fogStart: 3000,
-  fogEnd: 8000,
-  hazeColor: [0.92, 0.92, 0.9] as [number, number, number],
-  grainAmount: 0.025,
+  fogStart: 2000,
+  fogEnd: 16000,
+  hazeColor: [0.96, 0.94, 0.9] as [number, number, number],
+  grainAmount: 0.02,
 };
 
 /**
@@ -89,39 +95,65 @@ export function buildStudioEnvironmentShaderSource(
   const hazeB = glslFloat(hazeColor[2]);
 
   return [
-    '// Plaster Void: depth-haze + film-grain post-process (GLSL ES 3.00).',
-    '// Cesium injects the version + precision, all czm_* built-ins, and the',
-    '// layout(location=0) out vec4 out_FragColor declaration we write to below.',
+    '// Plaster Void: gradient sky + sun/moon bloom + depth-haze + film-grain',
+    '// post-process (GLSL ES 3.00). Cesium injects the version + precision, all czm_*',
+    '// built-ins, and the layout(location=0) out vec4 out_FragColor we write to.',
     'uniform sampler2D colorTexture;',
     'uniform sampler2D depthTexture;',
     '',
+    '// Custom PostProcessStage uniforms MUST be declared here (Cesium does not',
+    '// auto-declare them), and their VALUES must be Cesium.Cartesian2/3 — plain JS',
+    '// arrays are silently not bound and the uniform reads 0. See the factory below.',
+    'uniform vec2 u_sunUv;        // sun/moon centre in texture coords [0,1]',
+    'uniform float u_sunVisible;  // 1 when the body is up and on-screen, else 0',
+    'uniform float u_aspect;      // viewport width/height, keeps the bloom circular',
+    'uniform vec3 u_skyTop;       // cool sky colour at the top of frame',
+    'uniform vec3 u_glowColor;    // warm sun / cool moon bloom colour',
+    'uniform float u_glowStrength;',
+    '',
     'in vec2 v_textureCoordinates;',
+    '',
+    `const vec3 c_haze = vec3(${hazeR}, ${hazeG}, ${hazeB});`,
+    '',
+    '// The plaster-void sky at a screen point: a vertical gradient from the warm haze',
+    '// horizon up to the cooler u_skyTop, plus a soft radial bloom around the body.',
+    'vec3 skyColor(vec2 uv, vec3 hazeColor) {',
+    '  vec3 base = mix(hazeColor, u_skyTop, smoothstep(-0.15, 1.15, uv.y));',
+    '  vec2 d = uv - u_sunUv;',
+    '  d.x *= u_aspect;',
+    '  float r2 = dot(d, d);',
+    '  float glow = u_glowStrength * exp(-r2 / 0.03) * u_sunVisible;',
+    '  return base + u_glowColor * glow;',
+    '}',
     '',
     'void main() {',
     '  // Plaster-void haze + grain parameters, baked from build opts.',
     `  float fogStart = ${glslFloat(fogStart)};`,
     `  float fogEnd = ${glslFloat(fogEnd)};`,
-    `  vec3 hazeColor = vec3(${hazeR}, ${hazeG}, ${hazeB});`,
+    `  vec3 hazeColor = c_haze;`,
     `  float grainAmount = ${glslFloat(grainAmount)};`,
     '',
     '  vec4 color = texture(colorTexture, v_textureCoordinates);',
     '  float depth = czm_readDepth(depthTexture, v_textureCoordinates);',
+    '  vec3 sky = skyColor(v_textureCoordinates, hazeColor);',
     '',
     '  // Fix #3: background via epsilon, never an exact one-point depth test.',
     '  // Logarithmic-depth distant geometry samples arbitrarily close to the',
     '  // far plane; the 0.9999 epsilon avoids flicker at the horizon.',
     '  if (depth > 0.9999) {',
-    '    // Pure background (the sky void): flat haze, no fog ramp, no grain.',
-    '    out_FragColor = vec4(hazeColor, color.a);',
+    '    // Sky: the gradient + bloom, no fog ramp, no grain.',
+    '    out_FragColor = vec4(sky, color.a);',
     '    return;',
     '  }',
     '',
     '  // Fix #4: fog from eye-space distance in METERS, not raw [0,1] depth.',
     '  // czm_windowToEyeCoordinates(...).xyz length is in meters, so fogStart',
-    '  // / fogEnd are meters of eye-space distance.',
+    '  // / fogEnd are meters of eye-space distance. Geometry fades toward the SKY',
+    '  // colour behind it (so a backlit tower gains an atmospheric rim and reads',
+    '  // as a silhouette against the bloom rather than washing to flat white).',
     '  float dist = length(czm_windowToEyeCoordinates(vec4(gl_FragCoord.xy, depth, 1.0)).xyz);',
     '  float fog = smoothstep(fogStart, fogEnd, dist);',
-    '  vec3 result = mix(color.rgb, hazeColor, fog);',
+    '  vec3 result = mix(color.rgb, sky, fog);',
     '',
     '  // Film grain: temporal dither driven by czm_frameNumber (fix #4).',
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
@@ -134,15 +166,89 @@ export function buildStudioEnvironmentShaderSource(
 }
 
 /**
+ * Live sky/bloom state, mutated by the app each frame and read through the uniform
+ * callbacks below. Kept as a plain object so the app can update it in place without
+ * re-creating the stage.
+ */
+export interface StudioEnvironmentState {
+  /** Sun/moon centre in texture coords [0,1] (origin bottom-left). */
+  sunUv: [number, number];
+  /** 1 when the body is above the horizon and on-screen, else 0. */
+  sunVisible: number;
+  /** Viewport aspect (width/height) — keeps the bloom circular. */
+  aspect: number;
+  /** Cool sky colour at the top of frame. */
+  skyTop: [number, number, number];
+  /** Warm sun / cool moon bloom colour. */
+  glowColor: [number, number, number];
+  /** Bloom intensity. */
+  glowStrength: number;
+}
+
+/** A neutral default so the stage renders sanely before the app sets real values. */
+export function defaultStudioEnvironmentState(): StudioEnvironmentState {
+  return {
+    sunUv: [0.5, 0.5],
+    sunVisible: 0,
+    aspect: 1.6,
+    skyTop: [0.8, 0.83, 0.89],
+    glowColor: [1.0, 0.92, 0.75],
+    glowStrength: 0.9,
+  };
+}
+
+/**
  * Create the Cesium PostProcessStage for the Plaster Void look.
  *
- * NOT unit-tested: takes the Cesium namespace as a runtime argument so this
- * module has no load-time Cesium dependency. `uniforms` is empty because the
- * haze/grain parameters are baked into the fragment source as literals.
+ * NOT unit-tested: takes the Cesium namespace as a runtime argument so this module
+ * has no load-time Cesium dependency. The sky-gradient / bloom uniforms read from the
+ * shared `state` object through callbacks, so the app re-frames the bloom (e.g. as the
+ * clock scrubs the sun across the sky) simply by mutating `state`.
  */
-export function createStudioEnvironmentStage(Cesium: any): any {
-  return new Cesium.PostProcessStage({
+export function createStudioEnvironmentStage(
+  Cesium: any,
+  state: StudioEnvironmentState = defaultStudioEnvironmentState(),
+): any {
+  // vec2 / vec3 uniform VALUES must be Cesium.Cartesian2 / Cartesian3 — a plain JS
+  // array is silently not bound (the uniform reads 0, rendering black). Scalars are
+  // plain numbers. The app mutates stage.uniforms.* each frame via updateStudioUniforms.
+  const stage = new Cesium.PostProcessStage({
     fragmentShader: buildStudioEnvironmentShaderSource(),
-    uniforms: {},
+    uniforms: {
+      u_sunUv: new Cesium.Cartesian2(state.sunUv[0], state.sunUv[1]),
+      u_sunVisible: state.sunVisible,
+      u_aspect: state.aspect,
+      u_skyTop: new Cesium.Cartesian3(state.skyTop[0], state.skyTop[1], state.skyTop[2]),
+      u_glowColor: new Cesium.Cartesian3(
+        state.glowColor[0],
+        state.glowColor[1],
+        state.glowColor[2],
+      ),
+      u_glowStrength: state.glowStrength,
+    },
   });
+  return stage;
+}
+
+/** Push the live state object's values onto a stage's uniforms (Cartesian for vecs). */
+export function updateStudioUniforms(
+  Cesium: any,
+  stage: any,
+  state: StudioEnvironmentState,
+): void {
+  if (!stage || !stage.uniforms) return;
+  stage.uniforms.u_sunUv = new Cesium.Cartesian2(state.sunUv[0], state.sunUv[1]);
+  stage.uniforms.u_sunVisible = state.sunVisible;
+  stage.uniforms.u_aspect = state.aspect;
+  stage.uniforms.u_skyTop = new Cesium.Cartesian3(
+    state.skyTop[0],
+    state.skyTop[1],
+    state.skyTop[2],
+  );
+  stage.uniforms.u_glowColor = new Cesium.Cartesian3(
+    state.glowColor[0],
+    state.glowColor[1],
+    state.glowColor[2],
+  );
+  stage.uniforms.u_glowStrength = state.glowStrength;
 }
