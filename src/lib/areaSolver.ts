@@ -34,6 +34,8 @@ import { landmarkHeight, type RevolutionLandmark } from './landmarks.js';
 import {
   azAltTo,
   buildSilhouette,
+  buildSilhouetteDirections,
+  projectSilhouette,
   offsetGeodetic,
   type ObserverGeodetic,
 } from './silhouette.js';
@@ -334,6 +336,17 @@ export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandid
   const stepMs = stepMinutes * 60_000;
   const out: FixedCandidate[] = [];
 
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+  // Cheap rejection margin: no disc wider than ~1 deg matters, so anything further than
+  // this from the landmark's angular bounds cannot interact with it. This skips the
+  // projection entirely for the overwhelming majority of instants.
+  const REJECT_MARGIN_DEG = 2;
+  const { azMin, azMax, altMin, altMax } = dirs.bounds;
+
   for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
     const when = new Date(t);
     const body = bodyAt(when);
@@ -341,8 +354,14 @@ export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandid
     // Below the horizon there is nothing to photograph.
     if (!(body.alt > minAltitudeDeg)) continue;
 
+    // Bounds pre-filter. Azimuth difference is wrapped to handle the 0/360 seam.
+    let dAz = Math.abs(body.az - (azMin + azMax) / 2);
+    if (dAz > 180) dAz = 360 - dAz;
+    if (dAz > (azMax - azMin) / 2 + REJECT_MARGIN_DEG) continue;
+    if (body.alt < altMin - REJECT_MARGIN_DEG || body.alt > altMax + REJECT_MARGIN_DEG) continue;
+
     const reference = { az: body.az, alt: body.alt };
-    const silhouette = buildSilhouette(observer, landmark, reference);
+    const silhouette = projectSilhouette(dirs, reference);
     if (silhouette.length < 3) continue;
 
     const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);

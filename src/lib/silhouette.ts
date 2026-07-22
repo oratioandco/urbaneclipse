@@ -197,13 +197,43 @@ export function buildSilhouette(
   reference: AzAlt,
   steps = 96,
 ): AngularPoint[] {
+  return projectSilhouette(buildSilhouetteDirections(observer, landmark, steps), reference);
+}
+
+/**
+ * The landmark's outline as ABSOLUTE az/alt directions, plus its angular bounds.
+ *
+ * Split out because these depend only on the observer and the landmark — for a fixed
+ * observer they are CONSTANT over a whole time sweep. Computing them once turns the
+ * expensive part (a geodetic azAltTo per vertical sample) into a one-off, leaving only
+ * cheap trig per time step. Over a 30-day 1-minute sweep that is ~4.1 million
+ * azAltTo calls avoided.
+ *
+ * `bounds` additionally allows a sweep to reject instants where the body is nowhere
+ * near the landmark without projecting anything at all.
+ */
+export interface SilhouetteDirections {
+  outline: AzAlt[];
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+}
+
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
   const total = landmarkHeight(landmark);
-  if (total <= 0) return [];
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
 
   const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
 
-  const left: AngularPoint[] = [];
-  const right: AngularPoint[] = [];
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
 
   for (let i = 0; i <= steps; i++) {
     const hAgl = (total * i) / steps;
@@ -219,11 +249,28 @@ export function buildSilhouette(
     const cosAlt = Math.max(Math.cos(axis.alt * RAD), 1e-9);
     const dAz = halfWidthDeg / cosAlt;
 
-    left.push(toTangentPlane({ az: axis.az - dAz, alt: axis.alt }, reference));
-    right.push(toTangentPlane({ az: axis.az + dAz, alt: axis.alt }, reference));
+    left.push({ az: axis.az - dAz, alt: axis.alt });
+    right.push({ az: axis.az + dAz, alt: axis.alt });
+
+    azMin = Math.min(azMin, axis.az - dAz);
+    azMax = Math.max(azMax, axis.az + dAz);
+    altMin = Math.min(altMin, axis.alt);
+    altMax = Math.max(altMax, axis.alt);
   }
 
   // Trace up the left limb and back down the right to close the outline.
-  const polygon = [...left, ...right.reverse()];
-  return polygon.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  return {
+    outline: [...left, ...right.reverse()],
+    bounds: { azMin, azMax, altMin, altMax },
+  };
+}
+
+/** Project precomputed absolute directions into the disc-centred tangent plane. */
+export function projectSilhouette(
+  dirs: SilhouetteDirections,
+  reference: AzAlt,
+): AngularPoint[] {
+  return dirs.outline
+    .map((d) => toTangentPlane(d, reference))
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
 }

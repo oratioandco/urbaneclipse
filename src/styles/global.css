@@ -664,3 +664,13 @@ body,
   background: revert;
   border: revert;
 }
+
+/* Coverage/altitude annotation on a solver result row. Right-aligned tabular numerals
+   so a column of percentages scans vertically. */
+.pv-list__meta {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85em;
+  color: var(--pv-ink-3, #6b6b6b);
+  letter-spacing: 0.02em;
+}

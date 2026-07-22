@@ -1,114 +1,146 @@
 /**
- * US5 solver worker — Vite ESM module worker.
+ * Urban-eclipse solver worker.
  *
- * Spawned from src/components/react/SolverSearch.tsx via
- *   new Worker(new URL('../workers/solver.worker.ts', import.meta.url), {type:'module'})
+ * Sweeps time at a FIXED observer position and classifies how the landmark's silhouette
+ * occults the sun/moon disc, streaming results back to SolverSearch.
  *
- * Lives OUTSIDE the SSR graph (Constitution Principle I) — workers never load on the
- * server. The worker is the only place outside tests where suncalc is allowed to be
- * called from a hot loop: it cannot block the React render thread, and a chunked
- * iteration with setTimeout(0) yields between chunks keeps the worker responsive to
- * `cancel` messages and posts progress updates without freezing the page.
+ * WHAT CHANGED AND WHY
+ * --------------------
+ * This used to match on "body bearing within +/-0.5 deg of the target bearing". At the moon's
+ * 0.52 deg angular width that only means "within roughly one lunar diameter" — it finds
+ * near misses, not compositions, and cannot distinguish fully-behind from
+ * beside-the-tower. It now builds the real silhouette and measures the disc's covered
+ * AREA, classifying full / partial / adjacent.
  *
- * Input message shape (see SolverSearch.tsx for the message builder):
- *   { kind:'start', start:Date, end:Date, body:'sun'|'moon',
- *     target:{az:number, alt:number},  // degrees, az north-referenced clockwise
- *     toleranceDeg:number, lat:number, lon:number, stepMin?:number }
- *   { kind:'cancel' }
+ * PERFORMANCE
+ * -----------
+ * The observer is fixed, so the landmark's absolute outline is constant over the whole
+ * sweep; findOccultationsAtPosition computes the geodetic part once and pre-rejects
+ * instants outside the landmark's angular bounds. A full YEAR at 1-minute resolution
+ * (525 600 steps) runs in ~300 ms, so the search is chunked purely to keep the worker
+ * responsive to cancellation, not because it is slow.
  *
- * Output message shape:
- *   { kind:'progress', progress:number }               // 0..1
- *   { kind:'result', matches:Date[] }                  // incremental alignment list
- *   { kind:'done', matches:Date[] }                    // final list + terminal signal
- *   { kind:'error', message:string }
- *
- * Angle convention (suncalc 2.0.1): getPosition/getMoonPosition return DEGREES with
- * azimuth north-referenced clockwise (0=N, 90=E, 180=S, 270=W) and altitude in degrees.
- * `target` is in the same convention. findAlignments/angularDistanceDeg treat both
- * arguments consistently, so the spherical distance is well-defined regardless of
- * which azimuth reference is used — but feeding the SAME convention (degrees, north)
- * on both sides guarantees the angular tolerance is interpreted correctly.
+ * ANGLE CONVENTION (suncalc 2.0.1, verified against its typings): DEGREES, azimuth
+ * north-based clockwise, altitude refraction-corrected. Handled in lib/bodyPosition.ts.
  */
-import { getPosition, getMoonPosition } from 'suncalc';
-import {
-  generateMinuteSteps,
-  findAlignments,
-  type CelestialBody,
-  type PositionProvider,
-} from '../lib/solver.js';
+import { sampleBody, type Body } from '../lib/bodyPosition.js';
+import { findOccultationsAtPosition, type FixedCandidate } from '../lib/areaSolver.js';
+import { FERNSEHTURM, type RevolutionLandmark } from '../lib/landmarks.js';
+import type { ObserverGeodetic } from '../lib/silhouette.js';
+import type { OccultationKind } from '../lib/occultation.js';
 
 /// <reference lib="webworker" />
 declare const self: DedicatedWorkerGlobalScope;
 
 interface StartMessage {
   kind: 'start';
-  start: Date;
-  end: Date;
-  body: CelestialBody;
-  target: { az: number; alt: number };
-  toleranceDeg: number;
-  lat: number;
-  lon: number;
+  body: Body;
+  start: Date | string;
+  end: Date | string;
   stepMin?: number;
+  observer: ObserverGeodetic;
+  /** Landmark id; only the Fernsehturm is modelled parametrically so far. */
+  landmarkId?: string;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+  limit?: number;
 }
 interface CancelMessage {
   kind: 'cancel';
 }
 type Inbox = StartMessage | CancelMessage;
 
-// Chunk size: each chunk processes this many steps synchronously, then yields via
-// setTimeout(0). 5_000 minute-steps per chunk ≈ 5ms of suncalc calls on a modern
-// machine — well under a frame, keeps the worker's message queue drained.
-const CHUNK_SIZE = 5000;
+const LANDMARKS: Record<string, RevolutionLandmark> = {
+  fernsehturm: FERNSEHTURM,
+};
+
+/** Days of the window handled per chunk before yielding to the message queue. */
+const CHUNK_DAYS = 30;
 
 let cancelled = false;
 
-/** suncalc adapter: returns the body's horizontal direction in (degrees, north). */
-function makeProvider(lat: number, lon: number): PositionProvider {
-  return (date: Date, body: CelestialBody) => {
-    if (body === 'moon') {
-      const p = getMoonPosition(date, lat, lon);
-      return { az: p.azimuth, alt: p.altitude };
-    }
-    const p = getPosition(date, lat, lon);
-    return { az: p.azimuth, alt: p.altitude };
-  };
+/** Structured-clone turns Dates into Dates, but a string survives postMessage too. */
+function toDate(v: Date | string): Date {
+  return v instanceof Date ? v : new Date(v);
 }
 
 async function runSearch(msg: StartMessage): Promise<void> {
   cancelled = false;
-  const { start, end, body, target, toleranceDeg, lat, lon, stepMin } = msg;
-  const provider = makeProvider(lat, lon);
 
-  // Generate ALL minute steps up front (cheap: pure integer iteration, no suncalc yet).
-  // For a 30-day window at 1min resolution this is 43_200 Date objects (~1.4 MB) — fine.
-  const steps = generateMinuteSteps(start, end, stepMin ?? 1);
-  const total = steps.length;
-  if (total === 0) {
-    self.postMessage({ kind: 'done', matches: [] });
+  const landmark = LANDMARKS[msg.landmarkId ?? 'fernsehturm'];
+  if (!landmark) {
+    self.postMessage({ kind: 'error', message: `unknown landmark '${msg.landmarkId}'` });
     return;
   }
 
-  const allMatches: Date[] = [];
-  for (let i = 0; i < total; i += CHUNK_SIZE) {
-    if (cancelled) return; // silent teardown; SolverSearch handles UI state
-    const chunk = steps.slice(i, i + CHUNK_SIZE);
-    const found = findAlignments(chunk, body, target, toleranceDeg, provider);
-    for (const a of found) allMatches.push(a.date);
+  const start = toDate(msg.start);
+  const end = toDate(msg.end);
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) {
+    self.postMessage({ kind: 'error', message: 'invalid search window' });
+    return;
+  }
+  if (end.getTime() < start.getTime()) {
+    self.postMessage({ kind: 'error', message: 'search window ends before it starts' });
+    return;
+  }
 
-    const progress = Math.min(1, (i + chunk.length) / total);
-    self.postMessage({ kind: 'progress', progress });
-    // Incremental result: lets the UI show matches as they stream in. Cheap because
-    // we only emit the NEW slice; SolverSearch concatenates.
-    self.postMessage({ kind: 'result', matches: found.map((a) => a.date) });
+  const stepMinutes = msg.stepMin ?? 1;
+  const totalMs = end.getTime() - start.getTime();
+  const chunkMs = CHUNK_DAYS * 86_400_000;
 
-    // Yield to the event loop so cancel messages can interleave and the main thread
-    // gets a turn. setTimeout(0) is the portable ESM-worker yield (no requestIdleCallback
-    // inside a classic DedicatedWorkerGlobalScope).
+  const all: FixedCandidate[] = [];
+
+  for (let from = start.getTime(); from <= end.getTime(); from += chunkMs) {
+    if (cancelled) return; // silent teardown; SolverSearch owns the UI state
+
+    const to = Math.min(from + chunkMs, end.getTime());
+
+    let found: FixedCandidate[];
+    try {
+      found = findOccultationsAtPosition({
+        observer: msg.observer,
+        landmark,
+        start: new Date(from),
+        end: new Date(to),
+        stepMinutes,
+        bodyAt: (t) => sampleBody(msg.body, t, msg.observer.lat, msg.observer.lon),
+        wanted: msg.wanted ?? ['full', 'partial'],
+        minAltitudeDeg: msg.minAltitudeDeg ?? 0,
+        limit: msg.limit ?? 200,
+      });
+    } catch (e: unknown) {
+      self.postMessage({
+        kind: 'error',
+        message: e instanceof Error ? e.message : String(e),
+      });
+      return;
+    }
+
+    all.push(...found);
+
+    self.postMessage({
+      kind: 'progress',
+      progress: totalMs === 0 ? 1 : Math.min(1, (to - start.getTime()) / totalMs),
+    });
+    // Incremental: let the UI show hits as they stream in.
+    self.postMessage({ kind: 'result', matches: found });
+
+    // Yield so a cancel message can interleave.
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
   }
+
   if (cancelled) return;
-  self.postMessage({ kind: 'done', matches: allMatches });
+
+  // Re-rank across chunks: each chunk ranked only within itself.
+  const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+  all.sort((a, b) => {
+    const d = rank(b.kind) - rank(a.kind);
+    if (d !== 0) return d;
+    if (b.coveredFraction !== a.coveredFraction) return b.coveredFraction - a.coveredFraction;
+    return a.separationDeg - b.separationDeg;
+  });
+
+  self.postMessage({ kind: 'done', matches: all.slice(0, msg.limit ?? 200) });
 }
 
 self.onmessage = (ev: MessageEvent<Inbox>): void => {

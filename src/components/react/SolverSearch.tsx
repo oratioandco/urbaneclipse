@@ -1,14 +1,23 @@
 /**
- * SolverSearch — US5 — spawns the solver worker and shows progress + matches.
+ * SolverSearch — finds URBAN ECLIPSES: instants when the sun or moon passes behind
+ * the Fernsehturm's silhouette as seen from the observer.
  *
- * HARDCODED search parameters (per spec — UI for tweaking them is a later story):
- *   body      : 'moon'
- *   target    : Fernsehturm azimuth/altitude AS SEEN FROM the observer
- *               - azimuth   = greatCircleBearing(observer,target)  // already 0=N cw
- *               - altitude  = atan2(targetH - observerH, surfaceDistance) in degrees
- *   start     : now
- *   end       : now + 30 days
- *   tolerance : 0.5 deg
+ * Search parameters:
+ *   body      : sun or moon (toggle)
+ *   landmark  : Fernsehturm (parametric model — the LoD2 tile geometry is unusable,
+ *               see src/lib/landmarks.ts)
+ *   window    : now -> +12 months
+ *
+ * WHY 12 MONTHS, NOT 30 DAYS: from the Lichtenberger Brücke the tower's tip is only
+ * ~3.2 deg above the horizon, so a sun transit needs the sun at the tower's bearing while
+ * very low — which happens only near the equinoxes. The 2026 windows are 4-11 April
+ * and 31 Aug-7 Sep. A 30-day window would usually report "no alignments" for a shot
+ * that is simply seasonal. A full year at 1-minute resolution costs ~300 ms.
+ *
+ * WHY NOT A BEARING TOLERANCE: the old sweep matched "within +/-0.5 deg of the target
+ * bearing", which at the moon's 0.52 deg width only means "within about one lunar
+ * diameter" — near misses, not compositions, and no way to tell fully-behind from
+ * beside-the-tower. It now measures the disc's covered AREA against the real silhouette.
  *
  * The worker is constructed via the canonical Vite ESM pattern
  *   new Worker(new URL('../workers/solver.worker.ts', import.meta.url), {type:'module'})
@@ -29,72 +38,53 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { solverState, dateTime } from '../../store.js';
-import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
-import { greatCircleBearing } from '../../lib/sceneMath.js';
+import { solverState, dateTime, observerHeight } from '../../store.js';
+import { FERNSEHTURM } from '../../lib/landmarks.js';
+import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
+import { resolveObserverHeight } from '../../lib/sceneHeights.js';
+import { azAltTo } from '../../lib/silhouette.js';
+import { feasibility, type FixedCandidate } from '../../lib/areaSolver.js';
+import { MOON_RADIUS_KM, SUN_RADIUS_KM } from '../../lib/occultation.js';
+import { orthometricToEllipsoidal } from '../../lib/elevation.js';
 
-/** Haversine great-circle distance in metres between two lat/lon points (R=6371000m). */
-function haversineMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const R = 6_371_000;
-  const phi1 = toRad(lat1);
-  const phi2 = toRad(lat2);
-  const dPhi = toRad(lat2 - lat1);
-  const dLam = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dPhi / 2) ** 2 +
-    Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLam / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
-
-/** Compute the (az, alt) of TARGET_DEFAULT as seen from OBSERVER_DEFAULT, in degrees. */
-function computeTargetAzAlt(): { az: number; alt: number } {
-  const distance = haversineMeters(
-    OBSERVER_DEFAULT.lat,
-    OBSERVER_DEFAULT.lon,
-    TARGET_DEFAULT.lat,
-    TARGET_DEFAULT.lon,
+/** Observer on the surveyed bridge deck; eye height comes from the store. */
+function currentObserver(eyeHeight: number) {
+  const r = resolveObserverHeight(
+    LICHTENBERGER_BRUECKE.lat,
+    LICHTENBERGER_BRUECKE.lon,
+    eyeHeight,
+    () => undefined, // the curated deck elevation wins here anyway
+    LICHTENBERGER_BRUECKE,
   );
-  // greatCircleBearing returns radians, 0=N clockwise (matches suncalc's north-referenced
-  // convention). Convert to degrees so the worker feeds a consistent (deg, north) pair.
-  const azRad = greatCircleBearing(
-    OBSERVER_DEFAULT.lat,
-    OBSERVER_DEFAULT.lon,
-    TARGET_DEFAULT.lat,
-    TARGET_DEFAULT.lon,
-  );
-  const azDeg = (azRad * 180) / Math.PI;
-  const heightDiff =
-    TARGET_DEFAULT.heightAboveGround - OBSERVER_DEFAULT.heightAboveGround;
-  const altRad = Math.atan2(heightDiff, distance);
-  const altDeg = (altRad * 180) / Math.PI;
-  return { az: azDeg, alt: altDeg };
+  return {
+    lat: LICHTENBERGER_BRUECKE.lat,
+    lon: LICHTENBERGER_BRUECKE.lon,
+    ellipsoidalHeight: r.ellipsoidalHeight,
+  };
 }
 
 interface WorkerOut {
   kind: 'progress' | 'result' | 'done' | 'error';
   progress?: number;
-  matches?: Date[];
+  matches?: FixedCandidate[];
   message?: string;
 }
 
-const TOLERANCE_DEG = 0.5;
-const WINDOW_DAYS = 30;
+const WINDOW_MONTHS = 12;
+/** Sphere centre — the iconic occulter, and what "behind the tower" usually means. */
+const SPHERE_AGL = 213;
 
 export default function SolverSearch(): JSX.Element {
   const solver = useStore(solverState);
   const dt = useStore(dateTime);
+  const eyeHeight = useStore(observerHeight);
   const workerRef = useRef<Worker | null>(null);
   // useState drives the visible list; the matching ref holds the SAME accumulator the
   // worker callbacks mutate without re-renders (the closure inside onmessage captures
   // the ref, not a stale `accumulated` snapshot).
-  const [visible, setVisible] = useState<Date[]>([]);
-  const accumulatedRef = useRef<Date[]>([]);
+  const [visible, setVisible] = useState<FixedCandidate[]>([]);
+  const accumulatedRef = useRef<FixedCandidate[]>([]);
+  const [body, setBody] = useState<'sun' | 'moon'>('sun');
   // Distinguishes "never searched" from "searched, cancelled" so the idle panel can
   // say which one it is (T059 — no ambiguous blank state).
   const [cancelled, setCancelled] = useState(false);
@@ -147,7 +137,7 @@ export default function SolverSearch(): JSX.Element {
         solverState.set({
           status: 'running',
           progress: p,
-          matches: accumulatedRef.current,
+          matches: accumulatedRef.current.map((c) => c.when),
         });
       } else if (msg.kind === 'result') {
         const next = accumulatedRef.current.concat(msg.matches ?? []);
@@ -156,7 +146,7 @@ export default function SolverSearch(): JSX.Element {
         solverState.set({
           status: 'running',
           progress: solver.progress,
-          matches: next,
+          matches: next.map((c) => c.when),
         });
       } else if (msg.kind === 'done') {
         const final = msg.matches ?? accumulatedRef.current;
@@ -165,7 +155,7 @@ export default function SolverSearch(): JSX.Element {
         solverState.set({
           status: 'done',
           progress: 1,
-          matches: final,
+          matches: final.map((c) => c.when),
         });
         worker.terminate();
         workerRef.current = null;
@@ -205,19 +195,20 @@ export default function SolverSearch(): JSX.Element {
       workerRef.current = null;
     };
 
-    const target = computeTargetAzAlt();
     const now = new Date();
-    const end = new Date(now.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const end = new Date(now);
+    end.setMonth(end.getMonth() + WINDOW_MONTHS);
     worker.postMessage({
       kind: 'start',
+      body,
       start: now,
       end,
-      body: 'moon',
-      target,
-      toleranceDeg: TOLERANCE_DEG,
-      lat: OBSERVER_DEFAULT.lat,
-      lon: OBSERVER_DEFAULT.lon,
       stepMin: 1,
+      observer: currentObserver(eyeHeight),
+      landmarkId: 'fernsehturm',
+      wanted: ['full', 'partial'],
+      minAltitudeDeg: 0,
+      limit: 200,
     });
   };
 
@@ -236,10 +227,30 @@ export default function SolverSearch(): JSX.Element {
     dateTime.set(d);
   };
 
-  const target = computeTargetAzAlt();
+  const observer = currentObserver(eyeHeight);
+  // The tower's sphere as actually seen from here — drives both the readout and the
+  // feasibility verdict.
+  const sphere = azAltTo(
+    observer,
+    FERNSEHTURM.lat,
+    FERNSEHTURM.lon,
+    orthometricToEllipsoidal(FERNSEHTURM.baseOrthometric) + SPHERE_AGL,
+  );
+  // Mean-distance disc: a supermoon is slightly worse, the sun very slightly better.
+  const feas = feasibility(
+    FERNSEHTURM,
+    body === 'moon'
+      ? { distanceKm: 384400, radiusKm: MOON_RADIUS_KM }
+      : { distanceKm: 149.6e6, radiusKm: SUN_RADIUS_KM },
+    sphere.rangeM,
+  );
   const status = solver.status;
   const progressPct = Math.round((solver.progress ?? 0) * 100);
-  const list = status === 'done' ? solver.matches : visible;
+  // ALWAYS the rich accumulator, never solver.matches. The store deliberately keeps
+  // `matches` as Date[] (its contract is fixed), but this list renders coverage and
+  // altitude — reading the store's Date[] here made every row's c.kind/.coveredFraction
+  // undefined and crashed the panel on completion.
+  const list = visible;
   const noMatches = status === 'done' && list.length === 0;
 
   const headMeta =
@@ -255,7 +266,7 @@ export default function SolverSearch(): JSX.Element {
     <section className="pv-panel" data-testid="solver-search">
       <header className="pv-panel__head">
         <h2 className="pv-panel__title">
-          <span className="pv-panel__index">03</span>Lunar alignment
+          <span className="pv-panel__index">03</span>Urban eclipse
         </h2>
         <span className="pv-panel__meta">{headMeta}</span>
       </header>
@@ -263,21 +274,60 @@ export default function SolverSearch(): JSX.Element {
       <dl className="pv-readout" style={{ marginTop: 0, borderTop: 0, paddingTop: 0 }}>
         <div className="pv-readout__row">
           <dt className="pv-label">Azimuth</dt>
-          <dd className="pv-value">{target.az.toFixed(1)}°</dd>
+          <dd className="pv-value">{sphere.az.toFixed(1)}°</dd>
         </div>
         <div className="pv-readout__row">
           <dt className="pv-label">Altitude</dt>
-          <dd className="pv-value">{target.alt.toFixed(2)}°</dd>
+          <dd className="pv-value">{sphere.alt.toFixed(2)}°</dd>
         </div>
         <div className="pv-readout__row">
-          <dt className="pv-label">Tolerance</dt>
-          <dd className="pv-value">± {TOLERANCE_DEG.toFixed(1)}°</dd>
+          <dt className="pv-label">Range</dt>
+          <dd className="pv-value">{(sphere.rangeM / 1000).toFixed(2)} km</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">Tower width</dt>
+          <dd className="pv-value">{feas.landmarkWidthDeg.toFixed(3)}°</dd>
         </div>
         <div className="pv-readout__row">
           <dt className="pv-label">Window</dt>
-          <dd className="pv-value">now → +{WINDOW_DAYS} d</dd>
+          <dd className="pv-value">now → +{WINDOW_MONTHS} mo</dd>
         </div>
       </dl>
+
+      <div className="pv-btn-row">
+        <button
+          type="button"
+          onClick={() => setBody('sun')}
+          disabled={status === 'running'}
+          className={`pv-btn ${body === 'sun' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={body === 'sun'}
+        >
+          Sun
+        </button>
+        <button
+          type="button"
+          onClick={() => setBody('moon')}
+          disabled={status === 'running'}
+          className={`pv-btn ${body === 'moon' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={body === 'moon'}
+        >
+          Moon
+        </button>
+      </div>
+
+      {/* THE headline planning fact, stated before any search runs: from this bridge
+          the tower is narrower than the disc, so a FULL cover is impossible at any
+          date or time. Better to say so than to let the user hunt for it forever. */}
+      {!feas.fullPossible && (
+        <div className="pv-msg pv-msg--warn" role="status">
+          <strong className="pv-msg__title">Full eclipse impossible from here</strong>
+          The tower spans {feas.landmarkWidthDeg.toFixed(3)}° at{' '}
+          {(sphere.rangeM / 1000).toFixed(2)} km, but the {body} is about{' '}
+          {body === 'moon' ? '0.52' : '0.53'}° wide — so it can never be fully hidden.
+          Partial transits are still possible. For a full cover you would need to be
+          within {(feas.maxRangeForFullM / 1000).toFixed(2)} km of the tower.
+        </div>
+      )}
 
       <div className="pv-btn-row">
         <button
@@ -314,7 +364,7 @@ export default function SolverSearch(): JSX.Element {
           </strong>
           {cancelled
             ? 'The sweep was stopped before completion, so any partial results were discarded. Run it again to get a full list.'
-            : `Run the sweep to list every instant in the next ${WINDOW_DAYS} days when the moon sits within ±${TOLERANCE_DEG}° of the target bearing.`}
+            : `Run the sweep to find every instant in the next ${WINDOW_MONTHS} months when the ${body} passes behind the Fernsehturm, ranked by how much of the disc is covered.`}
         </div>
       )}
 
@@ -331,11 +381,12 @@ export default function SolverSearch(): JSX.Element {
 
       {noMatches && (
         <div className="pv-msg pv-msg--warn" role="status">
-          <strong className="pv-msg__title">No alignments found</strong>
-          The sweep completed successfully but the moon never came within ±
-          {TOLERANCE_DEG}° of azimuth {target.az.toFixed(1)}° / altitude{' '}
-          {target.alt.toFixed(2)}° during the next {WINDOW_DAYS} days. This is a real
-          result, not an error — try a different target or a later window.
+          <strong className="pv-msg__title">No transits found</strong>
+          The sweep completed successfully but the {body} never passed behind the tower
+          during the next {WINDOW_MONTHS} months. This is a real result, not an error.
+          From this bridge the tower's tip sits only ~{sphere.alt.toFixed(1)}° above the
+          horizon at bearing {sphere.az.toFixed(1)}°, so the {body} has to be very low
+          at exactly that bearing — a narrow, seasonal alignment.
         </div>
       )}
 
@@ -346,7 +397,8 @@ export default function SolverSearch(): JSX.Element {
             <span>{list.length}</span>
           </div>
           <ul className="pv-list">
-            {list.map((d, i) => {
+            {list.map((c, i) => {
+              const d = c.when instanceof Date ? c.when : new Date(c.when);
               const active = d.getTime() === dt.getTime();
               return (
                 <li key={`${d.getTime()}-${i}`}>
@@ -360,6 +412,13 @@ export default function SolverSearch(): JSX.Element {
                       {String(i + 1).padStart(2, '0')}
                     </span>
                     {d.toISOString().replace('T', ' ').slice(0, 16)}Z
+                    <span className="pv-list__meta">
+                      {c.kind === 'full'
+                        ? 'FULL'
+                        : `${Math.round(c.coveredFraction * 100)}%`}
+                      {' · '}
+                      {c.bodyAlt.toFixed(1)}°
+                    </span>
                   </button>
                 </li>
               );
