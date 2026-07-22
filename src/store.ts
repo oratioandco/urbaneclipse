@@ -1,4 +1,5 @@
 import { atom, type ReadableAtom } from 'nanostores';
+import { log } from './lib/log';
 
 /**
  * Core shared state. Pure logic, NO Cesium (Constitution Principle I — Vitest-first).
@@ -82,3 +83,152 @@ export function setDateTimeScrubbing(date: Date): void {
   if (rafHandle !== null) return;
   rafHandle = requestAnimationFrame(flushScrub);
 }
+
+// --- T058 preference persistence (localStorage, guarded + validated) -------
+// Persists dateTime/observerHeight/targetHeight/cameraProfile so a returning visitor
+// resumes their last scene instead of the hardcoded defaults. This module is imported
+// by code that must not assume a browser (SSR, tests, potentially a worker), so every
+// localStorage touch is wrapped defensively: absence, SecurityError (private mode),
+// and QuotaExceededError all degrade to "use the in-memory defaults", never a throw.
+//
+// Versioned key: bump the `v1` suffix if the persisted shape changes incompatibly so
+// old/foreign payloads are naturally ignored (JSON.parse of an unrelated shape just
+// fails per-field validation below rather than crashing).
+const PREFS_STORAGE_KEY = 'plaster-void:prefs:v1';
+
+interface PersistedPrefs {
+  dateTime: number; // epoch ms
+  observerHeight: number;
+  targetHeight: number;
+  cameraProfile: CameraProfile;
+}
+
+// Mirrors the ranges documented in data-model.md's "Validation Rules" section
+// (observerHeight/targetHeight clamp bounds) so a corrupted or hand-edited
+// localStorage payload can never resurrect a NaN/negative/absurd height.
+const MAX_OBSERVER_HEIGHT_M = 100;
+const MAX_TARGET_HEIGHT_M = 400;
+
+function isFiniteNumber(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+function isValidHeight(v: unknown, max: number): v is number {
+  return isFiniteNumber(v) && v > 0 && v <= max;
+}
+
+function isValidCameraProfile(v: unknown): v is CameraProfile {
+  if (typeof v !== 'object' || v === null) return false;
+  const c = v as Record<string, unknown>;
+  return (
+    isFiniteNumber(c.sensorWidth) &&
+    c.sensorWidth > 0 &&
+    isFiniteNumber(c.focalLength) &&
+    c.focalLength > 0 &&
+    isFiniteNumber(c.zoom) &&
+    c.zoom > 0
+  );
+}
+
+/** Returns the browser's localStorage, or null if unavailable/inaccessible for any reason. */
+function getSafeLocalStorage(): Storage | null {
+  try {
+    if (typeof localStorage === 'undefined' || localStorage === null) return null;
+    return localStorage;
+  } catch {
+    // Some environments (privacy mode in older Safari, sandboxed iframes) throw on
+    // merely referencing localStorage rather than returning undefined.
+    return null;
+  }
+}
+
+/** Reads + validates persisted prefs, applying only the fields that pass validation. */
+function rehydratePrefs(): void {
+  const storage = getSafeLocalStorage();
+  if (!storage) return;
+
+  let raw: string | null;
+  try {
+    raw = storage.getItem(PREFS_STORAGE_KEY);
+  } catch (err) {
+    log.warn('store', 'rehydrate-read-failed', { message: String(err) });
+    return;
+  }
+  if (!raw) return;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    log.warn('store', 'rehydrate-parse-failed', { message: String(err) });
+    return;
+  }
+  if (typeof parsed !== 'object' || parsed === null) {
+    log.warn('store', 'rehydrate-rejected', { reason: 'not-an-object' });
+    return;
+  }
+  const p = parsed as Partial<Record<keyof PersistedPrefs, unknown>>;
+
+  if (p.dateTime !== undefined) {
+    const ms = p.dateTime;
+    const d = isFiniteNumber(ms) ? new Date(ms) : null;
+    if (d && !Number.isNaN(d.getTime())) {
+      dateTime.set(d);
+    } else {
+      log.warn('store', 'rehydrate-rejected', { field: 'dateTime' });
+    }
+  }
+
+  if (p.observerHeight !== undefined) {
+    if (isValidHeight(p.observerHeight, MAX_OBSERVER_HEIGHT_M)) {
+      observerHeight.set(p.observerHeight);
+    } else {
+      log.warn('store', 'rehydrate-rejected', { field: 'observerHeight' });
+    }
+  }
+
+  if (p.targetHeight !== undefined) {
+    if (isValidHeight(p.targetHeight, MAX_TARGET_HEIGHT_M)) {
+      targetHeight.set(p.targetHeight);
+    } else {
+      log.warn('store', 'rehydrate-rejected', { field: 'targetHeight' });
+    }
+  }
+
+  if (p.cameraProfile !== undefined) {
+    if (isValidCameraProfile(p.cameraProfile)) {
+      cameraProfile.set(p.cameraProfile);
+    } else {
+      log.warn('store', 'rehydrate-rejected', { field: 'cameraProfile' });
+    }
+  }
+}
+
+/** Writes the current persistable slice of state; a no-op (never throws) if storage is unavailable. */
+function persistPrefs(): void {
+  const storage = getSafeLocalStorage();
+  if (!storage) return;
+  try {
+    const prefs: PersistedPrefs = {
+      dateTime: dateTime.get().getTime(),
+      observerHeight: observerHeight.get(),
+      targetHeight: targetHeight.get(),
+      cameraProfile: cameraProfile.get(),
+    };
+    storage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+  } catch (err) {
+    // Quota exceeded, storage revoked mid-session, serialization failure — never
+    // propagate; persistence is a nice-to-have, not a scene-breaking dependency.
+    log.warn('store', 'persist-failed', { message: String(err) });
+  }
+}
+
+// Rehydrate once at module load (before any consumer reads the atoms), then keep
+// localStorage in sync on every subsequent change. `dateTime`'s persistence listener
+// fires at most once per animation frame during a scrub (setDateTimeScrubbing already
+// coalesces the underlying .set()), so this adds no new write-amplification risk.
+rehydratePrefs();
+dateTime.listen(persistPrefs);
+observerHeight.listen(persistPrefs);
+targetHeight.listen(persistPrefs);
+cameraProfile.listen(persistPrefs);
