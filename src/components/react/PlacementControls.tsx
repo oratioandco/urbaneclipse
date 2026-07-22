@@ -1,0 +1,184 @@
+/**
+ * PlacementControls — the map-first workflow: switch between MAP and PREVIEW, and
+ * place the observer and target by clicking the scene.
+ *
+ * The plaster model IS the map, so MAP mode is a top-down view of the same geometry
+ * the solver reasons about — what you click is exactly what gets computed.
+ *
+ * Pure presentation + store wiring; NO Cesium import (Constitution Principle I).
+ */
+import { useStore } from '@nanostores/react';
+import {
+  viewMode,
+  pickMode,
+  observerPosition,
+  targetPosition,
+  setObserverPosition,
+  setTargetPosition,
+  type PickMode,
+} from '../../store.js';
+import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
+import { TARGET_DEFAULT } from '../../lib/berlin.js';
+
+export interface PlacementControlsProps {
+  /** Set when a click missed the model or landed outside Berlin. */
+  pickError?: string;
+  /** Surface elevation source for the observer, surfaced so accuracy is never implied. */
+  observerSurfaceSource?: 'viewpoint' | 'terrain' | 'fallback';
+}
+
+const SOURCE_COPY: Record<string, string> = {
+  viewpoint: 'surveyed viewpoint',
+  terrain: 'DGM1 terrain',
+  fallback: 'assumed Berlin mean',
+};
+
+export default function PlacementControls({
+  pickError,
+  observerSurfaceSource,
+}: PlacementControlsProps = {}): JSX.Element {
+  const mode = useStore(viewMode);
+  const pick = useStore(pickMode);
+  const obs = useStore(observerPosition);
+  const tgt = useStore(targetPosition);
+
+  const arm = (which: Exclude<PickMode, 'none'>): void => {
+    // Placing requires seeing the map; switch there automatically rather than arming
+    // a pick the user cannot aim.
+    if (viewMode.get() !== 'map') viewMode.set('map');
+    pickMode.set(pickMode.get() === which ? 'none' : which);
+  };
+
+  const reset = (): void => {
+    setObserverPosition({
+      lat: LICHTENBERGER_BRUECKE.lat,
+      lon: LICHTENBERGER_BRUECKE.lon,
+      viewpointId: LICHTENBERGER_BRUECKE.id,
+      label: LICHTENBERGER_BRUECKE.name,
+    });
+    setTargetPosition({
+      lat: TARGET_DEFAULT.lat,
+      lon: TARGET_DEFAULT.lon,
+      label: 'Berliner Fernsehturm',
+    });
+    pickMode.set('none');
+  };
+
+  const fmt = (p: { lat: number; lon: number }) =>
+    `${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`;
+
+  return (
+    <section className="pv-panel" data-testid="placement-controls">
+      <header className="pv-panel__head">
+        <h2 className="pv-panel__title">
+          <span className="pv-panel__index">00</span>Placement
+        </h2>
+        <span className="pv-panel__meta">{mode === 'map' ? 'map' : 'preview'}</span>
+      </header>
+
+      <div className="pv-btn-row">
+        <button
+          type="button"
+          onClick={() => viewMode.set('map')}
+          className={`pv-btn ${mode === 'map' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={mode === 'map'}
+        >
+          Map
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            pickMode.set('none');
+            viewMode.set('preview');
+          }}
+          className={`pv-btn ${mode === 'preview' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={mode === 'preview'}
+        >
+          Preview
+        </button>
+      </div>
+
+      <dl className="pv-readout">
+        <div className="pv-readout__row">
+          <dt className="pv-label">Observer</dt>
+          <dd className="pv-value">{obs.label ?? fmt(obs)}</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">&nbsp;</dt>
+          <dd className="pv-value">{fmt(obs)}</dd>
+        </div>
+        {observerSurfaceSource ? (
+          <div className="pv-readout__row">
+            <dt className="pv-label">Elevation from</dt>
+            <dd className="pv-value">
+              {SOURCE_COPY[observerSurfaceSource] ?? observerSurfaceSource}
+            </dd>
+          </div>
+        ) : null}
+        <div className="pv-readout__row">
+          <dt className="pv-label">Target</dt>
+          <dd className="pv-value">{tgt.label ?? fmt(tgt)}</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">&nbsp;</dt>
+          <dd className="pv-value">{fmt(tgt)}</dd>
+        </div>
+      </dl>
+
+      <div className="pv-btn-row">
+        <button
+          type="button"
+          onClick={() => arm('observer')}
+          className={`pv-btn ${pick === 'observer' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={pick === 'observer'}
+        >
+          {pick === 'observer' ? 'Click map…' : 'Place observer'}
+        </button>
+        <button
+          type="button"
+          onClick={() => arm('target')}
+          className={`pv-btn ${pick === 'target' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={pick === 'target'}
+        >
+          {pick === 'target' ? 'Click map…' : 'Place target'}
+        </button>
+      </div>
+
+      <div className="pv-btn-row">
+        <button type="button" onClick={reset} className="pv-btn pv-btn--quiet">
+          Reset to Brücke → Turm
+        </button>
+      </div>
+
+      {pick !== 'none' && (
+        <div className="pv-msg" role="status">
+          <strong className="pv-msg__title">
+            Placing the {pick === 'observer' ? 'observer' : 'target'}
+          </strong>
+          Click anywhere on the model to place it. Elevation is read from the DGM1
+          terrain automatically. Click the button again to cancel.
+        </div>
+      )}
+
+      {/* A pick that misses must say so — silently ignoring the click reads as a
+          broken button (FR-013). */}
+      {pickError ? (
+        <div className="pv-msg pv-msg--warn" role="alert">
+          <strong className="pv-msg__title">Pick not registered</strong>
+          {pickError}
+        </div>
+      ) : null}
+
+      {/* Freely placed observers lose the surveyed deck elevation, which is an 8.8 m
+          difference on the Lichtenberger Brücke — worth stating plainly. */}
+      {obs.viewpointId === undefined && observerSurfaceSource === 'terrain' ? (
+        <div className="pv-msg" role="status">
+          <strong className="pv-msg__title">Standing on terrain</strong>
+          This observer uses the bare-earth terrain model. If you are actually on a
+          bridge, roof or platform, the real eye height is higher — on the Lichtenberger
+          Brücke the deck sits 8.8 m above the ground beneath it.
+        </div>
+      ) : null}
+    </section>
+  );
+}

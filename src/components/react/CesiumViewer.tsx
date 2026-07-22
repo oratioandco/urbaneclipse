@@ -51,14 +51,40 @@ import {
   targetHeight,
   commitOcclusion,
   cameraProfile,
+  viewMode,
+  pickMode,
+  observerPosition,
+  targetPosition,
+  setObserverPosition,
+  setTargetPosition,
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
 import { resolveObserverHeight, resolveTargetHeight } from '../../lib/sceneHeights.js';
 import { loadHeightmap } from '../../cesium/loadHeightmap.js';
-import { BERLIN_GROUND_ORTHOMETRIC_FALLBACK } from '../../lib/elevation.js';
+import {
+  pickGeographic,
+  flyToMapView,
+  flyToPreview,
+  upsertMarker,
+  OBSERVER_MARKER_ID,
+  TARGET_MARKER_ID,
+} from '../../cesium/placement.js';
+import { findViewpoint } from '../../lib/viewpoints.js';
+import {
+  BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
+  orthometricToEllipsoidal,
+} from '../../lib/elevation.js';
+
+/** Marker base height, guarding against a non-finite surface reading. */
+function orthometricToEllipsoidalSafe(surfaceOrthometric: number): number {
+  return Number.isFinite(surfaceOrthometric)
+    ? orthometricToEllipsoidal(surfaceOrthometric)
+    : orthometricToEllipsoidal(BERLIN_GROUND_ORTHOMETRIC_FALLBACK);
+}
 import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
 import ControlPanel, { type ScenePhase } from './ControlPanel.js';
+import PlacementControls from './PlacementControls.js';
 import HourTimeline from './HourTimeline.js';
 import SolverSearch from './SolverSearch.js';
 import CameraControls from './CameraControls.js';
@@ -98,6 +124,13 @@ export default function CesiumViewer(): JSX.Element {
     null,
   );
   const [groundWarning, setGroundWarning] = useState<string | undefined>(undefined);
+  /** Feedback for a click that hit nothing or landed outside Berlin (FR-013). */
+  const [pickError, setPickError] = useState<string | undefined>(undefined);
+  /** Where the observer's surface elevation came from, so the UI never implies more
+   *  precision than the source supports. */
+  const [observerSurfaceSource, setObserverSurfaceSource] = useState<
+    'viewpoint' | 'terrain' | 'fallback' | undefined
+  >(undefined);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -132,6 +165,8 @@ export default function CesiumViewer(): JSX.Element {
     viewerRef.current = viewer;
     // Track disposal so the async tileset callback can no-op after StrictMode unmount.
     let disposed = false;
+    // Torn down with the viewer; assigned once the tileset resolves.
+    let cleanupPlacement: (() => void) | undefined;
 
     // --- T059 scene-phase plumbing ---------------------------------------------
     // `phase` mirrors the React state inside the effect closure so the slow-scene
@@ -274,30 +309,59 @@ export default function CesiumViewer(): JSX.Element {
           // bare-earth terrain and would return the rail cutting 8.8 m below the bridge.
           const sample = groundSamplerRef.current ?? (() => undefined);
 
+          // Positions are now PLACED (map-first), not hardcoded. A position carrying a
+          // viewpointId uses that viewpoint's surveyed surface (e.g. the bridge deck)
+          // instead of the bare-earth terrain sample.
+          const obsPos = observerPosition.get();
+          const tgtPos = targetPosition.get();
+          const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
+
           const obs = resolveObserverHeight(
-            OBSERVER_DEFAULT.lat,
-            OBSERVER_DEFAULT.lon,
+            obsPos.lat,
+            obsPos.lon,
             observerHeight.get(),
             sample,
-            LICHTENBERGER_BRUECKE,
+            viewpoint,
           );
           const tgt = resolveTargetHeight(
-            TARGET_DEFAULT.lat,
-            TARGET_DEFAULT.lon,
+            tgtPos.lat,
+            tgtPos.lon,
             targetHeight.get(),
             sample,
           );
 
           const observer: LatLonHeight = {
-            lat: OBSERVER_DEFAULT.lat,
-            lon: OBSERVER_DEFAULT.lon,
+            lat: obsPos.lat,
+            lon: obsPos.lon,
             height: obs.ellipsoidalHeight,
           };
           const target: LatLonHeight = {
-            lat: TARGET_DEFAULT.lat,
-            lon: TARGET_DEFAULT.lon,
+            lat: tgtPos.lat,
+            lon: tgtPos.lon,
             height: tgt.ellipsoidalHeight,
           };
+
+          // Markers reflect the placed positions and their resolved elevations.
+          upsertMarker(
+            viewer,
+            OBSERVER_MARKER_ID,
+            obsPos.lat,
+            obsPos.lon,
+            orthometricToEllipsoidalSafe(obs.surfaceOrthometric),
+            obs.ellipsoidalHeight,
+            Cesium.Color.fromCssColorString('#2f5136'),
+            obsPos.label ?? 'Observer',
+          );
+          upsertMarker(
+            viewer,
+            TARGET_MARKER_ID,
+            tgtPos.lat,
+            tgtPos.lon,
+            orthometricToEllipsoidalSafe(tgt.surfaceOrthometric),
+            tgt.ellipsoidalHeight,
+            Cesium.Color.fromCssColorString('#8c2f16'),
+            tgtPos.label ?? 'Target',
+          );
 
           const result = computeOcclusion(viewer, observer, target);
           polylineEntity = drawLineOfSight(
@@ -326,6 +390,7 @@ export default function CesiumViewer(): JSX.Element {
           dbg.observerEllipsoidalHeight = obs.ellipsoidalHeight;
           dbg.targetEllipsoidalHeight = tgt.ellipsoidalHeight;
           dbg.groundSource = obs.surfaceSource;
+          setObserverSurfaceSource(obs.surfaceSource);
           dbg.targetGroundSource = tgt.surfaceSource;
           dbg.targetSurfaceOrthometric = tgt.surfaceOrthometric;
           dbg.heightmapReady = groundSamplerRef.current !== null;
@@ -353,6 +418,75 @@ export default function CesiumViewer(): JSX.Element {
             );
           }
         });
+
+        // --- Map-first placement -------------------------------------------------
+        // Click to place the observer or target. Only active when pickMode is not
+        // 'none', so the map stays pannable by default and a stray click cannot
+        // silently relocate the scene.
+        const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+        clickHandler.setInputAction((movement: { position: CesiumType.Cartesian2 }) => {
+          if (disposed) return;
+          const mode = pickMode.get();
+          if (mode === 'none') return;
+
+          const picked = pickGeographic(viewer, movement.position);
+          if (!picked) {
+            setPickError('That click did not hit the model — try clicking on the ground or a building.');
+            return;
+          }
+
+          // setObserver/TargetPosition reject implausible coordinates; a ray that
+          // grazes the horizon can return a point on the far side of the globe.
+          const ok =
+            mode === 'observer'
+              ? setObserverPosition({ lat: picked.lat, lon: picked.lon })
+              : setTargetPosition({ lat: picked.lat, lon: picked.lon });
+
+          if (!ok) {
+            setPickError('That point is outside Berlin — the pick was ignored.');
+            return;
+          }
+          setPickError(undefined);
+          pickMode.set('none');
+          recompute();
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        // --- View mode ------------------------------------------------------------
+        const applyViewMode = () => {
+          if (disposed || viewer.isDestroyed()) return;
+          const sample = groundSamplerRef.current ?? (() => undefined);
+          const obsPos = observerPosition.get();
+          const tgtPos = targetPosition.get();
+          const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
+
+          if (viewMode.get() === 'map') {
+            flyToMapView(viewer, obsPos, tgtPos);
+            return;
+          }
+
+          const obs = resolveObserverHeight(
+            obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
+          );
+          const tgt = resolveTargetHeight(
+            tgtPos.lat, tgtPos.lon, targetHeight.get(), sample,
+          );
+          flyToPreview(
+            viewer,
+            { lat: obsPos.lat, lon: obsPos.lon, ellipsoidalHeight: obs.ellipsoidalHeight },
+            { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: tgt.ellipsoidalHeight },
+          );
+        };
+
+        const unsubViewMode = viewMode.listen(applyViewMode);
+        // Re-frame and re-solve whenever a position moves.
+        const unsubObsPos = observerPosition.listen(() => { recompute(); applyViewMode(); });
+        const unsubTgtPos = targetPosition.listen(() => { recompute(); applyViewMode(); });
+        cleanupPlacement = () => {
+          unsubViewMode();
+          unsubObsPos();
+          unsubTgtPos();
+          clickHandler.destroy();
+        };
 
         // Initial compute: defer until tilesLoaded so we don't read an empty scene.
         // tilesLoaded transitions to true exactly once, when the load queue drains.
@@ -407,6 +541,13 @@ export default function CesiumViewer(): JSX.Element {
     return () => {
       disposed = true;
       window.clearTimeout(slowTimer);
+      // Placement listeners + the click handler outlive the tileset promise, so tear
+      // them down explicitly or a StrictMode remount leaves a dead handler attached.
+      try {
+        cleanupPlacement?.();
+      } catch {
+        /* teardown must not throw */
+      }
       const v = viewerRef.current;
       if (v && !v.isDestroyed()) {
         // Run any stashed non-Cesium cleanups (store listeners) before destroying.
@@ -435,6 +576,10 @@ export default function CesiumViewer(): JSX.Element {
           non-overlapping at 1280x800 and roomier at 1440x900 (see global.css). */}
       <div className="pv-overlay">
         <div className="pv-rail pv-rail--left">
+          <PlacementControls
+            pickError={pickError}
+            observerSurfaceSource={observerSurfaceSource}
+          />
           <ControlPanel
             groundWarning={groundWarning}
             scenePhase={scenePhase}

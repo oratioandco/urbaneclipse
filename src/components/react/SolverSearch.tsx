@@ -38,29 +38,36 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { solverState, dateTime, observerHeight } from '../../store.js';
+import {
+  solverState,
+  dateTime,
+  observerHeight,
+  observerPosition,
+  targetPosition,
+} from '../../store.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
-import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
+import { findViewpoint } from '../../lib/viewpoints.js';
 import { resolveObserverHeight } from '../../lib/sceneHeights.js';
 import { azAltTo } from '../../lib/silhouette.js';
 import { feasibility, type FixedCandidate } from '../../lib/areaSolver.js';
 import { MOON_RADIUS_KM, SUN_RADIUS_KM } from '../../lib/occultation.js';
 import { orthometricToEllipsoidal } from '../../lib/elevation.js';
 
-/** Observer on the surveyed bridge deck; eye height comes from the store. */
-function currentObserver(eyeHeight: number) {
-  const r = resolveObserverHeight(
-    LICHTENBERGER_BRUECKE.lat,
-    LICHTENBERGER_BRUECKE.lon,
-    eyeHeight,
-    () => undefined, // the curated deck elevation wins here anyway
-    LICHTENBERGER_BRUECKE,
-  );
-  return {
-    lat: LICHTENBERGER_BRUECKE.lat,
-    lon: LICHTENBERGER_BRUECKE.lon,
-    ellipsoidalHeight: r.ellipsoidalHeight,
-  };
+/**
+ * Observer at the PLACED position (map-first), with its eye height resolved.
+ *
+ * Ground sampling is not available in this component — the heightmap lives in the
+ * Cesium island — so a freely placed observer falls back to the Berlin mean. That is
+ * a few metres of error in the solved altitude, well under the ~0.05 deg tolerance at
+ * these ranges, whereas a curated viewpoint's surveyed deck is exact.
+ */
+function currentObserver(
+  pos: { lat: number; lon: number; viewpointId?: string },
+  eyeHeight: number,
+) {
+  const viewpoint = pos.viewpointId ? findViewpoint(pos.viewpointId) : undefined;
+  const r = resolveObserverHeight(pos.lat, pos.lon, eyeHeight, () => undefined, viewpoint);
+  return { lat: pos.lat, lon: pos.lon, ellipsoidalHeight: r.ellipsoidalHeight };
 }
 
 interface WorkerOut {
@@ -78,6 +85,8 @@ export default function SolverSearch(): JSX.Element {
   const solver = useStore(solverState);
   const dt = useStore(dateTime);
   const eyeHeight = useStore(observerHeight);
+  const obsPos = useStore(observerPosition);
+  const tgtPos = useStore(targetPosition);
   const workerRef = useRef<Worker | null>(null);
   // useState drives the visible list; the matching ref holds the SAME accumulator the
   // worker callbacks mutate without re-renders (the closure inside onmessage captures
@@ -204,7 +213,7 @@ export default function SolverSearch(): JSX.Element {
       start: now,
       end,
       stepMin: 1,
-      observer: currentObserver(eyeHeight),
+      observer: currentObserver(obsPos, eyeHeight),
       landmarkId: 'fernsehturm',
       wanted: ['full', 'partial'],
       minAltitudeDeg: 0,
@@ -227,7 +236,7 @@ export default function SolverSearch(): JSX.Element {
     dateTime.set(d);
   };
 
-  const observer = currentObserver(eyeHeight);
+  const observer = currentObserver(obsPos, eyeHeight);
   // The tower's sphere as actually seen from here — drives both the readout and the
   // feasibility verdict.
   const sphere = azAltTo(
@@ -244,6 +253,15 @@ export default function SolverSearch(): JSX.Element {
       : { distanceKm: 149.6e6, radiusKm: SUN_RADIUS_KM },
     sphere.rangeM,
   );
+  // Only the Fernsehturm has a parametric silhouette model (the LoD2 tile geometry is
+  // unusable for this — see lib/landmarks.ts). If the target has been placed elsewhere
+  // the sweep is still about the tower, and saying so beats a confidently wrong answer.
+  const targetOffsetM = Math.hypot(
+    (tgtPos.lat - FERNSEHTURM.lat) * 111_320,
+    (tgtPos.lon - FERNSEHTURM.lon) * 111_320 * Math.cos((tgtPos.lat * Math.PI) / 180),
+  );
+  const targetIsTower = targetOffsetM < 250;
+
   const status = solver.status;
   const progressPct = Math.round((solver.progress ?? 0) * 100);
   // ALWAYS the rich accumulator, never solver.matches. The store deliberately keeps
@@ -314,6 +332,16 @@ export default function SolverSearch(): JSX.Element {
           Moon
         </button>
       </div>
+
+      {!targetIsTower && (
+        <div className="pv-msg pv-msg--warn" role="status">
+          <strong className="pv-msg__title">Search still targets the Fernsehturm</strong>
+          Your target is placed {(targetOffsetM / 1000).toFixed(2)} km from the
+          Fernsehturm, but only that tower has a parametric silhouette model — the LoD2
+          building data is too coarse for occultation work. These results describe the
+          tower, not your placed target.
+        </div>
+      )}
 
       {/* THE headline planning fact, stated before any search runs: from this bridge
           the tower is narrower than the disc, so a FULL cover is impossible at any

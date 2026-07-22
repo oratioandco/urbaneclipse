@@ -28,6 +28,92 @@ export const observerHeight = atom<number>(1.5);
  *  (it was 210 m, roughly the observation deck, leaving the target ~158 m short). */
 export const targetHeight = atom<number>(368.03);
 
+// --- Map-first placement ----------------------------------------------------
+// The observer and target are no longer hardcoded constants: they are placed by
+// clicking the scene in MAP mode. Positions are WGS84 degrees; their ELEVATIONS are
+// resolved separately from the DGM1 heightmap / curated viewpoints
+// (src/lib/sceneHeights.ts) — never stored here, so there is exactly one place that
+// knows about the vertical datum.
+export interface ScenePosition {
+  lat: number;
+  lon: number;
+  /** Set when the position came from a curated viewpoint, so its surveyed surface
+   *  elevation overrides the terrain sample (e.g. a bridge deck). */
+  viewpointId?: string;
+  /** Human label for the UI; falls back to coordinates when absent. */
+  label?: string;
+}
+
+/**
+ * View mode.
+ *   'map'     — top-down over Berlin; clicking places the observer or target.
+ *   'preview' — the telephoto shot itself, from the observer toward the target.
+ * The plaster model IS the map: no external tile provider, no extra dependency, and
+ * the same geometry the occlusion and silhouette maths already use.
+ */
+export type ViewMode = 'map' | 'preview';
+export const viewMode = atom<ViewMode>('preview');
+
+/** What a click in MAP mode places. 'none' disables picking so the map can be panned. */
+export type PickMode = 'none' | 'observer' | 'target';
+export const pickMode = atom<PickMode>('none');
+
+export const observerPosition = atom<ScenePosition>({
+  lat: 52.5113,
+  lon: 13.4988,
+  viewpointId: 'lichtenberger-bruecke',
+  label: 'Lichtenberger Brücke',
+});
+
+export const targetPosition = atom<ScenePosition>({
+  lat: 52.520815,
+  lon: 13.409419,
+  label: 'Berliner Fernsehturm',
+});
+
+/** Rough Berlin bounds — a click outside these is a mis-pick, not a viewpoint. */
+const BERLIN_LAT = [52.3, 52.7] as const;
+const BERLIN_LON = [13.05, 13.8] as const;
+
+/** True when a position is a plausible Berlin location. */
+export function isPlausibleBerlinPosition(p: {
+  lat: number;
+  lon: number;
+}): boolean {
+  return (
+    Number.isFinite(p.lat) &&
+    Number.isFinite(p.lon) &&
+    p.lat >= BERLIN_LAT[0] &&
+    p.lat <= BERLIN_LAT[1] &&
+    p.lon >= BERLIN_LON[0] &&
+    p.lon <= BERLIN_LON[1]
+  );
+}
+
+/**
+ * Commit a picked position. Rejects implausible coordinates rather than moving the
+ * scene somewhere impossible — a ray-pick that misses all geometry can return a point
+ * on the far side of the globe, and silently accepting it would send the camera to the
+ * middle of the ocean with no explanation.
+ */
+export function setObserverPosition(p: ScenePosition): boolean {
+  if (!isPlausibleBerlinPosition(p)) {
+    log.warn('store', 'observer position rejected', { lat: p.lat, lon: p.lon });
+    return false;
+  }
+  observerPosition.set(p);
+  return true;
+}
+
+export function setTargetPosition(p: ScenePosition): boolean {
+  if (!isPlausibleBerlinPosition(p)) {
+    log.warn('store', 'target position rejected', { lat: p.lat, lon: p.lon });
+    return false;
+  }
+  targetPosition.set(p);
+  return true;
+}
+
 // --- US6 camera profile -----------------------------------------------------
 // Sensor + lens model authored by CameraControls; consumed by the CesiumViewer
 // island to drive viewer.camera.frustum.fov via fovToCesium(computeHorizontalFov(...)).
