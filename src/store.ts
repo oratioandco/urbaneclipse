@@ -52,6 +52,11 @@ export interface ScenePosition {
  * the same geometry the occlusion and silhouette maths already use.
  */
 export type ViewMode = 'map' | 'preview';
+
+/** Which body the solver searches for and the preview draws. Shared so the disc you
+ *  see is always the body the results describe. */
+export type SolverBody = 'sun' | 'moon';
+export const solverBody = atom<SolverBody>('sun');
 export const viewMode = atom<ViewMode>('preview');
 
 /** What a click in MAP mode places. 'none' disables picking so the map can be panned. */

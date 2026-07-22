@@ -49,6 +49,15 @@ export interface ControlPanelProps {
    * be several metres out, and must not look as authoritative as a real sample.
    */
   groundWarning?: string;
+  /** Where the drawn sun/moon is. Absent in map mode. */
+  discState?: {
+    altitude: number;
+    azimuth: number;
+    angularDiameterDeg: number;
+    visible: boolean;
+  };
+  /** Which body the preview is drawing. */
+  body?: 'sun' | 'moon';
 }
 
 /**
@@ -76,6 +85,8 @@ export default function ControlPanel({
   sceneError,
   sceneSlow = false,
   groundWarning,
+  discState,
+  body = 'sun',
 }: ControlPanelProps = {}): JSX.Element {
   const oh = useStore(observerHeight);
   const th = useStore(targetHeight);
@@ -202,6 +213,34 @@ export default function ControlPanel({
             : 'The sightline verdict stays UNKNOWN until the building geometry has streamed in.'}
         </div>
       )}
+
+      {/* The disc is the whole point of the preview, so when it is NOT on screen the
+          reason must be explicit — "below the horizon" and "something broke" would
+          otherwise look identical. */}
+      {discState ? (
+        discState.visible ? (
+          <dl className="pv-readout">
+            <div className="pv-readout__row">
+              <dt className="pv-label">{body === 'sun' ? 'Sun' : 'Moon'}</dt>
+              <dd className="pv-value">
+                {discState.azimuth.toFixed(1)}° / {discState.altitude.toFixed(2)}°
+              </dd>
+            </div>
+            <div className="pv-readout__row">
+              <dt className="pv-label">Apparent size</dt>
+              <dd className="pv-value">{discState.angularDiameterDeg.toFixed(3)}°</dd>
+            </div>
+          </dl>
+        ) : (
+          <div className="pv-msg" role="status">
+            <strong className="pv-msg__title">
+              {body === 'sun' ? 'Sun' : 'Moon'} is below the horizon
+            </strong>
+            At this time it sits {Math.abs(discState.altitude).toFixed(1)}° under the
+            horizon, so nothing is drawn. Scrub the time or pick a search result.
+          </div>
+        )
+      ) : null}
 
       {/* Ground elevation is load-bearing: heights are measured from the terrain, so a
           missing heightmap silently shifts the whole sightline. Say so explicitly. */}

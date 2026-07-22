@@ -44,6 +44,8 @@ import {
   observerHeight,
   observerPosition,
   targetPosition,
+  solverBody,
+  viewMode,
 } from '../../store.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
 import { findViewpoint } from '../../lib/viewpoints.js';
@@ -85,6 +87,7 @@ export default function SolverSearch(): JSX.Element {
   const solver = useStore(solverState);
   const dt = useStore(dateTime);
   const eyeHeight = useStore(observerHeight);
+  const body = useStore(solverBody);
   const obsPos = useStore(observerPosition);
   const tgtPos = useStore(targetPosition);
   const workerRef = useRef<Worker | null>(null);
@@ -93,7 +96,7 @@ export default function SolverSearch(): JSX.Element {
   // the ref, not a stale `accumulated` snapshot).
   const [visible, setVisible] = useState<FixedCandidate[]>([]);
   const accumulatedRef = useRef<FixedCandidate[]>([]);
-  const [body, setBody] = useState<'sun' | 'moon'>('sun');
+
   // Distinguishes "never searched" from "searched, cancelled" so the idle panel can
   // say which one it is (T059 — no ambiguous blank state).
   const [cancelled, setCancelled] = useState(false);
@@ -233,7 +236,10 @@ export default function SolverSearch(): JSX.Element {
   // Click a result: scrub dateTime to that instant (Strategy B: drives the Cesium
   // clock and the timeline marker via the existing dateTime store listener).
   const chooseMatch = (d: Date): void => {
+    // Scrub to the instant AND switch to the preview, so picking a result shows the
+    // actual composition rather than only moving a clock the user cannot see.
     dateTime.set(d);
+    viewMode.set('preview');
   };
 
   const observer = currentObserver(obsPos, eyeHeight);
@@ -315,7 +321,7 @@ export default function SolverSearch(): JSX.Element {
       <div className="pv-btn-row">
         <button
           type="button"
-          onClick={() => setBody('sun')}
+          onClick={() => solverBody.set('sun')}
           disabled={status === 'running'}
           className={`pv-btn ${body === 'sun' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
           aria-pressed={body === 'sun'}
@@ -324,7 +330,7 @@ export default function SolverSearch(): JSX.Element {
         </button>
         <button
           type="button"
-          onClick={() => setBody('moon')}
+          onClick={() => solverBody.set('moon')}
           disabled={status === 'running'}
           className={`pv-btn ${body === 'moon' ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
           aria-pressed={body === 'moon'}

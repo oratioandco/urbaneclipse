@@ -30,6 +30,7 @@
  *     (the landscape scene case), so we pass its result straight through.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useStore } from '@nanostores/react';
 import type * as CesiumType from 'cesium';
 // Cesium is served as a UMD GLOBAL (window.Cesium) by vite-plugin-cesium + the
 // /cesium/Cesium.js tag injected in index.astro. We use the global at runtime — NOT
@@ -57,6 +58,7 @@ import {
   targetPosition,
   setObserverPosition,
   setTargetPosition,
+  solverBody,
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
@@ -71,6 +73,10 @@ import {
   TARGET_MARKER_ID,
 } from '../../cesium/placement.js';
 import { findViewpoint } from '../../lib/viewpoints.js';
+import {
+  upsertCelestialDisc,
+  removeCelestialDisc,
+} from '../../cesium/celestialDisc.js';
 import {
   BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
   orthometricToEllipsoidal,
@@ -104,6 +110,7 @@ const TILESET_ECEF_CENTER = new Cesium.Cartesian3(3782802.4642903516, 902286.467
 const SLOW_SCENE_WARNING_MS = 25_000;
 
 export default function CesiumViewer(): JSX.Element {
+  const solverBodyValue = useStore(solverBody);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
@@ -130,6 +137,11 @@ export default function CesiumViewer(): JSX.Element {
    *  precision than the source supports. */
   const [observerSurfaceSource, setObserverSurfaceSource] = useState<
     'viewpoint' | 'terrain' | 'fallback' | undefined
+  >(undefined);
+  /** Where the drawn sun/moon actually is — surfaced so "no disc visible" is never
+   *  ambiguous between "below the horizon" and "something broke". */
+  const [discState, setDiscState] = useState<
+    { altitude: number; azimuth: number; angularDiameterDeg: number; visible: boolean } | undefined
   >(undefined);
 
   useEffect(() => {
@@ -477,11 +489,59 @@ export default function CesiumViewer(): JSX.Element {
           );
         };
 
-        const unsubViewMode = viewMode.listen(applyViewMode);
+        // --- Celestial disc -------------------------------------------------------
+        // Drawn from suncalc (the SAME ephemeris the solver uses), not Cesium's own
+        // sun: Cesium falls back to the TEME frame without network EOP data and sits a
+        // near-constant ~0.37 deg off — three quarters of a solar diameter — so its disc
+        // would contradict the prediction this preview exists to illustrate.
+        // See tests/unit/sun-agreement.test.ts.
+        const applyDisc = () => {
+          if (disposed || viewer.isDestroyed()) return;
+          if (viewMode.get() !== 'preview') {
+            removeCelestialDisc(viewer);
+            setDiscState(undefined);
+            return;
+          }
+          const sample = groundSamplerRef.current ?? (() => undefined);
+          const obsPos = observerPosition.get();
+          const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
+          const obs = resolveObserverHeight(
+            obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
+          );
+          try {
+            const st = upsertCelestialDisc(
+              viewer,
+              { lat: obsPos.lat, lon: obsPos.lon, ellipsoidalHeight: obs.ellipsoidalHeight },
+              solverBody.get(),
+              dateTime.get(),
+            );
+            setDiscState(st);
+          } catch (err) {
+            // Never let a drawing failure take down the scene; report it instead.
+            setDiscState(undefined);
+            console.error('[CesiumViewer] celestial disc failed', err);
+          }
+          viewer.scene.requestRender();
+        };
+
+        const unsubDiscTime = dateTime.listen(applyDisc);
+        const unsubDiscBody = solverBody.listen(applyDisc);
+        applyDisc();
+
+        const unsubViewMode = viewMode.listen(() => {
+          applyViewMode();
+          applyDisc();
+        });
         // Re-frame and re-solve whenever a position moves.
-        const unsubObsPos = observerPosition.listen(() => { recompute(); applyViewMode(); });
+        const unsubObsPos = observerPosition.listen(() => {
+          recompute();
+          applyViewMode();
+          applyDisc();
+        });
         const unsubTgtPos = targetPosition.listen(() => { recompute(); applyViewMode(); });
         cleanupPlacement = () => {
+          unsubDiscTime();
+          unsubDiscBody();
           unsubViewMode();
           unsubObsPos();
           unsubTgtPos();
@@ -581,6 +641,8 @@ export default function CesiumViewer(): JSX.Element {
             observerSurfaceSource={observerSurfaceSource}
           />
           <ControlPanel
+            discState={discState}
+            body={solverBodyValue}
             groundWarning={groundWarning}
             scenePhase={scenePhase}
             sceneError={sceneError}

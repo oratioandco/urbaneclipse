@@ -78,6 +78,51 @@ export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
   ];
 }
 
+/**
+ * ECEF position of a point at `distanceM` from the observer along a horizontal
+ * direction (az/alt), for placing a celestial disc in the scene.
+ *
+ * The disc is drawn at a FIXED, large distance rather than the body's true distance:
+ * a sphere at the correct angular size subtends the same angle from the camera at any
+ * range, and placing it a few tens of km out puts it BEHIND the city geometry so the
+ * depth buffer lets buildings occult it — which is the entire point of the preview.
+ */
+export function directionOffsetECEF(
+  observer: ObserverGeodetic,
+  azDeg: number,
+  altDeg: number,
+  distanceM: number,
+): Vec3 {
+  const az = azDeg * RAD;
+  const alt = altDeg * RAD;
+
+  // ENU unit vector for an az/alt direction (azimuth clockwise from north).
+  const e = Math.cos(alt) * Math.sin(az);
+  const n = Math.cos(alt) * Math.cos(az);
+  const u = Math.sin(alt);
+
+  const sφ = Math.sin(observer.lat * RAD);
+  const cφ = Math.cos(observer.lat * RAD);
+  const sλ = Math.sin(observer.lon * RAD);
+  const cλ = Math.cos(observer.lon * RAD);
+
+  // ENU -> ECEF rotation (transpose of ecefToENU).
+  const dx = (-sλ * e - sφ * cλ * n + cφ * cλ * u) * distanceM;
+  const dy = (cλ * e - sφ * sλ * n + cφ * sλ * u) * distanceM;
+  const dz = (cφ * n + sφ * u) * distanceM;
+
+  const o = geodeticToECEF(observer.lat, observer.lon, observer.ellipsoidalHeight);
+  return [o[0] + dx, o[1] + dy, o[2] + dz];
+}
+
+/**
+ * Physical radius, metres, that a disc placed at `distanceM` must have to subtend
+ * `angularRadiusDeg` from the observer.
+ */
+export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+  return distanceM * Math.tan(angularRadiusDeg * RAD);
+}
+
 /** ECEF metres -> geodetic (deg, deg, ellipsoidal m), via Bowring's method. */
 export function ecefToGeodetic(x: number, y: number, z: number): {
   lat: number;
