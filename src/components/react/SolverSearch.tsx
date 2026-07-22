@@ -19,32 +19,19 @@
  * Worker handshake (see src/workers/solver.worker.ts):
  *   start  -> {progress}* -> {result}* -> {done|error}
  *   cancel -> silent teardown (no ack)
+ *
+ * T059 (FR-013): four terminal conditions each get explicit on-screen copy —
+ * worker construction failure, worker runtime error, a completed search with ZERO
+ * matches, and a cancelled search. None of them may leave the panel blank.
+ *
+ * HARD CONTRACT: data-testid="solver-search" and a real <button> whose trimmed
+ * textContent starts with "SEARCH" are consumed by scripts/diagnose.mjs.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { solverState, dateTime } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { greatCircleBearing } from '../../lib/sceneMath.js';
-
-const PANEL_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  top: 16,
-  right: 16,
-  zIndex: 10,
-  padding: '12px 14px',
-  background: 'rgba(255,255,255,0.92)',
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 8,
-  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-  fontSize: 12,
-  color: '#111',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-  pointerEvents: 'auto',
-  minWidth: 220,
-  maxWidth: 280,
-  maxHeight: '60vh',
-  overflow: 'auto',
-};
 
 /** Haversine great-circle distance in metres between two lat/lon points (R=6371000m). */
 function haversineMeters(
@@ -96,6 +83,9 @@ interface WorkerOut {
   message?: string;
 }
 
+const TOLERANCE_DEG = 0.5;
+const WINDOW_DAYS = 30;
+
 export default function SolverSearch(): JSX.Element {
   const solver = useStore(solverState);
   const dt = useStore(dateTime);
@@ -105,6 +95,9 @@ export default function SolverSearch(): JSX.Element {
   // the ref, not a stale `accumulated` snapshot).
   const [visible, setVisible] = useState<Date[]>([]);
   const accumulatedRef = useRef<Date[]>([]);
+  // Distinguishes "never searched" from "searched, cancelled" so the idle panel can
+  // say which one it is (T059 — no ambiguous blank state).
+  const [cancelled, setCancelled] = useState(false);
 
   const resetAccumulator = () => {
     accumulatedRef.current = [];
@@ -123,12 +116,27 @@ export default function SolverSearch(): JSX.Element {
     // Tear down any in-flight worker before starting a new one.
     workerRef.current?.terminate();
     resetAccumulator();
+    setCancelled(false);
     solverState.set({ status: 'running', progress: 0, matches: [] });
 
-    const worker = new Worker(
-      new URL('../../workers/solver.worker.ts', import.meta.url),
-      { type: 'module' },
-    );
+    // T059: worker CONSTRUCTION itself can throw (blocked by CSP, module worker
+    // unsupported, chunk 404). Without this the panel would sit at 0% forever.
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL('../../workers/solver.worker.ts', import.meta.url), {
+        type: 'module',
+      });
+    } catch (err) {
+      solverState.set({
+        status: 'error',
+        progress: 0,
+        matches: [],
+        error: `Could not start the solver worker: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      });
+      return;
+    }
     workerRef.current = worker;
 
     worker.onmessage = (ev: MessageEvent<WorkerOut>) => {
@@ -166,7 +174,7 @@ export default function SolverSearch(): JSX.Element {
           status: 'error',
           progress: 0,
           matches: [],
-          error: msg.message ?? 'unknown error',
+          error: msg.message ?? 'The solver worker reported an unspecified failure.',
         });
         worker.terminate();
         workerRef.current = null;
@@ -177,7 +185,21 @@ export default function SolverSearch(): JSX.Element {
         status: 'error',
         progress: 0,
         matches: [],
-        error: e.message || 'worker error',
+        error:
+          e.message ||
+          'The solver worker crashed before reporting a reason (see the browser console).',
+      });
+      worker.terminate();
+      workerRef.current = null;
+    };
+    // A module worker that fails to *resolve* its script emits messageerror/error on
+    // the worker; a failed import surfaces here rather than as onerror in some engines.
+    worker.onmessageerror = () => {
+      solverState.set({
+        status: 'error',
+        progress: 0,
+        matches: [],
+        error: 'The solver worker sent a message that could not be deserialised.',
       });
       worker.terminate();
       workerRef.current = null;
@@ -185,14 +207,14 @@ export default function SolverSearch(): JSX.Element {
 
     const target = computeTargetAzAlt();
     const now = new Date();
-    const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const end = new Date(now.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000);
     worker.postMessage({
       kind: 'start',
       start: now,
       end,
       body: 'moon',
       target,
-      toleranceDeg: 0.5,
+      toleranceDeg: TOLERANCE_DEG,
       lat: OBSERVER_DEFAULT.lat,
       lon: OBSERVER_DEFAULT.lon,
       stepMin: 1,
@@ -205,6 +227,7 @@ export default function SolverSearch(): JSX.Element {
     workerRef.current = null;
     solverState.set({ status: 'idle', progress: 0, matches: [] });
     resetAccumulator();
+    setCancelled(true);
   };
 
   // Click a result: scrub dateTime to that instant (Strategy B: drives the Cesium
@@ -217,133 +240,133 @@ export default function SolverSearch(): JSX.Element {
   const status = solver.status;
   const progressPct = Math.round((solver.progress ?? 0) * 100);
   const list = status === 'done' ? solver.matches : visible;
+  const noMatches = status === 'done' && list.length === 0;
+
+  const headMeta =
+    status === 'running'
+      ? `${progressPct}%`
+      : status === 'done'
+        ? `${list.length} hit${list.length === 1 ? '' : 's'}`
+        : status === 'error'
+          ? 'failed'
+          : 'idle';
 
   return (
-    <div style={PANEL_STYLE} data-testid="solver-search">
-      <div style={{ fontWeight: 700, letterSpacing: 0.4, marginBottom: 4 }}>
-        MOON ALIGNMENT SEARCH
-      </div>
-      <div style={{ opacity: 0.75, marginBottom: 6, lineHeight: 1.4 }}>
-        Target: Fernsehturm from observer
-        <br />
-        az {target.az.toFixed(1)}°, alt {target.alt.toFixed(2)}° · ±0.5°
-        <br />
-        Window: now → +30d, 1-min steps
-      </div>
+    <section className="pv-panel" data-testid="solver-search">
+      <header className="pv-panel__head">
+        <h2 className="pv-panel__title">
+          <span className="pv-panel__index">03</span>Lunar alignment
+        </h2>
+        <span className="pv-panel__meta">{headMeta}</span>
+      </header>
 
-      <div style={{ display: 'flex', gap: 6 }}>
+      <dl className="pv-readout" style={{ marginTop: 0, borderTop: 0, paddingTop: 0 }}>
+        <div className="pv-readout__row">
+          <dt className="pv-label">Azimuth</dt>
+          <dd className="pv-value">{target.az.toFixed(1)}°</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">Altitude</dt>
+          <dd className="pv-value">{target.alt.toFixed(2)}°</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">Tolerance</dt>
+          <dd className="pv-value">± {TOLERANCE_DEG.toFixed(1)}°</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">Window</dt>
+          <dd className="pv-value">now → +{WINDOW_DAYS} d</dd>
+        </div>
+      </dl>
+
+      <div className="pv-btn-row">
         <button
           type="button"
           onClick={start}
           disabled={status === 'running'}
-          style={{
-            flex: 1,
-            padding: '6px 8px',
-            border: '1px solid rgba(0,0,0,0.12)',
-            borderRadius: 4,
-            background: status === 'running' ? '#eee' : '#111',
-            color: status === 'running' ? '#888' : '#fff',
-            cursor: status === 'running' ? 'default' : 'pointer',
-            fontWeight: 600,
-          }}
+          className="pv-btn pv-btn--primary"
         >
-          {status === 'running' ? 'SEARCHING…' : 'SEARCH'}
+          {status === 'running' ? 'SEARCHING' : 'SEARCH'}
         </button>
         {status === 'running' && (
-          <button
-            type="button"
-            onClick={cancel}
-            style={{
-              padding: '6px 8px',
-              border: '1px solid rgba(0,0,0,0.12)',
-              borderRadius: 4,
-              background: '#fff',
-              color: '#a02020',
-              cursor: 'pointer',
-              fontWeight: 600,
-            }}
-          >
-            CANCEL
+          <button type="button" onClick={cancel} className="pv-btn pv-btn--quiet">
+            Cancel
           </button>
         )}
       </div>
 
       {status === 'running' && (
-        <div style={{ marginTop: 8 }}>
-          <div
-            style={{
-              height: 6,
-              background: '#e5e7eb',
-              borderRadius: 3,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                height: '100%',
-                width: `${progressPct}%`,
-                background: '#111',
-                transition: 'width 120ms linear',
-              }}
-            />
+        <div className="pv-meter">
+          <div className="pv-meter__track">
+            <div className="pv-meter__fill" style={{ width: `${progressPct}%` }} />
           </div>
-          <div style={{ fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
-            {progressPct}%
+          <div className="pv-meter__line">
+            <span>Sweeping 1-min steps</span>
+            <span>{progressPct}%</span>
           </div>
+        </div>
+      )}
+
+      {status === 'idle' && (
+        <div className="pv-msg" role="status">
+          <strong className="pv-msg__title">
+            {cancelled ? 'Search cancelled' : 'No search run yet'}
+          </strong>
+          {cancelled
+            ? 'The sweep was stopped before completion, so any partial results were discarded. Run it again to get a full list.'
+            : `Run the sweep to list every instant in the next ${WINDOW_DAYS} days when the moon sits within ±${TOLERANCE_DEG}° of the target bearing.`}
         </div>
       )}
 
       {status === 'error' && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: '6px 8px',
-            borderRadius: 4,
-            background: 'rgba(220,60,60,0.15)',
-            color: '#a02020',
-          }}
-        >
-          ERROR: {solver.error ?? 'unknown'}
+        <div className="pv-msg pv-msg--error" role="alert">
+          <strong className="pv-msg__title">Solver failed</strong>
+          The alignment sweep stopped before it finished, so the result list is not
+          trustworthy. Reload the page and search again.
+          <span className="pv-msg__detail">
+            {solver.error ?? 'No reason was reported by the worker.'}
+          </span>
         </div>
       )}
 
-      {(status === 'done' || (status === 'running' && list.length > 0)) && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>
-            {status === 'done' ? `${solver.matches.length} matches` : `${list.length} so far`}
+      {noMatches && (
+        <div className="pv-msg pv-msg--warn" role="status">
+          <strong className="pv-msg__title">No alignments found</strong>
+          The sweep completed successfully but the moon never came within ±
+          {TOLERANCE_DEG}° of azimuth {target.az.toFixed(1)}° / altitude{' '}
+          {target.alt.toFixed(2)}° during the next {WINDOW_DAYS} days. This is a real
+          result, not an error — try a different target or a later window.
+        </div>
+      )}
+
+      {list.length > 0 && (
+        <>
+          <div className="pv-meter__line" style={{ marginTop: 12 }}>
+            <span>{status === 'done' ? 'Matches' : 'Matches so far'}</span>
+            <span>{list.length}</span>
           </div>
-          <ul
-            style={{
-              listStyle: 'none',
-              padding: 0,
-              margin: 0,
-              maxHeight: 180,
-              overflowY: 'auto',
-              border: '1px solid rgba(0,0,0,0.08)',
-              borderRadius: 4,
-            }}
-          >
+          <ul className="pv-list">
             {list.map((d, i) => {
               const active = d.getTime() === dt.getTime();
               return (
-                <li
-                  key={`${d.getTime()}-${i}`}
-                  style={{
-                    padding: '3px 6px',
-                    cursor: 'pointer',
-                    background: active ? '#fef3c7' : i % 2 ? '#fafafa' : '#fff',
-                    fontVariantNumeric: 'tabular-nums',
-                    borderBottom: '1px solid rgba(0,0,0,0.04)',
-                  }}
-                  onClick={() => chooseMatch(d)}
-                >
-                  {d.toISOString().replace('T', ' ').slice(0, 16)}Z
+                <li key={`${d.getTime()}-${i}`}>
+                  <button
+                    type="button"
+                    className="pv-list__item"
+                    aria-current={active}
+                    onClick={() => chooseMatch(d)}
+                  >
+                    <span className="pv-list__ord">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    {d.toISOString().replace('T', ' ').slice(0, 16)}Z
+                  </button>
                 </li>
               );
             })}
           </ul>
-        </div>
+        </>
       )}
-    </div>
+    </section>
   );
 }

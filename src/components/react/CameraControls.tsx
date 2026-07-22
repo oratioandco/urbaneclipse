@@ -6,49 +6,26 @@
  * via fovToCesium(computeHorizontalFov(sensor, focal*zoom), aspectRatio).
  *
  * Rendered INSIDE the CesiumViewer island so it shares the client:only lifecycle.
+ *
+ * NOTE (headless diagnostic contract): scripts/diagnose.mjs finds the APS-C preset by
+ * matching a <button> whose trimmed textContent is EXACTLY 'APS-C'. Keep the preset
+ * buttons as real <button> elements whose only text is `preset.code` — descriptive
+ * copy lives in the caption line below the segment, never inside the button.
  */
 import { useStore } from '@nanostores/react';
 import { cameraProfile, type CameraProfile } from '../../store.js';
 
-const PANEL_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  top: 220,
-  left: 16,
-  zIndex: 10,
-  padding: '12px 14px',
-  background: 'rgba(255,255,255,0.92)',
-  border: '1px solid rgba(0,0,0,0.08)',
-  borderRadius: 8,
-  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-  fontSize: 12,
-  color: '#111',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-  pointerEvents: 'auto',
-  minWidth: 220,
-};
-
-const ROW_STYLE: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 4,
-  marginTop: 8,
-};
-
-const LABEL_STYLE: React.CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  fontVariantNumeric: 'tabular-nums',
-};
-
 interface SensorPreset {
+  /** The button's entire textContent — see the diagnostic contract note above. */
+  code: string;
   label: string;
   sensorWidth: number; // mm
 }
 
 const SENSOR_PRESETS: SensorPreset[] = [
-  { label: 'Full-frame', sensorWidth: 36 },
-  { label: 'APS-C', sensorWidth: 23.6 },
-  { label: 'Micro 4/3', sensorWidth: 17.3 },
+  { code: 'FF', label: 'Full-frame', sensorWidth: 36 },
+  { code: 'APS-C', label: 'APS-C', sensorWidth: 23.6 },
+  { code: 'M4/3', label: 'Micro 4/3', sensorWidth: 17.3 },
 ];
 
 export default function CameraControls(): JSX.Element {
@@ -64,94 +41,122 @@ export default function CameraControls(): JSX.Element {
   // Horizontal FOV in degrees for display only — the actual radian value is computed
   // in CesiumViewer via computeHorizontalFov/fovToCesium.
   const hfovDeg =
-    2 *
-    (180 / Math.PI) *
-    Math.atan(profile.sensorWidth / (2 * effectiveFocal));
+    2 * (180 / Math.PI) * Math.atan(profile.sensorWidth / (2 * effectiveFocal));
 
   // The currently-active preset (if any) — compare by sensorWidth so a custom slider
   // value still highlights the matching preset.
-  const activePreset = SENSOR_PRESETS.find((p) => p.sensorWidth === profile.sensorWidth);
+  const activePreset = SENSOR_PRESETS.find(
+    (p) => p.sensorWidth === profile.sensorWidth,
+  );
+
+  // Defensive display (T059): a corrupted/persisted profile could yield a
+  // non-finite FOV. Say so rather than printing "NaN°".
+  const fovValid = Number.isFinite(hfovDeg) && hfovDeg > 0;
 
   return (
-    <div style={PANEL_STYLE} data-testid="camera-controls">
-      <div style={{ fontWeight: 700, letterSpacing: 0.4 }}>CAMERA</div>
-
-      <div style={ROW_STYLE}>
-        <span style={{ opacity: 0.7 }}>Sensor</span>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {SENSOR_PRESETS.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              onClick={() => update({ sensorWidth: p.sensorWidth })}
-              style={{
-                flex: 1,
-                padding: '4px 6px',
-                border: '1px solid rgba(0,0,0,0.12)',
-                borderRadius: 4,
-                background:
-                  profile.sensorWidth === p.sensorWidth ? '#111' : '#fff',
-                color: profile.sensorWidth === p.sensorWidth ? '#fff' : '#111',
-                cursor: 'pointer',
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <span style={{ opacity: 0.6, fontVariantNumeric: 'tabular-nums' }}>
-          {activePreset
-            ? `${activePreset.label} · ${profile.sensorWidth} mm`
-            : `Custom · ${profile.sensorWidth.toFixed(1)} mm`}
+    <section className="pv-panel" data-testid="camera-controls">
+      <header className="pv-panel__head">
+        <h2 className="pv-panel__title">
+          <span className="pv-panel__index">02</span>Optics
+        </h2>
+        <span className="pv-panel__meta">
+          {fovValid ? `${hfovDeg.toFixed(2)}° h` : '—'}
         </span>
+      </header>
+
+      <div className="pv-field">
+        <div className="pv-field__line">
+          <span className="pv-label">Sensor</span>
+          <span className="pv-value pv-value--sub">
+            {profile.sensorWidth.toFixed(1)} mm
+          </span>
+        </div>
+        <div className="pv-segment" role="group" aria-label="Sensor format">
+          {SENSOR_PRESETS.map((p) => {
+            const on = profile.sensorWidth === p.sensorWidth;
+            return (
+              <button
+                key={p.code}
+                type="button"
+                aria-pressed={on}
+                title={`${p.label} — ${p.sensorWidth} mm wide`}
+                onClick={() => update({ sensorWidth: p.sensorWidth })}
+                className={`pv-btn${on ? ' pv-btn--on' : ''}`}
+              >
+                {p.code}
+              </button>
+            );
+          })}
+        </div>
+        <p className="pv-note">
+          {activePreset ? activePreset.label : 'Custom format'}
+        </p>
       </div>
 
-      <div style={ROW_STYLE}>
-        <label style={LABEL_STYLE}>
-          <span>Focal length</span>
-          <span>{profile.focalLength} mm</span>
-        </label>
+      <div className="pv-field">
+        <div className="pv-field__line">
+          <span className="pv-label">Focal length</span>
+          <span className="pv-value">{profile.focalLength} mm</span>
+        </div>
         <input
+          className="pv-range"
           type="range"
+          aria-label="Focal length in millimetres"
           min={50}
           max={800}
           step={10}
           value={profile.focalLength}
-          onChange={(e) => update({ focalLength: parseInt(e.currentTarget.value, 10) })}
-          style={{ width: '100%' }}
+          onChange={(e) =>
+            update({ focalLength: parseInt(e.currentTarget.value, 10) })
+          }
         />
+        <div className="pv-scale">
+          <span>50</span>
+          <span>800 mm</span>
+        </div>
       </div>
 
-      <div style={ROW_STYLE}>
-        <label style={LABEL_STYLE}>
-          <span>Zoom</span>
-          <span>{profile.zoom.toFixed(1)}×</span>
-        </label>
+      <div className="pv-field">
+        <div className="pv-field__line">
+          <span className="pv-label">Zoom</span>
+          <span className="pv-value">{profile.zoom.toFixed(1)}×</span>
+        </div>
         <input
+          className="pv-range"
           type="range"
+          aria-label="Zoom multiplier"
           min={1}
           max={4}
           step={0.1}
           value={profile.zoom}
           onChange={(e) => update({ zoom: parseFloat(e.currentTarget.value) })}
-          style={{ width: '100%' }}
         />
+        <div className="pv-scale">
+          <span>1.0×</span>
+          <span>4.0×</span>
+        </div>
       </div>
 
-      <div
-        style={{
-          marginTop: 10,
-          padding: '6px 8px',
-          borderRadius: 4,
-          background: 'rgba(0,0,0,0.04)',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        <div>Effective: {effectiveFocal.toFixed(0)} mm</div>
-        <div>Horizontal FOV: {hfovDeg.toFixed(2)}°</div>
-      </div>
-    </div>
+      <dl className="pv-readout">
+        <div className="pv-readout__row">
+          <dt className="pv-label">Effective</dt>
+          <dd className="pv-value">{effectiveFocal.toFixed(0)} mm</dd>
+        </div>
+        <div className="pv-readout__row">
+          <dt className="pv-label">Horiz. FOV</dt>
+          <dd className="pv-value">
+            {fovValid ? `${hfovDeg.toFixed(2)}°` : 'unavailable'}
+          </dd>
+        </div>
+      </dl>
+
+      {!fovValid && (
+        <div className="pv-msg pv-msg--error" role="alert">
+          <strong className="pv-msg__title">Invalid camera profile</strong>
+          The sensor width and effective focal length must both be positive, so the
+          field of view cannot be derived. Pick a sensor preset to reset the optics.
+        </div>
+      )}
+    </section>
   );
 }

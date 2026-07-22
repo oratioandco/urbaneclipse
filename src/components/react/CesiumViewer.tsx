@@ -29,7 +29,7 @@
  *     otherwise vertical. fovToCesium already returns hfov unchanged for aspect>=1
  *     (the landscape scene case), so we pass its result straight through.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type * as CesiumType from 'cesium';
 // Cesium is served as a UMD GLOBAL (window.Cesium) by vite-plugin-cesium + the
 // /cesium/Cesium.js tag injected in index.astro. We use the global at runtime — NOT
@@ -54,7 +54,7 @@ import {
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
-import ControlPanel from './ControlPanel.js';
+import ControlPanel, { type ScenePhase } from './ControlPanel.js';
 import HourTimeline from './HourTimeline.js';
 import SolverSearch from './SolverSearch.js';
 import CameraControls from './CameraControls.js';
@@ -70,9 +70,21 @@ const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.
 // only consulted before the root content loads.)
 const TILESET_ECEF_CENTER = new Cesium.Cartesian3(3782802.4642903516, 902286.4677665455, 5038573.502874194);
 
+/** How long the scene may stay in a non-ready phase before we warn the user (T059). */
+const SLOW_SCENE_WARNING_MS = 25_000;
+
 export default function CesiumViewer(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
+
+  // --- T059 (FR-013): the island is the only place that knows whether the building
+  // data actually arrived, so it owns the scene phase and hands it to the panels.
+  // 'connecting' -> 'streaming' -> 'ready', or 'error' if the tileset never loads.
+  // NOTE: these are plain React state, NOT store atoms — the store contract
+  // (contracts/store.md) is fixed and must not grow a new atom for this.
+  const [scenePhase, setScenePhase] = useState<ScenePhase>('connecting');
+  const [sceneError, setSceneError] = useState<string | undefined>(undefined);
+  const [sceneSlow, setSceneSlow] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -107,6 +119,24 @@ export default function CesiumViewer(): JSX.Element {
     viewerRef.current = viewer;
     // Track disposal so the async tileset callback can no-op after StrictMode unmount.
     let disposed = false;
+
+    // --- T059 scene-phase plumbing ---------------------------------------------
+    // `phase` mirrors the React state inside the effect closure so the slow-scene
+    // timer can read the CURRENT phase without re-subscribing or re-running the effect.
+    let phase: ScenePhase = 'connecting';
+    const setPhase = (next: ScenePhase, message?: string): void => {
+      if (disposed) return;
+      phase = next;
+      setScenePhase(next);
+      if (message !== undefined) setSceneError(message);
+      if (next === 'ready' || next === 'error') setSceneSlow(false);
+    };
+    // If the tiles have not arrived after a generous window, say so in the UI rather
+    // than leaving the operator staring at an unexplained "UNKNOWN" verdict forever.
+    const slowTimer = window.setTimeout(() => {
+      if (disposed) return;
+      if (phase !== 'ready' && phase !== 'error') setSceneSlow(true);
+    }, SLOW_SCENE_WARNING_MS);
 
     const scene = viewer.scene;
 
@@ -183,6 +213,9 @@ export default function CesiumViewer(): JSX.Element {
       .then((tileset) => {
         if (disposed || viewer.isDestroyed()) return;
         viewer.scene.primitives.add(tileset);
+        // Root metadata resolved: the building data EXISTS. Occlusion is still
+        // undecided until the tile content actually streams (see runWhenLoaded).
+        setPhase('streaming');
         // Uniform matte white geometry — the plaster/clay model look.
         tileset.style = new Cesium.Cesium3DTileStyle({ color: "color('#ffffff')" });
         tileset.shadows = Cesium.ShadowMode.ENABLED;
@@ -241,6 +274,9 @@ export default function CesiumViewer(): JSX.Element {
             result.state;
           // commitOcclusion treats 'occluded' OR 'marginal' as blocked.
           commitOcclusion(result.state === 'occluded' || result.state === 'marginal');
+          // First real occlusion result -> the verdict shown in ControlPanel is now
+          // backed by loaded geometry, so promote the phase out of 'streaming'.
+          setPhase('ready');
         };
 
         // Initial compute: defer until tilesLoaded so we don't read an empty scene.
@@ -285,12 +321,17 @@ export default function CesiumViewer(): JSX.Element {
         if (!disposed) {
           // eslint-disable-next-line no-console
           console.error('[CesiumViewer] failed to load tileset', TILESET_URL, err);
+          // T059 / FR-013: a console.error alone is a SILENT failure to the operator.
+          // Surface the URL and the underlying reason in the panel too.
+          const reason = err instanceof Error ? err.message : String(err);
+          setPhase('error', `${TILESET_URL} — ${reason}`);
         }
       });
 
     // --- Cleanup (React 18/19 StrictMode double-mount safe) --------------------
     return () => {
       disposed = true;
+      window.clearTimeout(slowTimer);
       const v = viewerRef.current;
       if (v && !v.isDestroyed()) {
         // Run any stashed non-Cesium cleanups (store listeners) before destroying.
@@ -313,10 +354,26 @@ export default function CesiumViewer(): JSX.Element {
   return (
     <>
       <div id="cesium-container" ref={containerRef} />
-      <ControlPanel />
-      <HourTimeline />
-      <SolverSearch />
-      <CameraControls />
+      {/* Overlay scaffold (T057): two side rails + a bottom dock. Panels are STATIC
+          children of a flex rail rather than absolutely positioned at hand-tuned
+          `top:` offsets, so their heights compose instead of colliding — legible and
+          non-overlapping at 1280x800 and roomier at 1440x900 (see global.css). */}
+      <div className="pv-overlay">
+        <div className="pv-rail pv-rail--left">
+          <ControlPanel
+            scenePhase={scenePhase}
+            sceneError={sceneError}
+            sceneSlow={sceneSlow}
+          />
+          <CameraControls />
+        </div>
+        <div className="pv-rail pv-rail--right">
+          <SolverSearch />
+        </div>
+        <div className="pv-dock">
+          <HourTimeline />
+        </div>
+      </div>
     </>
   );
 }

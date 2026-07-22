@@ -1,11 +1,666 @@
-/* Tailwind v4 entry — processed by @tailwindcss/vite (see astro.config.mjs). */
+/* Tailwind v4 entry — processed by @tailwindcss/vite (see astro.config.mjs).
+   Tailwind's preflight/utilities live in cascade LAYERS; every rule below this
+   import is UNLAYERED and therefore always wins over a utility of equal
+   specificity. That is intentional: the `pv-*` component classes below are the
+   authoritative art direction, and Tailwind utilities are used only for one-off
+   layout nudges inside the components. */
 @import 'tailwindcss';
 
-/* Plaster-void base: neutral page background behind the Cesium canvas. */
+/* ===========================================================================
+   PLASTER VOID — design tokens
+   ---------------------------------------------------------------------------
+   The scene is a matte-white plaster model in a near-white studio void
+   (#f4f4f4). Overlay chrome therefore cannot be "dark app UI"; it is a sheet
+   of slightly warmer paper laid on the void, separated from it by a hairline
+   rule and one very soft contact shadow. Everything else is typography:
+   uppercase micro-labels, tabular numerals, rules instead of boxes, square
+   corners instead of pills.
+   =========================================================================== */
+:root {
+  --pv-void: #f4f4f4;
+
+  /* Paper surfaces */
+  --pv-paper: rgba(250, 249, 246, 0.94);
+  --pv-paper-solid: #faf9f6;
+  --pv-paper-sunk: rgba(22, 22, 15, 0.045);
+
+  /* Ink ramp */
+  --pv-ink: #16160f;
+  --pv-ink-70: rgba(22, 22, 15, 0.7);
+  --pv-ink-50: rgba(22, 22, 15, 0.5);
+  --pv-ink-34: rgba(22, 22, 15, 0.34);
+
+  /* Hairlines */
+  --pv-rule: rgba(22, 22, 15, 0.13);
+  --pv-rule-strong: rgba(22, 22, 15, 0.3);
+
+  /* Signals — pigment, not neon. Rust for blocked, ochre for indeterminate. */
+  --pv-blocked: #8c2f16;
+  --pv-clear: #2f5136;
+  --pv-warn: #8a6410;
+
+  /* Solar-day band pigments (US4) — flat gouache, no gradients. */
+  --pv-band-golden: #d9a441;
+  --pv-band-blue: #4a6b96;
+  --pv-band-day: #ece4cf;
+  --pv-band-night: #2a2a26;
+
+  --pv-font: ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  /* Rail geometry — tuned so nothing overlaps at 1280x800 and everything still
+     fits inside 800x600 (the headless diagnostic viewport). */
+  --pv-gutter: 16px;
+  --pv-rail-left: 236px;
+  --pv-rail-right: 264px;
+  --pv-dock-height: 136px;
+}
+
 html,
 body,
 :root {
   margin: 0;
   padding: 0;
-  background-color: #f4f4f4;
+  background-color: var(--pv-void);
+}
+
+/* ===========================================================================
+   Overlay scaffold
+   The island renders ONE overlay; panels are static children of a rail so their
+   heights compose instead of colliding at hand-tuned `top:` offsets.
+   =========================================================================== */
+.pv-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  font-family: var(--pv-font);
+  color: var(--pv-ink);
+  font-size: 11px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+.pv-rail {
+  position: absolute;
+  top: 0;
+  bottom: var(--pv-dock-height);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: var(--pv-gutter);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.pv-rail--left {
+  left: 0;
+  width: var(--pv-rail-left);
+}
+
+.pv-rail--right {
+  right: 0;
+  width: var(--pv-rail-right);
+}
+
+.pv-dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 var(--pv-gutter) var(--pv-gutter);
+}
+
+/* Roomier at 1440x900 and up. */
+@media (min-width: 1400px) {
+  :root {
+    --pv-gutter: 24px;
+    --pv-rail-left: 260px;
+    --pv-rail-right: 292px;
+  }
+}
+
+/* ===========================================================================
+   Panel
+   =========================================================================== */
+.pv-panel {
+  pointer-events: auto;
+  position: relative;
+  flex: 0 0 auto;
+  padding: 11px 13px 13px;
+  background: var(--pv-paper);
+  backdrop-filter: blur(8px) saturate(1.04);
+  -webkit-backdrop-filter: blur(8px) saturate(1.04);
+  border: 1px solid var(--pv-rule-strong);
+  border-radius: 0;
+  color: var(--pv-ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  /* One hairline contact shadow — enough separation from the void, no soup. */
+  box-shadow: 0 10px 24px -22px rgba(22, 22, 15, 0.85);
+}
+
+.pv-panel--alert {
+  border-color: var(--pv-blocked);
+  box-shadow: none;
+}
+
+/* Panel header: "01 / LINE OF SIGHT" + optional right-aligned readout. */
+.pv-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--pv-ink);
+}
+
+.pv-panel__index {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--pv-ink-34);
+  margin-right: 7px;
+}
+
+.pv-panel__title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pv-panel__meta {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--pv-ink-50);
+  white-space: nowrap;
+}
+
+/* ===========================================================================
+   Field: micro-label + tabular readout + control
+   =========================================================================== */
+.pv-field + .pv-field {
+  margin-top: 12px;
+}
+
+.pv-field__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pv-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pv-ink-50);
+}
+
+.pv-value {
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  color: var(--pv-ink);
+}
+
+.pv-value--sub {
+  font-size: 10.5px;
+  color: var(--pv-ink-50);
+}
+
+.pv-note {
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--pv-ink-50);
+}
+
+/* Definition list for computed, read-only quantities. */
+.pv-readout {
+  margin-top: 12px;
+  border-top: 1px solid var(--pv-rule);
+  padding-top: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.pv-readout__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ===========================================================================
+   Range input — a surveyor's slide, not a candy pill
+   =========================================================================== */
+.pv-range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin: 8px 0 0;
+  height: 16px;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.pv-range:focus-visible {
+  outline: 1px solid var(--pv-ink);
+  outline-offset: 2px;
+}
+
+.pv-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--pv-rule-strong);
+}
+
+.pv-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 9px;
+  height: 15px;
+  margin-top: -7px;
+  border: 0;
+  border-radius: 0;
+  background: var(--pv-ink);
+}
+
+.pv-range::-moz-range-track {
+  height: 1px;
+  background: var(--pv-rule-strong);
+}
+
+.pv-range::-moz-range-thumb {
+  width: 9px;
+  height: 15px;
+  border: 0;
+  border-radius: 0;
+  background: var(--pv-ink);
+}
+
+/* Min/max scale beneath a slider. */
+.pv-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--pv-ink-34);
+}
+
+/* ===========================================================================
+   Text inputs
+   =========================================================================== */
+.pv-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 6px;
+  font: inherit;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--pv-ink);
+  background: var(--pv-paper-sunk);
+  border: 1px solid var(--pv-rule);
+  border-radius: 0;
+}
+
+.pv-input:focus-visible {
+  outline: none;
+  border-color: var(--pv-ink);
+}
+
+/* ===========================================================================
+   Buttons
+   =========================================================================== */
+.pv-btn {
+  appearance: none;
+  padding: 6px 9px;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pv-ink);
+  background: transparent;
+  border: 1px solid var(--pv-rule-strong);
+  border-radius: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 90ms linear, color 90ms linear;
+}
+
+.pv-btn:hover:not(:disabled) {
+  background: rgba(22, 22, 15, 0.07);
+}
+
+.pv-btn:focus-visible {
+  outline: 1px solid var(--pv-ink);
+  outline-offset: 2px;
+}
+
+.pv-btn--on {
+  color: var(--pv-paper-solid);
+  background: var(--pv-ink);
+  border-color: var(--pv-ink);
+}
+
+.pv-btn--on:hover:not(:disabled) {
+  background: var(--pv-ink);
+}
+
+.pv-btn--primary {
+  flex: 1;
+  color: var(--pv-paper-solid);
+  background: var(--pv-ink);
+  border-color: var(--pv-ink);
+}
+
+.pv-btn--primary:hover:not(:disabled) {
+  background: #000;
+}
+
+.pv-btn--quiet {
+  color: var(--pv-blocked);
+}
+
+.pv-btn:disabled {
+  color: var(--pv-ink-34);
+  background: transparent;
+  border-color: var(--pv-rule);
+  cursor: default;
+}
+
+.pv-btn-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.pv-segment {
+  display: flex;
+  margin-top: 6px;
+}
+
+.pv-segment .pv-btn {
+  flex: 1;
+  padding-left: 4px;
+  padding-right: 4px;
+  letter-spacing: 0.08em;
+}
+
+.pv-segment .pv-btn + .pv-btn {
+  border-left-width: 0;
+}
+
+.pv-segment .pv-btn--on + .pv-btn,
+.pv-segment .pv-btn + .pv-btn--on {
+  border-left-width: 1px;
+}
+
+/* ===========================================================================
+   Status strip — the CLEAR / BLOCKED / UNKNOWN verdict
+   =========================================================================== */
+.pv-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 7px 9px;
+  border: 1px solid var(--pv-rule-strong);
+  background: var(--pv-paper-sunk);
+}
+
+.pv-status__dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  background: currentColor;
+}
+
+.pv-status__text {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.pv-status__hint {
+  margin-left: auto;
+  font-size: 9px;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-align: right;
+  color: var(--pv-ink-50);
+  text-transform: uppercase;
+}
+
+.pv-status--clear {
+  color: var(--pv-clear);
+  border-color: rgba(47, 81, 54, 0.45);
+}
+
+.pv-status--blocked {
+  color: var(--pv-blocked);
+  border-color: rgba(140, 47, 22, 0.5);
+}
+
+.pv-status--unknown {
+  color: var(--pv-warn);
+  border-color: rgba(138, 100, 16, 0.45);
+}
+
+/* ===========================================================================
+   Messages (T059 — every failure gets words on screen)
+   =========================================================================== */
+.pv-msg {
+  margin-top: 10px;
+  padding: 8px 9px;
+  border-left: 2px solid var(--pv-ink-34);
+  background: var(--pv-paper-sunk);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--pv-ink-70);
+}
+
+.pv-msg__title {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pv-ink);
+}
+
+.pv-msg--error {
+  border-left-color: var(--pv-blocked);
+}
+
+.pv-msg--error .pv-msg__title {
+  color: var(--pv-blocked);
+}
+
+.pv-msg--warn {
+  border-left-color: var(--pv-warn);
+}
+
+.pv-msg--warn .pv-msg__title {
+  color: var(--pv-warn);
+}
+
+.pv-msg__detail {
+  display: block;
+  margin-top: 4px;
+  font-size: 9.5px;
+  color: var(--pv-ink-50);
+  word-break: break-word;
+}
+
+/* ===========================================================================
+   Progress meter
+   =========================================================================== */
+.pv-meter {
+  margin-top: 10px;
+}
+
+.pv-meter__track {
+  height: 3px;
+  background: rgba(22, 22, 15, 0.12);
+  overflow: hidden;
+}
+
+.pv-meter__fill {
+  height: 100%;
+  background: var(--pv-ink);
+  transition: width 120ms linear;
+}
+
+.pv-meter__line {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--pv-ink-50);
+}
+
+/* ===========================================================================
+   Result list
+   =========================================================================== */
+.pv-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 30vh;
+  overflow-y: auto;
+  border-top: 1px solid var(--pv-rule);
+}
+
+.pv-list__item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 3px;
+  font-family: inherit;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  color: var(--pv-ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--pv-rule);
+  cursor: pointer;
+}
+
+.pv-list__item:hover {
+  background: rgba(22, 22, 15, 0.06);
+}
+
+.pv-list__item[aria-current='true'] {
+  background: var(--pv-ink);
+  color: var(--pv-paper-solid);
+}
+
+.pv-list__ord {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--pv-ink-34);
+  min-width: 20px;
+}
+
+.pv-list__item[aria-current='true'] .pv-list__ord {
+  color: rgba(250, 249, 246, 0.6);
+}
+
+/* ===========================================================================
+   Solar-day timeline (US4)
+   =========================================================================== */
+.pv-timeline__bar {
+  position: relative;
+  height: 16px;
+  background: rgba(22, 22, 15, 0.08);
+  overflow: hidden;
+  border: 1px solid var(--pv-rule);
+}
+
+.pv-timeline__band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.pv-timeline__marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--pv-ink);
+  transform: translateX(-0.5px);
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(250, 249, 246, 0.75);
+}
+
+.pv-timeline__ticks {
+  position: relative;
+  height: 12px;
+  margin-top: 4px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--pv-ink-34);
+}
+
+.pv-timeline__tick {
+  position: absolute;
+  top: 0;
+}
+
+.pv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--pv-ink-50);
+}
+
+.pv-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pv-legend__swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--pv-rule);
+}
+
+/* ===========================================================================
+   Cesium widget guard — keep Preflight away from the widget DOM.
+   All Cesium chrome is disabled via Viewer options, but if any widget does
+   mount we do not want Tailwind's reset to strip its intrinsic layout.
+   =========================================================================== */
+.cesium-widget,
+.cesium-widget canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cesium-viewer button,
+.cesium-viewer input {
+  font: revert;
+  color: revert;
+  background: revert;
+  border: revert;
 }
