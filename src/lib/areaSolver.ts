@@ -278,6 +278,98 @@ export function findCompositions(req: SearchRequest): Candidate[] {
   return out.slice(0, limit);
 }
 
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/**
+ * Sweep time at a FIXED observer position and classify the occultation at each step.
+ *
+ * This is the "I am standing here, when does it happen?" search, as opposed to
+ * findCompositions' "where do I need to stand?". It replaces the original
+ * bearing-tolerance sweep: matching on "body within +/-0.5 deg of the target bearing" only
+ * means "within roughly one lunar diameter", which finds near misses rather than
+ * compositions. Here the real silhouette is built and the disc's covered AREA measured.
+ */
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    bodyAt,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const when = new Date(t);
+    const body = bodyAt(when);
+
+    // Below the horizon there is nothing to photograph.
+    if (!(body.alt > minAltitudeDeg)) continue;
+
+    const reference = { az: body.az, alt: body.alt };
+    const silhouette = buildSilhouette(observer, landmark, reference);
+    if (silhouette.length < 3) continue;
+
+    const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+    const result = classifyOccultation(discRadius, silhouette);
+    if (!wanted.includes(result.kind)) continue;
+
+    out.push({
+      when,
+      kind: result.kind,
+      coveredFraction: result.coveredFraction,
+      separationDeg: result.separationDeg,
+      bodyAz: body.az,
+      bodyAlt: body.alt,
+    });
+  }
+
+  out.sort((a, b) => {
+    const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+    const d = rank(b.kind) - rank(a.kind);
+    if (d !== 0) return d;
+    if (b.coveredFraction !== a.coveredFraction) return b.coveredFraction - a.coveredFraction;
+    return a.separationDeg - b.separationDeg;
+  });
+
+  return out.slice(0, limit);
+}
+
 /**
  * Report whether the requested composition is possible AT ALL for this landmark and
  * body, independent of date, time or position.
