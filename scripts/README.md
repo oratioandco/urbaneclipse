@@ -274,3 +274,89 @@ are derived from the 1 m airborne-laser DOM1, whose stated accuracy is ±10 cm
 plus whatever the laser hit (railings, vehicles) — the mid-span p05–p95 spread
 was only 0.4 m, so **±0.3 m** is a fair error bar on the deck value.
 
+
+---
+
+## Publishing the full Berlin tileset to Cloudflare R2
+
+The committed `public/berlin-core/` subset (20 tiles, 28 MB) ships inside the Docker
+image. The full city is far too large for that, so it is hosted in object storage and
+streamed — 3D Tiles fetches only what is in view.
+
+### 1. Convert the whole city
+
+```bash
+.venv/bin/python scripts/convert_batch.py --all --out data/berlin-full --progress-every 25
+```
+
+Resumable and idempotent: a tile whose `.b3dm` is newer than its source zip is reused,
+so an interrupted run continues where it left off. Add `--force` to reconvert.
+Produces **924 tiles / 543 MB** from the 925 source zips (one contains no buildings).
+Takes roughly 15-20 minutes. `data/` is gitignored — this output is never committed.
+
+Use `--dry-run` to see the selection without doing work. The default (no `--all`)
+still selects the original 236 central tiles.
+
+### 2. Create the bucket (manual, Cloudflare dashboard)
+
+These steps cannot be automated and must be done once by the account owner:
+
+1. **R2 → Create bucket** (e.g. `urbaneclipse-tiles`). Pick a location hint near your
+   users; select the EU jurisdiction if data residency matters.
+2. **R2 → Manage API tokens → Create API token**, permission **Object Read & Write**,
+   scoped to that bucket. Copy the Access Key ID and Secret Access Key — the secret is
+   shown only once.
+3. Note your **Account ID** from the R2 overview page.
+4. **Enable public access**: either turn on the r2.dev development URL (fine for
+   testing, rate-limited and not for production) or attach a **custom domain** under
+   the bucket's Settings → Public access. A custom domain is strongly preferred — it is
+   CDN-backed and has no rate limit.
+5. **Add a CORS policy** under the bucket's Settings → CORS policy. Cesium fetches
+   tiles with `fetch()` from your app's origin, so without this every tile request
+   fails with an opaque CORS error:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://your-app-domain.example"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag", "Content-Length"],
+    "MaxAgeSeconds": 86400
+  }
+]
+```
+
+Replace `AllowedOrigins` with your real origin(s); add `http://localhost:4321` while
+developing locally.
+
+### 3. Configure credentials
+
+Copy the R2 keys into `.env` (see `.env.example`). `.env` is gitignored — never commit
+it. Real environment variables take precedence over `.env`.
+
+### 4. Upload
+
+```bash
+# Always check first — works with NO credentials:
+.venv/bin/python scripts/upload_tiles.py data/berlin-full --dry-run
+
+# Then publish:
+.venv/bin/python scripts/upload_tiles.py data/berlin-full --prefix berlin-full -j 16
+```
+
+Unchanged objects are skipped by comparing a local checksum against the remote ETag,
+so re-publishing after a partial reconversion only uploads what changed. `.b3dm` files
+get a one-year immutable `Cache-Control` (tile content never mutates under a given
+name); `tileset.json` gets a short TTL so a republish is picked up promptly.
+
+### 5. Point the app at it
+
+Set in the deployment environment (Coolify), **not** in git:
+
+```
+PUBLIC_TILESET_URL=https://<your-r2-domain>/berlin-full/tileset.json
+```
+
+Unset, the app falls back to the committed `/berlin-core/tileset.json`, so a missing
+or broken bucket degrades to the small local subset rather than an empty scene.
