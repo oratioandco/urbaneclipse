@@ -80,17 +80,18 @@ describe('geodesy helpers', () => {
     expect(Math.hypot(x, y, z)).toBeLessThan(6.39e6);
   });
 
-  it('measures the observer-to-tower range as ~3953 m', () => {
-    // Independently measured from the tile geometry during the data audit.
+  it('measures the observer-to-tower range as ~6160 m', () => {
+    // From the CORRECTED Lichtenberger Bruecke coordinate (52.5113, 13.4988). The old
+    // default (52.5106, 13.4652) was not the bridge at all and sat 3953 m out.
     const r = azAltTo(OBSERVER, FERNSEHTURM.lat, FERNSEHTURM.lon, 74.1);
-    expect(r.rangeM).toBeGreaterThan(3800);
-    expect(r.rangeM).toBeLessThan(4100);
+    expect(r.rangeM).toBeGreaterThan(6000);
+    expect(r.rangeM).toBeLessThan(6300);
   });
 
-  it('bears roughly west-north-west toward the tower', () => {
+  it('bears roughly west toward the tower', () => {
     const r = azAltTo(OBSERVER, FERNSEHTURM.lat, FERNSEHTURM.lon, 74.1);
-    expect(r.az).toBeGreaterThan(280);
-    expect(r.az).toBeLessThan(296);
+    expect(r.az).toBeGreaterThan(275);
+    expect(r.az).toBeLessThan(285);
   });
 
   it('tangent-plane projection puts the reference direction at the origin', () => {
@@ -123,19 +124,20 @@ describe('buildSilhouette from the Lichtenberger Bruecke', () => {
     }
   });
 
-  it('spans ~5.3 deg vertically — the tower is far taller than the moon is wide', () => {
+  it('spans ~3.4 deg vertically — the tower is far taller than the moon is wide', () => {
     const ys = poly.map((p) => p.y);
     const span = Math.max(...ys) - Math.min(...ys);
-    // 368 m of structure at ~3953 m ~= 5.3 deg.
-    expect(span).toBeGreaterThan(4.5);
-    expect(span).toBeLessThan(6.0);
+    // 368 m of structure at ~6160 m ~= 3.4 deg.
+    expect(span).toBeGreaterThan(3.0);
+    expect(span).toBeLessThan(4.0);
   });
 
-  it('is at most ~0.47 deg wide at the sphere — comparable to the moon itself', () => {
-    // 32 m at 3953 m ~= 0.464 deg. This is why sphere fidelity decides the product.
+  it('is only ~0.30 deg wide at the sphere — NARROWER than the moon', () => {
+    // 32 m at 6160 m ~= 0.298 deg, against a ~0.52 deg moon. The tower is visibly
+    // slimmer than the disc from here, which is what caps coverage well below 100%.
     const widest = Math.max(...poly.map((p) => Math.abs(p.x))) * 2;
-    expect(widest).toBeGreaterThan(0.4);
-    expect(widest).toBeLessThan(0.55);
+    expect(widest).toBeGreaterThan(0.26);
+    expect(widest).toBeLessThan(0.34);
   });
 
   it('is far narrower at mid-shaft than at the sphere — the LoD2 failure mode', () => {
@@ -152,7 +154,7 @@ describe('buildSilhouette from the Lichtenberger Bruecke', () => {
     const wSphere = widthNear(sphereY);
     const wShaft = widthNear(midShaftY);
 
-    expect(wSphere).toBeGreaterThan(0.4);
+    expect(wSphere).toBeGreaterThan(0.26);
     expect(wShaft).toBeGreaterThan(0);
     expect(wShaft).toBeLessThan(wSphere * 0.6);
   });
@@ -161,19 +163,20 @@ describe('buildSilhouette from the Lichtenberger Bruecke', () => {
 describe('end-to-end urban eclipse classification', () => {
   const moonRadius = angularRadiusDeg(MOON_RADIUS_KM, 384400);
 
-  it('a moon centred on the sphere is ~84% covered but NEVER full from this bridge', () => {
+  it('a moon centred on the sphere is only ~43% covered — NEVER full from this bridge', () => {
     const sphereDir = azAltTo(OBSERVER, FERNSEHTURM.lat, FERNSEHTURM.lon, 74.1 + 213);
     const ref = { az: sphereDir.az, alt: sphereDir.alt };
     const poly = buildSilhouette(OBSERVER, FERNSEHTURM, ref);
     const r = classifyOccultation(moonRadius, poly);
 
     // HARD GEOMETRIC LIMIT, not a modelling shortfall. The tower's widest point is
-    // 32 m, subtending 0.464 deg at 3953 m, while the moon spans ~0.518 deg. The moon is
-    // simply BIGGER than the tower looks from here, so no date or time can produce a
-    // full occultation from the Lichtenberger Bruecke — the best possible is a partial.
+    // 32 m, subtending just 0.298 deg at 6160 m, while the moon spans ~0.518 deg. The moon
+    // is substantially BIGGER than the tower looks from here, so no date or time can
+    // produce a full occultation from the Lichtenberger Bruecke — the best achievable
+    // is a partial with the disc protruding on both sides.
     expect(r.kind).toBe('partial');
-    expect(r.coveredFraction).toBeGreaterThan(0.8);
-    expect(r.coveredFraction).toBeLessThan(0.9);
+    expect(r.coveredFraction).toBeGreaterThan(0.35);
+    expect(r.coveredFraction).toBeLessThan(0.5);
   });
 
   it('quantifies how much closer you must stand for a FULL occultation', () => {
