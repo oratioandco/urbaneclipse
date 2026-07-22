@@ -57,7 +57,9 @@ export type ViewMode = 'map' | 'preview';
  *  see is always the body the results describe. */
 export type SolverBody = 'sun' | 'moon';
 export const solverBody = atom<SolverBody>('sun');
-export const viewMode = atom<ViewMode>('preview');
+// Default to MAP: the map-first workflow starts here, and a top-down overview is the
+// least ambiguous confirmation that geometry is rendering. Preview is one click away.
+export const viewMode = atom<ViewMode>('map');
 
 /** What a click in MAP mode places. 'none' disables picking so the map can be panned. */
 export type PickMode = 'none' | 'observer' | 'target' | 'area';

@@ -246,7 +246,11 @@ export default function CesiumViewer(): JSX.Element {
     // (the only case this plaster-void viewport exercises), so we assign it directly.
     // The frustum is replaced in-place: viewer.camera.frustum is always a
     // PerspectiveFrustum by default (no orthographic switch in this app).
-    const applyCamera = () => {
+    // The telephoto FOV is the PREVIEW shot's lens. It must NOT be applied in map
+    // mode: fitting the whole city through a 3.4-degree pinhole is what parked the camera
+    // ~1100 km away and left the scene an empty white void. The lens only means
+    // something when you are actually framing the shot.
+    const applyPreviewFov = () => {
       if (disposed || viewer.isDestroyed()) return;
       const { sensorWidth, focalLength, zoom } = cameraProfile.get();
       const canvas = viewer.canvas as HTMLCanvasElement;
@@ -258,7 +262,12 @@ export default function CesiumViewer(): JSX.Element {
       frustum.aspectRatio = aspectRatio;
       viewer.scene.requestRender();
     };
-    applyCamera();
+    /** Wide overview lens for map mode. */
+    const MAP_FOV_RAD = Cesium.Math.toRadians(60);
+    const applyCamera = () => {
+      // Changing the lens only re-frames when we are IN the preview shot.
+      if (viewMode.get() === 'preview') applyPreviewFov();
+    };
     const unsubCamera = cameraProfile.listen(applyCamera);
 
     // --- Plaster post-process (US2) --------------------------------------------
@@ -266,7 +275,8 @@ export default function CesiumViewer(): JSX.Element {
     // depthTestAgainstTerrain MUST stay true (set above): the shader reads the depth
     // texture to separate geometry from the void, and that depth is only populated
     // correctly when the globe is part of the depth test.
-    scene.postProcessStages.add(createStudioEnvironmentStage(Cesium));
+    const studioStage = createStudioEnvironmentStage(Cesium);
+    scene.postProcessStages.add(studioStage);
 
     // --- Local self-hosted tileset ---------------------------------------------
     // Cesium3DTileset.fromUrl is the non-deprecated factory (the ctor is deprecated
@@ -292,13 +302,12 @@ export default function CesiumViewer(): JSX.Element {
           postProcessStages: scene.postProcessStages,
         };
 
-        // --- Camera: frame the tileset robustly ----------------------------------
-        // viewer.zoomTo flies the camera to optimally view the tileset's bounding volume,
-        // GUARANTEEING the frustum contains it so Cesium selects the root tile and fetches
-        // its content (tile.b3dm). Replaces fragile hand-rolled ECEF->carto camera math
-        // (which placed the camera outside the frustum and silently culled the tileset).
-        // Oblique pitch (-35deg) for the studio architectural-model look.
-        void viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-35), 0));
+        // --- Camera: framed by applyViewMode() on init (see below) ---------------
+        // NOT viewer.zoomTo(tileset): the camera FOV is the 3.4-degree telephoto lens, and
+        // fitting the 28 km-wide city into that pinhole parks the camera ~1100 km up,
+        // leaving an empty white void (only the depth-test-disabled markers show). The
+        // scene is framed per view mode instead — a top-down map or the preview shot —
+        // both at sane distances that actually load and render tiles.
 
         // --- US1 line-of-sight occlusion ----------------------------------------
         // Time-independent (see store.ts invariant): never recompute on dateTime.
@@ -471,7 +480,9 @@ export default function CesiumViewer(): JSX.Element {
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
         // --- View mode ------------------------------------------------------------
-        const applyViewMode = () => {
+        const frustumOf = () => viewer.camera.frustum as CesiumType.PerspectiveFrustum;
+
+        const applyViewMode = (durationSec = 1.2) => {
           if (disposed || viewer.isDestroyed()) return;
           const sample = groundSamplerRef.current ?? (() => undefined);
           const obsPos = observerPosition.get();
@@ -479,10 +490,19 @@ export default function CesiumViewer(): JSX.Element {
           const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
 
           if (viewMode.get() === 'map') {
-            flyToMapView(viewer, obsPos, tgtPos);
+            // MAP: a wide overview lens, and the studio haze OFF. The haze fades
+            // geometry to white by ~8 km of eye-space distance — perfect for the
+            // ground-level shot, but from a map viewpoint km overhead it would white
+            // out the entire city. A map wants crisp geometry anyway.
+            frustumOf().fov = MAP_FOV_RAD;
+            studioStage.enabled = false;
+            flyToMapView(viewer, obsPos, tgtPos, durationSec);
             return;
           }
 
+          // PREVIEW: the telephoto lens and the haze, i.e. the actual photograph.
+          applyPreviewFov();
+          studioStage.enabled = true;
           const obs = resolveObserverHeight(
             obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
           );
@@ -493,8 +513,12 @@ export default function CesiumViewer(): JSX.Element {
             viewer,
             { lat: obsPos.lat, lon: obsPos.lon, ellipsoidalHeight: obs.ellipsoidalHeight },
             { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: tgt.ellipsoidalHeight },
+            durationSec,
           );
         };
+        // Frame the scene NOW that the tileset exists. Instant (duration 0) so tiles
+        // begin streaming at the destination immediately rather than after a 1.2 s fly.
+        applyViewMode(0);
 
         // --- Celestial disc -------------------------------------------------------
         // Drawn from suncalc (the SAME ephemeris the solver uses), not Cesium's own
