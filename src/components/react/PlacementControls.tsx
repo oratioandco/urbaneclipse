@@ -21,7 +21,7 @@ import {
   AREA_RADIUS_MAX_M,
   type PickMode,
 } from '../../store.js';
-import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
+import { VIEWPOINTS, DEFAULT_VIEWPOINT } from '../../lib/viewpoints.js';
 import { TARGET_DEFAULT } from '../../lib/berlin.js';
 
 export interface PlacementControlsProps {
@@ -54,19 +54,20 @@ export default function PlacementControls({
     pickMode.set(pickMode.get() === which ? 'none' : which);
   };
 
+  const selectViewpoint = (id: string): void => {
+    const vp = VIEWPOINTS.find((v) => v.id === id);
+    if (!vp) return;
+    setObserverPosition({ lat: vp.lat, lon: vp.lon, viewpointId: vp.id, label: vp.name });
+    pickMode.set('none');
+  };
+
   const reset = (): void => {
-    setObserverPosition({
-      lat: LICHTENBERGER_BRUECKE.lat,
-      lon: LICHTENBERGER_BRUECKE.lon,
-      viewpointId: LICHTENBERGER_BRUECKE.id,
-      label: LICHTENBERGER_BRUECKE.name,
-    });
+    selectViewpoint(DEFAULT_VIEWPOINT.id);
     setTargetPosition({
       lat: TARGET_DEFAULT.lat,
       lon: TARGET_DEFAULT.lon,
       label: 'Berliner Fernsehturm',
     });
-    pickMode.set('none');
   };
 
   const fmt = (p: { lat: number; lon: number }) =>
@@ -129,6 +130,27 @@ export default function PlacementControls({
           <dd className="pv-value">{fmt(tgt)}</dd>
         </div>
       </dl>
+
+      {/* Curated clean-sightline viewpoints — the quickest way to a good shot, and how
+          you "jump to" a spot the solver found. */}
+      <div className="pv-field">
+        <div className="pv-field__line">
+          <span className="pv-label">Viewpoint</span>
+        </div>
+        <select
+          className="pv-select"
+          aria-label="Camera viewpoint"
+          value={obs.viewpointId ?? ''}
+          onChange={(e) => selectViewpoint(e.currentTarget.value)}
+        >
+          {obs.viewpointId === undefined && <option value="">Custom (placed)</option>}
+          {VIEWPOINTS.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="pv-btn-row">
         <button
@@ -199,7 +221,7 @@ export default function PlacementControls({
 
       <div className="pv-btn-row">
         <button type="button" onClick={reset} className="pv-btn pv-btn--quiet">
-          Reset to Brücke → Turm
+          Reset viewpoint & target
         </button>
       </div>
 

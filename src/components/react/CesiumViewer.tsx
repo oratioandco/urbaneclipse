@@ -548,6 +548,22 @@ export default function CesiumViewer(): JSX.Element {
             { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: aimEll },
             durationSec,
           );
+
+          // AUTO-FIT the lens to the target so it frames well from ANY distance: an
+          // extreme telephoto that suits a 6 km shot massively overfills the same tower
+          // from 1.3 km. Set the horizontal FOV to span the target's angular height with
+          // margin (landscape frame → frustum.fov is horizontal; the tower is vertical,
+          // so scale by aspect). Clamped to a sane telephoto-to-short range. The camera
+          // panel still overrides this the moment the user picks a specific lens.
+          const rangeToTarget = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, aimEll).rangeM;
+          const targetSpanM = targetHeight.get();
+          const angularHeightDeg =
+            (Math.atan2(targetSpanM, Math.max(rangeToTarget, 1)) * 180) / Math.PI;
+          const canvas = viewer.canvas as HTMLCanvasElement;
+          const aspect =
+            canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1.6;
+          const fitHfovDeg = Math.min(45, Math.max(2, angularHeightDeg * 1.35 * aspect));
+          frustumOf().fov = Cesium.Math.toRadians(fitHfovDeg);
         };
         // Frame the scene NOW that the tileset exists. Instant (duration 0) so tiles
         // begin streaming at the destination immediately rather than after a 1.2 s fly.

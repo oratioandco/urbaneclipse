@@ -65,7 +65,53 @@ export const LICHTENBERGER_BRUECKE: Viewpoint = {
     'published. Coordinate corrected from (52.5106, 13.4652), which is not the bridge.',
 };
 
-export const VIEWPOINTS: readonly Viewpoint[] = [LICHTENBERGER_BRUECKE];
+/**
+ * Karl-Marx-Allee at Strausberger Platz. A grand, wide boulevard plaza with an
+ * unobstructed corridor sightline WNW to the Fernsehturm ~1.3 km away — verified clear
+ * against the LoD2 geometry by ray-casting. This is the SHOWCASE default: a clean shot
+ * of the tower, unlike the Lichtenberger Brücke, whose low sightline is blocked by
+ * intervening buildings at a sun transit.
+ *
+ * Street-level, so no surface override — the DGM1 terrain gives the ground elevation.
+ */
+export const STRAUSBERGER_PLATZ: Viewpoint = {
+  id: 'strausberger-platz',
+  name: 'Strausberger Platz',
+  lat: 52.5182,
+  lon: 13.4285,
+  kind: 'ground',
+  source: 'Karl-Marx-Allee boulevard plaza; clean corridor sightline to the tower.',
+};
+
+/** Weberwiese, further down Karl-Marx-Allee (~1.9 km). Also a clear corridor view. */
+export const WEBERWIESE: Viewpoint = {
+  id: 'weberwiese',
+  name: 'Weberwiese',
+  lat: 52.517,
+  lon: 13.436,
+  kind: 'ground',
+  source: 'Karl-Marx-Allee; clean corridor sightline to the tower.',
+};
+
+/** Alexanderplatz east side (~0.5 km) — the tower looms large. Clear sightline. */
+export const ALEXANDERPLATZ: Viewpoint = {
+  id: 'alexanderplatz',
+  name: 'Alexanderplatz',
+  lat: 52.5205,
+  lon: 13.416,
+  kind: 'ground',
+  source: 'Alexanderplatz; close, unobstructed view of the tower.',
+};
+
+export const VIEWPOINTS: readonly Viewpoint[] = [
+  STRAUSBERGER_PLATZ,
+  WEBERWIESE,
+  ALEXANDERPLATZ,
+  LICHTENBERGER_BRUECKE,
+];
+
+/** The showcase default: a clean, corridor sightline to the tower. */
+export const DEFAULT_VIEWPOINT = STRAUSBERGER_PLATZ;
 
 /** Look up a curated viewpoint by id. */
 export function findViewpoint(id: string): Viewpoint | undefined {

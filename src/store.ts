@@ -107,11 +107,15 @@ export function setSearchArea(area: SearchArea | null): boolean {
 }
 export const pickMode = atom<PickMode>('none');
 
+// Default observer: the showcase viewpoint (Strausberger Platz on Karl-Marx-Allee),
+// which has a verified clear corridor sightline to the tower — so the app opens on a
+// clean shot. The Lichtenberger Brücke (the user's original scenario) is selectable
+// but its low sightline is blocked at a sun transit; see src/lib/viewpoints.ts.
 export const observerPosition = atom<ScenePosition>({
-  lat: 52.5113,
-  lon: 13.4988,
-  viewpointId: 'lichtenberger-bruecke',
-  label: 'Lichtenberger Brücke',
+  lat: 52.5182,
+  lon: 13.4285,
+  viewpointId: 'strausberger-platz',
+  label: 'Strausberger Platz',
 });
 
 export const targetPosition = atom<ScenePosition>({

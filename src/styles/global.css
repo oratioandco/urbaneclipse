@@ -674,3 +674,19 @@ body,
   color: var(--pv-ink-3, #6b6b6b);
   letter-spacing: 0.02em;
 }
+
+/* Viewpoint dropdown — matches the hairline field aesthetic. */
+.pv-select {
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  color: var(--pv-ink, #111);
+  background: var(--pv-paper, #faf9f6);
+  border: 1px solid var(--pv-rule, rgba(0,0,0,0.18));
+  border-radius: 0;
+  padding: 5px 7px;
+  margin-top: 3px;
+  appearance: none;
+  cursor: pointer;
+}
+.pv-select:focus { outline: 1px solid var(--pv-ink, #111); outline-offset: -1px; }
