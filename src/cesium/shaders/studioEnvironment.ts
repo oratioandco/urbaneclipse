@@ -55,8 +55,8 @@ export interface StudioEnvironmentOptions {
  *  HORIZON tint; the sky darkens/cools toward the top via the `u_skyTop` uniform, and
  *  a warm sun/moon bloom is added around `u_sunUv`. */
 const DEFAULTS = {
-  fogStart: 2000,
-  fogEnd: 16000,
+  fogStart: 8000,
+  fogEnd: 24000,
   hazeColor: [0.96, 0.94, 0.9] as [number, number, number],
   grainAmount: 0.02,
 };

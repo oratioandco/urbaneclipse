@@ -79,6 +79,10 @@ import {
   TARGET_MARKER_ID,
 } from '../../cesium/placement.js';
 import { findViewpoint } from '../../lib/viewpoints.js';
+import { buildLandmarkPrimitive } from '../../cesium/landmarkModel.js';
+import { sampleBody } from '../../lib/bodyPosition.js';
+import { azAltTo } from '../../lib/silhouette.js';
+import { FERNSEHTURM } from '../../lib/landmarks.js';
 import {
   upsertCelestialDisc,
   removeCelestialDisc,
@@ -512,19 +516,53 @@ export default function CesiumViewer(): JSX.Element {
           const obs = resolveObserverHeight(
             obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
           );
-          const tgt = resolveTargetHeight(
+
+          // AIM at the celestial body's height on the target, not the target's tip.
+          // At a transit the sun/moon sits partway up the tower; aiming at the tip
+          // pushes the disc — and the occultation, the whole point — to the frame edge.
+          // Compute the height on the target where the body's line of sight crosses it,
+          // and centre there so the eclipse lands mid-frame. Fall back to the tower top
+          // when the body is down.
+          const observerGeo = {
+            lat: obsPos.lat,
+            lon: obsPos.lon,
+            ellipsoidalHeight: obs.ellipsoidalHeight,
+          };
+          const tgtTopEll = resolveTargetHeight(
             tgtPos.lat, tgtPos.lon, targetHeight.get(), sample,
-          );
+          ).ellipsoidalHeight;
+
+          const bodySample = sampleBody(solverBody.get(), dateTime.get(), obsPos.lat, obsPos.lon);
+          let aimEll = tgtTopEll;
+          if (bodySample.alt > 0) {
+            const range = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, tgtTopEll).rangeM;
+            const heightAtBody =
+              obs.ellipsoidalHeight + range * Math.tan((bodySample.alt * Math.PI) / 180);
+            // Clamp within the target so we never aim at sky above the tip or below base.
+            aimEll = Math.min(tgtTopEll, Math.max(obs.ellipsoidalHeight + 5, heightAtBody));
+          }
+
           flyToPreview(
             viewer,
-            { lat: obsPos.lat, lon: obsPos.lon, ellipsoidalHeight: obs.ellipsoidalHeight },
-            { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: tgt.ellipsoidalHeight },
+            observerGeo,
+            { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: aimEll },
             durationSec,
           );
         };
         // Frame the scene NOW that the tileset exists. Instant (duration 0) so tiles
         // begin streaming at the destination immediately rather than after a 1.2 s fly.
         applyViewMode(0);
+
+        // --- Parametric Fernsehturm silhouette -----------------------------------
+        // The LoD2 tile tower is unusable (prism, no sphere, 114 m short). Draw the
+        // accurate solid-of-revolution the solver uses, so the preview shows the iconic
+        // silhouette where the maths says it is — and it occludes the celestial disc,
+        // which IS the urban eclipse. Depth-tested, so foreground buildings occlude it.
+        try {
+          scene.primitives.add(buildLandmarkPrimitive(FERNSEHTURM));
+        } catch (err) {
+          console.error('[CesiumViewer] landmark model failed', err);
+        }
 
         // --- Celestial disc -------------------------------------------------------
         // Drawn from suncalc (the SAME ephemeris the solver uses), not Cesium's own
@@ -624,7 +662,12 @@ export default function CesiumViewer(): JSX.Element {
         const unsubArea = searchArea.listen(applyArea);
         applyArea();
 
-        const unsubDiscTime = dateTime.listen(applyDisc);
+        const unsubDiscTime = dateTime.listen(() => {
+          applyDisc();
+          // Re-aim the preview as the clock scrubs: the sun/moon moves up the tower, so
+          // the eclipse centre moves. Instant re-frame (duration 0) keeps it snappy.
+          if (viewMode.get() === 'preview') applyViewMode(0);
+        });
         const unsubDiscBody = solverBody.listen(applyDisc);
         applyDisc();
 
