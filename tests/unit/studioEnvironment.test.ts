@@ -15,25 +15,21 @@ const moduleSource = readFileSync(
   'utf8',
 );
 
-describe('isBackgroundDepth (epsilon background test, fix #3)', () => {
-  // Implements `depth > 0.9999` (strict). With logarithmicDepthBuffer=true,
-  // distant ~5.5km geometry samples arbitrarily close to 1.0, so we never
-  // compare `== 1.0` — we branch on this epsilon instead.
-  it('returns false for foreground / clearly-below-epsilon depths', () => {
+describe('isBackgroundDepth (exact cleared-depth test, fix #3 revised)', () => {
+  // The depth buffer is cleared to exactly 1.0 and no geometry in this scene can
+  // write exactly 1.0 (hyperbolic: ~50 km content tops out at ~0.999998; log-depth:
+  // only geometry beyond ~9,999 km quantises to 1.0). The old 0.9999 epsilon ate all
+  // geometry beyond ~1 km because the post-process depth texture arrives hyperbolic
+  // (near=0.1, far=1e10) — the tower and the disc vanished into the sky.
+  it('returns false for real geometry at any distance', () => {
     expect(isBackgroundDepth(0.5)).toBe(false);
-    expect(isBackgroundDepth(0.9998)).toBe(false);
-  });
-
-  it('returns true above the 0.9999 epsilon and at exactly 1.0', () => {
-    expect(isBackgroundDepth(0.99995)).toBe(true);
-    expect(isBackgroundDepth(1.0)).toBe(true);
-  });
-
-  it('treats the threshold value itself as foreground (strict >)', () => {
-    // 0.9999 is the boundary; strict `>` means the exact cutoff is NOT background.
     expect(isBackgroundDepth(0.9999)).toBe(false);
-    // One representable step above crosses into background.
-    expect(isBackgroundDepth(0.99991)).toBe(true);
+    expect(isBackgroundDepth(0.99999)).toBe(false);
+    expect(isBackgroundDepth(0.999998)).toBe(false); // the ~50 km sky-direction content
+  });
+
+  it('returns true only at exactly the cleared depth 1.0', () => {
+    expect(isBackgroundDepth(1.0)).toBe(true);
   });
 });
 
@@ -83,13 +79,16 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
     });
   });
 
-  // ---- Rule 3: background via epsilon, NEVER depth == 1.0. ----
-  describe('rule 3: background via epsilon (depth > 0.9999), never == 1.0', () => {
-    it('branches on the epsilon comparison depth > 0.9999', () => {
-      expect(src).toContain('depth > 0.9999');
+  // ---- Rule 3: background via EXACT cleared depth (depth >= 1.0). ----
+  describe('rule 3: background via exact cleared depth (depth >= 1.0)', () => {
+    it('branches on the exact cleared-depth comparison depth >= 1.0', () => {
+      expect(src).toContain('depth >= 1.0');
     });
-    it('never compares depth == 1.0', () => {
-      expect(src).not.toMatch(/depth\s*==\s*1\.0/);
+    it('never uses the city-eating 0.9999 epsilon comparison', () => {
+      // With the hyperbolic depth texture this scene produces (near=0.1, far=1e10),
+      // everything beyond ~1 km reads above 0.9999 and would be painted as sky.
+      // (Comments may cite the value; the COMPARISON must be gone.)
+      expect(src).not.toMatch(/depth\s*>\s*0\.9999/);
     });
   });
 
@@ -136,16 +135,34 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       const custom = buildStudioEnvironmentShaderSource({
         fogStart: 1234,
         fogEnd: 5678,
-        hazeColor: [0.1, 0.2, 0.3],
         grainAmount: 0.07,
       });
       expect(custom).toContain('1234.0');
       expect(custom).toContain('5678.0');
-      expect(custom).toContain('vec3(0.1, 0.2, 0.3)');
       expect(custom).toContain('0.07');
       // The 4 invariant rules still hold on a customized source.
-      expect(custom).toContain('depth > 0.9999');
+      expect(custom).toContain('depth >= 1.0');
       expect(custom).toContain('smoothstep(fogStart, fogEnd, dist)');
+    });
+
+    it('reads the haze colour from the u_haze uniform (time-of-day palette), not a baked literal', () => {
+      const srcNow = buildStudioEnvironmentShaderSource();
+      expect(srcNow).toContain('uniform vec3 u_haze');
+      expect(srcNow).toContain('vec3 hazeColor = u_haze');
+      expect(srcNow).not.toMatch(/const vec3 c_haze/);
+    });
+
+    it('draws the disc on background pixels from u_sunUv/u_sunRadius/u_discColor', () => {
+      // The disc lives in the shader so city geometry occults it per-pixel and the
+      // fog ramp can never haze it out (a 50 km billboard had both problems).
+      expect(src).toContain('uniform float u_sunRadius');
+      expect(src).toContain('uniform vec3 u_discColor');
+      expect(src).toContain('smoothstep(u_sunRadius - soft, u_sunRadius + soft, r)');
+    });
+
+    it('dims geometry via the u_sceneTint uniform (night/golden-hour without usable normals)', () => {
+      expect(src).toContain('uniform vec3 u_sceneTint');
+      expect(src).toContain('color.rgb * u_sceneTint');
     });
 
     it('works with no opts (sensible plaster-void defaults)', () => {

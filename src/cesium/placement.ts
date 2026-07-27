@@ -1,10 +1,9 @@
 /**
- * Map-first placement: picking positions off the scene, and the two camera framings.
+ * Placement helpers for the 3D scene: the preview camera framing and the placement
+ * marker entities.
  *
- * THE PLASTER MODEL IS THE MAP. There is no external tile provider, no second
- * rendering library and no third-party request — MAP mode is simply a top-down view of
- * the same 924-tile Berlin model the occlusion and silhouette maths already use, so
- * what you click is exactly what the solver reasons about.
+ * The PLANNING map is 2D (Leaflet, src/components/react/PlanningMap.tsx) — picking and
+ * top-down framing live there. This module keeps only what the 3D preview still uses.
  *
  * Cesium-touching adapter code (Constitution Principle I): the geometry it depends on
  * lives in pure modules under src/lib.
@@ -14,55 +13,19 @@ import { greatCircleBearing } from '../lib/sceneMath.js';
 
 const Cesium = (window as unknown as { Cesium: typeof CesiumType }).Cesium;
 
-const DEG = 180 / Math.PI;
-
 export interface PickedPosition {
   lat: number;
   lon: number;
 }
 
 /**
- * Convert a screen click into a geographic position.
+ * MAP-mode camera: straight down, centred between observer and target.
  *
- * Tries scene.pickPosition first (real depth against buildings and terrain), then
- * falls back to the ellipsoid. Returns undefined when the ray hits nothing — the
- * caller must treat that as "no pick", never as a coordinate, because an unchecked
- * miss yields NaN or a point on the far side of the globe.
- */
-export function pickGeographic(
-  viewer: CesiumType.Viewer,
-  windowPosition: CesiumType.Cartesian2,
-): PickedPosition | undefined {
-  const scene = viewer.scene;
-  let cartesian: CesiumType.Cartesian3 | undefined;
-
-  // pickPosition needs a depth texture; guard rather than throw on weak GPUs.
-  if (scene.pickPositionSupported) {
-    cartesian = scene.pickPosition(windowPosition);
-  }
-
-  if (!Cesium.defined(cartesian)) {
-    cartesian = viewer.camera.pickEllipsoid(windowPosition, Cesium.Ellipsoid.WGS84);
-  }
-
-  if (!Cesium.defined(cartesian)) return undefined;
-
-  const carto = Cesium.Cartographic.fromCartesian(cartesian);
-  if (!Cesium.defined(carto)) return undefined;
-
-  const lat = carto.latitude * DEG;
-  const lon = carto.longitude * DEG;
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return undefined;
-
-  return { lat, lon };
-}
-
-/**
- * MAP framing: look straight down, centred between observer and target, high enough
- * that both are comfortably in view.
- *
- * Altitude is derived from their separation rather than fixed, so the framing works
- * for a 500 m shot and a 15 km one alike.
+ * The user never SEES this framing — the 2D Leaflet planning map covers the canvas in
+ * map mode. It exists purely so the Cesium camera sits near the city, which is what
+ * drives tile streaming; the occlusion ray-picks can only classify against tiles that
+ * actually loaded. Altitude derives from the observer–target separation so the
+ * sightline's tiles stream for a 500 m shot and a 15 km one alike.
  */
 export function flyToMapView(
   viewer: CesiumType.Viewer,

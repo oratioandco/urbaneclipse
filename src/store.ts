@@ -182,6 +182,23 @@ export const cameraProfile = atom<CameraProfile>({
   zoom: 1,
 });
 
+/**
+ * Whether the preview lens is AUTO-FITTED to frame the target (true) or follows the
+ * authored `cameraProfile` (false). Default true: the shot frames itself sensibly from
+ * any observer distance. Touching the optics panel flips this to false via
+ * `setCameraProfile`, so the authored lens and the auto-fit can never fight over the
+ * frustum; the panel's AUTO button flips it back.
+ */
+export const lensAutoFit = atom<boolean>(true);
+
+/** SOLE intended writer for cameraProfile from UI: records that the user has authored
+ *  a lens, which opts the preview out of auto-framing. Direct cameraProfile.set() from
+ *  non-UI code (e.g. tests, rehydration) does not. */
+export function setCameraProfile(p: CameraProfile): void {
+  cameraProfile.set(p);
+  lensAutoFit.set(false);
+}
+
 // --- US5 solver state -------------------------------------------------------
 // Worker -> store handshake. Status transitions:
 //   idle -> running (search started) -> done|error (terminal)

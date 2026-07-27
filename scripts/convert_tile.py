@@ -128,6 +128,54 @@ def to_ecef(verts_utm: np.ndarray) -> np.ndarray:
     return np.column_stack([np.asarray(xs), np.asarray(ys), np.asarray(zs)])
 
 
+def flat_normals(verts: np.ndarray, tris: np.ndarray) -> np.ndarray:
+    """Per-vertex normals for flat (faceted) clay shading.
+
+    The CityGML mesh carries NO normals and the baked clay material
+    (metallic=0, roughness=1) cannot be lit per-face without them — without
+    normals Cesium renders every facade as the same flat white, so the preview
+    reads as a washed-out plane rather than a clay architectural model.
+
+    Computed in the SAME space as ``verts`` (RTC ECEF here): each triangle's
+    face normal is the normalised cross product of two edges, accumulated
+    (area-weighted, since the un-normalised cross magnitude is 2*area) onto its
+    three vertices with ``np.add.at``. Vertices shared between coplanar CityGML
+    surfaces keep one normal; vertices shared across non-coplanar surfaces get
+    the area-weighted average — the rough=1 clay material then shades each
+    facade/roof by its true orientation. Degenerate (zero-area) triangles
+    contribute nothing; vertices touched only by degenerate triangles fall back
+    to the local ECEF "up" (their own normalised RTC position), which for a
+    Berlin tile is within a few degrees of geodetic up.
+    """
+    if tris.size == 0:
+        return np.tile(np.array([0.0, 0.0, 1.0], np.float32), (verts.shape[0], 1))
+
+    v0 = verts[tris[:, 0]]
+    v1 = verts[tris[:, 1]]
+    v2 = verts[tris[:, 2]]
+    face = np.cross(v1 - v0, v2 - v0)  # magnitude = 2 * triangle area
+    face_len = np.linalg.norm(face, axis=1)
+    valid = face_len > 0
+    face_unit = np.zeros_like(face)
+    face_unit[valid] = face[valid] / face_len[valid, None]
+
+    normals = np.zeros((verts.shape[0], 3), dtype=np.float64)
+    for i in range(3):
+        np.add.at(normals, tris[:, i], face_unit)
+
+    nlen = np.linalg.norm(normals, axis=1)
+    has = nlen > 0
+    out = np.zeros_like(normals)
+    out[has] = normals[has] / nlen[has, None]
+    # Degenerate-only vertices: fall back to local ECEF up (normalised RTC pos).
+    if (~has).any():
+        fallback = verts[~has].astype(np.float64)
+        fl = np.linalg.norm(fallback, axis=1, keepdims=True)
+        fl[fl == 0] = 1.0
+        out[~has] = fallback / fl
+    return out.astype(np.float32)
+
+
 def build_white_material() -> pygltflib.Material:
     return pygltflib.Material(
         pbrMetallicRoughness=pygltflib.PbrMetallicRoughness(
@@ -179,11 +227,18 @@ def convert(source: Path, out_dir: Path) -> dict:
     # Triangle indices: uint32 (vertex count > 65535, so uint16 won't fit).
     tris_u32 = tris.astype(np.uint32)
 
-    # 5. Build the b3dm (mesh -> glTF -> b3dm) with a baked WHITE material.
+    # 5. Per-vertex flat normals — the clay material cannot be lit per-face
+    #    without them (see flat_normals). Computed in the RTC ECEF space the
+    #    glTF ultimately stores, so they are correct in world space without a
+    #    rotation.
+    normals = flat_normals(verts_local, tris_u32)
+
+    # 6. Build the b3dm (mesh -> glTF -> b3dm) with a baked WHITE material.
     white_material = build_white_material()
     b3dm = B3dm.from_numpy_arrays(
         points=verts_local,
         triangles=tris_u32,
+        normal=normals,
         material=white_material,
     )
 

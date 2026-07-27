@@ -65,6 +65,54 @@ body,
 }
 
 /* ===========================================================================
+   2D planning map (Leaflet)
+   Covers the Cesium canvas in map mode; sits below the overlay rails (z-index
+   10) so the panels stay on top. Tiles are graded to the monochrome palette.
+   =========================================================================== */
+.pv-planning-map {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: var(--pv-void);
+  font-family: var(--pv-font);
+}
+
+/* Grade the OSM tiles toward the plaster-void palette. */
+.pv-planning-map .leaflet-tile-pane {
+  filter: grayscale(1) contrast(1.05) brightness(1.02);
+}
+
+/* Leaflet chrome -> paper aesthetic. */
+.pv-planning-map .leaflet-bar a {
+  background: var(--pv-paper-solid);
+  color: var(--pv-ink);
+  border-bottom: 1px solid var(--pv-rule);
+}
+
+.pv-planning-map .leaflet-control-attribution {
+  background: var(--pv-paper);
+  color: var(--pv-ink-50);
+  font-size: 9px;
+}
+
+/* Permanent marker labels, matching the Cesium marker labels (dark ink on paper). */
+.pv-planning-map .pv-map-label {
+  background: var(--pv-paper);
+  border: 1px solid var(--pv-rule);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--pv-ink);
+  font-family: var(--pv-font);
+  font-size: 10px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.pv-planning-map .pv-map-label::before {
+  display: none;
+}
+
+/* ===========================================================================
    Overlay scaffold
    The island renders ONE overlay; panels are static children of a rail so their
    heights compose instead of colliding at hand-tuned `top:` offsets.

@@ -8,32 +8,51 @@
  * present.
  *
  * Background / spec: research.md §6 "Art Direction — Plaster Void". The GLSL
- * follows the spec's plaster intent but applies the 4 correctness fixes from
- * that critique. Verified against Cesium 1.143 runtime conventions
- * (node_modules/cesium/Build/CesiumUnminified/index.cjs:230817 BlackAndWhite)
- * which compiles post-process stages as `#version 300 es` (GLSL ES 3.00):
+ * follows the spec's plaster intent, applying the correctness fixes from that
+ * critique plus the 2026 depth-encode fix (below). Verified against Cesium 1.143
+ * runtime conventions (node_modules/cesium/Build/CesiumUnminified/index.cjs:230817
+ * BlackAndWhite) which compiles post-process stages as `#version 300 es`
+ * (GLSL ES 3.00):
  *   1. NO `#version` / `precision` — Cesium injects them (and all `czm_*`,
  *      plus `layout(location = 0) out vec4 out_FragColor;` which we write to).
  *   2. GLSL ES 3.00 sampling: `texture(sampler, uv)` (NOT `texture2D(...)`),
  *      and `in vec2 v_textureCoordinates;` (NOT `varying`), and write to
  *      `out_FragColor` (NOT `gl_FragColor`).
- *   3. Background via epsilon `depth > 0.9999`, NEVER `depth == 1.0`
- *      (logarithmic-depth distant geometry samples arbitrarily close to 1.0).
+ *   3. Background via EXACT cleared-depth test `depth >= 1.0` — see
+ *      BACKGROUND_DEPTH_EPSILON below for why the old 0.9999 epsilon ate the city.
  *   4. Fog from eye-space distance in METERS via
  *      `length(czm_windowToEyeCoordinates(vec4(gl_FragCoord.xy, depth, 1.0)).xyz)`
  *      then `smoothstep(fogStart, fogEnd, dist)`; film grain via `czm_frameNumber`.
+ *
+ * THE DISC LIVES IN THE SHADER
+ * ----------------------------
+ * The sun/moon disc is drawn here, in the background branch, as a tinted circle at
+ * `u_sunUv` with angular radius `u_sunRadius` — NOT as a billboard entity. Two
+ * reasons:
+ *   - A billboard at the required 50 km sits beyond fogEnd and would be fully
+ *     fogged to sky colour (invisible); closer distances break occultation for
+ *     far targets. In the shader there is no such trade-off.
+ *   - Occultation falls out for free: the disc is only painted on background
+ *     pixels (depth >= 1.0), so any building or the tower — whose depth is
+ *     always < 1.0 — covers it exactly where it should, per pixel.
  */
-
-/** Background-epsilon threshold. Strictly-greater comparison (see fix #3). */
-export const BACKGROUND_DEPTH_EPSILON = 0.9999;
 
 /**
- * Epsilon background test (fix #3). With logarithmicDepthBuffer=true, distant
- * geometry samples arbitrarily close to 1.0, so we branch on this epsilon
- * instead of comparing `== 1.0` (which would flicker).
+ * Background test: the depth buffer is CLEARED to exactly 1.0, and no geometry in
+ * this scene can write exactly 1.0 — with plain hyperbolic depth the farthest
+ * content (the ~50 km sky direction) tops out at ~0.999998, and with logarithmic
+ * depth only geometry beyond ~9,999 km quantises to 1.0. The previous
+ * `depth > 0.9999` epsilon assumed log-depth encoding, but the post-process depth
+ * texture arrives hyperbolic (near=0.1, far=1e10): EVERYTHING beyond ~1 km read
+ * above 0.9999 and was painted over with sky — the Fernsehturm, the disc, and most
+ * of the city vanished from the preview. Exact `>= 1.0` is correct under BOTH
+ * encodings at this scene's scales.
  */
+export const BACKGROUND_DEPTH = 1.0;
+
+/** Exact cleared-depth background test (fix #3, revised — see above). */
 export function isBackgroundDepth(depth: number): boolean {
-  return depth > BACKGROUND_DEPTH_EPSILON;
+  return depth >= BACKGROUND_DEPTH;
 }
 
 export interface StudioEnvironmentOptions {
@@ -41,8 +60,6 @@ export interface StudioEnvironmentOptions {
   fogStart?: number;
   /** Eye-space distance (meters) at which haze reaches full strength. */
   fogEnd?: number;
-  /** RGB (0..1) haze color mixed toward with distance. */
-  hazeColor?: [number, number, number];
   /** Film-grain strength (fraction of a channel). */
   grainAmount?: number;
 }
@@ -51,15 +68,17 @@ export interface StudioEnvironmentOptions {
  *
  *  Tuned so a landmark ~6 km out (the Fernsehturm from the Lichtenberger Brücke) is
  *  only lightly hazed (fog ~0.29) rather than washed to invisibility — it must read
- *  as a silhouette against the sky, not vanish into it. `hazeColor` is the warm, bright
- *  HORIZON tint; the sky darkens/cools toward the top via the `u_skyTop` uniform, and
- *  a warm sun/moon bloom is added around `u_sunUv`. */
+ *  as a silhouette against the sky, not vanish into it. The haze COLOUR is a live
+ *  uniform (`u_haze`, driven per-frame from src/lib/skyPalette.ts); this default is
+ *  only the value before the app pushes the time-of-day palette. */
 const DEFAULTS = {
   fogStart: 8000,
   fogEnd: 24000,
-  hazeColor: [0.96, 0.94, 0.9] as [number, number, number],
   grainAmount: 0.02,
 };
+
+/** Initial haze colour — the neutral daytime value the palette module replaces. */
+export const DEFAULT_HAZE: [number, number, number] = [0.96, 0.94, 0.9];
 
 /**
  * Format a JS number as a valid GLSL float literal (must contain a decimal
@@ -75,7 +94,7 @@ function glslFloat(n: number): string {
 /**
  * Build the "Plaster Void" depth-haze + film-grain GLSL ES 3.00 fragment source
  * for a Cesium PostProcessStage. The configurable values are BAKED INTO the
- * source as float/vec3 literals (so the stage can be created with `uniforms: {}`).
+ * source as float literals (so the stage can be created with `uniforms: {}`).
  *
  * Cesium auto-injects `#version 300 es`, `precision`, every `czm_*` built-in
  * (`czm_readDepth`, `czm_windowToEyeCoordinates`, `czm_frameNumber`), and the
@@ -87,15 +106,10 @@ export function buildStudioEnvironmentShaderSource(
 ): string {
   const fogStart = opts?.fogStart ?? DEFAULTS.fogStart;
   const fogEnd = opts?.fogEnd ?? DEFAULTS.fogEnd;
-  const hazeColor = opts?.hazeColor ?? DEFAULTS.hazeColor;
   const grainAmount = opts?.grainAmount ?? DEFAULTS.grainAmount;
 
-  const hazeR = glslFloat(hazeColor[0]);
-  const hazeG = glslFloat(hazeColor[1]);
-  const hazeB = glslFloat(hazeColor[2]);
-
   return [
-    '// Plaster Void: gradient sky + sun/moon bloom + depth-haze + film-grain',
+    '// Plaster Void: gradient sky + sun/moon disc & bloom + depth-haze + film-grain',
     '// post-process (GLSL ES 3.00). Cesium injects the version + precision, all czm_*',
     '// built-ins, and the layout(location=0) out vec4 out_FragColor we write to.',
     'uniform sampler2D colorTexture;',
@@ -106,42 +120,48 @@ export function buildStudioEnvironmentShaderSource(
     '// arrays are silently not bound and the uniform reads 0. See the factory below.',
     'uniform vec2 u_sunUv;        // sun/moon centre in texture coords [0,1]',
     'uniform float u_sunVisible;  // 1 when the body is up and on-screen, else 0',
+    'uniform float u_sunRadius;   // disc angular radius as a fraction of frame height',
+    'uniform vec3 u_discColor;    // disc tint (time-of-day palette)',
     'uniform float u_aspect;      // viewport width/height, keeps the bloom circular',
     'uniform vec3 u_skyTop;       // cool sky colour at the top of frame',
+    'uniform vec3 u_haze;         // haze/horizon colour (time-of-day palette)',
     'uniform vec3 u_glowColor;    // warm sun / cool moon bloom colour',
     'uniform float u_glowStrength;',
+    'uniform vec3 u_sceneTint;    // geometry dim/tint (day/night, golden hour)',
     '',
     'in vec2 v_textureCoordinates;',
     '',
-    `const vec3 c_haze = vec3(${hazeR}, ${hazeG}, ${hazeB});`,
-    '',
     '// The plaster-void sky at a screen point: a vertical gradient from the warm haze',
-    '// horizon up to the cooler u_skyTop, plus a soft radial bloom around the body.',
+    '// horizon up to the cooler u_skyTop, a soft radial bloom around the body, and the',
+    '// disc itself — drawn ONLY on background pixels, so geometry occludes it per-pixel.',
     'vec3 skyColor(vec2 uv, vec3 hazeColor) {',
     '  vec3 base = mix(hazeColor, u_skyTop, smoothstep(-0.15, 1.15, uv.y));',
     '  vec2 d = uv - u_sunUv;',
     '  d.x *= u_aspect;',
-    '  float r2 = dot(d, d);',
-    '  float glow = u_glowStrength * exp(-r2 / 0.03) * u_sunVisible;',
-    '  return base + u_glowColor * glow;',
+    '  float r = length(d);',
+    '  float glow = u_glowStrength * exp(-(r * r) / 0.03) * u_sunVisible;',
+    '  vec3 sky = base + u_glowColor * glow;',
+    '  float soft = max(u_sunRadius * 0.08, 0.0015);',
+    '  float disc = u_sunVisible * (1.0 - smoothstep(u_sunRadius - soft, u_sunRadius + soft, r));',
+    '  return mix(sky, u_discColor, disc);',
     '}',
     '',
     'void main() {',
     '  // Plaster-void haze + grain parameters, baked from build opts.',
     `  float fogStart = ${glslFloat(fogStart)};`,
     `  float fogEnd = ${glslFloat(fogEnd)};`,
-    `  vec3 hazeColor = c_haze;`,
+    '  vec3 hazeColor = u_haze;',
     `  float grainAmount = ${glslFloat(grainAmount)};`,
     '',
     '  vec4 color = texture(colorTexture, v_textureCoordinates);',
     '  float depth = czm_readDepth(depthTexture, v_textureCoordinates);',
     '  vec3 sky = skyColor(v_textureCoordinates, hazeColor);',
     '',
-    '  // Fix #3: background via epsilon, never an exact one-point depth test.',
-    '  // Logarithmic-depth distant geometry samples arbitrarily close to the',
-    '  // far plane; the 0.9999 epsilon avoids flicker at the horizon.',
-    '  if (depth > 0.9999) {',
-    '    // Sky: the gradient + bloom, no fog ramp, no grain.',
+    '  // Fix #3 (revised): background is EXACTLY the cleared depth 1.0. Geometry in',
+    '  // this scene always writes < 1.0 under either depth encoding (see the module',
+    '  // header), so an exact test — never a 0.9999 epsilon — separates void from city.',
+    '  if (depth >= 1.0) {',
+    '    // Sky: the gradient + bloom + disc, no fog ramp, no grain.',
     '    out_FragColor = vec4(sky, color.a);',
     '    return;',
     '  }',
@@ -153,7 +173,10 @@ export function buildStudioEnvironmentShaderSource(
     '  // as a silhouette against the bloom rather than washing to flat white).',
     '  float dist = length(czm_windowToEyeCoordinates(vec4(gl_FragCoord.xy, depth, 1.0)).xyz);',
     '  float fog = smoothstep(fogStart, fogEnd, dist);',
-    '  vec3 result = mix(color.rgb, sky, fog);',
+    '  // u_sceneTint adds a mild warmth (golden hour) / coolness (night) to the',
+    '  // clay geometry — brightness comes from the directional light + image-based',
+    '  // ambient against the tiles real per-face normals, so the tint stays near 1.',
+    '  vec3 result = mix(color.rgb * u_sceneTint, sky, fog);',
     '',
     '  // Film grain: temporal dither driven by czm_frameNumber (fix #4).',
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
@@ -175,14 +198,22 @@ export interface StudioEnvironmentState {
   sunUv: [number, number];
   /** 1 when the body is above the horizon and on-screen, else 0. */
   sunVisible: number;
+  /** Disc angular radius as a fraction of frame height (UV units, y-axis). */
+  sunRadius: number;
+  /** Disc tint (palette discTint). */
+  discColor: [number, number, number];
   /** Viewport aspect (width/height) — keeps the bloom circular. */
   aspect: number;
   /** Cool sky colour at the top of frame. */
   skyTop: [number, number, number];
+  /** Haze/horizon colour. */
+  haze: [number, number, number];
   /** Warm sun / cool moon bloom colour. */
   glowColor: [number, number, number];
   /** Bloom intensity. */
   glowStrength: number;
+  /** Geometry dim/tint multiplier (1,1,1 = full daylight). */
+  sceneTint: [number, number, number];
 }
 
 /** A neutral default so the stage renders sanely before the app sets real values. */
@@ -190,10 +221,14 @@ export function defaultStudioEnvironmentState(): StudioEnvironmentState {
   return {
     sunUv: [0.5, 0.5],
     sunVisible: 0,
+    sunRadius: 0.01,
+    discColor: [1, 1, 1],
     aspect: 1.6,
     skyTop: [0.8, 0.83, 0.89],
+    haze: DEFAULT_HAZE,
     glowColor: [1.0, 0.92, 0.75],
     glowStrength: 0.9,
+    sceneTint: [1, 1, 1],
   };
 }
 
@@ -217,14 +252,18 @@ export function createStudioEnvironmentStage(
     uniforms: {
       u_sunUv: new Cesium.Cartesian2(state.sunUv[0], state.sunUv[1]),
       u_sunVisible: state.sunVisible,
+      u_sunRadius: state.sunRadius,
+      u_discColor: new Cesium.Cartesian3(state.discColor[0], state.discColor[1], state.discColor[2]),
       u_aspect: state.aspect,
       u_skyTop: new Cesium.Cartesian3(state.skyTop[0], state.skyTop[1], state.skyTop[2]),
+      u_haze: new Cesium.Cartesian3(state.haze[0], state.haze[1], state.haze[2]),
       u_glowColor: new Cesium.Cartesian3(
         state.glowColor[0],
         state.glowColor[1],
         state.glowColor[2],
       ),
       u_glowStrength: state.glowStrength,
+      u_sceneTint: new Cesium.Cartesian3(state.sceneTint[0], state.sceneTint[1], state.sceneTint[2]),
     },
   });
   return stage;
@@ -239,16 +278,28 @@ export function updateStudioUniforms(
   if (!stage || !stage.uniforms) return;
   stage.uniforms.u_sunUv = new Cesium.Cartesian2(state.sunUv[0], state.sunUv[1]);
   stage.uniforms.u_sunVisible = state.sunVisible;
+  stage.uniforms.u_sunRadius = state.sunRadius;
+  stage.uniforms.u_discColor = new Cesium.Cartesian3(
+    state.discColor[0],
+    state.discColor[1],
+    state.discColor[2],
+  );
   stage.uniforms.u_aspect = state.aspect;
   stage.uniforms.u_skyTop = new Cesium.Cartesian3(
     state.skyTop[0],
     state.skyTop[1],
     state.skyTop[2],
   );
+  stage.uniforms.u_haze = new Cesium.Cartesian3(state.haze[0], state.haze[1], state.haze[2]);
   stage.uniforms.u_glowColor = new Cesium.Cartesian3(
     state.glowColor[0],
     state.glowColor[1],
     state.glowColor[2],
   );
   stage.uniforms.u_glowStrength = state.glowStrength;
+  stage.uniforms.u_sceneTint = new Cesium.Cartesian3(
+    state.sceneTint[0],
+    state.sceneTint[1],
+    state.sceneTint[2],
+  );
 }

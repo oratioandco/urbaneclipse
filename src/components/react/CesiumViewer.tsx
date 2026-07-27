@@ -56,22 +56,18 @@ import {
   targetHeight,
   commitOcclusion,
   cameraProfile,
+  lensAutoFit,
   viewMode,
-  pickMode,
   observerPosition,
   targetPosition,
-  setObserverPosition,
-  setTargetPosition,
   solverBody,
   searchArea,
-  setSearchArea,
 } from '../../store.js';
 import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
 import { resolveObserverHeight, resolveTargetHeight } from '../../lib/sceneHeights.js';
 import { loadHeightmap } from '../../cesium/loadHeightmap.js';
 import {
-  pickGeographic,
   flyToMapView,
   flyToPreview,
   upsertMarker,
@@ -81,13 +77,10 @@ import {
 import { findViewpoint } from '../../lib/viewpoints.js';
 import { buildLandmarkPrimitive } from '../../cesium/landmarkModel.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
-import { azAltTo } from '../../lib/silhouette.js';
+import { skyPalette } from '../../lib/skyPalette.js';
+import { azAltTo, directionOffsetECEF, geodeticToECEF } from '../../lib/silhouette.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
-import {
-  upsertCelestialDisc,
-  removeCelestialDisc,
-  CELESTIAL_DISC_ID,
-} from '../../cesium/celestialDisc.js';
+import { computeDiscState } from '../../cesium/celestialDisc.js';
 import {
   BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
   orthometricToEllipsoidal,
@@ -102,6 +95,7 @@ function orthometricToEllipsoidalSafe(surfaceOrthometric: number): number {
 import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
 import ControlPanel, { type ScenePhase } from './ControlPanel.js';
 import PlacementControls from './PlacementControls.js';
+import PlanningMap from './PlanningMap.js';
 import HourTimeline from './HourTimeline.js';
 import SolverSearch from './SolverSearch.js';
 import CameraControls from './CameraControls.js';
@@ -122,6 +116,7 @@ const SLOW_SCENE_WARNING_MS = 25_000;
 
 export default function CesiumViewer(): JSX.Element {
   const solverBodyValue = useStore(solverBody);
+  const viewModeValue = useStore(viewMode);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Cesium.Viewer | null>(null);
 
@@ -222,10 +217,20 @@ export default function CesiumViewer(): JSX.Element {
     scene.globe.baseColor = Cesium.Color.fromCssColorString('#f4f4f4');
     scene.imageryLayers.removeAll();
 
-    // Studio lighting + harsh shadows so the white plaster geometry actually reads
-    // against the white void (US2 art-direction). WITHOUT this, white-on-white is
-    // invisible — the buildings must be lit + cast shadows to be seen.
-    viewer.shadows = true;
+    // ONE reusable directional light, created up front: assigning a fresh
+    // DirectionalLight per time-scrub would force shader recompiles (and stall the
+    // renderer); mutating direction/intensity is uploaded per-frame as a uniform.
+    const sunLight = new Cesium.DirectionalLight({
+      direction: new Cesium.Cartesian3(0, 0, -1),
+      intensity: 1.5,
+    });
+    scene.light = sunLight;
+    // Studio lighting WITHOUT shadow maps: the LoD2 tiles' per-face normals +
+    // image-based ambient fill carry the clay form (lit vs shaded facades), so
+    // contact shadows are not needed — and Cesium's shadow map at city scale
+    // self-shadows into acne stripes. Shadows stay OFF; the directional key light
+    // + IBL fill do the clay-model read.
+    viewer.shadows = false;
     scene.globe.enableLighting = true;
     scene.globe.depthTestAgainstTerrain = true;
     // Morning sun -> low angle -> long shadows + strong facade shading. INITIAL seed
@@ -271,11 +276,16 @@ export default function CesiumViewer(): JSX.Element {
       frustum.aspectRatio = aspectRatio;
       viewer.scene.requestRender();
     };
-    /** Wide overview lens for map mode. */
-    const MAP_FOV_RAD = Cesium.Math.toRadians(60);
+    // Set once the tileset callback defines applyDisc; lets the (earlier-defined)
+    // camera listener refresh the disc size after an authored-lens FOV change.
+    let refreshDisc: () => void = () => {};
     const applyCamera = () => {
-      // Changing the lens only re-frames when we are IN the preview shot.
-      if (viewMode.get() === 'preview') applyPreviewFov();
+      // Changing the lens only re-frames when we are IN the preview shot, and only
+      // when the lens is AUTHORED — in auto-fit mode the framing owns the frustum.
+      if (viewMode.get() === 'preview' && !lensAutoFit.get()) {
+        applyPreviewFov();
+        refreshDisc(); // the FOV change alters the disc's on-screen size
+      }
     };
     const unsubCamera = cameraProfile.listen(applyCamera);
 
@@ -298,8 +308,17 @@ export default function CesiumViewer(): JSX.Element {
         // Root metadata resolved: the building data EXISTS. Occlusion is still
         // undecided until the tile content actually streams (see runWhenLoaded).
         setPhase('streaming');
-        // Uniform matte white geometry — the plaster/clay model look.
+        // Uniform matte white geometry — the plaster/clay model look. The tiles
+        // now carry per-face flat normals (scripts/convert_tile.py flat_normals),
+        // so the directional light + image-based ambient fill shade each facade
+        // by orientation. luminanceAtZenith is the soft hemisphere fill that keeps
+        // shaded facades reading as clay rather than pure black; applyDisc() drives
+        // it from the time-of-day palette (low at night, full by day). (IBL is
+        // already enabled by default via imageBasedLightingFactor; Cesium supplies
+        // neutral default spherical harmonics, so luminanceAtZenith is the only
+        // knob — `enabled` itself is a read-only getter.)
         tileset.style = new Cesium.Cesium3DTileStyle({ color: "color('#ffffff')" });
+        tileset.imageBasedLighting.luminanceAtZenith = 0.6;
         tileset.shadows = Cesium.ShadowMode.ENABLED;
         // Debug hook for headless scene-state inspection (scripts/diagnose.mjs).
         (window as unknown as { __cesium?: unknown }).__cesium = {
@@ -453,41 +472,8 @@ export default function CesiumViewer(): JSX.Element {
         });
 
         // --- Map-first placement -------------------------------------------------
-        // Click to place the observer or target. Only active when pickMode is not
-        // 'none', so the map stays pannable by default and a stray click cannot
-        // silently relocate the scene.
-        const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-        clickHandler.setInputAction((movement: { position: CesiumType.Cartesian2 }) => {
-          if (disposed) return;
-          const mode = pickMode.get();
-          if (mode === 'none') return;
-
-          const picked = pickGeographic(viewer, movement.position);
-          if (!picked) {
-            setPickError('That click did not hit the model — try clicking on the ground or a building.');
-            return;
-          }
-
-          // setObserver/Target/SearchArea reject implausible coordinates; a ray that
-          // grazes the horizon can return a point on the far side of the globe.
-          const ok =
-            mode === 'observer'
-              ? setObserverPosition({ lat: picked.lat, lon: picked.lon })
-              : mode === 'target'
-                ? setTargetPosition({ lat: picked.lat, lon: picked.lon })
-                : setSearchArea({
-                    center: { lat: picked.lat, lon: picked.lon },
-                    radiusM: searchArea.get()?.radiusM ?? 400,
-                  });
-
-          if (!ok) {
-            setPickError('That point is outside Berlin — the pick was ignored.');
-            return;
-          }
-          setPickError(undefined);
-          pickMode.set('none');
-          recompute();
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        // Placement picking lives on the 2D Leaflet planning map (PlanningMap.tsx),
+        // which overlays the Cesium canvas in map mode — no Cesium click handler here.
 
         // --- View mode ------------------------------------------------------------
         const frustumOf = () => viewer.camera.frustum as CesiumType.PerspectiveFrustum;
@@ -500,18 +486,15 @@ export default function CesiumViewer(): JSX.Element {
           const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
 
           if (viewMode.get() === 'map') {
-            // MAP: a wide overview lens, and the studio haze OFF. The haze fades
-            // geometry to white by ~8 km of eye-space distance — perfect for the
-            // ground-level shot, but from a map viewpoint km overhead it would white
-            // out the entire city. A map wants crisp geometry anyway.
-            frustumOf().fov = MAP_FOV_RAD;
+            // MAP: the 2D Leaflet planning map covers the canvas, so the user never
+            // sees this framing — but the Cesium camera must still sit near the city
+            // or no tiles stream and the occlusion ray-picks have nothing to hit.
             studioStage.enabled = false;
             flyToMapView(viewer, obsPos, tgtPos, durationSec);
             return;
           }
 
-          // PREVIEW: the telephoto lens and the haze, i.e. the actual photograph.
-          applyPreviewFov();
+          // PREVIEW: the haze + the lens, i.e. the actual photograph.
           studioStage.enabled = true;
           const obs = resolveObserverHeight(
             obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
@@ -549,21 +532,26 @@ export default function CesiumViewer(): JSX.Element {
             durationSec,
           );
 
-          // AUTO-FIT the lens to the target so it frames well from ANY distance: an
-          // extreme telephoto that suits a 6 km shot massively overfills the same tower
-          // from 1.3 km. Set the horizontal FOV to span the target's angular height with
-          // margin (landscape frame → frustum.fov is horizontal; the tower is vertical,
-          // so scale by aspect). Clamped to a sane telephoto-to-short range. The camera
-          // panel still overrides this the moment the user picks a specific lens.
-          const rangeToTarget = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, aimEll).rangeM;
-          const targetSpanM = targetHeight.get();
-          const angularHeightDeg =
-            (Math.atan2(targetSpanM, Math.max(rangeToTarget, 1)) * 180) / Math.PI;
-          const canvas = viewer.canvas as HTMLCanvasElement;
-          const aspect =
-            canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1.6;
-          const fitHfovDeg = Math.min(45, Math.max(2, angularHeightDeg * 1.35 * aspect));
-          frustumOf().fov = Cesium.Math.toRadians(fitHfovDeg);
+          // The lens: AUTO-FIT frames the target from ANY distance (an extreme
+          // telephoto that suits a 6 km shot massively overfills the same tower from
+          // 1.3 km); the AUTHORED lens (camera profile) applies once the user picks
+          // one — lensAutoFit decides, so the two never fight over the frustum.
+          if (lensAutoFit.get()) {
+            // Horizontal FOV spans the target's angular height with margin (landscape
+            // frame → frustum.fov is horizontal; the tower is vertical, so scale by
+            // aspect). Clamped to a sane telephoto-to-short range.
+            const rangeToTarget = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, aimEll).rangeM;
+            const targetSpanM = targetHeight.get();
+            const angularHeightDeg =
+              (Math.atan2(targetSpanM, Math.max(rangeToTarget, 1)) * 180) / Math.PI;
+            const canvas = viewer.canvas as HTMLCanvasElement;
+            const aspect =
+              canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1.6;
+            const fitHfovDeg = Math.min(45, Math.max(2, angularHeightDeg * 1.5 * aspect));
+            frustumOf().fov = Cesium.Math.toRadians(fitHfovDeg);
+          } else {
+            applyPreviewFov();
+          }
         };
         // Frame the scene NOW that the tileset exists. Instant (duration 0) so tiles
         // begin streaming at the destination immediately rather than after a 1.2 s fly.
@@ -580,18 +568,18 @@ export default function CesiumViewer(): JSX.Element {
           console.error('[CesiumViewer] landmark model failed', err);
         }
 
-        // --- Celestial disc -------------------------------------------------------
-        // Drawn from suncalc (the SAME ephemeris the solver uses), not Cesium's own
-        // sun: Cesium falls back to the TEME frame without network EOP data and sits a
-        // near-constant ~0.37 deg off — three quarters of a solar diameter — so its disc
-        // would contradict the prediction this preview exists to illustrate.
-        // See tests/unit/sun-agreement.test.ts.
+        // --- Celestial disc + atmosphere ------------------------------------------
+        // The disc is drawn by the studio post-process SHADER on background pixels
+        // (src/cesium/shaders/studioEnvironment.ts), so city geometry occults it
+        // per-pixel at any range — no billboard entity. Its direction comes from
+        // suncalc (the SAME ephemeris the solver uses), not Cesium's own sun, which
+        // sits ~0.37 deg off the prediction (tests/unit/sun-agreement.test.ts).
         const applyDisc = () => {
           if (disposed || viewer.isDestroyed()) return;
           if (viewMode.get() !== 'preview') {
-            removeCelestialDisc(viewer);
             setDiscState(undefined);
-            studioState.sunVisible = 0; // no bloom off the preview
+            studioState.sunVisible = 0; // no disc/bloom off the preview
+            updateStudioUniforms(Cesium, studioStage, studioState);
             return;
           }
           const sample = groundSamplerRef.current ?? (() => undefined);
@@ -600,39 +588,74 @@ export default function CesiumViewer(): JSX.Element {
           const obs = resolveObserverHeight(
             obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
           );
+          const body = solverBody.get();
+          const observerGeo = {
+            lat: obsPos.lat,
+            lon: obsPos.lon,
+            ellipsoidalHeight: obs.ellipsoidalHeight,
+          };
           try {
-            const st = upsertCelestialDisc(
-              viewer,
-              { lat: obsPos.lat, lon: obsPos.lon, ellipsoidalHeight: obs.ellipsoidalHeight },
-              solverBody.get(),
-              dateTime.get(),
-            );
+            // Time-of-day palette from the SAME suncalc altitude the disc and the
+            // solver use — sky, haze, bloom, disc tint and scene light all agree.
+            const bodySample = sampleBody(body, dateTime.get(), obsPos.lat, obsPos.lon);
+            const palette = skyPalette(body, bodySample.alt);
+            const st = computeDiscState(body, dateTime.get(), obsPos.lat, obsPos.lon);
             setDiscState(st);
 
-            // Drive the studio sky bloom from the SAME body position as the disc, so
-            // the glow sits exactly where the sun/moon is — behind the tower at a real
-            // transit. Projecting the disc's world position keeps the bloom anchored as
-            // the camera orbits or the clock scrubs.
+            // Scene light from the suncalc direction (NOT Cesium's clock-driven sun,
+            // which sits ~0.37 deg off the prediction): the globe's shading follows
+            // the drawn disc and dims to nothing through twilight. MUTATE the one
+            // shared light — see the creation site for why.
+            const sunPoint = directionOffsetECEF(observerGeo, bodySample.az, bodySample.alt, 1);
+            const obsEcef = geodeticToECEF(obsPos.lat, obsPos.lon, obs.ellipsoidalHeight);
+            const lightDir = new Cesium.Cartesian3(
+              obsEcef[0] - sunPoint[0],
+              obsEcef[1] - sunPoint[1],
+              obsEcef[2] - sunPoint[2],
+            );
+            Cesium.Cartesian3.normalize(lightDir, lightDir);
+            sunLight.direction = lightDir;
+            sunLight.intensity = palette.lightIntensity;
+            // Sky-ambient fill follows the same time-of-day curve: bright skylight
+            // by day (shaded facades read as soft clay), a trace by night.
+            tileset.imageBasedLighting.luminanceAtZenith = palette.ambientLevel;
+
+            // Drive the studio sky + disc from the SAME body position, so the glow
+            // sits exactly where the sun/moon is — behind the tower at a real
+            // transit. Projecting a point along the body's direction keeps the disc
+            // anchored as the camera orbits or the clock scrubs (the distance is
+            // irrelevant to the projection; 10 km stays well inside the frustum).
             const canvas = viewer.canvas as HTMLCanvasElement;
             studioState.aspect =
               canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1.6;
-            const body = solverBody.get();
-            studioState.glowColor = body === 'moon' ? [0.9, 0.92, 0.98] : [1.0, 0.9, 0.72];
-            studioState.glowStrength = body === 'moon' ? 0.45 : 0.95;
-            studioState.skyTop = body === 'moon' ? [0.6, 0.64, 0.74] : [0.8, 0.83, 0.89];
+            studioState.glowColor = palette.glowColor;
+            studioState.glowStrength = palette.glowStrength;
+            studioState.skyTop = palette.skyTop;
+            studioState.haze = palette.haze;
+            studioState.discColor = palette.discTint;
+            // The tiles have no usable normals, so the post-process — not scene
+            // lighting — darkens/warms the city for night and golden hour.
+            studioState.sceneTint = palette.sceneTint;
 
-            const disc = viewer.entities.getById(CELESTIAL_DISC_ID);
-            const worldPos = st.visible
-              ? disc?.position?.getValue(viewer.clock.currentTime)
-              : undefined;
-            const win = worldPos
-              ? Cesium.SceneTransforms.worldToWindowCoordinates(scene, worldPos)
+            const anchor = directionOffsetECEF(observerGeo, st.azimuth, st.altitude, 10_000);
+            const win = st.visible
+              ? Cesium.SceneTransforms.worldToWindowCoordinates(
+                  scene,
+                  new Cesium.Cartesian3(anchor[0], anchor[1], anchor[2]),
+                )
               : undefined;
             if (win && canvas.clientWidth > 0 && canvas.clientHeight > 0) {
               studioState.sunUv = [
                 win.x / canvas.clientWidth,
                 1 - win.y / canvas.clientHeight,
               ];
+              // Angular radius -> fraction of frame height. frustum.fov is the
+              // HORIZONTAL fov in this landscape viewport; convert to vertical.
+              const frustum = viewer.camera.frustum as CesiumType.PerspectiveFrustum;
+              const aspect = canvas.clientWidth / canvas.clientHeight;
+              const vfov = 2 * Math.atan(Math.tan(frustum.fov / 2) / aspect);
+              const angRadiusRad = ((st.angularDiameterDeg / 2) * Math.PI) / 180;
+              studioState.sunRadius = Math.tan(angRadiusRad) / (2 * Math.tan(vfov / 2));
               studioState.sunVisible = 1;
             } else {
               studioState.sunVisible = 0;
@@ -647,6 +670,7 @@ export default function CesiumViewer(): JSX.Element {
           }
           viewer.scene.requestRender();
         };
+        refreshDisc = applyDisc;
 
         // --- Search-area overlay --------------------------------------------------
         const AREA_ENTITY_ID = 'pv-search-area';
@@ -688,8 +712,18 @@ export default function CesiumViewer(): JSX.Element {
         applyDisc();
 
         const unsubViewMode = viewMode.listen(() => {
-          applyViewMode();
+          // Instant (duration 0), never an animated fly: in map mode the camera is
+          // left wherever it was (potentially very far away), so a flyTo into the
+          // preview would drag the whole tile-streaming pipeline across the globe.
+          applyViewMode(0);
           applyDisc();
+        });
+        // Flipping back to AUTO framing re-fits the lens immediately.
+        const unsubLens = lensAutoFit.listen(() => {
+          if (viewMode.get() === 'preview') {
+            applyViewMode(0);
+            applyDisc(); // the FOV change alters the disc's on-screen size
+          }
         });
         // Re-frame and re-solve whenever a position moves.
         const unsubObsPos = observerPosition.listen(() => {
@@ -703,9 +737,9 @@ export default function CesiumViewer(): JSX.Element {
           unsubDiscTime();
           unsubDiscBody();
           unsubViewMode();
+          unsubLens();
           unsubObsPos();
           unsubTgtPos();
-          clickHandler.destroy();
         };
 
         // Initial compute: defer until tilesLoaded so we don't read an empty scene.
@@ -790,6 +824,9 @@ export default function CesiumViewer(): JSX.Element {
   return (
     <>
       <div id="cesium-container" ref={containerRef} />
+      {/* 2D planning map: covers the Cesium canvas in map mode. The scene stays
+          mounted underneath — occlusion + preview still need it. */}
+      {viewModeValue === 'map' && <PlanningMap onPickError={setPickError} />}
       {/* Overlay scaffold (T057): two side rails + a bottom dock. Panels are STATIC
           children of a flex rail rather than absolutely positioned at hand-tuned
           `top:` offsets, so their heights compose instead of colliding — legible and

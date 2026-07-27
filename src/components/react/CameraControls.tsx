@@ -13,7 +13,7 @@
  * copy lives in the caption line below the segment, never inside the button.
  */
 import { useStore } from '@nanostores/react';
-import { cameraProfile, type CameraProfile } from '../../store.js';
+import { cameraProfile, lensAutoFit, setCameraProfile, type CameraProfile } from '../../store.js';
 
 interface SensorPreset {
   /** The button's entire textContent — see the diagnostic contract note above. */
@@ -30,9 +30,12 @@ const SENSOR_PRESETS: SensorPreset[] = [
 
 export default function CameraControls(): JSX.Element {
   const profile = useStore(cameraProfile);
+  const autoFit = useStore(lensAutoFit);
 
   const update = (patch: Partial<CameraProfile>): void => {
-    cameraProfile.set({ ...cameraProfile.get(), ...patch });
+    // setCameraProfile (not cameraProfile.set): authoring a lens opts the preview
+    // OUT of auto-framing, so the two never fight over the frustum.
+    setCameraProfile({ ...cameraProfile.get(), ...patch });
   };
 
   // Effective focal length accounts for the zoom multiplier (the *apparent* focal length
@@ -149,6 +152,19 @@ export default function CameraControls(): JSX.Element {
           </dd>
         </div>
       </dl>
+
+      {/* Framing mode: AUTO fits the lens to the target from any distance; touching
+          the optics above switches to the authored lens. */}
+      <div className="pv-btn-row">
+        <button
+          type="button"
+          onClick={() => lensAutoFit.set(!autoFit)}
+          className={`pv-btn ${autoFit ? 'pv-btn--primary' : 'pv-btn--quiet'}`}
+          aria-pressed={autoFit}
+        >
+          {autoFit ? 'Framing: auto' : 'Framing: manual'}
+        </button>
+      </div>
 
       {!fovValid && (
         <div className="pv-msg pv-msg--error" role="alert">

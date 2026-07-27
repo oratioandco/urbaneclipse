@@ -14,6 +14,8 @@ export const dateTime: WritableAtom<Date>;            // default: new Date()
 export const observerHeight: WritableAtom<number>;    // default: 1.5
 export const targetHeight: WritableAtom<number>;      // default: 210 (⚠️ verify Fernsehturm height)
 export const cameraProfile: WritableAtom<CameraProfile>;
+export const lensAutoFit: WritableAtom<boolean>;      // default: true — preview auto-frames the target;
+                                                      // setCameraProfile() flips it to false (authored lens wins)
 export const solverState: WritableAtom<{
   status: 'idle' | 'running' | 'done' | 'error';
   progress: number;          // 0..1
@@ -28,6 +30,7 @@ export const timelineBands: ReadableAtom<Band[]>;     // computed from dateTime 
 // --- Controlled writers ---
 export function setDateTimeScrubbing(date: Date): void;   // rAF-coalesced (slider only)
 export function commitOcclusion(v: boolean): void;        // SOLE writer of isOccluded (engine-only)
+export function setCameraProfile(p: CameraProfile): void; // UI writer: authors a lens AND sets lensAutoFit=false
 ```
 
 ## Invariants (enforced; the test suite locks these)
@@ -41,6 +44,7 @@ export function commitOcclusion(v: boolean): void;        // SOLE writer of isOc
 4. **Listener hygiene.** Every `.listen()`/`.subscribe()` in an island is unsubscribed in `useEffect` cleanup (prevents HMR/remount leak → stacked callbacks → multiplied Cesium work).
 5. **Timezone-free.** `dateTime` is an absolute `Date`; all formatting lives in the control panel. No dual source of truth.
 6. **Tiles gate.** Occlusion stays `unknown`/stale until `tilesLoaded === true`; `commitOcclusion` is only called after the engine confirms tiles along the sightline are loaded.
+7. **Lens ownership is exclusive.** The preview frustum is driven either by auto-fit (`lensAutoFit === true`) or by the authored `cameraProfile` (`false`) — never both in the same frame. UI edits to the optics go through `setCameraProfile`, which flips `lensAutoFit` to `false`; rehydration uses `cameraProfile.set()` directly and does not.
 
 ## Consumer Wiring (shape)
 

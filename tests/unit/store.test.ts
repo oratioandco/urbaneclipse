@@ -6,6 +6,9 @@ import {
   isOccluded,
   commitOcclusion,
   setDateTimeScrubbing,
+  cameraProfile,
+  lensAutoFit,
+  setCameraProfile,
 } from '../../src/store';
 
 beforeEach(() => {
@@ -87,5 +90,30 @@ describe('setDateTimeScrubbing (rAF coalescing)', () => {
 
     unsub();
     vi.unstubAllGlobals();
+  });
+});
+
+describe('lensAutoFit / setCameraProfile (auto-fit vs authored lens)', () => {
+  it('defaults to auto-framing', () => {
+    expect(lensAutoFit.get()).toBe(true);
+  });
+
+  it('authoring a lens via setCameraProfile opts out of auto-framing', () => {
+    lensAutoFit.set(true);
+    setCameraProfile({ sensorWidth: 23.6, focalLength: 400, zoom: 1 });
+    expect(cameraProfile.get().focalLength).toBe(400);
+    expect(lensAutoFit.get()).toBe(false);
+  });
+
+  it('a direct cameraProfile.set (rehydration, tests) does NOT touch lensAutoFit', () => {
+    lensAutoFit.set(true);
+    cameraProfile.set({ sensorWidth: 36, focalLength: 600, zoom: 2 });
+    expect(lensAutoFit.get()).toBe(true);
+  });
+
+  it('flipping lensAutoFit back on returns to auto-framing', () => {
+    lensAutoFit.set(false);
+    lensAutoFit.set(true);
+    expect(lensAutoFit.get()).toBe(true);
   });
 });

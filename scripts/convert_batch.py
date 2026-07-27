@@ -94,6 +94,7 @@ from scripts.convert_tile import (  # noqa: E402
     SOURCE_CRS,
     TARGET_CRS,
     build_white_material,
+    flat_normals,
     merge_buildings,
 )
 from py3dtiles.tileset import Tile, TileSet  # noqa: E402
@@ -327,10 +328,15 @@ def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef):
     verts_local = (verts_ecef - center).astype(np.float32)
     tris_u32 = tris.astype(np.uint32)
 
-    # 4. White-material b3dm via py3dtiles (same material as convert_tile.py).
+    # 4. Per-vertex flat normals — the clay material cannot be lit per-face
+    #    without them (see convert_tile.flat_normals).
+    normals = flat_normals(verts_local, tris_u32)
+
+    # 5. White-material b3dm via py3dtiles (same material as convert_tile.py).
     b3dm = B3dm.from_numpy_arrays(
         points=verts_local,
         triangles=tris_u32,
+        normal=normals,
         material=build_white_material(),
     )
     uri = "tile_%d_%d.b3dm" % (x, y)
