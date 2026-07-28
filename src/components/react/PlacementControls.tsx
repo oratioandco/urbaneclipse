@@ -28,12 +28,13 @@ export interface PlacementControlsProps {
   /** Set when a click missed the model or landed outside Berlin. */
   pickError?: string;
   /** Surface elevation source for the observer, surfaced so accuracy is never implied. */
-  observerSurfaceSource?: 'viewpoint' | 'terrain' | 'fallback';
+  observerSurfaceSource?: 'viewpoint' | 'terrain' | 'extrapolated' | 'fallback';
 }
 
 const SOURCE_COPY: Record<string, string> = {
   viewpoint: 'surveyed viewpoint',
   terrain: 'DGM1 terrain',
+  extrapolated: 'outside DGM1 — nearest edge',
   fallback: 'assumed Berlin mean',
 };
 

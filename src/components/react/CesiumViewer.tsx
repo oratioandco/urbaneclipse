@@ -67,6 +67,8 @@ import { OBSERVER_DEFAULT, TARGET_DEFAULT } from '../../lib/berlin.js';
 import { LICHTENBERGER_BRUECKE } from '../../lib/viewpoints.js';
 import { resolveObserverHeight, resolveTargetHeight } from '../../lib/sceneHeights.js';
 import { loadHeightmap } from '../../cesium/loadHeightmap.js';
+import { createGroundTerrainProvider } from '../../cesium/groundTerrain.js';
+import { sampleGroundClamped } from '../../lib/terrainTile.js';
 import {
   flyToMapView,
   flyToPreview,
@@ -134,6 +136,16 @@ export default function CesiumViewer(): JSX.Element {
   // the viewer. Null until loaded (or if loading fails), in which case
   // resolveObserverHeight degrades to the Berlin mean and reports 'fallback'.
   const groundSamplerRef = useRef<((lat: number, lon: number) => number | undefined) | null>(
+    null,
+  );
+  /**
+   * Edge-extended ground, used ONLY where the DGM1 grid has no coverage. It is the exact
+   * surface the globe renders out there (src/lib/terrainTile.ts edge-clamps the same
+   * way), so a position outside the AOI resolves to the ground actually beneath it
+   * instead of the Berlin mean — which sits up to 22 m BELOW the drawn terrain on the
+   * northern fringe and would bury the camera.
+   */
+  const extrapolateGroundRef = useRef<((lat: number, lon: number) => number | undefined) | null>(
     null,
   );
   const [groundWarning, setGroundWarning] = useState<string | undefined>(undefined);
@@ -214,7 +226,13 @@ export default function CesiumViewer(): JSX.Element {
     scene.moon.show = false;
     // Plaster-coloured globe base; strip any imagery (defensive — baseLayer:false
     // already adds none).
-    scene.globe.baseColor = Cesium.Color.fromCssColorString('#f4f4f4');
+    // Slightly darker than the buildings' white. The globe now carries real terrain and
+    // is therefore IN SHOT at street level, where it used to be an unseen backdrop.
+    // Heightmap terrain has no vertex normals, so Cesium cannot relief-shade it — it
+    // renders at full intensity. Left at the buildings' own #f4f4f4 it comes out
+    // BRIGHTER than every lit facade and the model reads as a light box rather than
+    // clay standing on a plinth.
+    scene.globe.baseColor = Cesium.Color.fromCssColorString('#d8d5d0');
     scene.imageryLayers.removeAll();
 
     // ONE reusable directional light, created up front: assigning a fresh
@@ -233,6 +251,15 @@ export default function CesiumViewer(): JSX.Element {
     viewer.shadows = false;
     scene.globe.enableLighting = true;
     scene.globe.depthTestAgainstTerrain = true;
+    // The camera is AUTHORED from surveyed geometry (viewpoint deck elevation + eye
+    // height), so Cesium must not second-guess it. Its collision detection otherwise
+    // pushes the camera to `globeHeight + minimumZoomDistance` (1 m) whenever it reads
+    // below that, and now that the globe carries real terrain the preview eye sits only
+    // 0.5 m above that floor — a coarse-LOD tile reading half a metre high would pin the
+    // camera and silently override the photographer's eye height, while leaving the
+    // pitch that was computed from the UNclamped position. The framing would then no
+    // longer match the geometry the solver used.
+    scene.screenSpaceCameraController.enableCollisionDetection = false;
     // Morning sun -> low angle -> long shadows + strong facade shading. INITIAL seed
     // only — the dateTime listener below keeps viewer.clock.currentTime in sync with
     // the store (US3), so the user-driven time always wins after mount.
@@ -360,6 +387,7 @@ export default function CesiumViewer(): JSX.Element {
           // a curated viewpoint's surveyed deck elevation wins over it, because DGM1 is
           // bare-earth terrain and would return the rail cutting 8.8 m below the bridge.
           const sample = groundSamplerRef.current ?? (() => undefined);
+          const extrapolate = extrapolateGroundRef.current ?? undefined;
 
           // Positions are now PLACED (map-first), not hardcoded. A position carrying a
           // viewpointId uses that viewpoint's surveyed surface (e.g. the bridge deck)
@@ -374,12 +402,14 @@ export default function CesiumViewer(): JSX.Element {
             observerHeight.get(),
             sample,
             viewpoint,
+            extrapolate,
           );
           const tgt = resolveTargetHeight(
             tgtPos.lat,
             tgtPos.lon,
             targetHeight.get(),
             sample,
+            extrapolate,
           );
 
           const observer: LatLonHeight = {
@@ -457,7 +487,7 @@ export default function CesiumViewer(): JSX.Element {
         // Loaded in parallel with the tiles. Occlusion is recomputed once it lands so
         // the first verdict is not silently based on the fallback elevation.
         void loadHeightmap().then((res) => {
-          if (disposed) return;
+          if (disposed || viewer.isDestroyed()) return;
           if (res.sampleGround) {
             groundSamplerRef.current = res.sampleGround;
             recompute();
@@ -468,6 +498,44 @@ export default function CesiumViewer(): JSX.Element {
               `ground elevation unavailable (${res.error ?? 'unknown error'}) — ` +
                 `using the ${BERLIN_GROUND_ORTHOMETRIC_FALLBACK} m Berlin mean`,
             );
+          }
+
+          // --- Ground the buildings ------------------------------------------------
+          // Until this lands the globe is the bare WGS84 ellipsoid at height 0, while
+          // the building tiles are baked at ellipsoidal heights (~77 m at Berlin's
+          // ground) — so the whole city hovers ~77 m above the plaster surface. Feeding
+          // the SAME DGM1 grid to the globe puts the ground back under the buildings.
+          // Deliberately driven off the same load as the sampler: the rendered surface
+          // and the occlusion elevations then come from one source and cannot drift.
+          if (res.grid) {
+            // Same grid, same edge-extension rule as the terrain sampler — so a position
+            // outside the AOI resolves to the ground the globe actually draws there.
+            // Set BEFORE the re-frame below, or applyViewMode would place the camera
+            // from the Berlin mean again.
+            const grid = res.grid;
+            extrapolateGroundRef.current = (lat: number, lon: number) =>
+              sampleGroundClamped(grid, lat, lon);
+            try {
+              viewer.scene.terrainProvider = createGroundTerrainProvider(res.grid);
+              // Re-frame NOW. applyViewMode() already ran once, synchronously, before
+              // this promise resolved — at which point the ground sampler was still null,
+              // so the preview eye was placed on the 34 m Berlin mean (75.0 m) rather
+              // than Strausberger Platz's real 75.5 m. That leaves the camera half a
+              // metre UNDER the terrain that just installed, i.e. a plaster whiteout on
+              // first load. Re-framing also hides most of the ground's ~75 m jump as the
+              // provider swap invalidates every globe tile.
+              applyViewMode(0);
+              applyDisc();
+              viewer.scene.requestRender();
+            } catch (err) {
+              // The scene is still usable with a flat globe (buildings float, but the
+              // solver is unaffected), so report rather than tear the island down.
+              console.error('[CesiumViewer] ground terrain failed', err);
+              setGroundWarning(
+                `ground terrain unavailable (${err instanceof Error ? err.message : String(err)}) — ` +
+                  `the buildings will render above the plaster surface`,
+              );
+            }
           }
         });
 
@@ -481,6 +549,7 @@ export default function CesiumViewer(): JSX.Element {
         const applyViewMode = (durationSec = 1.2) => {
           if (disposed || viewer.isDestroyed()) return;
           const sample = groundSamplerRef.current ?? (() => undefined);
+          const extrapolate = extrapolateGroundRef.current ?? undefined;
           const obsPos = observerPosition.get();
           const tgtPos = targetPosition.get();
           const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
@@ -497,7 +566,7 @@ export default function CesiumViewer(): JSX.Element {
           // PREVIEW: the haze + the lens, i.e. the actual photograph.
           studioStage.enabled = true;
           const obs = resolveObserverHeight(
-            obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
+            obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint, extrapolate,
           );
 
           // AIM at the celestial body's height on the target, not the target's tip.
@@ -512,7 +581,7 @@ export default function CesiumViewer(): JSX.Element {
             ellipsoidalHeight: obs.ellipsoidalHeight,
           };
           const tgtTopEll = resolveTargetHeight(
-            tgtPos.lat, tgtPos.lon, targetHeight.get(), sample,
+            tgtPos.lat, tgtPos.lon, targetHeight.get(), sample, extrapolate,
           ).ellipsoidalHeight;
 
           const bodySample = sampleBody(solverBody.get(), dateTime.get(), obsPos.lat, obsPos.lon);
@@ -583,10 +652,11 @@ export default function CesiumViewer(): JSX.Element {
             return;
           }
           const sample = groundSamplerRef.current ?? (() => undefined);
+          const extrapolate = extrapolateGroundRef.current ?? undefined;
           const obsPos = observerPosition.get();
           const viewpoint = obsPos.viewpointId ? findViewpoint(obsPos.viewpointId) : undefined;
           const obs = resolveObserverHeight(
-            obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint,
+            obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint, extrapolate,
           );
           const body = solverBody.get();
           const observerGeo = {

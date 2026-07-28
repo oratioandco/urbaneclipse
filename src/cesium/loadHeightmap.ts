@@ -13,6 +13,7 @@ import {
   createHeightmap,
   decodeSamples,
   sampleGroundOrthometric,
+  type Heightmap,
   type HeightmapHeader,
 } from '../lib/heightmap.js';
 import type { SampleGround } from '../lib/sceneHeights.js';
@@ -20,6 +21,12 @@ import type { SampleGround } from '../lib/sceneHeights.js';
 export interface HeightmapLoadResult {
   /** Ground sampler, or null when the heightmap could not be loaded. */
   sampleGround: SampleGround | null;
+  /**
+   * The validated grid itself, so the globe's terrain can be built from the SAME DGM1
+   * data that resolves observer/target elevations — one source of ground truth, so the
+   * rendered surface and the occlusion math can never disagree. Null on failure.
+   */
+  grid: Heightmap | null;
   /** Human-readable failure reason, present only on failure. */
   error?: string;
 }
@@ -43,10 +50,10 @@ export async function loadHeightmap(
     ]);
 
     if (!headerRes.ok) {
-      return { sampleGround: null, error: `${base}.json — HTTP ${headerRes.status}` };
+      return { sampleGround: null, grid: null, error: `${base}.json — HTTP ${headerRes.status}` };
     }
     if (!binRes.ok) {
-      return { sampleGround: null, error: `${base}.bin — HTTP ${binRes.status}` };
+      return { sampleGround: null, grid: null, error: `${base}.bin — HTTP ${binRes.status}` };
     }
 
     const header = (await headerRes.json()) as HeightmapHeader;
@@ -58,10 +65,12 @@ export async function loadHeightmap(
 
     return {
       sampleGround: (lat: number, lon: number) => sampleGroundOrthometric(map, lat, lon),
+      grid: map,
     };
   } catch (err) {
     return {
       sampleGround: null,
+      grid: null,
       error: err instanceof Error ? err.message : String(err),
     };
   }
