@@ -17,7 +17,11 @@
  *     Cesium.d.ts but IS present on the runtime prototype (search the unminified
  *     build, line ~230510). Throws DeveloperError if scene.mode !== SCENE3D.
  *   - `Cesium.Cartesian3.fromDegrees(longitude, latitude, height?, ellipsoid?, result?)`
- *     (height is ellipsoidal metres — our globe has NO terrain so ground ≈ 0).
+ *     (height is ellipsoidal metres). The globe DOES carry terrain now — the DGM1 grid,
+ *     via src/cesium/groundTerrain.ts — so Berlin's ground is ~73-80 m ellipsoidal, not
+ *     0. Heights reaching here have already been through src/lib/sceneHeights.ts, which
+ *     applies the geoid; see the globe-hiding note in computeOcclusion for why the
+ *     terrain is nevertheless kept out of the pick.
  *   - `Cesium.Ray(origin?, direction?)` with `.origin` and `.direction` (unit).
  *   - `Cesium.Cartesian3.distance(left, right)`.
  *   - `Cesium.Cartesian3.subtract(left, right, result)`; `normalize(cartesian, result)`.
@@ -111,7 +115,27 @@ export function computeOcclusion(
   // scene is not 3D — wrap defensively so a transient mode switch can't crash the
   // island (the caller treats 'unknown' the same as 'not yet computed').
   let picks: Array<{ object: unknown; position: CesiumType.Cartesian3 }> = [];
+  // HIDE THE GLOBE FOR THE PICK.
+  //
+  // The globe now carries real DGM1 terrain (src/cesium/groundTerrain.ts) instead of
+  // sitting 77 m below the city as a bare ellipsoid, so the observer's ray can reach it.
+  // A globe hit comes back as `{ object: undefined, position }` — verified live — and
+  // Cesium's drill treats a positioned hit with no object as COMPLETE and stops there
+  // (addDrillPickedResults). Anything behind the ground would therefore never be
+  // reported, silently truncating the sightline.
+  //
+  // `objectsToExclude` cannot help: Cesium's isExcluded() returns false immediately when
+  // the picked object is undefined. Hiding the globe is the one lever that works.
+  // Globe.render() returns early when show is false and this offscreen pick pass is
+  // never composited, so nothing flickers on screen.
+  //
+  // The terrain is not a sightline occluder in this app anyway: the photographer stands
+  // ON it, and every curated viewpoint looks over it. Excluding it keeps the terrain
+  // upgrade a strict no-op for occlusion.
+  const globe = viewer.scene.globe;
+  const globeWasShown = globe.show;
   try {
+    globe.show = false;
     picks = (viewer.scene as unknown as {
       drillPickFromRay: (
         ray: CesiumType.Ray,
@@ -123,6 +147,8 @@ export function computeOcclusion(
   } catch (e) {
     // Non-3D scene or pick failure — can't classify. Don't crash the React tree.
     return { state: 'unknown' };
+  } finally {
+    globe.show = globeWasShown;
   }
 
   // Map each pick to the Intersection shape classifyOcclusion expects.
@@ -152,9 +178,21 @@ export function computeOcclusion(
  * Classify a Cesium picked object as 'building' (3D Tiles content), 'terrain'
  * (globe primitive), or 'other' (anything else — atmosphere, helpers, etc.).
  *
- * 3D Tiles picks come back as Cesium3DTileFeature (when per-feature IDs are
- * available) or as a model/primitive tied to the Cesium3DTileset — we treat BOTH
- * as 'building'. The globe itself surfaces as a GlobeSurfacePrimitive pick.
+ * KNOWN DEFECT (pre-dates the terrain work; NOT fixed here because correcting it
+ * changes solver verdicts and deserves its own change):
+ * none of the checks below match what Cesium 1.143 actually hands back for this
+ * tileset, so buildings currently classify as 'other' and NEVER occlude. Verified
+ * live — a b3dm hit is shaped:
+ *
+ *     { content, primitive: <Cesium3DTileset>, detail, id }
+ *
+ * so `.tileset` is undefined, `.getContent` is undefined, and the constructor is a
+ * plain `Object`. Because these tiles carry no batch table, Cesium takes the
+ * `buildPickObject` branch rather than producing a Cesium3DTileFeature. The reliable
+ * discriminator is `picked.primitive?.isCesium3DTileset === true` — which is the test
+ * Cesium itself uses internally.
+ *
+ * The globe never reaches here at all: computeOcclusion hides it for the pick.
  */
 function classifyPick(picked: unknown): Intersection['kind'] {
   if (!picked || typeof picked !== 'object') return 'other';
