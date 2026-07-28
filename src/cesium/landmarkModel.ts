@@ -17,6 +17,7 @@
 import type * as CesiumType from 'cesium';
 import { orthometricToEllipsoidal } from '../lib/elevation.js';
 import { radiusAtHeight, landmarkHeight, type RevolutionLandmark } from '../lib/landmarks.js';
+import { LANDMARK_PICK_ID } from '../lib/pickKind.js';
 
 const Cesium = (window as unknown as { Cesium: typeof CesiumType }).Cesium;
 
@@ -64,6 +65,13 @@ export function buildLandmarkPrimitive(
           attributes: {
             color: Cesium.ColorGeometryInstanceAttribute.fromColor(color),
           },
+          // Stable pick identity, per INSTANCE — Primitive copies instance.id onto the
+          // pick object (Primitive.js:647); a Primitive has no id of its own. The
+          // occlusion classifier must tell this apart from a building: it is the
+          // TARGET, and a ray aimed at the tip necessarily grazes the shaft below it,
+          // so counting it as an obstacle would self-block every sightline to it.
+          // See LANDMARK_PICK_ID in src/lib/pickKind.ts.
+          id: LANDMARK_PICK_ID,
         }),
       );
     }

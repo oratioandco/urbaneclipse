@@ -36,6 +36,7 @@ import {
   type Intersection,
   type OcclusionResult,
 } from '../lib/occlusionMath.js';
+import { classifyPick } from '../lib/pickKind.js';
 
 /**
  * Read the Cesium UMD global the same way CesiumViewer.tsx does. `import type` is
@@ -57,6 +58,12 @@ export interface ComputeOcclusionResult {
   /** Kind of the first occluder Cesium reported (for diagnostics). Undefined if none. */
   occluderKind?: 'building' | 'terrain' | 'other';
 }
+
+/**
+ * Upper bound on drill-pick hits. Picks are ordered nearest-first and only the closest
+ * occluder decides the verdict, so this bounds work without changing the result.
+ */
+const MAX_DRILL_PICKS = 32;
 
 /** Polyline entity created/updated by {@link drawLineOfSight}. */
 type PolylineEntity = CesiumType.Entity;
@@ -143,7 +150,11 @@ export function computeOcclusion(
         objectsToExclude?: unknown[],
         width?: number,
       ) => Array<{ object: unknown; position: CesiumType.Cartesian3 }>;
-    }).drillPickFromRay(ray);
+    // Bounded: drill results come back NEAREST-FIRST, and classifyOcclusion only ever
+    // needs the closest occluder, so a cap cannot change the verdict — it just stops a
+    // horizontal ray through dense city from enumerating the whole block. Unbounded was
+    // survivable only while the terrain hit truncated the drill early.
+    }).drillPickFromRay(ray, MAX_DRILL_PICKS);
   } catch (e) {
     // Non-3D scene or pick failure — can't classify. Don't crash the React tree.
     return { state: 'unknown' };
@@ -172,49 +183,6 @@ export function computeOcclusion(
   );
 
   return { state, occluderKind: firstOccluderKind };
-}
-
-/**
- * Classify a Cesium picked object as 'building' (3D Tiles content), 'terrain'
- * (globe primitive), or 'other' (anything else — atmosphere, helpers, etc.).
- *
- * KNOWN DEFECT (pre-dates the terrain work; NOT fixed here because correcting it
- * changes solver verdicts and deserves its own change):
- * none of the checks below match what Cesium 1.143 actually hands back for this
- * tileset, so buildings currently classify as 'other' and NEVER occlude. Verified
- * live — a b3dm hit is shaped:
- *
- *     { content, primitive: <Cesium3DTileset>, detail, id }
- *
- * so `.tileset` is undefined, `.getContent` is undefined, and the constructor is a
- * plain `Object`. Because these tiles carry no batch table, Cesium takes the
- * `buildPickObject` branch rather than producing a Cesium3DTileFeature. The reliable
- * discriminator is `picked.primitive?.isCesium3DTileset === true` — which is the test
- * Cesium itself uses internally.
- *
- * The globe never reaches here at all: computeOcclusion hides it for the pick.
- */
-function classifyPick(picked: unknown): Intersection['kind'] {
-  if (!picked || typeof picked !== 'object') return 'other';
-  // Cesium3DTileFeature has `getContent` + `tileset`. The tile-content primitive
-  // classes (e.g. Model3DTileContent / b3dm mesh) carry a `_tileset` backref too.
-  const anyPicked = picked as Record<string, unknown>;
-  if (typeof anyPicked.tileset === 'object' && anyPicked.tileset !== null) {
-    return 'building';
-  }
-  if (typeof anyPicked.getContent === 'function') {
-    return 'building';
-  }
-  // Cesium3DTileFeature class name check (defensive — covers feature picks).
-  const ctorName = (anyPicked.constructor as { name?: string } | undefined)?.name;
-  if (ctorName && ctorName.includes('Cesium3DTile')) {
-    return 'building';
-  }
-  // Globe / terrain primitive names.
-  if (ctorName && /Globe|Terrain/i.test(ctorName)) {
-    return 'terrain';
-  }
-  return 'other';
 }
 
 function cartesianToVec3(c: CesiumType.Cartesian3): [number, number, number] {
