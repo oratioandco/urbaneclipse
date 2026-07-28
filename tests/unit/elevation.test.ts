@@ -33,10 +33,16 @@ describe('geoid undulation constant', () => {
     // If the two ever drift apart, every building silently sits at the wrong height
     // relative to the observer — the exact class of bug this module was written to
     // fix. Fail loudly at test time instead.
+    // Anchored to the ASSIGNMENT, at the start of a line. An unanchored search matches
+    // the module docstring first ("...constant ``GEOID_UNDULATION_BERLIN = 39.5`` m",
+    // convert_tile.py:34), so someone could edit the real constant on line 85 and leave
+    // this test green while the baked tiles, the observer/target heights AND the
+    // rendered terrain (src/lib/terrainTile.ts) all silently disagree.
     const py = readFileSync('scripts/convert_tile.py', 'utf8');
-    const m = py.match(/GEOID_UNDULATION_BERLIN\s*=\s*([0-9.]+)/);
-    expect(m, 'GEOID_UNDULATION_BERLIN not found in scripts/convert_tile.py').not.toBeNull();
-    expect(Number(m![1])).toBe(GEOID_UNDULATION_BERLIN);
+    const all = [...py.matchAll(/^GEOID_UNDULATION_BERLIN\s*=\s*([-\d.eE+]+)\s*$/gm)];
+    expect(all, 'GEOID_UNDULATION_BERLIN assignment not found in scripts/convert_tile.py')
+      .toHaveLength(1);
+    expect(Number(all[0]![1])).toBe(GEOID_UNDULATION_BERLIN);
   });
 
   it('is a plausible Berlin geoid undulation', () => {
