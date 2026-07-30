@@ -70,6 +70,12 @@ import { loadHeightmap } from '../../cesium/loadHeightmap.js';
 import { createGroundTerrainProvider } from '../../cesium/groundTerrain.js';
 import { sampleGroundClamped } from '../../lib/terrainTile.js';
 import {
+  startRestream,
+  stepRestream,
+  isRestreaming,
+  type RestreamState,
+} from '../../lib/restreamWatcher.js';
+import {
   flyToMapView,
   flyToPreview,
   upsertMarker,
@@ -130,6 +136,9 @@ export default function CesiumViewer(): JSX.Element {
   const [scenePhase, setScenePhase] = useState<ScenePhase>('connecting');
   const [sceneError, setSceneError] = useState<string | undefined>(undefined);
   const [sceneSlow, setSceneSlow] = useState(false);
+  /** Brief loader while 3D Tiles re-stream after a Map->Preview reframe (e.g. a result
+   *  click). Driven by the pure restreamWatcher against tileset.tilesLoaded. */
+  const [sceneRestreaming, setSceneRestreaming] = useState(false);
 
   // DGM1 ground sampler. A ref rather than state: the occlusion recompute reads it
   // imperatively from inside the Cesium lifecycle, and a re-render must not remount
@@ -195,6 +204,9 @@ export default function CesiumViewer(): JSX.Element {
     viewerRef.current = viewer;
     // Track disposal so the async tileset callback can no-op after StrictMode unmount.
     let disposed = false;
+    // rAF handle for the post-reframe re-stream loader; cancelled on cleanup so a
+    // StrictMode remount/unmount mid-poll cannot setState after teardown.
+    let restreamRaf: number | null = null;
     // Torn down with the viewer; assigned once the tileset resolves.
     let cleanupPlacement: (() => void) | undefined;
 
@@ -781,12 +793,50 @@ export default function CesiumViewer(): JSX.Element {
         const unsubDiscBody = solverBody.listen(applyDisc);
         applyDisc();
 
-        const unsubViewMode = viewMode.listen(() => {
+        // --- Post-reframe re-stream loader ---------------------------------------
+        // Entering preview reframes top-down map -> street-level telephoto, forcing 3D
+        // Tiles to re-stream for the new view. Show a brief "Framing the shot…" loader
+        // until the tile queue drains. Cesium emits no tilesLoaded event in 1.143, so we
+        // rAF-poll the boolean the rest of the codebase already trusts; the pure
+        // restreamWatcher (src/lib/restreamWatcher.ts) hides it past a hard deadline so
+        // it can never pin the user behind a spinner under SwiftShader.
+        let restream: RestreamState = { kind: 'idle' };
+        const applyRestream = (next: RestreamState): void => {
+          restream = next;
+          setSceneRestreaming(isRestreaming(next));
+        };
+        const startRestreamWatch = (): void => {
+          if (disposed || viewer.isDestroyed()) return;
+          if (restreamRaf !== null) cancelAnimationFrame(restreamRaf);
+          applyRestream(startRestream(performance.now()));
+          const tick = (): void => {
+            if (disposed || viewer.isDestroyed()) {
+              restreamRaf = null;
+              return;
+            }
+            const next = stepRestream(restream, {
+              tilesLoaded: tileset.tilesLoaded,
+              now: performance.now(),
+            });
+            applyRestream(next);
+            if (next.kind === 'watching') {
+              restreamRaf = requestAnimationFrame(tick);
+            } else {
+              restreamRaf = null;
+            }
+          };
+          restreamRaf = requestAnimationFrame(tick);
+        };
+
+        const unsubViewMode = viewMode.listen((mode) => {
           // Instant (duration 0), never an animated fly: in map mode the camera is
           // left wherever it was (potentially very far away), so a flyTo into the
           // preview would drag the whole tile-streaming pipeline across the globe.
           applyViewMode(0);
           applyDisc();
+          // Only map->preview has a visible re-stream: in map mode the Leaflet planning
+          // map covers the canvas, so preview->map needs no loader.
+          if (mode === 'preview') startRestreamWatch();
         });
         // Flipping back to AUTO framing re-fits the lens immediately.
         const unsubLens = lensAutoFit.listen(() => {
@@ -864,6 +914,7 @@ export default function CesiumViewer(): JSX.Element {
     // --- Cleanup (React 18/19 StrictMode double-mount safe) --------------------
     return () => {
       disposed = true;
+      if (restreamRaf !== null) cancelAnimationFrame(restreamRaf);
       window.clearTimeout(slowTimer);
       // Placement listeners + the click handler outlive the tileset promise, so tear
       // them down explicitly or a StrictMode remount leaves a dead handler attached.
@@ -902,6 +953,17 @@ export default function CesiumViewer(): JSX.Element {
           `top:` offsets, so their heights compose instead of colliding — legible and
           non-overlapping at 1280x800 and roomier at 1440x900 (see global.css). */}
       <div className="pv-overlay">
+        {viewModeValue === 'preview' && sceneRestreaming && (
+          <div
+            className="pv-scene-loader"
+            role="status"
+            aria-live="polite"
+            data-testid="scene-restream-loader"
+          >
+            <span className="pv-scene-loader__spinner" aria-hidden="true" />
+            Framing the shot…
+          </div>
+        )}
         <div className="pv-rail pv-rail--left">
           <PlacementControls
             pickError={pickError}
