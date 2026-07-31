@@ -94,11 +94,10 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
 
   // ---- Rule 4: fog from eye-space distance in METERS + film grain. ----
   describe('rule 4: fog from eye-space distance (meters) + film grain', () => {
-    it('computes eye-space distance via length(czm_windowToEyeCoordinates(...).xyz)', () => {
-      expect(src).toContain('czm_windowToEyeCoordinates');
-      expect(src).toContain(
-        'length(czm_windowToEyeCoordinates(vec4(gl_FragCoord.xy, depth, 1.0)).xyz)',
-      );
+    it('computes eye-space position + distance via czm_windowToEyeCoordinates', () => {
+      expect(src).toContain('czm_windowToEyeCoordinates(vec4(gl_FragCoord.xy, depth, 1.0))');
+      expect(src).toContain('vec4 eye = czm_windowToEyeCoordinates');
+      expect(src).toContain('float dist = length(eye.xyz)');
     });
     it('applies smoothstep(fogStart, fogEnd, dist) over that distance', () => {
       expect(src).toContain('smoothstep(fogStart, fogEnd, dist)');
@@ -109,6 +108,29 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
     });
     it('references czm_frameNumber for temporal film grain', () => {
       expect(src).toContain('czm_frameNumber');
+    });
+  });
+
+  // ---- Horizon fade (the "horizon seam" fix): terrain dissolves to sky at the globe
+  //      silhouette instead of hard-cutting, scoped so tower/building tops stay sharp. ----
+  describe('horizon fade (view-pitch band around the horizon)', () => {
+    it('derives view pitch from the eye-space up component and blends toward sky', () => {
+      expect(src).toContain('float viewPitch = eye.y / dist;');
+      expect(src).toContain('float horizonFog = smoothstep(HORIZON_FADE_BELOW, 0.0, viewPitch)');
+      expect(src).toContain(
+        'horizonFog *= (1.0 - smoothstep(0.0, HORIZON_FADE_ABOVE, viewPitch))',
+      );
+      expect(src).toContain('fog = max(fog, horizonFog)');
+    });
+    it('keeps the distance-fog ramp and the haze mix intact (no regression)', () => {
+      expect(src).toContain('smoothstep(fogStart, fogEnd, dist)');
+      expect(src).toContain('mix(color.rgb * u_sceneTint, sky, fog)');
+    });
+    it('never touches the background depth test or the disc (additive only)', () => {
+      // The fade lives entirely in the geometry branch (depth < 1.0); the background
+      // branch and the disc are unchanged, so the city-eating regression cannot recur.
+      expect(src).toContain('depth >= 1.0');
+      expect(src).toContain('smoothstep(u_sunRadius - soft, u_sunRadius + soft, r)');
     });
   });
 
