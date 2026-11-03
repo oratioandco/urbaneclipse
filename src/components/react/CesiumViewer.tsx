@@ -377,8 +377,23 @@ export default function CesiumViewer(): JSX.Element {
         tileset.imageBasedLighting.luminanceAtZenith = 0.6;
         tileset.shadows = Cesium.ShadowMode.ENABLED;
 
+        // Give the city a continuous plaster ground instead of letting the sky/void
+        // show through between the narrow road ribbon and the building footprints.
+        // This broad urban floor follows the real boulevard axis, so it still narrows
+        // naturally under the telephoto camera and remains occluded by city geometry.
+        viewer.entities.add({
+          id: 'pv-frankfurter-allee-ground',
+          corridor: {
+            positions: Cesium.Cartesian3.fromDegreesArray([...FRANKFURTER_ALLEE_AXIS]),
+            width: 260,
+            height: 0,
+            material: Cesium.Color.fromCssColorString('#b8afa3'),
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            zIndex: 0,
+          },
+        });
         // Keep the photographed boulevard legible as it drops away from the bridge.
-        // A real-width ground corridor creates perspective naturally; unlike a screen
+        // A real-width road corridor creates perspective naturally; unlike a screen
         // overlay, it narrows with distance and is occluded by the actual city mesh.
         viewer.entities.add({
           id: 'pv-frankfurter-allee-axis',
@@ -388,6 +403,7 @@ export default function CesiumViewer(): JSX.Element {
             height: 0,
             material: Cesium.Color.fromCssColorString('#29313a').withAlpha(0.82),
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            zIndex: 1,
           },
         });
         viewer.entities.add({
@@ -397,6 +413,7 @@ export default function CesiumViewer(): JSX.Element {
             width: 1,
             material: Cesium.Color.fromCssColorString('#e5d8c4').withAlpha(0.52),
             clampToGround: true,
+            zIndex: 2,
           },
         });
         // Debug hook for headless scene-state inspection (scripts/diagnose.mjs).
@@ -1095,22 +1112,6 @@ export default function CesiumViewer(): JSX.Element {
       {/* 2D planning map: covers the Cesium canvas in map mode. The scene stays
           mounted underneath — occlusion + preview still need it. */}
       {viewModeValue === 'map' && <PlanningMap onPickError={setPickError} />}
-      {viewModeValue === 'preview' && (
-        <aside className="pv-minimap" aria-label="Top-down route overview">
-          <PlanningMap variant="inset" />
-          <div className="pv-minimap__legend" aria-hidden="true">
-            <span><i className="pv-minimap__dot pv-minimap__dot--observer" />Observer</span>
-            <span><i className="pv-minimap__dot pv-minimap__dot--target" />Target</span>
-          </div>
-          <button
-            type="button"
-            className="pv-minimap__open"
-            onClick={() => viewMode.set('map')}
-          >
-            Open top view
-          </button>
-        </aside>
-      )}
       {/* Overlay scaffold (T057): two side rails + a bottom dock. Panels are STATIC
           children of a flex rail rather than absolutely positioned at hand-tuned
           `top:` offsets, so their heights compose instead of colliding — legible and
@@ -1143,6 +1144,28 @@ export default function CesiumViewer(): JSX.Element {
           <CameraControls />
         </div>
         <div className="pv-rail pv-rail--right">
+          {viewModeValue === 'preview' && (
+            <section className="pv-panel pv-map-panel" aria-label="Top-down route overview">
+              <header className="pv-map-panel__head">
+                <span>Top view</span>
+                <span>Observer → target</span>
+              </header>
+              <div className="pv-map-panel__canvas">
+                <PlanningMap variant="inset" />
+              </div>
+              <div className="pv-map-panel__legend" aria-hidden="true">
+                <span><i className="pv-map-panel__dot pv-map-panel__dot--observer" />Observer</span>
+                <span><i className="pv-map-panel__dot pv-map-panel__dot--target" />Target</span>
+              </div>
+              <button
+                type="button"
+                className="pv-map-panel__open"
+                onClick={() => viewMode.set('map')}
+              >
+                Open full map
+              </button>
+            </section>
+          )}
           <SolverSearch />
         </div>
         <div className="pv-dock">

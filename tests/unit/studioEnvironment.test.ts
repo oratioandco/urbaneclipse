@@ -77,6 +77,9 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       expect(src).toContain('out_FragColor');
       expect(src).not.toMatch(/gl_FragColor/);
     });
+    it('renders the authored sky and scene as opaque surfaces', () => {
+      expect(src.match(/out_FragColor = vec4\(result, 1\.0\);/g)).toHaveLength(2);
+    });
   });
 
   // ---- Rule 3: background via EXACT cleared depth (depth >= 1.0). ----

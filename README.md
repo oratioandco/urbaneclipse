@@ -36,7 +36,8 @@ traveling to a location:
    length, and zoom into the actual field of view. The canonical composition uses the
    APS-C / 150 mm context setup, with 600 mm available for the tight detail view. A
    persistent top-down locator keeps the observer, target, bearing, and city context
-   visible beside the telephoto preview.
+   visible in the right instrument rail. An opaque plaster ground plane anchors the
+   street canyon so the city reads as a physical model rather than floating geometry.
 
 ## What this demonstrates in the field
 

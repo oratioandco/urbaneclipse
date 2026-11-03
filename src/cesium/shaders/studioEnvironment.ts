@@ -253,7 +253,8 @@ export function buildStudioEnvironmentShaderSource(
     '    vec3 landmark = landmarkColor(hazeColor);',
     '    vec3 result = mix(sky, landmark, towerMask(v_textureCoordinates));',
     '    result = mix(result, landmark, gateMask(v_textureCoordinates));',
-    '    out_FragColor = vec4(result, color.a);',
+    '    // The authored sky is a real scene surface, not a transparent canvas hole.',
+    '    out_FragColor = vec4(result, 1.0);',
     '    return;',
     '  }',
     '',
@@ -297,7 +298,7 @@ export function buildStudioEnvironmentShaderSource(
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
     '  result += (grain - 0.5) * grainAmount;',
     '',
-    '  out_FragColor = vec4(result, color.a);',
+    '  out_FragColor = vec4(result, 1.0);',
     '}',
     '',
   ].join('\n');
