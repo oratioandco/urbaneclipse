@@ -34,7 +34,21 @@ traveling to a location:
 
 3. **What will the frame contain?** A camera/lens preview converts sensor size, focal
    length, and zoom into the actual field of view. The canonical composition uses the
-   APS-C / 150 mm context setup, with 600 mm available for the tight detail view.
+   APS-C / 150 mm context setup, with 600 mm available for the tight detail view. A
+   persistent top-down locator keeps the observer, target, bearing, and city context
+   visible beside the telephoto preview.
+
+## What this demonstrates in the field
+
+- **Messy data made operational:** official CityGML becomes a compact, self-hosted
+  3D Tiles scene through a reproducible conversion pipeline.
+- **Systems integration:** geospatial data, astronomical calculations, camera
+  geometry, terrain height, line-of-sight analysis, and a browser-based 3D engine
+  meet in one working instrument.
+- **Truth over spectacle:** the interface distinguishes surveyed, terrain-derived,
+  extrapolated, and assumed values; impossible full eclipses are reported honestly.
+- **End-to-end delivery:** product concept, visual system, math, data pipeline,
+  automated checks, container build, and live deployment are maintained together.
 
 ## Product direction: the daily Eclipse Finder
 
@@ -57,13 +71,15 @@ instrument: *what is the best urban eclipse I can photograph in Berlin today?*
 ## The "Plaster Void" aesthetic
 
 The scene deliberately does **not** look like a GIS map. Buildings render as
-uniform matte-white geometry with no satellite/road imagery, no sky box, and no
-atmosphere — floating in a soft, hazy, grain-textured void, like a physical
+uniform matte-white geometry with no satellite imagery or sky box, floating in a
+restrained, grain-textured atmosphere like a physical
 architectural plaster/clay model under studio lighting. This is a first-class
 product requirement (not decoration): stripping away map chrome and color isolates
 pure geometry and shadow, which is what a line-of-sight/light planning tool
-actually needs to show. See `src/cesium/shaders/studioEnvironment.ts` for the
-depth-haze + film-grain post-process shader that produces the effect.
+actually needs to show. A separate monochrome map inset provides spatial orientation
+without contaminating the photographic preview. See
+`src/cesium/shaders/studioEnvironment.ts` for the depth-haze + film-grain
+post-process shader that produces the effect.
 
 ## Quick start
 

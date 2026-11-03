@@ -120,7 +120,7 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       expect(src).toContain(
         'horizonFog *= (1.0 - smoothstep(0.0, HORIZON_FADE_ABOVE, viewPitch))',
       );
-      expect(src).toContain('fog = max(fog, horizonFog)');
+      expect(src).toContain('fog = max(fog, horizonFog * 0.38)');
     });
     it('keeps the distance-fog ramp and the haze mix intact (no regression)', () => {
       expect(src).toContain('smoothstep(fogStart, fogEnd, dist)');
@@ -190,7 +190,7 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
 
     it('uses the distant-city plaster for analytical landmarks instead of a black silhouette', () => {
       expect(src).toContain('vec3 landmarkColor');
-      expect(src).toContain('mix(distantPlaster, hazeColor, 0.30)');
+      expect(src).toContain('mix(distantPlaster, hazeColor, 0.18)');
       expect(src).not.toContain('mix(result, vec3(0.12, 0.115, 0.12)');
     });
 

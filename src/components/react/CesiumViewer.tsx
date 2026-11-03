@@ -1095,6 +1095,22 @@ export default function CesiumViewer(): JSX.Element {
       {/* 2D planning map: covers the Cesium canvas in map mode. The scene stays
           mounted underneath — occlusion + preview still need it. */}
       {viewModeValue === 'map' && <PlanningMap onPickError={setPickError} />}
+      {viewModeValue === 'preview' && (
+        <aside className="pv-minimap" aria-label="Top-down route overview">
+          <PlanningMap variant="inset" />
+          <div className="pv-minimap__legend" aria-hidden="true">
+            <span><i className="pv-minimap__dot pv-minimap__dot--observer" />Observer</span>
+            <span><i className="pv-minimap__dot pv-minimap__dot--target" />Target</span>
+          </div>
+          <button
+            type="button"
+            className="pv-minimap__open"
+            onClick={() => viewMode.set('map')}
+          >
+            Open top view
+          </button>
+        </aside>
+      )}
       {/* Overlay scaffold (T057): two side rails + a bottom dock. Panels are STATIC
           children of a flex rail rather than absolutely positioned at hand-tuned
           `top:` offsets, so their heights compose instead of colliding — legible and

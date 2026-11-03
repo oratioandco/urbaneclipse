@@ -32,6 +32,8 @@ import {
 export interface PlanningMapProps {
   /** Report a rejected/failed pick so the placement panel can say why (FR-013). */
   onPickError?: (message: string | undefined) => void;
+  /** Full planning surface or a read-only locator retained beside the preview. */
+  variant?: 'full' | 'inset';
 }
 
 /** Same colours as the Cesium markers / search-area ellipse, so MAP and PREVIEW agree. */
@@ -42,8 +44,12 @@ const AREA_COLOR = '#8a6410';
 const LOS_CLEAR = '#2f7a3d';
 const LOS_BLOCKED = '#b3352a';
 
-export default function PlanningMap({ onPickError }: PlanningMapProps = {}): JSX.Element {
+export default function PlanningMap({
+  onPickError,
+  variant = 'full',
+}: PlanningMapProps = {}): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isInset = variant === 'inset';
 
   useEffect(() => {
     const container = containerRef.current;
@@ -52,8 +58,14 @@ export default function PlanningMap({ onPickError }: PlanningMapProps = {}): JSX
     const map = L.map(container, {
       center: [52.52, 13.42],
       zoom: 13,
-      zoomControl: true,
-      attributionControl: true,
+      zoomControl: !isInset,
+      attributionControl: !isInset,
+      dragging: !isInset,
+      scrollWheelZoom: !isInset,
+      doubleClickZoom: !isInset,
+      boxZoom: !isInset,
+      keyboard: !isInset,
+      touchZoom: !isInset,
     });
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -87,18 +99,20 @@ export default function PlanningMap({ onPickError }: PlanningMapProps = {}): JSX
       const tgt = targetPosition.get();
       observerMarker.setLatLng([obs.lat, obs.lon]);
       targetMarker.setLatLng([tgt.lat, tgt.lon]);
-      observerMarker.bindTooltip(obs.label ?? 'Observer', {
-        permanent: true,
-        direction: 'top',
-        offset: [0, -8],
-        className: 'pv-map-label',
-      });
-      targetMarker.bindTooltip(tgt.label ?? 'Target', {
-        permanent: true,
-        direction: 'top',
-        offset: [0, -8],
-        className: 'pv-map-label',
-      });
+      if (!isInset) {
+        observerMarker.bindTooltip(obs.label ?? 'Observer', {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -8],
+          className: 'pv-map-label',
+        });
+        targetMarker.bindTooltip(tgt.label ?? 'Target', {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -8],
+          className: 'pv-map-label',
+        });
+      }
       if (!map.hasLayer(observerMarker)) observerMarker.addTo(map);
       if (!map.hasLayer(targetMarker)) targetMarker.addTo(map);
 
@@ -110,7 +124,8 @@ export default function PlanningMap({ onPickError }: PlanningMapProps = {}): JSX
 
       // Frame both markers whenever they move while the map is up.
       map.fitBounds(
-        L.latLngBounds([obs.lat, obs.lon], [tgt.lat, tgt.lon]).pad(0.25),
+        L.latLngBounds([obs.lat, obs.lon], [tgt.lat, tgt.lon]).pad(isInset ? 0.08 : 0.25),
+        { animate: false },
       );
     };
 
@@ -163,7 +178,7 @@ export default function PlanningMap({ onPickError }: PlanningMapProps = {}): JSX
       onPickError?.(undefined);
       pickMode.set('none');
     };
-    map.on('click', onMapClick);
+    if (!isInset) map.on('click', onMapClick);
 
     // --- Store subscriptions ----------------------------------------------------
     const unsubs = [
@@ -184,9 +199,17 @@ export default function PlanningMap({ onPickError }: PlanningMapProps = {}): JSX
 
     return () => {
       for (const unsub of unsubs) unsub();
+      if (!isInset) map.off('click', onMapClick);
       map.remove();
     };
-  }, [onPickError]);
+  }, [isInset, onPickError]);
 
-  return <div className="pv-planning-map" ref={containerRef} data-testid="planning-map" />;
+  return (
+    <div
+      className={`pv-planning-map ${isInset ? 'pv-planning-map--inset' : ''}`}
+      ref={containerRef}
+      data-testid={isInset ? 'planning-map-inset' : 'planning-map'}
+      aria-hidden={isInset || undefined}
+    />
+  );
 }

@@ -67,13 +67,13 @@ export interface StudioEnvironmentOptions {
 /** Default plaster-void haze parameters (sensible; not asserted by contract).
  *
  *  Tuned so a landmark ~6 km out (the Fernsehturm from the Lichtenberger Brücke) is
- *  only lightly hazed (fog ~0.29) rather than washed to invisibility — it must read
- *  as a silhouette against the sky, not vanish into it. The haze COLOUR is a live
+ *  still crisp; the atmospheric separation begins beyond the canonical composition
+ *  rather than flattening the street canyon. The haze COLOUR is a live
  *  uniform (`u_haze`, driven per-frame from src/lib/skyPalette.ts); this default is
  *  only the value before the app pushes the time-of-day palette. */
 const DEFAULTS = {
-  fogStart: 8000,
-  fogEnd: 24000,
+  fogStart: 12000,
+  fogEnd: 30000,
   grainAmount: 0.02,
 };
 
@@ -149,10 +149,10 @@ export function buildStudioEnvironmentShaderSource(
     '  float r = length(d);',
     '  // Keep the halo proportional to the real disc. The tighter floor preserves',
     '  // atmosphere without making a physically accurate low sun read oversized.',
-    '  float glowSpread = max(u_sunRadius * u_sunRadius * 2.25, 0.00065);',
+    '  float glowSpread = max(u_sunRadius * u_sunRadius * 0.85, 0.00018);',
     '  float glow = u_glowStrength * exp(-(r * r) / glowSpread) * u_sunVisible;',
     '  vec3 sky = base + u_glowColor * glow;',
-    '  float soft = max(u_sunRadius * 0.08, 0.0015);',
+    '  float soft = max(u_sunRadius * 0.045, 0.0007);',
     '  float disc = u_sunVisible * (1.0 - smoothstep(u_sunRadius - soft, u_sunRadius + soft, r));',
     '  return mix(sky, u_discColor, disc);',
     '}',
@@ -223,7 +223,7 @@ export function buildStudioEnvironmentShaderSource(
     '// darker cut-outs. Their contrast now comes from the real backlit composition.',
     'vec3 landmarkColor(vec3 hazeColor) {',
     '  vec3 distantPlaster = vec3(0.42, 0.39, 0.37);',
-    '  return mix(distantPlaster, hazeColor, 0.30);',
+    '  return mix(distantPlaster, hazeColor, 0.18);',
     '}',
     '',
     'void main() {',
@@ -235,9 +235,10 @@ export function buildStudioEnvironmentShaderSource(
     // Horizon-fade band, in units of sin(view elevation): terrain fades to sky over
     // HORIZON_FADE_BELOW..0 (the last few degrees of ground up to the silhouette) and
     // the fade tapers to zero by HORIZON_FADE_ABOVE (tower/building tops stay sharp).
-    // sin(~3.4deg) = 0.06; sin(~2.3deg) = 0.04. Tunable — see the horizon-seam note.
-    '  float HORIZON_FADE_BELOW = -0.06;',
-    '  float HORIZON_FADE_ABOVE = 0.04;',
+    // Keep the band narrow and partial: it hides the terrain seam without turning
+    // the entire boulevard into fog. Tunable — see the horizon-seam note.
+    '  float HORIZON_FADE_BELOW = -0.035;',
+    '  float HORIZON_FADE_ABOVE = 0.025;',
     '',
     '  vec4 color = texture(colorTexture, v_textureCoordinates);',
     '  float depth = czm_readDepth(depthTexture, v_textureCoordinates);',
@@ -276,7 +277,7 @@ export function buildStudioEnvironmentShaderSource(
     '  float viewPitch = eye.y / dist;',
     '  float horizonFog = smoothstep(HORIZON_FADE_BELOW, 0.0, viewPitch);',
     '  horizonFog *= (1.0 - smoothstep(0.0, HORIZON_FADE_ABOVE, viewPitch));',
-    '  fog = max(fog, horizonFog);',
+    '  fog = max(fog, horizonFog * 0.38);',
     '  // u_sceneTint adds a mild warmth (golden hour) / coolness (night) to the',
     '  // clay geometry — brightness comes from the directional light + image-based',
     '  // ambient against the tiles real per-face normals, so the tint stays near 1.',

@@ -112,6 +112,84 @@ body,
   display: none;
 }
 
+/* Persistent locator retained beside the telephoto preview. It answers the spatial
+   question the photograph cannot: where observer and target sit in the city. */
+.pv-minimap {
+  position: absolute;
+  right: calc(var(--pv-rail-right) + var(--pv-gutter) * 2);
+  bottom: calc(var(--pv-dock-height) + var(--pv-gutter));
+  z-index: 9;
+  width: 224px;
+  height: 156px;
+  overflow: hidden;
+  background: var(--pv-paper-solid);
+  border: 1px solid var(--pv-rule-strong);
+  box-shadow: 0 12px 30px -22px rgba(22, 22, 15, 0.85);
+  font-family: var(--pv-font);
+}
+
+.pv-planning-map--inset {
+  z-index: 0;
+  bottom: 44px;
+  pointer-events: none;
+}
+
+.pv-minimap__legend {
+  position: absolute;
+  left: 8px;
+  bottom: 25px;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  color: var(--pv-ink-70);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.pv-minimap__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pv-minimap__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.pv-minimap__dot--observer { background: var(--pv-clear); }
+.pv-minimap__dot--target { background: var(--pv-blocked); }
+
+.pv-minimap__open {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  height: 24px;
+  padding: 0 8px;
+  color: var(--pv-paper-solid);
+  background: var(--pv-ink);
+  border: 0;
+  border-radius: 0;
+  font: 600 8px/24px var(--pv-font);
+  letter-spacing: 0.15em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pv-minimap__open:hover { background: #2b2b23; }
+.pv-minimap__open:focus-visible {
+  outline: 2px solid var(--pv-paper-solid);
+  outline-offset: -3px;
+}
+
 /* ===========================================================================
    Overlay scaffold
    The island renders ONE overlay; panels are static children of a rail so their
@@ -268,6 +346,10 @@ body,
   }
 
   .pv-dock .pv-legend {
+    display: none;
+  }
+
+  .pv-minimap {
     display: none;
   }
 }
