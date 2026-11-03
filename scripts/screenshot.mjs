@@ -5,6 +5,8 @@ import { chromium } from '@playwright/test';
 const URL = process.argv[2] || process.env.URL || 'http://localhost:4321/';
 const OUT = process.argv[3] || 'data/screenshot.png';
 const WAIT = Number(process.env.WAIT || 12000);
+const WIDTH = Number(process.env.VIEWPORT_WIDTH || 1280);
+const HEIGHT = Number(process.env.VIEWPORT_HEIGHT || 800);
 
 const browser = await chromium.launch({
   headless: true,
@@ -16,7 +18,7 @@ const browser = await chromium.launch({
   ],
 });
 
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+const page = await browser.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
 const errors = [];
 const reqs = [];
 page.on('console', (m) => {

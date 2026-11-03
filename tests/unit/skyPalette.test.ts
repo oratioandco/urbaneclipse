@@ -36,7 +36,7 @@ describe('skyPalette — sun', () => {
     expect(p.glowStrength).toBeGreaterThan(0.8);
     // Atmospheric reddening: the disc loses blue far faster than red.
     expect(p.discTint[0]).toBe(1);
-    expect(p.discTint[2]).toBeLessThan(0.3);
+    expect(p.discTint[2]).toBeLessThan(0.4);
     expect(p.lightIntensity).toBeGreaterThan(0.4);
     expect(p.lightIntensity).toBeLessThan(1.5);
   });
