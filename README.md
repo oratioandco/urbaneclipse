@@ -190,27 +190,28 @@ tileset), `public/berlin/` (the full 236-tile tileset mirrored for local dev), a
 above if you need the full scene. `public/berlin-core/` (the deploy subset) **is**
 committed, so the image always has a usable scene even with no data volume attached.
 
-**Deployed tile hosting.** The full city (924 tiles / 545 MB) is far too large for git
-or the Docker image, so in production it lives on the Hetzner Coolify host and is
-mounted into nginx's docroot via a Coolify persistent volume
-(`/data/plastervoid/tiles/berlin-full` -> `/usr/share/nginx/html/berlin-full`). It is
-therefore served from the **same origin** as the app, so no CORS is involved at all.
-Sync it with `scripts/sync_tiles_hetzner.sh` (needs Tailscale — the Hetzner firewall
-exposes only 80/443 publicly). See [scripts/README.md](./scripts/README.md).
+**Deployed tile hosting.** The committed core subset is the production default, so a
+fresh Docker build always renders a real Berlin scene without relying on host-local
+state. The optional full city (924 tiles / 545 MB) is too large for git or the Docker
+image; deployments that need it mount the Hetzner host directory into nginx at
+`/berlin-full/` and explicitly build with that URL. It remains same-origin, so no CORS
+is involved. Sync it with `scripts/sync_tiles_hetzner.sh` (needs Tailscale — the
+Hetzner firewall exposes only 80/443 publicly). See
+[`scripts/README.md`](./scripts/README.md).
 
 The app reads the tileset URL from `PUBLIC_TILESET_URL`. Astro bakes `PUBLIC_*` at
 build time, so it is set by the **Dockerfile** (`ARG PUBLIC_TILESET_URL`, defaulting to
-`/berlin-full/tileset.json` for deploys) rather than at runtime. Locally, set it in
-`.env` — `/berlin/tileset.json` for the full 236-tile dev set, or leave it unset to use
-the committed core subset. If the tileset 404s the app says so explicitly rather than
+`/berlin-core/tileset.json`) rather than at runtime. Locally, set it in `.env` —
+`/berlin/tileset.json` for the full 236-tile dev set, or leave it unset to use the
+committed core subset. If the tileset 404s the app says so explicitly rather than
 rendering an empty void.
 
 ## Verification tooling
 
 - **`vitest` unit tests** (`npm test`) cover every pure `src/lib/*` module, the
   store's invariants (read-only `isOccluded`, dependency direction, scrub
-  coalescing), and the SSR graph guard. 12 test files, 148 passing tests (+1
-  skipped) as of this writing — run entirely in Node, no browser/WebGL needed.
+  coalescing), and the SSR graph guard. The current suite has 27 passing test files
+  and 356 passing tests (+1 skipped), all running in Node without a browser or WebGL.
 - **`scripts/diagnose.mjs`** is a headless, objective **scene-state inspector**,
   not a pixel-diff tool. It exists because headless Chromium's software renderer
   (SwiftShader) **cannot meaningfully render Cesium's actual pixels** — shader
@@ -229,9 +230,10 @@ rendering an empty void.
 - **`scripts/screenshot.mjs`** is a simpler headless screenshot utility for eyeballing
   the render, also useful for confirming asset requests (`/cesium/`, `/berlin-core/`
   or `/test_tile/`) actually succeed.
-- **`playwright.config.ts`** is configured (points `tests/e2e/**/*.spec.ts` at
-  `astro preview` on port 4402, with SwiftShader launch flags) but no e2e spec files
-  exist yet and no `test:e2e` npm script is wired up.
+- **Playwright E2E tests** (`npm run test:e2e`) exercise the line-of-sight controls,
+  solar timeline and reverse-ephemeris worker against `astro preview` on port 4402.
+  The literal 3D occlusion flip is skipped when headless SwiftShader cannot finish
+  streaming the tiles; the wiring and non-GPU product behavior still run.
 
 ## Deployment
 
@@ -248,6 +250,8 @@ constitution's Infrastructure-as-Code principle — no hand-configured servers).
 - **`.dockerignore`** keeps the build context small and explicitly excludes the
   gitignored full datasets (`data/`, `public/berlin/`, `public/test_tile/`) and
   `.env` — only the committed `public/berlin-core/` subset travels with the image.
+  Deployments with a verified full-city volume can opt into
+  `/berlin-full/tileset.json` as a build argument; the default never depends on it.
 
 ### Operational notes
 

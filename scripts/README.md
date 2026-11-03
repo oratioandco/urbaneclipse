@@ -312,7 +312,7 @@ is Tailscale-only. Uses compressed, resumable rsync; expect ~20-40 minutes for a
 545 MB sync (the path is latency-bound at ~160 ms RTT), and only changed tiles
 thereafter. The script verifies the remote tile count matches and exits non-zero if not.
 
-### 3. Coolify wiring (already applied — documented for rebuilds)
+### 3. Optional Coolify wiring for the full-city dataset
 
 A persistent volume maps the host directory into the nginx docroot:
 
@@ -329,16 +329,17 @@ coolify app storage create <app-uuid> --type persistent \
   --mount-path /usr/share/nginx/html/berlin-full
 ```
 
-The tileset URL is set by the **Dockerfile** rather than a Coolify env var, so it is
-version-controlled and reproducible:
+The Docker image always carries the committed core subset and uses it by default:
 
 ```dockerfile
-ARG PUBLIC_TILESET_URL="/berlin-full/tileset.json"
+ARG PUBLIC_TILESET_URL="/berlin-core/tileset.json"
 ```
 
 Astro bakes `PUBLIC_*` at build time, so changing it requires a rebuild, not a restart.
-To build an image serving only the committed subset:
-`--build-arg PUBLIC_TILESET_URL=/berlin-core/tileset.json`.
+Only after the persistent volume above has been created and its contents verified,
+build with `--build-arg PUBLIC_TILESET_URL=/berlin-full/tileset.json` to opt into the
+full city. Removing or losing that host volume therefore cannot break the default
+public deployment.
 
 `nginx.conf` gives `/berlin-full/`, `/berlin-core/` and `/heightmap/` an explicit
 `try_files $uri =404`. Without it the SPA fallback would answer a missing tile with
