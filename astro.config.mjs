@@ -17,6 +17,12 @@ import tailwindcss from '@tailwindcss/vite';
 // it out of the server graph regardless).
 export default defineConfig({
   output: 'static',
+  // One-time asset namespace bump: the previous deployment marked an entry chunk
+  // immutable even though its generated filename was reused. A new directory forces
+  // every returning browser onto the corrected Lichtenberger scene immediately.
+  build: {
+    assets: '_urban-eclipse-v2',
+  },
   integrations: [react()],
   vite: {
     plugins: [vitePluginCesium(), tailwindcss()],
