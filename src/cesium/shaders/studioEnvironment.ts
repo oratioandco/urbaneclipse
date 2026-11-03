@@ -131,6 +131,11 @@ export function buildStudioEnvironmentShaderSource(
     'uniform vec2 u_towerBaseUv;  // landmark base in texture coords',
     'uniform vec2 u_towerTopUv;   // landmark tip in texture coords',
     'uniform float u_towerVisible;',
+    'uniform vec2 u_gateSouthBaseUv; // Frankfurter Tor south crown',
+    'uniform vec2 u_gateSouthTopUv;',
+    'uniform vec2 u_gateNorthBaseUv; // Frankfurter Tor north crown',
+    'uniform vec2 u_gateNorthTopUv;',
+    'uniform float u_gateVisible;',
     '',
     'in vec2 v_textureCoordinates;',
     '',
@@ -183,15 +188,42 @@ export function buildStudioEnvironmentShaderSource(
     '  return skylineReveal * (1.0 - smoothstep(radiusUv - edge, radiusUv + edge, distanceToAxis));',
     '}',
     '',
-    '// Atmospheric landmark material. The tower is a surveyed planning surface,',
-    '// but it should sit in the same air as the city rather than read as flat black.',
-    'vec3 landmarkColor(vec3 hazeColor, vec2 uv) {',
-    '  float span = max(abs(u_towerTopUv.y - u_towerBaseUv.y), 0.001);',
-    '  float height = clamp((uv.y - u_towerBaseUv.y) / span, 0.0, 1.0);',
-    '  vec3 warmCharcoal = vec3(0.13, 0.115, 0.12);',
-    '  vec3 atmospheric = mix(warmCharcoal, hazeColor, 0.22);',
-    '  // A little extra haze at the skyline anchors the analytical silhouette.',
-    '  return mix(atmospheric, hazeColor, (1.0 - height) * 0.10);',
+    '// Frankfurter Tor crown: lower lantern, cornice, domed copper roof and finial.',
+    '// The LoD2 blocks remain real geometry; this restores only the curved crown that',
+    '// the city mesh necessarily generalises into a flat roof.',
+    'float gateCrownMask(vec2 uv, vec2 baseUv, vec2 topUv) {',
+    '  vec2 p = vec2((uv.x - baseUv.x) * u_aspect, uv.y - baseUv.y);',
+    '  vec2 axis = vec2((topUv.x - baseUv.x) * u_aspect, topUv.y - baseUv.y);',
+    '  float axis2 = dot(axis, axis);',
+    '  if (axis2 < 0.000001) return 0.0;',
+    '  float t = dot(p, axis) / axis2;',
+    '  if (t < 0.0 || t > 1.0) return 0.0;',
+    '  float radiusRatio;',
+    '  if (t < 0.34) radiusRatio = 0.19;',
+    '  else if (t < 0.43) radiusRatio = 0.31;',
+    '  else if (t < 0.84) {',
+    '    float q = (t - 0.43) / 0.41;',
+    '    radiusRatio = 0.31 * sqrt(max(0.0, 1.0 - q * q));',
+    '  } else radiusRatio = mix(0.045, 0.008, (t - 0.84) / 0.16);',
+    '  float distanceToAxis = length(p - axis * t);',
+    '  float radiusUv = radiusRatio * sqrt(axis2);',
+    '  float edge = max(0.00028, radiusUv * 0.10);',
+    '  return 1.0 - smoothstep(radiusUv - edge, radiusUv + edge, distanceToAxis);',
+    '}',
+    '',
+    'float gateMask(vec2 uv) {',
+    '  if (u_gateVisible < 0.5) return 0.0;',
+    '  return max(',
+    '    gateCrownMask(uv, u_gateSouthBaseUv, u_gateSouthTopUv),',
+    '    gateCrownMask(uv, u_gateNorthBaseUv, u_gateNorthTopUv)',
+    '  );',
+    '}',
+    '',
+    '// Analytical landmarks share the distant city plaster rather than becoming',
+    '// darker cut-outs. Their contrast now comes from the real backlit composition.',
+    'vec3 landmarkColor(vec3 hazeColor) {',
+    '  vec3 distantPlaster = vec3(0.42, 0.39, 0.37);',
+    '  return mix(distantPlaster, hazeColor, 0.30);',
     '}',
     '',
     'void main() {',
@@ -217,8 +249,10 @@ export function buildStudioEnvironmentShaderSource(
     '  if (depth >= 1.0) {',
     '    // Sky plus the surveyed landmark silhouette. Foreground city geometry has',
     '    // depth < 1 and therefore naturally occludes the screen-space tower.',
-    '    vec3 towerColor = landmarkColor(hazeColor, v_textureCoordinates);',
-    '    out_FragColor = vec4(mix(sky, towerColor, towerMask(v_textureCoordinates)), color.a);',
+    '    vec3 landmark = landmarkColor(hazeColor);',
+    '    vec3 result = mix(sky, landmark, towerMask(v_textureCoordinates));',
+    '    result = mix(result, landmark, gateMask(v_textureCoordinates));',
+    '    out_FragColor = vec4(result, color.a);',
     '    return;',
     '  }',
     '',
@@ -254,7 +288,9 @@ export function buildStudioEnvironmentShaderSource(
     '  // The landmark is an analytical planning surface, rendered after the coarse',
     '  // LoD2 city mesh so its surveyed silhouette is not lost inside generalized',
     '  // building blocks. The separate line-of-sight verdict still reports occlusion.',
-    '  result = mix(result, landmarkColor(hazeColor, v_textureCoordinates), towerMask(v_textureCoordinates));',
+    '  vec3 landmark = landmarkColor(hazeColor);',
+    '  result = mix(result, landmark, towerMask(v_textureCoordinates));',
+    '  result = mix(result, landmark, gateMask(v_textureCoordinates));',
     '',
     '  // Film grain: temporal dither driven by czm_frameNumber (fix #4).',
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
@@ -296,6 +332,11 @@ export interface StudioEnvironmentState {
   towerBaseUv: [number, number];
   towerTopUv: [number, number];
   towerVisible: number;
+  gateSouthBaseUv: [number, number];
+  gateSouthTopUv: [number, number];
+  gateNorthBaseUv: [number, number];
+  gateNorthTopUv: [number, number];
+  gateVisible: number;
 }
 
 /** A neutral default so the stage renders sanely before the app sets real values. */
@@ -314,6 +355,11 @@ export function defaultStudioEnvironmentState(): StudioEnvironmentState {
     towerBaseUv: [0.5, 0.25],
     towerTopUv: [0.5, 0.75],
     towerVisible: 0,
+    gateSouthBaseUv: [0.45, 0.25],
+    gateSouthTopUv: [0.45, 0.3],
+    gateNorthBaseUv: [0.55, 0.25],
+    gateNorthTopUv: [0.55, 0.3],
+    gateVisible: 0,
   };
 }
 
@@ -352,6 +398,23 @@ export function createStudioEnvironmentStage(
       u_towerBaseUv: new Cesium.Cartesian2(state.towerBaseUv[0], state.towerBaseUv[1]),
       u_towerTopUv: new Cesium.Cartesian2(state.towerTopUv[0], state.towerTopUv[1]),
       u_towerVisible: state.towerVisible,
+      u_gateSouthBaseUv: new Cesium.Cartesian2(
+        state.gateSouthBaseUv[0],
+        state.gateSouthBaseUv[1],
+      ),
+      u_gateSouthTopUv: new Cesium.Cartesian2(
+        state.gateSouthTopUv[0],
+        state.gateSouthTopUv[1],
+      ),
+      u_gateNorthBaseUv: new Cesium.Cartesian2(
+        state.gateNorthBaseUv[0],
+        state.gateNorthBaseUv[1],
+      ),
+      u_gateNorthTopUv: new Cesium.Cartesian2(
+        state.gateNorthTopUv[0],
+        state.gateNorthTopUv[1],
+      ),
+      u_gateVisible: state.gateVisible,
     },
   });
   return stage;
@@ -399,4 +462,21 @@ export function updateStudioUniforms(
     state.towerTopUv[1],
   );
   stage.uniforms.u_towerVisible = state.towerVisible;
+  stage.uniforms.u_gateSouthBaseUv = new Cesium.Cartesian2(
+    state.gateSouthBaseUv[0],
+    state.gateSouthBaseUv[1],
+  );
+  stage.uniforms.u_gateSouthTopUv = new Cesium.Cartesian2(
+    state.gateSouthTopUv[0],
+    state.gateSouthTopUv[1],
+  );
+  stage.uniforms.u_gateNorthBaseUv = new Cesium.Cartesian2(
+    state.gateNorthBaseUv[0],
+    state.gateNorthBaseUv[1],
+  );
+  stage.uniforms.u_gateNorthTopUv = new Cesium.Cartesian2(
+    state.gateNorthTopUv[0],
+    state.gateNorthTopUv[1],
+  );
+  stage.uniforms.u_gateVisible = state.gateVisible;
 }

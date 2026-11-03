@@ -188,10 +188,17 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       expect(src).toContain('color.rgb * u_sceneTint');
     });
 
-    it('uses an atmospheric landmark material instead of a flat black silhouette', () => {
+    it('uses the distant-city plaster for analytical landmarks instead of a black silhouette', () => {
       expect(src).toContain('vec3 landmarkColor');
-      expect(src).toContain('mix(warmCharcoal, hazeColor, 0.22)');
+      expect(src).toContain('mix(distantPlaster, hazeColor, 0.30)');
       expect(src).not.toContain('mix(result, vec3(0.12, 0.115, 0.12)');
+    });
+
+    it('restores the paired Frankfurter Tor crowns omitted by the LoD2 mesh', () => {
+      expect(src).toContain('uniform vec2 u_gateSouthBaseUv');
+      expect(src).toContain('uniform vec2 u_gateNorthBaseUv');
+      expect(src).toContain('float gateCrownMask');
+      expect(src).toContain('gateMask(v_textureCoordinates)');
     });
 
     it('works with no opts (sensible plaster-void defaults)', () => {

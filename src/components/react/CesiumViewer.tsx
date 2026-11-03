@@ -86,7 +86,7 @@ import { findViewpoint } from '../../lib/viewpoints.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
 import { skyPalette } from '../../lib/skyPalette.js';
 import { azAltTo, directionOffsetECEF, geodeticToECEF } from '../../lib/silhouette.js';
-import { FERNSEHTURM } from '../../lib/landmarks.js';
+import { FERNSEHTURM, FRANKFURTER_TOR_CROWNS } from '../../lib/landmarks.js';
 import { computeDiscState } from '../../cesium/celestialDisc.js';
 import {
   BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
@@ -117,6 +117,21 @@ const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.
 // (Berlin tileset's root bounding-volume centre is in the same neighbourhood; this is
 // only consulted before the root content loads.)
 const TILESET_ECEF_CENTER = new Cesium.Cartesian3(3782802.4642903516, 902286.4677665455, 5038573.502874194);
+
+/**
+ * The photographed street valley from Lichtenberger Brücke toward Alexanderplatz.
+ * The points follow the Frankfurter Allee / Karl-Marx-Allee centre line through
+ * Frankfurter Tor. The ribbon is a restrained planning surface, not a road map: its
+ * job is to keep the real urban axis legible inside the otherwise uniform plaster city.
+ */
+const FRANKFURTER_ALLEE_AXIS = [
+  13.4988, 52.5113,
+  13.482, 52.5135,
+  13.465, 52.5149,
+  13.45403, 52.51581,
+  13.436, 52.517,
+  13.4285, 52.5182,
+] as const;
 
 /** How long the scene may stay in a non-ready phase before we warn the user (T059). */
 const SLOW_SCENE_WARNING_MS = 25_000;
@@ -361,6 +376,29 @@ export default function CesiumViewer(): JSX.Element {
         tileset.style = new Cesium.Cesium3DTileStyle({ color: "color('#ffffff')" });
         tileset.imageBasedLighting.luminanceAtZenith = 0.6;
         tileset.shadows = Cesium.ShadowMode.ENABLED;
+
+        // Keep the photographed boulevard legible as it drops away from the bridge.
+        // A real-width ground corridor creates perspective naturally; unlike a screen
+        // overlay, it narrows with distance and is occluded by the actual city mesh.
+        viewer.entities.add({
+          id: 'pv-frankfurter-allee-axis',
+          corridor: {
+            positions: Cesium.Cartesian3.fromDegreesArray([...FRANKFURTER_ALLEE_AXIS]),
+            width: 34,
+            height: 0,
+            material: Cesium.Color.fromCssColorString('#29313a').withAlpha(0.82),
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          },
+        });
+        viewer.entities.add({
+          id: 'pv-frankfurter-allee-centreline',
+          polyline: {
+            positions: Cesium.Cartesian3.fromDegreesArray([...FRANKFURTER_ALLEE_AXIS]),
+            width: 1,
+            material: Cesium.Color.fromCssColorString('#e5d8c4').withAlpha(0.52),
+            clampToGround: true,
+          },
+        });
         // Debug hook for headless scene-state inspection (scripts/diagnose.mjs).
         (window as unknown as { __cesium?: unknown }).__cesium = {
           viewer,
@@ -610,8 +648,15 @@ export default function CesiumViewer(): JSX.Element {
             const range = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, tgtTopEll).rangeM;
             const heightAtBody =
               obs.ellipsoidalHeight + range * Math.tan((bodySample.alt * Math.PI) / 180);
-            // Clamp within the target so we never aim at sky above the tip or below base.
-            aimEll = Math.min(tgtTopEll, Math.max(obs.ellipsoidalHeight + 5, heightAtBody));
+            // Put the eclipse in the upper third instead of dead centre. Aiming below
+            // the body reveals the Frankfurter-Allee street valley and the Frankfurter
+            // Tor crowns while keeping the complete tower inside the telephoto frame.
+            const targetBaseEll = tgtTopEll - targetHeight.get();
+            const compositionDropM = Math.min(90, targetHeight.get() * 0.22);
+            aimEll = Math.min(
+              tgtTopEll,
+              Math.max(targetBaseEll + 5, heightAtBody - compositionDropM),
+            );
           }
 
           flyToPreview(
@@ -658,6 +703,7 @@ export default function CesiumViewer(): JSX.Element {
             setDiscState(undefined);
             studioState.sunVisible = 0; // no disc/bloom off the preview
             studioState.towerVisible = 0;
+            studioState.gateVisible = 0;
             updateStudioUniforms(Cesium, studioStage, studioState);
             return;
           }
@@ -793,11 +839,55 @@ export default function CesiumViewer(): JSX.Element {
             } else {
               studioState.towerVisible = 0;
             }
+
+            // Restore the paired Frankfurter Tor cupolas that Berlin's LoD2 blocks
+            // generalise into flat roofs. Only the curved crowns are analytical; their
+            // positions come from the OSM building-part centroids and their absolute
+            // height envelope is recorded in lib/landmarks.ts.
+            const projectCrown = (crown: (typeof FRANKFURTER_TOR_CROWNS)[number]) => {
+              const base = Cesium.Cartesian3.fromDegrees(
+                crown.lon,
+                crown.lat,
+                orthometricToEllipsoidal(crown.crownBaseOrthometric),
+              );
+              const top = Cesium.Cartesian3.fromDegrees(
+                crown.lon,
+                crown.lat,
+                orthometricToEllipsoidal(crown.crownTopOrthometric),
+              );
+              const baseWin = Cesium.SceneTransforms.worldToWindowCoordinates(scene, base);
+              const topWin = Cesium.SceneTransforms.worldToWindowCoordinates(scene, top);
+              if (!baseWin || !topWin || canvas.clientWidth <= 0 || canvas.clientHeight <= 0) {
+                return undefined;
+              }
+              return {
+                base: [
+                  baseWin.x / canvas.clientWidth,
+                  1 - baseWin.y / canvas.clientHeight,
+                ] as [number, number],
+                top: [
+                  topWin.x / canvas.clientWidth,
+                  1 - topWin.y / canvas.clientHeight,
+                ] as [number, number],
+              };
+            };
+            const southCrown = projectCrown(FRANKFURTER_TOR_CROWNS[0]);
+            const northCrown = projectCrown(FRANKFURTER_TOR_CROWNS[1]);
+            if (southCrown && northCrown) {
+              studioState.gateSouthBaseUv = southCrown.base;
+              studioState.gateSouthTopUv = southCrown.top;
+              studioState.gateNorthBaseUv = northCrown.base;
+              studioState.gateNorthTopUv = northCrown.top;
+              studioState.gateVisible = 1;
+            } else {
+              studioState.gateVisible = 0;
+            }
             updateStudioUniforms(Cesium, studioStage, studioState);
           } catch (err) {
             // Never let a drawing failure take down the scene; report it instead.
             setDiscState(undefined);
             studioState.sunVisible = 0;
+            studioState.gateVisible = 0;
             updateStudioUniforms(Cesium, studioStage, studioState);
             console.error('[CesiumViewer] celestial disc failed', err);
           }
