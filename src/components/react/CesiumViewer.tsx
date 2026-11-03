@@ -83,7 +83,6 @@ import {
   TARGET_MARKER_ID,
 } from '../../cesium/placement.js';
 import { findViewpoint } from '../../lib/viewpoints.js';
-import { buildLandmarkPrimitive } from '../../cesium/landmarkModel.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
 import { skyPalette } from '../../lib/skyPalette.js';
 import { azAltTo, directionOffsetECEF, geodeticToECEF } from '../../lib/silhouette.js';
@@ -111,7 +110,7 @@ import CameraControls from './CameraControls.js';
 // The DEPLOYED app serves the committed core subset (public/berlin-core/, the
 // Lichtenberger-Brücke -> Fernsehturm sightline). For the full 236-tile scene locally,
 // set PUBLIC_TILESET_URL=/berlin/tileset.json in .env (the full tileset is gitignored).
-const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.json';
+const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.json?v=enu2';
 
 // Tileset root transform translation (ECEF), from data/test_tile/tileset.json.
 // Used as a fallback camera target if the tileset's bounding sphere isn't populated yet.
@@ -340,7 +339,10 @@ export default function CesiumViewer(): JSX.Element {
     // --- Local self-hosted tileset ---------------------------------------------
     // Cesium3DTileset.fromUrl is the non-deprecated factory (the ctor is deprecated
     // since 1.107). It resolves once the root tile metadata is loaded.
-    Cesium.Cesium3DTileset.fromUrl(TILESET_URL)
+    // The converter writes glTF vertices in a local East/North/Up frame with Z as up,
+    // then carries ENU→ECEF in each tile transform. Cesium otherwise assumes glTF's
+    // conventional Y-up and applies an extra Y→Z rotation, tipping the city geometry.
+    Cesium.Cesium3DTileset.fromUrl(TILESET_URL, { modelUpAxis: Cesium.Axis.Z })
       .then((tileset) => {
         if (disposed || viewer.isDestroyed()) return;
         viewer.scene.primitives.add(tileset);
@@ -465,6 +467,12 @@ export default function CesiumViewer(): JSX.Element {
             result.state,
             polylineEntity,
           );
+          const planningAidsVisible = viewMode.get() === 'map';
+          const observerMarker = viewer.entities.getById(OBSERVER_MARKER_ID);
+          const targetMarker = viewer.entities.getById(TARGET_MARKER_ID);
+          if (observerMarker) observerMarker.show = planningAidsVisible;
+          if (targetMarker) targetMarker.show = planningAidsVisible;
+          if (polylineEntity) polylineEntity.show = planningAidsVisible;
           const dbg = (
             window as unknown as {
               __cesium?: {
@@ -638,17 +646,6 @@ export default function CesiumViewer(): JSX.Element {
         // begin streaming at the destination immediately rather than after a 1.2 s fly.
         applyViewMode(0);
 
-        // --- Parametric Fernsehturm silhouette -----------------------------------
-        // The LoD2 tile tower is unusable (prism, no sphere, 114 m short). Draw the
-        // accurate solid-of-revolution the solver uses, so the preview shows the iconic
-        // silhouette where the maths says it is — and it occludes the celestial disc,
-        // which IS the urban eclipse. Depth-tested, so foreground buildings occlude it.
-        try {
-          scene.primitives.add(buildLandmarkPrimitive(FERNSEHTURM));
-        } catch (err) {
-          console.error('[CesiumViewer] landmark model failed', err);
-        }
-
         // --- Celestial disc + atmosphere ------------------------------------------
         // The disc is drawn by the studio post-process SHADER on background pixels
         // (src/cesium/shaders/studioEnvironment.ts), so city geometry occults it
@@ -660,6 +657,7 @@ export default function CesiumViewer(): JSX.Element {
           if (viewMode.get() !== 'preview') {
             setDiscState(undefined);
             studioState.sunVisible = 0; // no disc/bloom off the preview
+            studioState.towerVisible = 0;
             updateStudioUniforms(Cesium, studioStage, studioState);
             return;
           }
@@ -741,6 +739,59 @@ export default function CesiumViewer(): JSX.Element {
               studioState.sunVisible = 1;
             } else {
               studioState.sunVisible = 0;
+            }
+
+            // Project the two edges of the 32 m sphere, which remain numerically stable
+            // even when a tight lens puts the tower base or antenna tip off-screen.
+            // Extrapolate the full 368.03 m axis from that stable local scale.
+            const towerBaseEll = orthometricToEllipsoidal(FERNSEHTURM.baseOrthometric);
+            const sphereBottomDirection = azAltTo(
+              observerGeo,
+              FERNSEHTURM.lat,
+              FERNSEHTURM.lon,
+              towerBaseEll + 197,
+            );
+            const sphereTopDirection = azAltTo(
+              observerGeo,
+              FERNSEHTURM.lat,
+              FERNSEHTURM.lon,
+              towerBaseEll + 229,
+            );
+            const sphereBottomPoint = directionOffsetECEF(
+              observerGeo,
+              sphereBottomDirection.az,
+              sphereBottomDirection.alt,
+              10_000,
+            );
+            const sphereTopPoint = directionOffsetECEF(
+              observerGeo,
+              sphereTopDirection.az,
+              sphereTopDirection.alt,
+              10_000,
+            );
+            const towerSphereBottom = Cesium.SceneTransforms.worldToWindowCoordinates(
+              scene,
+              new Cesium.Cartesian3(...sphereBottomPoint),
+            );
+            const towerSphereTop = Cesium.SceneTransforms.worldToWindowCoordinates(
+              scene,
+              new Cesium.Cartesian3(...sphereTopPoint),
+            );
+            if (
+              towerSphereBottom && towerSphereTop &&
+              canvas.clientWidth > 0 && canvas.clientHeight > 0
+            ) {
+              const dxPerM = (towerSphereTop.x - towerSphereBottom.x) / 32;
+              const dyPerM = (towerSphereTop.y - towerSphereBottom.y) / 32;
+              const baseX = towerSphereBottom.x - dxPerM * 197;
+              const baseY = towerSphereBottom.y - dyPerM * 197;
+              const topX = towerSphereBottom.x + dxPerM * (368.03 - 197);
+              const topY = towerSphereBottom.y + dyPerM * (368.03 - 197);
+              studioState.towerBaseUv = [baseX / canvas.clientWidth, 1 - baseY / canvas.clientHeight];
+              studioState.towerTopUv = [topX / canvas.clientWidth, 1 - topY / canvas.clientHeight];
+              studioState.towerVisible = 1;
+            } else {
+              studioState.towerVisible = 0;
             }
             updateStudioUniforms(Cesium, studioStage, studioState);
           } catch (err) {
@@ -834,6 +885,12 @@ export default function CesiumViewer(): JSX.Element {
           // preview would drag the whole tile-streaming pipeline across the globe.
           applyViewMode(0);
           applyDisc();
+          const planningAidsVisible = mode === 'map';
+          const observerMarker = viewer.entities.getById(OBSERVER_MARKER_ID);
+          const targetMarker = viewer.entities.getById(TARGET_MARKER_ID);
+          if (observerMarker) observerMarker.show = planningAidsVisible;
+          if (targetMarker) targetMarker.show = planningAidsVisible;
+          if (polylineEntity) polylineEntity.show = planningAidsVisible;
           // Only map->preview has a visible re-stream: in map mode the Leaflet planning
           // map covers the canvas, so preview->map needs no loader.
           if (mode === 'preview') startRestreamWatch();

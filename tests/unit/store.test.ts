@@ -94,8 +94,9 @@ describe('setDateTimeScrubbing (rAF coalescing)', () => {
 });
 
 describe('lensAutoFit / setCameraProfile (auto-fit vs authored lens)', () => {
-  it('defaults to auto-framing', () => {
-    expect(lensAutoFit.get()).toBe(true);
+  it('opens the canonical scene with the authored APS-C / 150 mm context framing', () => {
+    expect(lensAutoFit.get()).toBe(false);
+    expect(cameraProfile.get()).toEqual({ sensorWidth: 23.6, focalLength: 150, zoom: 1 });
   });
 
   it('authoring a lens via setCameraProfile opts out of auto-framing', () => {

@@ -2,7 +2,7 @@
  * HourTimeline — US4 — colour-coded solar-day band bar with a "now" marker.
  *
  * Pure presentation + nanostores wiring. Reads `dateTime` from the store, computes
- * suncalc.getTimes for that date at OBSERVER_DEFAULT, classifies the day into
+ * suncalc.getTimes for that date at the active observer, classifies the day into
  * golden/blue/day/night bands via buildTimelineBands, and renders a horizontal bar
  * plus a marker at the current dateTime position.
  *
@@ -19,9 +19,8 @@
  */
 import { useStore } from '@nanostores/react';
 import { getTimes } from 'suncalc';
-import { dateTime } from '../../store.js';
+import { dateTime, observerPosition } from '../../store.js';
 import { buildTimelineBands, type Band, type BandKind } from '../../lib/timeline.js';
-import { OBSERVER_DEFAULT } from '../../lib/berlin.js';
 
 /** Flat gouache pigments; mirrored as CSS custom properties in global.css. */
 const BAND_COLOR: Record<BandKind, string> = {
@@ -81,6 +80,7 @@ function renderBand(b: Band, dayStart: number, daySpan: number, keyPrefix: strin
 
 export default function HourTimeline(): JSX.Element {
   const dt = useStore(dateTime);
+  const observer = useStore(observerPosition);
 
   // suncalc.getTimes returns the events of the day containing `dt` (it ignores the
   // time-of-day). Use the UTC midnight BEFORE dt as the day span anchor so the marker
@@ -94,7 +94,7 @@ export default function HourTimeline(): JSX.Element {
   let bands: Band[] = [];
   let bandError: string | null = null;
   try {
-    const times = getTimes(dt, OBSERVER_DEFAULT.lat, OBSERVER_DEFAULT.lon);
+    const times = getTimes(dt, observer.lat, observer.lon);
     bands = buildTimelineBands(times);
     if (bands.length === 0) {
       bandError = 'No sunrise/sunset transitions resolved for this date.';
@@ -128,7 +128,7 @@ export default function HourTimeline(): JSX.Element {
         </h2>
         <span className="pv-panel__meta">
           {dt.toISOString().slice(0, 10)} · {dt.toISOString().slice(11, 16)} UTC ·{' '}
-          {OBSERVER_DEFAULT.lat.toFixed(3)}°N {OBSERVER_DEFAULT.lon.toFixed(3)}°E
+          {observer.lat.toFixed(3)}°N {observer.lon.toFixed(3)}°E
         </span>
       </header>
 

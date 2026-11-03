@@ -104,7 +104,7 @@ export default function CameraControls(): JSX.Element {
         <input
           className="pv-range"
           type="range"
-          aria-label="Focal length in millimetres"
+          aria-label="Focal length in millimeters"
           min={50}
           max={800}
           step={10}

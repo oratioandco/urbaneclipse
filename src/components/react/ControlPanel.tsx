@@ -147,7 +147,7 @@ export default function ControlPanel({
         <input
           className="pv-range"
           type="range"
-          aria-label="Observer height in metres"
+          aria-label="Observer height in meters"
           min={0.5}
           max={50}
           step={0.5}
@@ -168,7 +168,7 @@ export default function ControlPanel({
         <input
           className="pv-range"
           type="range"
-          aria-label="Target height in metres"
+          aria-label="Target height in meters"
           min={1}
           max={450}
           step={1}
@@ -249,7 +249,7 @@ export default function ControlPanel({
           <strong className="pv-msg__title">Approximate ground elevation</strong>
           Terrain heights could not be loaded, so the observer and target sit on an
           assumed Berlin mean rather than measured ground. Heights may be several
-          metres out.
+          meters out.
           <span className="pv-msg__detail">{groundWarning}</span>
         </div>
       ) : null}

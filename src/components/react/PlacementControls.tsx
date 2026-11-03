@@ -204,7 +204,7 @@ export default function PlacementControls({
           <input
             className="pv-range"
             type="range"
-            aria-label="Search area radius in metres"
+            aria-label="Search area radius in meters"
             min={AREA_RADIUS_MIN_M}
             max={AREA_RADIUS_MAX_M}
             step={25}

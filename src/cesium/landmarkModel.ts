@@ -21,6 +21,9 @@ import { LANDMARK_PICK_ID } from '../lib/pickKind.js';
 
 const Cesium = (window as unknown as { Cesium: typeof CesiumType }).Cesium;
 
+const FERNSEHTURM_SPHERE_CENTER_AGL = 213;
+const FERNSEHTURM_SPHERE_RADIUS_M = 16;
+
 /**
  * Build a Primitive for a solid-of-revolution landmark.
  *
@@ -78,6 +81,38 @@ export function buildLandmarkPrimitive(
 
     prevH = h;
     prevR = r;
+  }
+
+  // Keep the published 32 m sphere as an actual ellipsoid rather than relying only
+  // on stacked frustums. Besides producing a smooth silhouette at extreme telephoto
+  // focal lengths, this avoids sub-pixel seams between slices hiding the landmark's
+  // most recognisable feature in the depth-tested city scene.
+  if (landmark.id === 'fernsehturm') {
+    instances.push(
+      new Cesium.GeometryInstance({
+        geometry: new Cesium.EllipsoidGeometry({
+          radii: new Cesium.Cartesian3(
+            FERNSEHTURM_SPHERE_RADIUS_M,
+            FERNSEHTURM_SPHERE_RADIUS_M,
+            FERNSEHTURM_SPHERE_RADIUS_M,
+          ),
+          stackPartitions: 24,
+          slicePartitions: 32,
+          vertexFormat: Cesium.PerInstanceColorAppearance.VERTEX_FORMAT,
+        }),
+        modelMatrix: Cesium.Transforms.eastNorthUpToFixedFrame(
+          Cesium.Cartesian3.fromDegrees(
+            landmark.lon,
+            landmark.lat,
+            base + FERNSEHTURM_SPHERE_CENTER_AGL,
+          ),
+        ),
+        attributes: {
+          color: Cesium.ColorGeometryInstanceAttribute.fromColor(color),
+        },
+        id: LANDMARK_PICK_ID,
+      }),
+    );
   }
 
   return new Cesium.Primitive({

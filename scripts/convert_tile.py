@@ -89,6 +89,17 @@ DEFAULT_TILE = Path(__file__).resolve().parent.parent / "data" / "citygml" / "Lo
 
 B3DM_URI = "tile.b3dm"  # relative to the tileset.json directory
 
+# The Berlin LoD2 source represents the Fernsehturm as a blunt 255 m prism: no
+# sphere, no taper, and no antenna.  The application renders a surveyed
+# solid-of-revolution replacement (src/lib/landmarks.ts), so retaining this source
+# object would depth-occlude the accurate model with the visibly wrong block.
+REPLACED_BUILDING_IDS = {"DEBE01YYK0000B8a"}
+
+
+def without_replaced_landmarks(buildings):
+    """Remove source meshes that the client replaces with higher-fidelity models."""
+    return [b for b in buildings if b.get("id") not in REPLACED_BUILDING_IDS]
+
 
 def merge_buildings(buildings):
     """Merge per-building meshes into one flat (verts, tris) pair (EPSG:25833).
@@ -126,6 +137,22 @@ def to_ecef(verts_utm: np.ndarray) -> np.ndarray:
         verts_utm[:, 0], verts_utm[:, 1], verts_utm[:, 2]
     )
     return np.column_stack([np.asarray(xs), np.asarray(ys), np.asarray(zs)])
+
+
+def enu_basis(lon_deg: float, lat_deg: float) -> np.ndarray:
+    """Return the local East/North/Up axes as ECEF column vectors."""
+    lon = np.deg2rad(lon_deg)
+    lat = np.deg2rad(lat_deg)
+    east = np.array([-np.sin(lon), np.cos(lon), 0.0], dtype=np.float64)
+    north = np.array(
+        [-np.sin(lat) * np.cos(lon), -np.sin(lat) * np.sin(lon), np.cos(lat)],
+        dtype=np.float64,
+    )
+    up = np.array(
+        [np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)],
+        dtype=np.float64,
+    )
+    return np.column_stack([east, north, up])
 
 
 def flat_normals(verts: np.ndarray, tris: np.ndarray) -> np.ndarray:
@@ -201,6 +228,7 @@ def convert(source: Path, out_dir: Path) -> dict:
     # 1. Parse -> per-building meshes (EPSG:25833).
     buildings = parse_tile(str(source))
     n_buildings_total = len(buildings)
+    buildings = without_replaced_landmarks(buildings)
 
     # 2. Merge into one mesh.
     verts_utm, tris, n_buildings_kept = merge_buildings(buildings)
@@ -217,12 +245,17 @@ def convert(source: Path, out_dir: Path) -> dict:
     # 4. Reproject to ECEF.
     verts_ecef = to_ecef(verts_utm)
 
-    # 4. Relative-to-center: center = midpoint of ECEF min/max (keeps the
-    #    float32 deltas small and symmetric for precision).
+    # 4. Relative-to-center in a LOCAL ENU frame. glTF requires one declared up axis;
+    #    raw ECEF deltas have no single X/Y/Z up direction and Cesium's glTF axis
+    #    conversion would therefore tip and stretch buildings. Store true East/North/Up
+    #    vertices and carry the ENU->ECEF basis in the tile transform instead.
     ecef_min = verts_ecef.min(axis=0)
     ecef_max = verts_ecef.max(axis=0)
     center = (ecef_min + ecef_max) / 2.0
-    verts_local = (verts_ecef - center).astype(np.float32)
+    ecef_to_ll = Transformer.from_crs(TARGET_CRS, "EPSG:4326", always_xy=True)
+    center_lon, center_lat = ecef_to_ll.transform(*center)[:2]
+    basis = enu_basis(center_lon, center_lat)
+    verts_local = ((verts_ecef - center) @ basis).astype(np.float32)
 
     # Triangle indices: uint32 (vertex count > 65535, so uint16 won't fit).
     tris_u32 = tris.astype(np.uint32)
@@ -242,11 +275,12 @@ def convert(source: Path, out_dir: Path) -> dict:
         material=white_material,
     )
 
-    # 6. Local (RTC) bounding box + root transform carrying the ECEF center.
+    # 6. Local (RTC) bounding box + ENU->ECEF root transform.
     bbox = BoundingVolumeBox.from_points(verts_local)
 
     transform = np.identity(4, dtype=np.float64)
-    transform[0:3, 3] = center  # pure translation; identity rotation
+    transform[0:3, 0:3] = basis
+    transform[0:3, 3] = center
 
     tile = Tile(
         geometric_error=0.0,  # leaf tile (no children) -> 0 is allowed

@@ -1,20 +1,45 @@
 # Urban Eclipse — Plaster Void
 
-A web-based 3D geospatial planning tool for **extreme telephoto photography** in
-Berlin. It answers two questions a long-lens photographer needs before traveling to
-a location:
+**Find the moment when Berlin eclipses the sky.** Urban Eclipse is a web-based 3D
+planning tool for extreme-telephoto photography. It opens on a real, reproducible
+composition: from the surveyed deck of Lichtenberger Brücke, an APS-C camera at
+150 mm frames the Fernsehturm crossing the sun on September 4, 2027 at 17:33 UTC.
+The scene uses a real Berlin LoD2 model, the bridge elevation, astronomical position,
+camera geometry, and a line-of-sight check rather than a decorative mockup.
+
+The current proof of concept answers three questions a photographer needs before
+traveling to a location:
 
 1. **Is the shot physically possible?** Place an observer and a target at
    adjustable heights on a real 3D model of Berlin (Mitte + Lichtenberg + parts of
    Friedrichshain, LoD2 buildings) and see whether an intervening building blocks
    the line of sight.
-2. **When is the light right?** Scrub to any date/time and see the real sun
+2. **When is the alignment right?** Scrub to any date/time and see the real sun
    position and shadows (via `suncalc`), read a golden/blue-hour timeline, or run a
    reverse-ephemeris search ("when is the moon behind the Fernsehturm?") over a
    date range.
 
-A camera/lens framing preview (sensor size + focal length + zoom → field of view)
-completes the planning loop.
+3. **What will the frame contain?** A camera/lens preview converts sensor size, focal
+   length, and zoom into the actual field of view. The canonical composition uses the
+   APS-C / 150 mm context setup, with 600 mm available for the tight detail view.
+
+## Product direction: the daily Eclipse Finder
+
+The bridge-to-tower image is the first verified scene, not the final scope. The
+meaningful product is a daily discovery engine for the whole city: choose today,
+tonight, or a future date and receive ranked places where the sun or moon aligns with
+a Berlin landmark.
+
+Each candidate should be ranked by photographic value as well as geometry:
+
+- overlap and timing, including an honest **no worthwhile alignment** result;
+- clear line of sight and a reachable, legally accessible camera position;
+- the lens and sensor format required to make the composition read;
+- light, weather confidence, foreground character, and a distinct visual mood;
+- enough lead time to reach the location and set up safely.
+
+That turns the project from a single impressive simulation into a repeatable creative
+instrument: *what is the best urban eclipse I can photograph in Berlin today?*
 
 ## The "Plaster Void" aesthetic
 

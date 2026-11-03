@@ -212,6 +212,66 @@ body,
   }
 }
 
+/* Phone layout: keep the photograph visible and turn the setup rail into a
+   horizontally scrollable set of instrument cards. The search panel stays available
+   at the top right, while the solar timeline remains anchored at the bottom. */
+@media (max-width: 700px) {
+  :root {
+    --pv-gutter: 8px;
+    --pv-dock-height: 104px;
+  }
+
+  .pv-rail--left {
+    top: auto;
+    right: 0;
+    bottom: var(--pv-dock-height);
+    width: auto;
+    height: min(34vh, 286px);
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .pv-rail--left::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pv-rail--left > .pv-panel {
+    flex: 0 0 min(82vw, 320px);
+    overflow-y: auto;
+    scroll-snap-align: start;
+  }
+
+  .pv-rail--right {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    width: min(70vw, 280px);
+    max-height: min(29vh, 240px);
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .pv-dock {
+    padding: 0 8px 8px;
+  }
+
+  .pv-dock .pv-panel {
+    padding: 8px 10px 9px;
+  }
+
+  .pv-dock .pv-panel__head {
+    margin-bottom: 6px;
+    padding-bottom: 5px;
+  }
+
+  .pv-dock .pv-legend {
+    display: none;
+  }
+}
+
 /* ===========================================================================
    Panel
    =========================================================================== */

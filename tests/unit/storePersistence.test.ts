@@ -27,7 +27,7 @@ function makeFakeStorage(initial: Record<string, string> = {}): Storage {
   } as Storage;
 }
 
-const STORAGE_KEY = 'plaster-void:prefs:v1';
+const STORAGE_KEY = 'plaster-void:prefs:v2';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -90,7 +90,7 @@ describe('store persistence — rehydrate validation (T058)', () => {
     const store = await import('../../src/store');
     expect(store.observerHeight.get()).toBe(1.5);
     expect(store.targetHeight.get()).toBe(368.03);
-    expect(store.cameraProfile.get()).toEqual({ sensorWidth: 36, focalLength: 600, zoom: 1 });
+    expect(store.cameraProfile.get()).toEqual({ sensorWidth: 23.6, focalLength: 150, zoom: 1 });
   });
 
   it('rejects a non-object payload and falls back to defaults', async () => {
@@ -128,7 +128,7 @@ describe('store persistence — rehydrate validation (T058)', () => {
     vi.resetModules();
 
     const store = await import('../../src/store');
-    expect(store.cameraProfile.get()).toEqual({ sensorWidth: 36, focalLength: 600, zoom: 1 });
+    expect(store.cameraProfile.get()).toEqual({ sensorWidth: 23.6, focalLength: 150, zoom: 1 });
   });
 });
 

@@ -95,7 +95,9 @@ from scripts.convert_tile import (  # noqa: E402
     TARGET_CRS,
     build_white_material,
     flat_normals,
+    enu_basis,
     merge_buildings,
+    without_replaced_landmarks,
 )
 from py3dtiles.tileset import Tile, TileSet  # noqa: E402
 from py3dtiles.tileset.bounding_volume_box import BoundingVolumeBox  # noqa: E402
@@ -121,7 +123,7 @@ ROOT_GEOMETRIC_ERROR = 5000.0
 CHILD_GEOMETRIC_ERROR = 0.0
 
 MANIFEST_NAME = "_manifest.json"
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -251,12 +253,14 @@ def is_up_to_date(entry: dict | None, src: Path, out_dir: Path) -> bool:
 def child_from_entry(entry: dict) -> Tile | None:
     """Rebuild a child Tile from a manifest entry (no reparse of the source)."""
     center = entry.get("ecef_center")
+    basis = entry.get("enu_basis")
     lo, hi = entry.get("local_min"), entry.get("local_max")
     uri = entry.get("uri")
-    if not center or not lo or not hi or not uri:
+    if not center or not basis or not lo or not hi or not uri:
         return None
     corners = np.array([lo, hi], dtype=np.float32)
     transform = np.identity(4, dtype=np.float64)
+    transform[0:3, 0:3] = np.asarray(basis, dtype=np.float64)
     transform[0:3, 3] = np.asarray(center, dtype=np.float64)
     return Tile(
         geometric_error=CHILD_GEOMETRIC_ERROR,
@@ -283,7 +287,7 @@ def _build_transformers():
     return utm_to_ecef, ecef_to_ll
 
 
-def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef):
+def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef, ecef_to_ll):
     """Convert one source tile -> write ``tile_<x>_<y>.b3dm`` -> return (child Tile, stats).
 
     Returns ``(None, stats)`` for tiles with no usable geometry so the caller
@@ -296,6 +300,7 @@ def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef):
     }
     buildings = parse_tile(str(src_path))
     n_total = len(buildings)
+    buildings = without_replaced_landmarks(buildings)
     if not buildings:
         return None, {
             **base_stats, "skipped": "no buildings",
@@ -325,7 +330,9 @@ def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef):
     ecef_min = verts_ecef.min(axis=0)
     ecef_max = verts_ecef.max(axis=0)
     center = (ecef_min + ecef_max) / 2.0
-    verts_local = (verts_ecef - center).astype(np.float32)
+    center_lon, center_lat = ecef_to_ll.transform(*center)[:2]
+    basis = enu_basis(center_lon, center_lat)
+    verts_local = ((verts_ecef - center) @ basis).astype(np.float32)
     tris_u32 = tris.astype(np.uint32)
 
     # 4. Per-vertex flat normals — the clay material cannot be lit per-face
@@ -350,6 +357,7 @@ def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef):
     local_max = verts_local.max(axis=0)
     bbox = BoundingVolumeBox.from_points(verts_local)
     transform = np.identity(4, dtype=np.float64)
+    transform[0:3, 0:3] = basis
     transform[0:3, 3] = center
 
     child = Tile(
@@ -369,6 +377,7 @@ def convert_one_tile(x, y, src_path, out_dir, utm_to_ecef):
         "triangles": int(tris_u32.shape[0]),
         "b3dm_bytes": b3dm_bytes,
         "ecef_center": center.tolist(),
+        "enu_basis": basis.tolist(),
         "local_min": local_min.tolist(),
         "local_max": local_max.tolist(),
     }
@@ -449,7 +458,7 @@ def convert_batch(
 
         t_tile = time.time()
         try:
-            child, stats = convert_one_tile(x, y, src, out_dir, utm_to_ecef)
+            child, stats = convert_one_tile(x, y, src, out_dir, utm_to_ecef, ecef_to_ll)
         except Exception as e:  # keep going on a single bad tile
             print("  [%d/%d] tile_%s FAILED: %s" % (i, len(tiles), key, e))
             n_failed += 1

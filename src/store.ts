@@ -10,7 +10,12 @@ import { log } from './lib/log';
  * NEVER to the `dateTime` listener.
  */
 
-export const dateTime = atom<Date>(new Date());
+/**
+ * Canonical first-run scene: the strongest verified partial solar transit from the
+ * Lichtenberger Brücke. A deterministic instant makes the product legible on first
+ * visit and in screenshots; the scrubber and solver still allow any other date.
+ */
+export const dateTime = atom<Date>(new Date('2027-09-04T17:33:00.000Z'));
 
 /**
  * SEMANTICS (changed with the vertical-datum fix — see src/lib/sceneHeights.ts):
@@ -57,9 +62,9 @@ export type ViewMode = 'map' | 'preview';
  *  see is always the body the results describe. */
 export type SolverBody = 'sun' | 'moon';
 export const solverBody = atom<SolverBody>('sun');
-// Default to MAP: the map-first workflow starts here, and a top-down overview is the
-// least ambiguous confirmation that geometry is rendering. Preview is one click away.
-export const viewMode = atom<ViewMode>('map');
+// Lead with the photograph, not the setup. The map remains one click away for people
+// who want to move the observer or target after understanding the product's promise.
+export const viewMode = atom<ViewMode>('preview');
 
 /** What a click in MAP mode places. 'none' disables picking so the map can be panned. */
 export type PickMode = 'none' | 'observer' | 'target' | 'area';
@@ -107,15 +112,15 @@ export function setSearchArea(area: SearchArea | null): boolean {
 }
 export const pickMode = atom<PickMode>('none');
 
-// Default observer: the showcase viewpoint (Strausberger Platz on Karl-Marx-Allee),
-// which has a verified clear corridor sightline to the tower — so the app opens on a
-// clean shot. The Lichtenberger Brücke (the user's original scenario) is selectable
-// but its low sightline is blocked at a sun transit; see src/lib/viewpoints.ts.
+// Canonical observer: the Lichtenberger Brücke. Its curated viewpoint record carries
+// the bridge-deck elevation, so resolveObserverHeight() places the eye above the deck
+// rather than at terrain level. The LOS verdict remains honest about foreground
+// occlusion while the preview shows the intended photographic alignment.
 export const observerPosition = atom<ScenePosition>({
-  lat: 52.5182,
-  lon: 13.4285,
-  viewpointId: 'strausberger-platz',
-  label: 'Strausberger Platz',
+  lat: 52.5113,
+  lon: 13.4988,
+  viewpointId: 'lichtenberger-bruecke',
+  label: 'Lichtenberger Brücke',
 });
 
 export const targetPosition = atom<ScenePosition>({
@@ -170,26 +175,29 @@ export function setTargetPosition(p: ScenePosition): boolean {
 // --- US6 camera profile -----------------------------------------------------
 // Sensor + lens model authored by CameraControls; consumed by the CesiumViewer
 // island to drive viewer.camera.frustum.fov via fovToCesium(computeHorizontalFov(...)).
-// Defaults model a full-frame camera at 600 mm with no zoom boost (the US6 spec).
+// Defaults model the context-rich APS-C camera at 150 mm with no digital zoom. At
+// this viewpoint 600 mm is still available as the tight detail framing, but 150 mm
+// preserves the full tower and the Frankfurter Allee street canyon.
 export interface CameraProfile {
   sensorWidth: number; // mm
   focalLength: number; // mm (prime, before zoom)
   zoom: number; // dimensionless multiplier on focalLength
 }
 export const cameraProfile = atom<CameraProfile>({
-  sensorWidth: 36,
-  focalLength: 600,
+  sensorWidth: 23.6,
+  focalLength: 150,
   zoom: 1,
 });
 
 /**
  * Whether the preview lens is AUTO-FITTED to frame the target (true) or follows the
- * authored `cameraProfile` (false). Default true: the shot frames itself sensibly from
- * any observer distance. Touching the optics panel flips this to false via
+ * authored `cameraProfile` (false). The canonical scene opens with the authored
+ * APS-C/150 mm framing; selecting AUTO can frame any later observer distance. Touching
+ * the optics panel flips this to false via
  * `setCameraProfile`, so the authored lens and the auto-fit can never fight over the
  * frustum; the panel's AUTO button flips it back.
  */
-export const lensAutoFit = atom<boolean>(true);
+export const lensAutoFit = atom<boolean>(false);
 
 /** SOLE intended writer for cameraProfile from UI: records that the user has authored
  *  a lens, which opts the preview out of auto-framing. Direct cameraProfile.set() from
@@ -261,10 +269,10 @@ export function setDateTimeScrubbing(date: Date): void {
 // localStorage touch is wrapped defensively: absence, SecurityError (private mode),
 // and QuotaExceededError all degrade to "use the in-memory defaults", never a throw.
 //
-// Versioned key: bump the `v1` suffix if the persisted shape changes incompatibly so
+// Versioned key: bump the suffix when the canonical first-run scene changes so
 // old/foreign payloads are naturally ignored (JSON.parse of an unrelated shape just
 // fails per-field validation below rather than crashing).
-const PREFS_STORAGE_KEY = 'plaster-void:prefs:v1';
+const PREFS_STORAGE_KEY = 'plaster-void:prefs:v2';
 
 interface PersistedPrefs {
   dateTime: number; // epoch ms

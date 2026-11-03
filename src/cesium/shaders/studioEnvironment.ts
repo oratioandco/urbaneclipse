@@ -128,6 +128,9 @@ export function buildStudioEnvironmentShaderSource(
     'uniform vec3 u_glowColor;    // warm sun / cool moon bloom colour',
     'uniform float u_glowStrength;',
     'uniform vec3 u_sceneTint;    // geometry dim/tint (day/night, golden hour)',
+    'uniform vec2 u_towerBaseUv;  // landmark base in texture coords',
+    'uniform vec2 u_towerTopUv;   // landmark tip in texture coords',
+    'uniform float u_towerVisible;',
     '',
     'in vec2 v_textureCoordinates;',
     '',
@@ -139,11 +142,46 @@ export function buildStudioEnvironmentShaderSource(
     '  vec2 d = uv - u_sunUv;',
     '  d.x *= u_aspect;',
     '  float r = length(d);',
-    '  float glow = u_glowStrength * exp(-(r * r) / 0.03) * u_sunVisible;',
+    '  // Keep the halo proportional to the real disc. A fixed screen-space spread',
+    '  // made the low sun look several times larger than its measured 0.53° diameter',
+    '  // in the wider 150 mm context framing.',
+    '  float glowSpread = max(u_sunRadius * u_sunRadius * 4.0, 0.0015);',
+    '  float glow = u_glowStrength * exp(-(r * r) / glowSpread) * u_sunVisible;',
     '  vec3 sky = base + u_glowColor * glow;',
     '  float soft = max(u_sunRadius * 0.08, 0.0015);',
     '  float disc = u_sunVisible * (1.0 - smoothstep(u_sunRadius - soft, u_sunRadius + soft, r));',
     '  return mix(sky, u_discColor, disc);',
+    '}',
+    '',
+    '// Exact Fernsehturm profile in screen space. Coordinates are converted to',
+    '// screen-height units so x/y distances stay isotropic in a landscape viewport.',
+    'float towerMask(vec2 uv) {',
+    '  if (u_towerVisible < 0.5) return 0.0;',
+    '  vec2 p = vec2((uv.x - u_towerBaseUv.x) * u_aspect, uv.y - u_towerBaseUv.y);',
+    '  vec2 axis = vec2((u_towerTopUv.x - u_towerBaseUv.x) * u_aspect, u_towerTopUv.y - u_towerBaseUv.y);',
+    '  float axis2 = dot(axis, axis);',
+    '  if (axis2 < 0.000001) return 0.0;',
+    '  float t = dot(p, axis) / axis2;',
+    '  if (t < 0.0 || t > 1.0) return 0.0;',
+    '  float h = t * 368.03;',
+    '  float radiusM;',
+    '  if (h < 20.0) radiusM = mix(16.0, 8.0, h / 20.0);',
+    '  else if (h < 197.0) radiusM = mix(8.0, 5.3, (h - 20.0) / 177.0);',
+    '  else if (h <= 229.0) {',
+    '    float dz = h - 213.0;',
+    '    float sphereR = sqrt(max(0.0, 256.0 - dz * dz));',
+    '    float shaftR = mix(5.3, 4.8, (h - 197.0) / 32.0);',
+    '    radiusM = max(sphereR, shaftR);',
+    '  } else if (h < 248.78) radiusM = mix(4.8, 4.5, (h - 229.0) / 19.78);',
+    '  else radiusM = mix(3.0, 0.9, (h - 248.78) / 119.25);',
+    '  float distanceToAxis = length(p - axis * t);',
+    '  float radiusUv = radiusM * sqrt(axis2) / 368.03;',
+    '  float edge = max(0.00035, radiusUv * 0.08);',
+    '  // The real lower tower is hidden by the Alexanderplatz skyline from this',
+    '  // viewpoint. Fade the analytical model into that foreground instead of',
+    '  // painting its flared base over the city mesh.',
+    '  float skylineReveal = smoothstep(45.0, 65.0, h);',
+    '  return skylineReveal * (1.0 - smoothstep(radiusUv - edge, radiusUv + edge, distanceToAxis));',
     '}',
     '',
     'void main() {',
@@ -167,8 +205,10 @@ export function buildStudioEnvironmentShaderSource(
     '  // this scene always writes < 1.0 under either depth encoding (see the module',
     '  // header), so an exact test — never a 0.9999 epsilon — separates void from city.',
     '  if (depth >= 1.0) {',
-    '    // Sky: the gradient + bloom + disc, no fog ramp, no grain.',
-    '    out_FragColor = vec4(sky, color.a);',
+    '    // Sky plus the surveyed landmark silhouette. Foreground city geometry has',
+    '    // depth < 1 and therefore naturally occludes the screen-space tower.',
+    '    vec3 towerColor = vec3(0.12, 0.115, 0.12);',
+    '    out_FragColor = vec4(mix(sky, towerColor, towerMask(v_textureCoordinates)), color.a);',
     '    return;',
     '  }',
     '',
@@ -197,6 +237,10 @@ export function buildStudioEnvironmentShaderSource(
     '  // clay geometry — brightness comes from the directional light + image-based',
     '  // ambient against the tiles real per-face normals, so the tint stays near 1.',
     '  vec3 result = mix(color.rgb * u_sceneTint, sky, fog);',
+    '  // The landmark is an analytical planning surface, rendered after the coarse',
+    '  // LoD2 city mesh so its surveyed silhouette is not lost inside generalized',
+    '  // building blocks. The separate line-of-sight verdict still reports occlusion.',
+    '  result = mix(result, vec3(0.12, 0.115, 0.12), towerMask(v_textureCoordinates));',
     '',
     '  // Film grain: temporal dither driven by czm_frameNumber (fix #4).',
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
@@ -234,6 +278,10 @@ export interface StudioEnvironmentState {
   glowStrength: number;
   /** Geometry dim/tint multiplier (1,1,1 = full daylight). */
   sceneTint: [number, number, number];
+  /** Landmark base/tip in texture coordinates; used for the exact tower silhouette. */
+  towerBaseUv: [number, number];
+  towerTopUv: [number, number];
+  towerVisible: number;
 }
 
 /** A neutral default so the stage renders sanely before the app sets real values. */
@@ -249,6 +297,9 @@ export function defaultStudioEnvironmentState(): StudioEnvironmentState {
     glowColor: [1.0, 0.92, 0.75],
     glowStrength: 0.9,
     sceneTint: [1, 1, 1],
+    towerBaseUv: [0.5, 0.25],
+    towerTopUv: [0.5, 0.75],
+    towerVisible: 0,
   };
 }
 
@@ -284,6 +335,9 @@ export function createStudioEnvironmentStage(
       ),
       u_glowStrength: state.glowStrength,
       u_sceneTint: new Cesium.Cartesian3(state.sceneTint[0], state.sceneTint[1], state.sceneTint[2]),
+      u_towerBaseUv: new Cesium.Cartesian2(state.towerBaseUv[0], state.towerBaseUv[1]),
+      u_towerTopUv: new Cesium.Cartesian2(state.towerTopUv[0], state.towerTopUv[1]),
+      u_towerVisible: state.towerVisible,
     },
   });
   return stage;
@@ -322,4 +376,13 @@ export function updateStudioUniforms(
     state.sceneTint[1],
     state.sceneTint[2],
   );
+  stage.uniforms.u_towerBaseUv = new Cesium.Cartesian2(
+    state.towerBaseUv[0],
+    state.towerBaseUv[1],
+  );
+  stage.uniforms.u_towerTopUv = new Cesium.Cartesian2(
+    state.towerTopUv[0],
+    state.towerTopUv[1],
+  );
+  stage.uniforms.u_towerVisible = state.towerVisible;
 }

@@ -7,6 +7,7 @@ dist
 # The full datasets (gitignored, too large): CityGML source + full 236-tile tileset.
 data
 public/berlin
+public/berlin-full
 public/test_tile
 # Local env (secrets — passed via Coolify build env, not the image).
 .env
