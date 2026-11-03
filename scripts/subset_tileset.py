@@ -14,11 +14,15 @@ import json
 import os
 import re
 import shutil
+from itertools import product
+
+import numpy as np
 
 SRC = "data/berlin"
 DST = "public/berlin-core"
-# Sightline tiles: observer (~390,5819) -> target (~392,5820) + a little context.
-X_RANGE = (389, 393)
+# Sightline tiles: Fernsehturm (392,5820) -> Lichtenberger Brücke (398,5818),
+# plus one tile of north/south context for the Frankfurter Allee street canyon.
+X_RANGE = (392, 398)
 Y_RANGE = (5818, 5821)
 
 
@@ -34,21 +38,21 @@ def main() -> None:
     if not keep:
         raise SystemExit("no tiles matched the subset range")
 
-    # Recompute the root bounding box as the AABB of the kept children's ECEF box
-    # corners. (Child transforms are pure ECEF translation — identity rotation — so
-    # local box axes are already ECEF-aligned; corners = translation +/- half-axes.)
+    # Recompute the root ECEF AABB from every transformed child-box corner. Converted
+    # tiles use local ENU coordinates, so their transforms include rotation as well as
+    # translation; treating the local half-axes as ECEF would under-bound the subset.
     xs, ys, zs = [], [], []
     for c in keep:
-        t = c["transform"]
-        tx, ty, tz = t[12], t[13], t[14]
+        transform = np.array(c["transform"], dtype=float).reshape((4, 4), order="F")
         b = c["boundingVolume"]["box"]
-        hx, hy, hz = b[3], b[7], b[11]
-        for sx in (-hx, hx):
-            for sy in (-hy, hy):
-                for sz in (-hz, hz):
-                    xs.append(tx + sx)
-                    ys.append(ty + sy)
-                    zs.append(tz + sz)
+        center = np.array(b[0:3], dtype=float)
+        axes = np.array([b[3:6], b[6:9], b[9:12]], dtype=float)
+        for signs in product((-1, 1), repeat=3):
+            local = center + sum(sign * axis for sign, axis in zip(signs, axes))
+            world = transform @ np.array([*local, 1.0])
+            xs.append(float(world[0]))
+            ys.append(float(world[1]))
+            zs.append(float(world[2]))
     cx, cy, cz = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (min(zs) + max(zs)) / 2
     hx, hy, hz = (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2, (max(zs) - min(zs)) / 2
     root["boundingVolume"] = {"box": [cx, cy, cz, hx, 0, 0, 0, hy, 0, 0, 0, hz]}

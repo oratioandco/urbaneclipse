@@ -110,7 +110,7 @@ import CameraControls from './CameraControls.js';
 // The DEPLOYED app serves the committed core subset (public/berlin-core/, the
 // Lichtenberger-Brücke -> Fernsehturm sightline). For the full 236-tile scene locally,
 // set PUBLIC_TILESET_URL=/berlin/tileset.json in .env (the full tileset is gitignored).
-const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.json?v=enu2';
+const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.json?v=enu3';
 
 // Tileset root transform translation (ECEF), from data/test_tile/tileset.json.
 // Used as a fallback camera target if the tileset's bounding sphere isn't populated yet.

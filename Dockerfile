@@ -14,7 +14,7 @@ ARG PUBLIC_CESIUM_ION_TOKEN=""
 # a fresh clone can render a real Berlin scene without depending on host-local state.
 # A deployment that has the optional full-Berlin volume mounted may override this with
 # --build-arg PUBLIC_TILESET_URL=/berlin-full/tileset.json (see scripts/README.md).
-ARG PUBLIC_TILESET_URL="/berlin-core/tileset.json"
+ARG PUBLIC_TILESET_URL="/berlin-core/tileset.json?v=enu3"
 ENV PUBLIC_CESIUM_ION_TOKEN=$PUBLIC_CESIUM_ION_TOKEN
 ENV PUBLIC_TILESET_URL=$PUBLIC_TILESET_URL
 RUN npm run build
