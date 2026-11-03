@@ -7,6 +7,19 @@ composition: from the surveyed deck of Lichtenberger Brücke, an APS-C camera at
 The scene uses a real Berlin LoD2 model, the bridge elevation, astronomical position,
 camera geometry, and a line-of-sight check rather than a decorative mockup.
 
+[**Open the live prototype**](https://plastervoid-n.2.28.29.90.sslip.io/) · Built by
+[Tobias Treppmann](https://treppmann.de)
+
+![Urban Eclipse framing the sun behind Berlin's Fernsehturm from Lichtenberger Brücke](docs/images/urban-eclipse-lichtenberger-bruecke.jpg)
+
+## What I built
+
+I designed and implemented the product, interaction model, visual system, 3D scene,
+astronomical and camera calculations, Berlin CityGML conversion pipeline, tests, and
+deployment. The result combines product design and engineering in one working
+instrument: it can test a composition against real geometry before a photographer
+travels to the location.
+
 The current proof of concept answers three questions a photographer needs before
 traveling to a location:
 
