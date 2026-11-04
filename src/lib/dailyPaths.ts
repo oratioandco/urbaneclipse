@@ -17,9 +17,10 @@ import {
   type GroundProvider,
 } from './areaSolver.js';
 import { sampleBody, type Body } from './bodyPosition.js';
-import type { RevolutionLandmark } from './landmarks.js';
+import { landmarkHeight, type RevolutionLandmark } from './landmarks.js';
+import { lightPhaseOf } from './lightPhases.js';
 import type { OccultationKind } from './occultation.js';
-import { buildSilhouetteDirections, type ObserverGeodetic } from './silhouette.js';
+import { buildSilhouetteDirections, offsetGeodetic, type ObserverGeodetic } from './silhouette.js';
 
 /** Height of the Fernsehturm sphere's centre, metres above its base. */
 export const SPHERE_CENTRE_AGL = 213;
@@ -133,6 +134,9 @@ export function pointAtTime(path: DayPath, t: number, toleranceMs = 3 * 60_000):
   return bestDelta <= toleranceMs ? best : undefined;
 }
 
+/** Outweighs any difference in coverage, so a golden hour shot beats a daytime one. */
+const LIGHT_RANK = { golden: 100, blue: 100, twilight: 70, night: 50, day: 0 } as const;
+
 /**
  * The shots worth surfacing for a day: where each run of the path meets the horizon end
  * of its arc. A low body gives the long, photogenic light and the longest reach from the
@@ -147,11 +151,10 @@ export function dayHighlights(path: DayPath, maxAltitudeDeg = 12): PathPoint[] {
     for (const half of [segment.filter((p) => p.t <= midpoint), segment.filter((p) => p.t > midpoint)]) {
       const low = half.filter(usable);
       if (low.length === 0) continue;
-      // Lowest usable light first; among those, the most covered disc.
-      const pick = low.reduce((a, b) => {
-        const score = (p: PathPoint) => p.coveredFraction * 40 - p.bodyAlt;
-        return score(b) > score(a) ? b : a;
-      });
+      // The light comes first, then the most covered disc, then the lowest body.
+      const score = (p: PathPoint) =>
+        LIGHT_RANK[lightPhaseOf(p.t, p.lat, p.lon)] + p.coveredFraction * 40 - p.bodyAlt;
+      const pick = low.reduce((a, b) => (score(b) > score(a) ? b : a));
       out.push(pick);
     }
   }
@@ -371,4 +374,38 @@ export function compassPoint(bearingDeg: number): string {
   const points = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
   const i = Math.round((((bearingDeg % 360) + 360) % 360) / 22.5) % 16;
   return points[i];
+}
+
+export interface AlignmentLine {
+  bodyAz: number;
+  bodyAlt: number;
+  /** Beyond the landmark, away from the body: where the disc sits behind its very top. */
+  farEnd: { lat: number; lon: number };
+  /** On the body's side of the landmark, marking which way it lies. */
+  bodySide: { lat: number; lon: number };
+}
+
+/**
+ * The line through the landmark along the body's direction. Anywhere on it between the
+ * landmark and `farEnd`, the disc lines up with some part of the landmark: lower parts
+ * from close in, higher parts from further out. Undefined when the body is down.
+ */
+export function alignmentLine(
+  body: Body,
+  t: number,
+  landmark: RevolutionLandmark,
+  maxDistanceM = MAX_DISTANCE_M,
+  bodySideM = 1500,
+): AlignmentLine | undefined {
+  const { az, alt } = sampleBody(body, new Date(t), landmark.lat, landmark.lon);
+  if (!(alt > 0.2)) return undefined;
+  const reach = Math.min(maxDistanceM, landmarkHeight(landmark) / Math.tan((alt * Math.PI) / 180));
+  const far = offsetGeodetic(landmark.lat, landmark.lon, 0, (az + 180) % 360, reach);
+  const near = offsetGeodetic(landmark.lat, landmark.lon, 0, az, bodySideM);
+  return {
+    bodyAz: az,
+    bodyAlt: alt,
+    farEnd: { lat: far.lat, lon: far.lon },
+    bodySide: { lat: near.lat, lon: near.lon },
+  };
 }

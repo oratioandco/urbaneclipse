@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { berlinDayBounds, berlinDayOf, formatTime, shiftDay } from '../../src/lib/berlinTime';
+import { lightPhaseOf } from '../../src/lib/lightPhases';
 import {
+  alignmentLine,
   applyView,
   nextClearPoint,
   compassPoint,
@@ -205,5 +207,65 @@ describe('applyView', () => {
     const all = viewed.segments.flat();
     expect(nextClearPoint(viewed, all[5].t)?.t).toBe(all[5].t);
     expect(nextClearPoint(viewed, all[all.length - 1].t + 1)).toBeUndefined();
+  });
+});
+
+describe('dayHighlights ranking', () => {
+  it('prefers golden hour when a clear shot exists there', () => {
+    for (const day of ['2026-11-05', '2027-03-20', '2027-09-04']) {
+      for (const pick of dayHighlights(pathFor(day, 'sun'))) {
+        expect(lightPhaseOf(pick.t, pick.lat, pick.lon)).toBe('golden');
+      }
+    }
+  });
+
+  it('falls back to daylight when golden hour is blocked, rather than offering nothing', () => {
+    const path = pathFor('2026-11-05', 'sun');
+    const viewed = applyView(path, () => true);
+    for (const segment of viewed.segments) {
+      for (const p of segment) p.clear = lightPhaseOf(p.t, p.lat, p.lon) !== 'golden';
+    }
+    const picks = dayHighlights(viewed);
+    expect(picks.length).toBeGreaterThan(0);
+    for (const p of picks) expect(lightPhaseOf(p.t, p.lat, p.lon)).toBe('day');
+  });
+});
+
+describe('alignmentLine', () => {
+  const noon = (day: string) => {
+    const { start, end } = berlinDayBounds(day);
+    return (start.getTime() + end.getTime()) / 2;
+  };
+
+  it('runs away from the body on the far side of the landmark', () => {
+    const line = alignmentLine('sun', noon('2026-11-05'), FERNSEHTURM)!;
+    // At midday the sun is south, so the far side is north and the near side south.
+    expect(line.farEnd.lat).toBeGreaterThan(FERNSEHTURM.lat);
+    expect(line.bodySide.lat).toBeLessThan(FERNSEHTURM.lat);
+  });
+
+  it('reaches further as the body gets lower', () => {
+    const distance = (t: number) => {
+      const line = alignmentLine('sun', t, FERNSEHTURM)!;
+      return Math.hypot(line.farEnd.lat - FERNSEHTURM.lat, line.farEnd.lon - FERNSEHTURM.lon);
+    };
+    const t = noon('2026-11-05');
+    expect(distance(t + 3 * 3_600_000)).toBeGreaterThan(distance(t));
+  });
+
+  it('passes through the sphere position on the path', () => {
+    const path = pathFor('2026-11-05', 'sun');
+    const point = path.segments[0][Math.floor(path.segments[0].length / 2)];
+    const line = alignmentLine('sun', point.t, FERNSEHTURM)!;
+    const bearing = (lat: number, lon: number) =>
+      (Math.atan2(
+        (lon - FERNSEHTURM.lon) * Math.cos((FERNSEHTURM.lat * Math.PI) / 180),
+        lat - FERNSEHTURM.lat,
+      ) * 180) / Math.PI;
+    expect(Math.abs(bearing(line.farEnd.lat, line.farEnd.lon) - bearing(point.lat, point.lon))).toBeLessThan(0.5);
+  });
+
+  it('does not exist once the body has set', () => {
+    expect(alignmentLine('sun', berlinDayBounds('2026-11-05').start.getTime(), FERNSEHTURM)).toBeUndefined();
   });
 });

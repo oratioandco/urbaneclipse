@@ -4,7 +4,7 @@ import { useStore } from '@nanostores/react';
 import { findOccultationsAtPosition } from '../../../lib/areaSolver.js';
 import { formatLongDay, formatTime } from '../../../lib/berlinTime.js';
 import { sampleBody } from '../../../lib/bodyPosition.js';
-import { moonLighting, phaseLabel } from '../../../lib/moonPhase.js';
+import { MOON_VISIBILITY_LABELS, moonLighting, moonVisibilityAt, phaseLabel } from '../../../lib/moonPhase.js';
 import { LIGHT_PHASE_NAMES, lightBands, lightPhaseOf } from '../../../lib/lightPhases.js';
 import type { SpotEvent } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
@@ -169,6 +169,12 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
   const moonNow =
     spot.body === 'moon' && t !== undefined ? moonLighting(new Date(t), spot.lat, spot.lon) : null;
 
+  const moonRatingNow = (() => {
+    if (spot.body !== 'moon' || t === undefined) return null;
+    const rating = moonVisibilityAt(new Date(t), spot.lat, spot.lon);
+    return rating && MOON_VISIBILITY_LABELS[rating];
+  })();
+
   // Checked live, since scrubbing lands between the passes checked above.
   const bodyName = spot.body === 'sun' ? 'Sun' : 'Moon';
   const hiddenNow =
@@ -242,6 +248,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
             <p className="ue-phase" data-testid="moon-phase">
               <MoonGlyph fraction={moonNow.fraction} waxing={moonNow.waxing} />
               {phaseLabel(moonNow.fraction, moonNow.waxing)}
+              {moonRatingNow && ` · ${moonRatingNow} (estimate, clear sky)`}
             </p>
           )}
           <p className={`ue-sight ue-sight--${status?.sphereSightline ?? 'unknown'}`} role="status">
@@ -307,6 +314,9 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
                     ? ` · ${Math.round(moonLighting(new Date(e.peak), spot.lat, spot.lon).fraction * 100)}% lit`
                     : ''}
                   {` · ${LIGHT_PHASE_NAMES[lightPhaseOf(e.peak, spot.lat, spot.lon)]}`}
+                  {e.body === 'moon' && moonVisibilityAt(new Date(e.peak), spot.lat, spot.lon) === 'hard'
+                    ? ' · hard to spot'
+                    : ''}
                 </small>
               </span>
             </button>

@@ -111,3 +111,44 @@ export function litDiscPath(fraction: number, waxing: boolean): string {
   const inner = fraction < 0.5 === waxing ? 0 : 1;
   return `M0,-1 A1,1 0 0 ${outer} 0,1 A${rx},1 0 0 ${inner} 0,-1 Z`;
 }
+
+export type MoonVisibility = 'easy' | 'faint' | 'hard';
+
+export const MOON_VISIBILITY_LABELS: Record<MoonVisibility, string> = {
+  easy: 'easy to see in daylight',
+  faint: 'faint in daylight',
+  hard: 'hard to spot in daylight',
+};
+
+/**
+ * A rough rating of how readily a daytime moon stands out, assuming a clear sky. A rule of
+ * thumb rather than a sky-brightness model: it reflects that a fuller moon, further from
+ * the sun and higher above the haze, is easier to find. Null once the sky is dark enough
+ * that the question does not arise.
+ */
+export function moonDaylightVisibility(
+  litFraction: number,
+  moonAltDeg: number,
+  sunAltDeg: number,
+  elongationDeg: number,
+): MoonVisibility | null {
+  if (sunAltDeg <= -4) return null;
+  if (moonAltDeg < 3 || elongationDeg < 25 || litFraction < 0.1) return 'hard';
+  // A low sun leaves a darker sky, which forgives a thinner or lower moon.
+  const sunIsLow = sunAltDeg < 6;
+  if (litFraction >= 0.4 && (moonAltDeg >= 12 || sunIsLow)) return 'easy';
+  if (litFraction >= 0.2 && moonAltDeg >= 5) return 'faint';
+  return 'hard';
+}
+
+/** The rating for a moment, with its inputs read from the ephemeris. */
+export function moonVisibilityAt(date: Date, lat: number, lon: number): MoonVisibility | null {
+  const lighting = moonLighting(date, lat, lon);
+  const elongation = (Math.acos(-lighting.phaseCos) * 180) / Math.PI;
+  return moonDaylightVisibility(
+    lighting.fraction,
+    sampleBody('moon', date, lat, lon).alt,
+    sampleBody('sun', date, lat, lon).alt,
+    elongation,
+  );
+}

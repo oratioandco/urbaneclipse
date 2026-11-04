@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { getMoonIllumination, getMoonPosition } from 'suncalc';
-import { celestialNorthOnDisc, litDiscPath, moonLighting, phaseLabel, phaseName } from '../../src/lib/moonPhase';
+import {
+  celestialNorthOnDisc,
+  litDiscPath,
+  moonDaylightVisibility,
+  moonLighting,
+  phaseLabel,
+  phaseName,
+} from '../../src/lib/moonPhase';
 import { moonPalette, skyPalette } from '../../src/lib/skyPalette';
 
 const BERLIN = [52.52, 13.41] as const;
@@ -94,6 +101,31 @@ describe('the lunar surface texture', () => {
     const file = readFileSync(join(__dirname, '..', '..', 'public', 'textures', 'moon-nearside.jpg'));
     expect(file.subarray(0, 2).toString('hex')).toBe('ffd8');
     expect(file.length).toBeGreaterThan(10_000);
+  });
+});
+
+describe('moonDaylightVisibility', () => {
+  it('has nothing to say once the sky is dark', () => {
+    expect(moonDaylightVisibility(0.1, 20, -10, 90)).toBeNull();
+  });
+
+  it('rates a high quarter moon far from the sun as easy', () => {
+    expect(moonDaylightVisibility(0.5, 30, 30, 90)).toBe('easy');
+  });
+
+  it('rates a moon near the sun, near the horizon or very thin as hard', () => {
+    expect(moonDaylightVisibility(0.5, 30, 30, 15)).toBe('hard');
+    expect(moonDaylightVisibility(0.5, 2, 30, 90)).toBe('hard');
+    expect(moonDaylightVisibility(0.05, 30, 30, 40)).toBe('hard');
+  });
+
+  it('gives a thinner daytime crescent a middling rating', () => {
+    expect(moonDaylightVisibility(0.25, 25, 30, 60)).toBe('faint');
+  });
+
+  it('is more forgiving when the sun is low', () => {
+    expect(moonDaylightVisibility(0.5, 6, 30, 90)).toBe('faint');
+    expect(moonDaylightVisibility(0.5, 6, 3, 90)).toBe('easy');
   });
 });
 

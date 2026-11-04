@@ -53,6 +53,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-map-now--moon i { background: var(--ue-moon); box-shadow: 0 0 0 2px var(--ue-moon), 0 0 22px 6px rgba(184, 198, 255, 0.45); }
 .ue-map-selected i { width: 16px; height: 16px; background: var(--ue-text); border: 3px solid var(--ue-bg); box-shadow: 0 0 0 2px var(--ue-text); }
 
+.ue-map-body i { position: absolute; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%); }
+.ue-map-body--sun i { background: var(--ue-sun); }
+.ue-map-body--moon i { background: var(--ue-moon); }
+
 /* Sheet: a side panel on wide screens, a bottom sheet on phones */
 .ue-sheet { position: absolute; z-index: 800; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; overscroll-behavior: contain; padding: 22px; background: var(--ue-surface); border: 1px solid var(--ue-line); border-radius: 18px; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); left: var(--ue-gutter); top: var(--ue-gutter); max-height: calc(100% - 2 * var(--ue-gutter)); width: var(--ue-sheet-width); }
 .ue-sheet__grip { display: none; }
@@ -63,6 +67,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-daynav { display: flex; gap: 4px; }
 .ue-daynav button { min-width: 40px; height: 40px; padding: 0 10px; border: 1px solid var(--ue-line); border-radius: 10px; font-size: 16px; }
 .ue-daynav .ue-daynav__today { font-size: 13px; }
+.ue-daynav__pick input { width: 40px; height: 40px; padding: 0; border: 1px solid var(--ue-line); border-radius: 10px; color: transparent; background: transparent; color-scheme: dark; cursor: pointer; font: inherit; }
+.ue-daynav__pick input::-webkit-datetime-edit { display: none; }
+.ue-daynav__pick input::-webkit-calendar-picker-indicator { width: 100%; height: 100%; margin: 0; padding: 10px; box-sizing: border-box; cursor: pointer; }
+.ue-daynav__pick input:hover { background: rgba(255, 255, 255, 0.07); }
+.ue-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .ue-daynav button:hover { background: rgba(255, 255, 255, 0.07); }
 
 .ue-time__value { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }

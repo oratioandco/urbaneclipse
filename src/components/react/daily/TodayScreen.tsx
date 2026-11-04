@@ -20,7 +20,7 @@ import {
   type PathPoint,
 } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
-import { moonLighting, phaseLabel } from '../../../lib/moonPhase.js';
+import { MOON_VISIBILITY_LABELS, moonLighting, moonVisibilityAt, phaseLabel } from '../../../lib/moonPhase.js';
 import { LIGHT_PHASE_NAMES, bandAt, lightBands, lightPhaseOf } from '../../../lib/lightPhases.js';
 import {
   VIEW_BUILDING,
@@ -141,6 +141,11 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   const pct = (t: number) => `${((t - bounds.start.getTime()) / span) * 100}%`;
   const isToday = day === berlinDayOf(new Date());
 
+  const moonRating = (p: PathPoint): string | null => {
+    const rating = moonVisibilityAt(new Date(p.t), p.lat, p.lon);
+    return rating && MOON_VISIBILITY_LABELS[rating];
+  };
+
   const openPoint = (body: Body, p: PathPoint): void =>
     onOpenSpot({ lat: p.lat, lon: p.lon, t: p.t, body, label: placeLabel(p) });
 
@@ -176,6 +181,17 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
           </div>
           <div className="ue-daynav">
             <button type="button" aria-label="Previous day" onClick={() => onDay(shiftDay(day, -1))}>‹</button>
+            <label className="ue-daynav__pick">
+              <span className="ue-visually-hidden">Choose a date</span>
+              <input
+                type="date"
+                value={day}
+                data-testid="date-picker"
+                onChange={(e) => {
+                  if (e.currentTarget.value) onDay(e.currentTarget.value);
+                }}
+              />
+            </label>
             {!isToday && (
               <button type="button" className="ue-daynav__today" onClick={() => onDay(berlinDayOf(new Date()))}>
                 Today
@@ -279,7 +295,6 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
           <section className="ue-now" aria-label="Where to stand at this time">
             {paths.map((path) => {
               const p = pointAtTime(path, time);
-              const thin = path.body === 'moon' && path.illumination < 0.25;
               if (p?.clear === false) {
                 const next = nextClearPoint(path, p.t);
                 return (
@@ -310,7 +325,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                     <small>
                       {BODY_NAME[path.body]} {coverageLabel(p.kind, p.coveredFraction)}
                       {path.body === 'moon' ? ` · ${phaseLabel(moonToday.fraction, moonToday.waxing)}` : ''}
-                      {thin ? ', hard to see' : ''}
+                      {path.body === 'moon' && moonRating(p) ? ` · ${moonRating(p)}` : ''}
                     </small>
                   </span>
                   <span className="ue-row__go">Preview</span>
@@ -328,7 +343,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         )}
 
         <section className="ue-list" data-testid="highlights">
-          <h2 className="ue-eyebrow">Best light</h2>
+          <h2 className="ue-eyebrow">Best shots</h2>
           {highlights.length === 0 ? (
             <p className="ue-empty">No low-light shots today. Try the next day.</p>
           ) : (
@@ -356,7 +371,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
             {viewFailed
               ? 'Building data could not be loaded, so these paths may be blocked. Check the preview before you travel.'
               : view
-                ? 'Bright lines have no buildings in the way. Trees are not included, so check on site.'
+                ? 'Bright paths have no buildings in the way, though trees are not included. Anywhere on the straight line, the disc is behind some part of the tower.'
                 : 'Checking buildings along the paths…'}
           </p>
         </section>

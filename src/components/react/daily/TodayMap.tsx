@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { formatTime } from '../../../lib/berlinTime.js';
-import { pointAtTime, type DayPath, type PathPoint } from '../../../lib/dailyPaths.js';
+import { alignmentLine, pointAtTime, type DayPath, type PathPoint } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { VIEWPOINTS, type Viewpoint } from '../../../lib/viewpoints.js';
 import type { Body } from '../../../lib/bodyPosition.js';
@@ -176,21 +176,36 @@ export default function TodayMap({ paths, time, selected, onPickPath, onPickFree
     }
   }, [paths, zoom]);
 
-  // The spot for the chosen time, with its sightline back to the tower.
+  // The line through the tower for the chosen time, and the sphere's spot along it.
   useEffect(() => {
     const layer = liveLayer.current;
     if (!layer) return;
     layer.clearLayers();
     for (const path of paths) {
+      const line = alignmentLine(path.body, time, FERNSEHTURM);
+      if (line) {
+        L.polyline(
+          [
+            [FERNSEHTURM.lat, FERNSEHTURM.lon],
+            [line.farEnd.lat, line.farEnd.lon],
+          ],
+          { color: COLOR[path.body], weight: 1.5, opacity: 0.75, dashArray: '4 5', interactive: false },
+        ).addTo(layer);
+        L.polyline(
+          [
+            [FERNSEHTURM.lat, FERNSEHTURM.lon],
+            [line.bodySide.lat, line.bodySide.lon],
+          ],
+          { color: COLOR[path.body], weight: 1, opacity: 0.35, dashArray: '1 6', interactive: false },
+        ).addTo(layer);
+        L.marker([line.bodySide.lat, line.bodySide.lon], {
+          icon: L.divIcon({ className: `ue-map-body ue-map-body--${path.body}`, iconSize: [0, 0], html: '<i></i>' }),
+          interactive: false,
+          title: path.body === 'sun' ? 'Direction of the sun' : 'Direction of the moon',
+        }).addTo(layer);
+      }
       const p = pointAtTime(path, time);
       if (!p) continue;
-      L.polyline(
-        [
-          [FERNSEHTURM.lat, FERNSEHTURM.lon],
-          [p.lat, p.lon],
-        ],
-        { color: COLOR[path.body], weight: 1, opacity: 0.6, dashArray: '3 5', interactive: false },
-      ).addTo(layer);
       L.marker([p.lat, p.lon], {
         icon: L.divIcon({ className: `ue-map-now ue-map-now--${path.body}`, iconSize: [0, 0], html: '<i></i>' }),
         interactive: false,
