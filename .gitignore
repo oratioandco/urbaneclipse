@@ -130,3 +130,6 @@ test-results/
 playwright-report/
 public/berlin-full/
 public/berlin-full
+
+# Local 3D tiles within 9 km of the Fernsehturm, for the daily-map prototype.
+public/berlin-9km

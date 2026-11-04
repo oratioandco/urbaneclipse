@@ -13,3 +13,4 @@ public/test_tile
 .env
 *.log
 .DS_Store
+public/berlin-9km

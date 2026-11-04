@@ -1,0 +1,136 @@
+/* Urban Eclipse redesign. One dark surface for both screens, so controls recede and the
+   sun, the moon and the shot carry the colour. */
+:root {
+  --ue-bg: #111013;
+  --ue-surface: rgba(24, 22, 27, 0.9);
+  --ue-surface-solid: #18161b;
+  --ue-line: rgba(255, 244, 230, 0.13);
+  --ue-text: #f6efe6;
+  --ue-muted: rgba(246, 239, 230, 0.62);
+  --ue-sun: #ff9d3c;
+  --ue-moon: #b8c6ff;
+  --ue-good: #8fd19e;
+  --ue-bad: #ff8a73;
+  --ue-sans: ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --ue-serif: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
+  --ue-gutter: 16px;
+  --ue-sheet-width: 372px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--ue-bg); color: var(--ue-text); font: 15px/1.4 var(--ue-sans); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.ue-app { position: fixed; inset: 0; overflow: hidden; }
+.ue-screen, .ue-map { position: absolute; inset: 0; }
+.ue-stage { position: absolute; inset: 0; background: var(--ue-bg); }
+#cesium-container { position: absolute; inset: 0; }
+.cesium-viewer, .cesium-viewer-cesiumWidgetContainer, .cesium-widget, .cesium-widget canvas { width: 100%; height: 100%; }
+.cesium-viewer-bottom { display: none; }
+
+/* Map */
+.ue-map { background: #17161a; font-family: var(--ue-sans); }
+.ue-map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.86) contrast(0.82); }
+.ue-map .leaflet-bar { border: 1px solid var(--ue-line); border-radius: 10px; overflow: hidden; }
+.ue-map .leaflet-bar a { background: var(--ue-surface-solid); color: var(--ue-text); border-color: var(--ue-line); }
+.ue-map .leaflet-control-attribution { background: rgba(17, 16, 19, 0.7); color: var(--ue-muted); font-size: 10px; }
+.ue-map .leaflet-control-attribution a { color: var(--ue-muted); }
+.ue-map-tower i, .ue-map-viewpoint i, .ue-map-now i, .ue-map-selected i { position: absolute; display: block; border-radius: 50%; transform: translate(-50%, -50%); }
+.ue-map-tower i { width: 12px; height: 12px; background: var(--ue-text); box-shadow: 0 0 0 4px rgba(246, 239, 230, 0.2); }
+.ue-map-tower span, .ue-map-viewpoint span { position: absolute; left: 10px; top: -9px; white-space: nowrap; font-size: 12px; text-shadow: 0 1px 3px #000, 0 0 8px #000; color: var(--ue-text); }
+.ue-map-tower span { font-weight: 600; }
+.ue-map-viewpoint i { width: 8px; height: 8px; border: 1.5px solid var(--ue-text); background: var(--ue-bg); }
+.ue-map-viewpoint span { color: var(--ue-muted); font-size: 11px; display: none; }
+.ue-map[data-detail='true'] .ue-map-viewpoint span { display: block; }
+.ue-row[data-past='true'] { opacity: 0.5; }
+.ue-map-label span { position: absolute; transform: translate(-50%, -50%); padding: 0 4px; border-radius: 6px; background: var(--ue-bg); font-size: 10px; line-height: 15px; font-variant-numeric: tabular-nums; }
+.ue-map-hour--sun span { color: var(--ue-sun); }
+.ue-map-hour--moon span { color: var(--ue-moon); }
+.ue-map-now i { width: 18px; height: 18px; border: 3px solid var(--ue-bg); }
+.ue-map-now--sun i { background: var(--ue-sun); box-shadow: 0 0 0 2px var(--ue-sun), 0 0 22px 6px rgba(255, 157, 60, 0.55); }
+.ue-map-now--moon i { background: var(--ue-moon); box-shadow: 0 0 0 2px var(--ue-moon), 0 0 22px 6px rgba(184, 198, 255, 0.45); }
+.ue-map-selected i { width: 16px; height: 16px; background: var(--ue-text); border: 3px solid var(--ue-bg); box-shadow: 0 0 0 2px var(--ue-text); }
+
+/* Sheet: a side panel on wide screens, a bottom sheet on phones */
+.ue-sheet { position: absolute; z-index: 800; display: flex; flex-direction: column; gap: 18px; overflow-y: auto; overscroll-behavior: contain; padding: 22px; background: var(--ue-surface); border: 1px solid var(--ue-line); border-radius: 18px; backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); left: var(--ue-gutter); top: var(--ue-gutter); max-height: calc(100% - 2 * var(--ue-gutter)); width: var(--ue-sheet-width); }
+.ue-sheet__grip { display: none; }
+.ue-eyebrow { margin: 0; color: var(--ue-muted); font-size: 12px; font-weight: 500; }
+.ue-title { margin: 2px 0 0; font: 400 40px/1.05 var(--ue-serif); letter-spacing: -0.01em; font-variant-numeric: lining-nums tabular-nums; }
+.ue-sub { margin: 2px 0 0; color: var(--ue-muted); }
+.ue-today__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.ue-daynav { display: flex; gap: 4px; }
+.ue-daynav button { min-width: 40px; height: 40px; padding: 0 10px; border: 1px solid var(--ue-line); border-radius: 10px; font-size: 16px; }
+.ue-daynav .ue-daynav__today { font-size: 13px; }
+.ue-daynav button:hover { background: rgba(255, 255, 255, 0.07); }
+
+.ue-time__value { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ue-time__value output { font: 400 26px/1 var(--ue-serif); font-variant-numeric: lining-nums tabular-nums; }
+.ue-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ue-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid var(--ue-line); border-radius: 999px; font-size: 13px; color: var(--ue-muted); }
+.ue-chip i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.ue-chip[aria-pressed='true'] { color: var(--ue-text); background: rgba(255, 255, 255, 0.09); }
+.ue-chip--sun[aria-pressed='true'] i { background: var(--ue-sun); }
+.ue-chip--moon[aria-pressed='true'] i { background: var(--ue-moon); }
+
+.ue-tracks { display: grid; gap: 3px; margin-bottom: 2px; }
+.ue-track { position: relative; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.06); }
+.ue-track span { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+.ue-track--sun span { background: var(--ue-sun); }
+.ue-track--moon span { background: var(--ue-moon); }
+
+.ue-range { width: 100%; height: 30px; margin: 0; background: transparent; accent-color: var(--ue-text); cursor: pointer; }
+.ue-scale { display: flex; justify-content: space-between; color: var(--ue-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+.ue-now, .ue-list { display: flex; flex-direction: column; gap: 2px; }
+.ue-list .ue-eyebrow { margin-bottom: 6px; }
+.ue-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 50px; padding: 8px 10px; margin: 0 -10px; width: calc(100% + 20px); border-radius: 10px; text-align: left; }
+.ue-row--cta:hover { background: rgba(255, 255, 255, 0.07); }
+.ue-row[aria-current='true'] { background: rgba(255, 255, 255, 0.1); }
+.ue-row--quiet { min-height: 36px; }
+.ue-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ue-row__main strong { font-weight: 500; }
+.ue-row__main small { color: var(--ue-muted); font-size: 13px; }
+.ue-row__time { font: 400 20px/1 var(--ue-serif); font-variant-numeric: lining-nums tabular-nums; }
+.ue-row__go { font-size: 13px; font-weight: 600; white-space: nowrap; padding: 7px 12px; border-radius: 999px; color: var(--ue-bg); background: var(--ue-text); }
+.ue-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+.ue-dot--sun { background: var(--ue-sun); }
+.ue-dot--moon { background: var(--ue-moon); }
+.ue-empty { margin: 0; color: var(--ue-muted); }
+.ue-note { margin: 10px 0 0; color: var(--ue-muted); font-size: 12px; }
+
+/* Spot */
+.ue-spot-ui { position: absolute; inset: 0; pointer-events: none; }
+.ue-spot-ui > * { pointer-events: auto; }
+.ue-back { position: absolute; z-index: 810; top: var(--ue-gutter); left: var(--ue-gutter); min-height: 40px; padding: 0 14px; border: 1px solid var(--ue-line); border-radius: 999px; background: var(--ue-surface); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.ue-back:hover { background: var(--ue-surface-solid); }
+.ue-loader { position: absolute; z-index: 805; top: var(--ue-gutter); left: 50%; transform: translateX(-50%); padding: 9px 14px; border-radius: 999px; font-size: 13px; background: var(--ue-surface); }
+.ue-sheet--spot { left: auto; right: var(--ue-gutter); overflow: hidden; }
+.ue-sheet--spot .ue-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 10px; margin: 0 -10px; }
+.ue-sheet--spot .ue-spot__head, .ue-sheet--spot .ue-time, .ue-sheet--spot .ue-adjust { flex: none; }
+.ue-spot__when { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ue-verdict { margin: 6px 0 0; font-size: 17px; }
+.ue-sight { margin: 4px 0 0; font-size: 13px; color: var(--ue-muted); }
+.ue-sight--clear { color: var(--ue-good); }
+.ue-sight--blocked { color: var(--ue-bad); }
+.ue-tag { margin-left: 8px; padding: 1px 7px; border: 1px solid var(--ue-line); border-radius: 999px; font-size: 11px; white-space: nowrap; }
+.ue-adjust { margin-top: auto; border-top: 1px solid var(--ue-line); padding-top: 6px; }
+.ue-adjust__toggle { display: flex; justify-content: space-between; align-items: center; width: 100%; min-height: 40px; font-weight: 500; }
+.ue-adjust__toggle span { color: var(--ue-muted); font-weight: 400; font-size: 13px; }
+.ue-adjust__body { display: grid; gap: 12px; padding: 6px 0 2px; }
+.ue-field { display: grid; gap: 2px; color: var(--ue-muted); font-size: 13px; }
+
+/* Phones: the map or shot stays visible above a bottom sheet */
+@media (max-width: 760px) {
+  .ue-sheet, .ue-sheet--spot { left: 0; right: 0; top: auto; bottom: 0; width: auto; gap: 14px; padding: 8px var(--ue-gutter) calc(var(--ue-gutter) + env(safe-area-inset-bottom)); border-width: 1px 0 0; border-radius: 18px 18px 0 0; max-height: 46dvh; }
+  .ue-sheet[data-expanded='true'] { max-height: 82dvh; }
+  .ue-sheet__grip { display: block; flex: none; align-self: center; width: 64px; height: 22px; position: relative; }
+  .ue-sheet__grip::after { content: ''; position: absolute; left: 14px; right: 14px; top: 9px; height: 4px; border-radius: 2px; background: var(--ue-line); }
+  .ue-title { font-size: 32px; }
+  .ue-sheet--spot { padding-top: 14px; gap: 10px; height: 44dvh; max-height: 44dvh; }
+  .ue-verdict { font-size: 15px; margin-top: 2px; }
+  /* The shot gets the space above the sheet, so nothing covers the eclipse. */
+  .ue-stage { bottom: 44dvh; }
+  .ue-map .leaflet-control-zoom { display: none; }
+}
