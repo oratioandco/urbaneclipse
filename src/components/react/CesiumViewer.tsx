@@ -87,6 +87,7 @@ import { sampleBody } from '../../lib/bodyPosition.js';
 import { skyPalette } from '../../lib/skyPalette.js';
 import { azAltTo, directionOffsetECEF, geodeticToECEF } from '../../lib/silhouette.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
+import { SPHERE_CENTRE_AGL } from '../../lib/dailyPaths.js';
 import { computeDiscState } from '../../cesium/celestialDisc.js';
 import {
   BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
@@ -110,7 +111,7 @@ import CameraControls from './CameraControls.js';
 // The DEPLOYED app serves the committed core subset (public/berlin-core/, the
 // Lichtenberger-Brücke -> Fernsehturm sightline). For the full 236-tile scene locally,
 // set PUBLIC_TILESET_URL=/berlin/tileset.json in .env (the full tileset is gitignored).
-const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.json?v=enu3';
+const DEFAULT_TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.json?v=enu3';
 
 // Tileset root transform translation (ECEF), from data/test_tile/tileset.json.
 // Used as a fallback camera target if the tileset's bounding sphere isn't populated yet.
@@ -118,25 +119,41 @@ const TILESET_URL = import.meta.env.PUBLIC_TILESET_URL ?? '/berlin-core/tileset.
 // only consulted before the root content loads.)
 const TILESET_ECEF_CENTER = new Cesium.Cartesian3(3782802.4642903516, 902286.4677665455, 5038573.502874194);
 
-/**
- * The photographed street valley from Lichtenberger Brücke toward Alexanderplatz.
- * The points follow the Frankfurter Allee / Karl-Marx-Allee centre line through
- * Frankfurter Tor. The ribbon is a restrained planning surface, not a road map: its
- * job is to keep the real urban axis legible inside the otherwise uniform plaster city.
- */
-const FRANKFURTER_ALLEE_AXIS = [
-  13.4988, 52.5113,
-  13.482, 52.5135,
-  13.465, 52.5149,
-  13.45403, 52.51581,
-  13.436, 52.517,
-  13.4285, 52.5182,
-] as const;
+/** Ground at full daylight. Well below the buildings' white, so the floor recedes. */
+const GROUND_COLOR = '#7d7873';
 
 /** How long the scene may stay in a non-ready phase before we warn the user (T059). */
 const SLOW_SCENE_WARNING_MS = 25_000;
 
-export default function CesiumViewer(): JSX.Element {
+/** What a host without the built-in panels needs to know about the scene. */
+export interface SceneStatus {
+  phase: ScenePhase;
+  /** Tiles are re-streaming after the camera moved. */
+  restreaming: boolean;
+  /** Whether buildings stand between the eye and the landmark's sphere. */
+  sphereSightline: 'clear' | 'blocked' | 'unknown';
+}
+
+export interface CesiumViewerProps {
+  /** 'none' renders the scene alone, for hosts that supply their own controls. */
+  chrome?: 'panels' | 'none';
+  tilesetUrl?: string;
+  /** Stops rendering while the scene is hidden. */
+  paused?: boolean;
+  onStatus?: (status: SceneStatus) => void;
+}
+
+/** Stop this far short of the landmark axis, so a sightline test cannot hit the
+ *  landmark's own coarse mesh and report it as an obstruction. */
+const SIGHTLINE_STANDOFF_M = 40;
+
+export default function CesiumViewer({
+  chrome = 'panels',
+  tilesetUrl,
+  paused = false,
+  onStatus,
+}: CesiumViewerProps = {}): JSX.Element {
+  const TILESET_URL = tilesetUrl ?? DEFAULT_TILESET_URL;
   const solverBodyValue = useStore(solverBody);
   const viewModeValue = useStore(viewMode);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -184,6 +201,17 @@ export default function CesiumViewer(): JSX.Element {
   const [discState, setDiscState] = useState<
     { altitude: number; azimuth: number; angularDiameterDeg: number; visible: boolean } | undefined
   >(undefined);
+
+  const [sphereSightline, setSphereSightline] =
+    useState<SceneStatus['sphereSightline']>('unknown');
+  useEffect(() => {
+    onStatus?.({ phase: scenePhase, restreaming: sceneRestreaming, sphereSightline });
+  }, [onStatus, scenePhase, sceneRestreaming, sphereSightline]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (viewer && !viewer.isDestroyed()) viewer.useDefaultRenderLoop = !paused;
+  }, [paused]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -252,13 +280,18 @@ export default function CesiumViewer(): JSX.Element {
     scene.moon.show = false;
     // Plaster-coloured globe base; strip any imagery (defensive — baseLayer:false
     // already adds none).
-    // Slightly darker than the buildings' white. The globe now carries real terrain and
-    // is therefore IN SHOT at street level, where it used to be an unseen backdrop.
+    // Well below the buildings' white. The globe carries real terrain and is IN SHOT at
+    // street level, and a bright floor would become the largest shape in the frame.
     // Heightmap terrain has no vertex normals, so Cesium cannot relief-shade it — it
     // renders at full intensity. Left at the buildings' own #f4f4f4 it comes out
     // BRIGHTER than every lit facade and the model reads as a light box rather than
     // clay standing on a plinth.
-    scene.globe.baseColor = Cesium.Color.fromCssColorString('#d8d5d0');
+    scene.globe.baseColor = Cesium.Color.fromCssColorString(GROUND_COLOR);
+    // Crisp edges: silhouettes against the sky are the whole picture. Capped at 2x, since
+    // the post-process stage runs per pixel and a 3x phone would pay for detail it can't show.
+    viewer.useBrowserRecommendedResolution = false;
+    viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2);
+    scene.msaaSamples = 4;
     scene.imageryLayers.removeAll();
 
     // ONE reusable directional light, created up front: assigning a fresh
@@ -275,7 +308,9 @@ export default function CesiumViewer(): JSX.Element {
     // self-shadows into acne stripes. Shadows stay OFF; the directional key light
     // + IBL fill do the clay-model read.
     viewer.shadows = false;
-    scene.globe.enableLighting = true;
+    // Off: the terrain has no normals, and the engine's lighting fades with camera distance,
+    // which draws a hard line across the ground. Its brightness follows the palette instead.
+    scene.globe.enableLighting = false;
     scene.globe.depthTestAgainstTerrain = true;
     // The camera is AUTHORED from surveyed geometry (viewpoint deck elevation + eye
     // height), so Cesium must not second-guess it. Its collision detection otherwise
@@ -377,45 +412,6 @@ export default function CesiumViewer(): JSX.Element {
         tileset.imageBasedLighting.luminanceAtZenith = 0.6;
         tileset.shadows = Cesium.ShadowMode.ENABLED;
 
-        // Give the city a continuous plaster ground instead of letting the sky/void
-        // show through between the narrow road ribbon and the building footprints.
-        // This broad urban floor follows the real boulevard axis, so it still narrows
-        // naturally under the telephoto camera and remains occluded by city geometry.
-        viewer.entities.add({
-          id: 'pv-frankfurter-allee-ground',
-          corridor: {
-            positions: Cesium.Cartesian3.fromDegreesArray([...FRANKFURTER_ALLEE_AXIS]),
-            width: 260,
-            height: 0,
-            material: Cesium.Color.fromCssColorString('#b8afa3'),
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-            zIndex: 0,
-          },
-        });
-        // Keep the photographed boulevard legible as it drops away from the bridge.
-        // A real-width road corridor creates perspective naturally; unlike a screen
-        // overlay, it narrows with distance and is occluded by the actual city mesh.
-        viewer.entities.add({
-          id: 'pv-frankfurter-allee-axis',
-          corridor: {
-            positions: Cesium.Cartesian3.fromDegreesArray([...FRANKFURTER_ALLEE_AXIS]),
-            width: 34,
-            height: 0,
-            material: Cesium.Color.fromCssColorString('#29313a').withAlpha(0.82),
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-            zIndex: 1,
-          },
-        });
-        viewer.entities.add({
-          id: 'pv-frankfurter-allee-centreline',
-          polyline: {
-            positions: Cesium.Cartesian3.fromDegreesArray([...FRANKFURTER_ALLEE_AXIS]),
-            width: 1,
-            material: Cesium.Color.fromCssColorString('#e5d8c4').withAlpha(0.52),
-            clampToGround: true,
-            zIndex: 2,
-          },
-        });
         // Debug hook for headless scene-state inspection (scripts/diagnose.mjs).
         (window as unknown as { __cesium?: unknown }).__cesium = {
           viewer,
@@ -542,6 +538,27 @@ export default function CesiumViewer(): JSX.Element {
             }
           ).__cesium!;
           dbg.lastOcclusion = result.state;
+          const tgtBaseEll = tgt.ellipsoidalHeight - targetHeight.get();
+          const sphereEll = tgtBaseEll + SPHERE_CENTRE_AGL;
+          const sightRange = azAltTo(
+            { lat: observer.lat, lon: observer.lon, ellipsoidalHeight: observer.height },
+            target.lat,
+            target.lon,
+            sphereEll,
+          ).rangeM;
+          const f = Math.max(0, 1 - SIGHTLINE_STANDOFF_M / Math.max(sightRange, 1));
+          const sphereSight = computeOcclusion(viewer, observer, {
+            lat: observer.lat + (target.lat - observer.lat) * f,
+            lon: observer.lon + (target.lon - observer.lon) * f,
+            height: observer.height + (sphereEll - observer.height) * f,
+          }).state;
+          setSphereSightline(
+            sphereSight === 'unknown'
+              ? 'unknown'
+              : sphereSight === 'occluded' || sphereSight === 'marginal'
+                ? 'blocked'
+                : 'clear',
+          );
           // Exposed for scripts/diagnose.mjs: the datum fix is invisible in pixels, so
           // it is verified objectively from scene state instead.
           dbg.observerEllipsoidalHeight = obs.ellipsoidalHeight;
@@ -666,7 +683,8 @@ export default function CesiumViewer(): JSX.Element {
             const heightAtBody =
               obs.ellipsoidalHeight + range * Math.tan((bodySample.alt * Math.PI) / 180);
             // Put the eclipse in the upper third instead of dead centre. Aiming below
-            // the body reveals the Frankfurter-Allee street valley while keeping the complete tower inside the telephoto frame.
+            // the body reveals the Frankfurter-Allee street valley while keeping the
+            // complete tower inside the telephoto frame.
             const targetBaseEll = tgtTopEll - targetHeight.get();
             const compositionDropM = Math.min(90, targetHeight.get() * 0.22);
             aimEll = Math.min(
@@ -697,7 +715,11 @@ export default function CesiumViewer(): JSX.Element {
             const canvas = viewer.canvas as HTMLCanvasElement;
             const aspect =
               canvas.clientHeight > 0 ? canvas.clientWidth / canvas.clientHeight : 1.6;
-            const fitHfovDeg = Math.min(45, Math.max(2, angularHeightDeg * 1.5 * aspect));
+            // In a portrait frame frustum.fov is already the vertical angle.
+            const fitHfovDeg = Math.min(
+              45,
+              Math.max(2, angularHeightDeg * 1.5 * Math.max(aspect, 1)),
+            );
             frustumOf().fov = Cesium.Math.toRadians(fitHfovDeg);
           } else {
             applyPreviewFov();
@@ -760,6 +782,13 @@ export default function CesiumViewer(): JSX.Element {
             // Sky-ambient fill follows the same time-of-day curve: bright skylight
             // by day (shaded facades read as soft clay), a trace by night.
             tileset.imageBasedLighting.luminanceAtZenith = palette.ambientLevel;
+            const groundLevel = Math.min(1, 0.12 + palette.ambientLevel * 1.5);
+            scene.globe.baseColor = Cesium.Color.multiplyByScalar(
+              Cesium.Color.fromCssColorString(GROUND_COLOR),
+              groundLevel,
+              new Cesium.Color(),
+            );
+            scene.globe.baseColor.alpha = 1;
 
             // Drive the studio sky + disc from the SAME body position, so the glow
             // sits exactly where the sun/moon is — behind the tower at a real
@@ -794,7 +823,9 @@ export default function CesiumViewer(): JSX.Element {
               // HORIZONTAL fov in this landscape viewport; convert to vertical.
               const frustum = viewer.camera.frustum as CesiumType.PerspectiveFrustum;
               const aspect = canvas.clientWidth / canvas.clientHeight;
-              const vfov = 2 * Math.atan(Math.tan(frustum.fov / 2) / aspect);
+              // frustum.fov is horizontal in a landscape frame and vertical in portrait.
+              const vfov =
+                aspect >= 1 ? 2 * Math.atan(Math.tan(frustum.fov / 2) / aspect) : frustum.fov;
               const angRadiusRad = ((st.angularDiameterDeg / 2) * Math.PI) / 180;
               studioState.sunRadius = Math.tan(angRadiusRad) / (2 * Math.tan(vfov / 2));
               studioState.sunVisible = 1;
@@ -851,6 +882,7 @@ export default function CesiumViewer(): JSX.Element {
               studioState.towerBaseUv = [baseX / canvas.clientWidth, 1 - baseY / canvas.clientHeight];
               studioState.towerTopUv = [topX / canvas.clientWidth, 1 - topY / canvas.clientHeight];
               studioState.towerVisible = 1;
+              studioState.towerRange = sphereBottomDirection.rangeM;
             } else {
               studioState.towerVisible = 0;
             }
@@ -965,13 +997,37 @@ export default function CesiumViewer(): JSX.Element {
           }
         });
         // Re-frame and re-solve whenever a position moves.
+        // The sightline can only be judged once the tiles along the new view have
+        // streamed, so check again after the camera has moved and the queue has drained.
+        let settleTimer: number | undefined;
+        const recomputeWhenSettled = (): void => {
+          window.clearTimeout(settleTimer);
+          setSphereSightline('unknown');
+          settleTimer = window.setTimeout(function check() {
+            if (disposed || viewer.isDestroyed()) return;
+            if (tileset.tilesLoaded) recompute();
+            else settleTimer = window.setTimeout(check, 250);
+          }, 500);
+        };
         const unsubObsPos = observerPosition.listen(() => {
           recompute();
-          applyViewMode();
+          applyViewMode(chrome === 'none' ? 0 : undefined);
           applyDisc();
+          recomputeWhenSettled();
         });
+        const resizeObserver = new ResizeObserver(() => {
+          if (disposed || viewer.isDestroyed()) return;
+          viewer.resize();
+          if (viewMode.get() === 'preview') {
+            applyViewMode(0);
+            applyDisc();
+          }
+        });
+        resizeObserver.observe(container);
         const unsubTgtPos = targetPosition.listen(() => { recompute(); applyViewMode(); });
         cleanupPlacement = () => {
+          window.clearTimeout(settleTimer);
+          resizeObserver.disconnect();
           unsubArea();
           unsubDiscTime();
           unsubDiscBody();
@@ -1060,6 +1116,10 @@ export default function CesiumViewer(): JSX.Element {
       viewerRef.current = null;
     };
   }, []);
+
+  if (chrome === 'none') {
+    return <div id="cesium-container" ref={containerRef} />;
+  }
 
   return (
     <>

@@ -66,14 +66,14 @@ export interface StudioEnvironmentOptions {
 
 /** Default plaster-void haze parameters (sensible; not asserted by contract).
  *
- *  Tuned so a landmark ~6 km out (the Fernsehturm from the Lichtenberger Brücke) is
- *  still crisp; the atmospheric separation begins beyond the canonical composition
- *  rather than flattening the street canyon. The haze COLOUR is a live
+ *  A telephoto lens stacks the city into layers, and only haze tells them apart, so the
+ *  haze ramps across the whole working range (see MAX_HAZE in the shader, which keeps
+ *  the farthest building from dissolving entirely). The haze COLOUR is a live
  *  uniform (`u_haze`, driven per-frame from src/lib/skyPalette.ts); this default is
  *  only the value before the app pushes the time-of-day palette. */
 const DEFAULTS = {
-  fogStart: 12000,
-  fogEnd: 30000,
+  fogStart: 250,
+  fogEnd: 11000,
   grainAmount: 0.02,
 };
 
@@ -131,25 +131,43 @@ export function buildStudioEnvironmentShaderSource(
     'uniform vec2 u_towerBaseUv;  // landmark base in texture coords',
     'uniform vec2 u_towerTopUv;   // landmark tip in texture coords',
     'uniform float u_towerVisible;',
+    'uniform float u_towerRange;  // eye-to-landmark distance, metres',
     '',
     'in vec2 v_textureCoordinates;',
     '',
     '// The plaster-void sky at a screen point: a vertical gradient from the warm haze',
     '// horizon up to the cooler u_skyTop, a soft radial bloom around the body, and the',
     '// disc itself — drawn ONLY on background pixels, so geometry occludes it per-pixel.',
-    'vec3 skyColor(vec2 uv, vec3 hazeColor) {',
-    '  vec3 base = mix(hazeColor, u_skyTop, smoothstep(-0.15, 1.15, uv.y));',
+    'float discDistance(vec2 uv) {',
     '  vec2 d = uv - u_sunUv;',
     '  d.x *= u_aspect;',
-    '  float r = length(d);',
-    '  // Keep the halo proportional to the real disc. The tighter floor preserves',
-    '  // atmosphere without making a physically accurate low sun read oversized.',
-    '  float glowSpread = max(u_sunRadius * u_sunRadius * 0.85, 0.00018);',
-    '  float glow = u_glowStrength * exp(-(r * r) / glowSpread) * u_sunVisible;',
-    '  vec3 sky = base + u_glowColor * glow;',
-    '  float soft = max(u_sunRadius * 0.045, 0.0007);',
+    '  return length(d);',
+    '}',
+    '',
+    '// Sky and scattered light, without the disc itself. Haze blends toward this, so',
+    '// glow reaches the air in front of far buildings but the disc never shows through.',
+    'vec3 airColor(vec2 uv, vec3 hazeColor) {',
+    '  vec3 base = mix(hazeColor, u_skyTop, smoothstep(-0.15, 1.15, uv.y));',
+    '  float r = discDistance(uv);',
+    '  // Three falloffs, scaled to the disc: a tight corona, a soft halo, and a wide',
+    '  // wash of light that warms the whole region of sky around a low sun.',
+    '  float R = max(u_sunRadius, 0.012);',
+    '  float corona = exp(-(r * r) / (R * R * 1.7));',
+    '  float halo = exp(-(r * r) / (R * R * 11.0));',
+    '  float wash = exp(-(r * r) / (R * R * 90.0));',
+    '  float glow = u_glowStrength * u_sunVisible * (0.55 * corona + 0.3 * halo + 0.16 * wash);',
+    '  return base + u_glowColor * glow;',
+    '}',
+    '',
+    'vec3 skyColor(vec2 uv, vec3 hazeColor) {',
+    '  vec3 sky = airColor(uv, hazeColor);',
+    '  float r = discDistance(uv);',
+    '  float soft = max(u_sunRadius * 0.03, 0.0006);',
     '  float disc = u_sunVisible * (1.0 - smoothstep(u_sunRadius - soft, u_sunRadius + soft, r));',
-    '  return mix(sky, u_discColor, disc);',
+    '  // Limb darkening: the centre runs hot, the edge keeps the body colour.',
+    '  float limb = 1.0 - smoothstep(0.0, 1.0, r / max(u_sunRadius, 0.0001));',
+    '  vec3 surface = mix(u_discColor, min(u_discColor + vec3(0.35), vec3(1.0)), limb);',
+    '  return mix(sky, surface, disc);',
     '}',
     '',
     '// Exact Fernsehturm profile in screen space. Coordinates are converted to',
@@ -176,18 +194,15 @@ export function buildStudioEnvironmentShaderSource(
     '  float distanceToAxis = length(p - axis * t);',
     '  float radiusUv = radiusM * sqrt(axis2) / 368.03;',
     '  float edge = max(0.00035, radiusUv * 0.08);',
-    '  // The real lower tower is hidden by the Alexanderplatz skyline from this',
-    '  // viewpoint. Fade the analytical model into that foreground instead of',
-    '  // painting its flared base over the city mesh.',
-    '  float skylineReveal = smoothstep(45.0, 65.0, h);',
-    '  return skylineReveal * (1.0 - smoothstep(radiusUv - edge, radiusUv + edge, distanceToAxis));',
+    '  return 1.0 - smoothstep(radiusUv - edge, radiusUv + edge, distanceToAxis);',
     '}',
     '',
     '// Analytical landmarks share the distant city plaster rather than becoming',
     '// darker cut-outs. Their contrast now comes from the real backlit composition.',
     'vec3 landmarkColor(vec3 hazeColor) {',
-    '  vec3 distantPlaster = vec3(0.42, 0.39, 0.37);',
-    '  return mix(distantPlaster, hazeColor, 0.18);',
+    '  // A backlit silhouette, lifted by the same haze as the city at that distance.',
+    '  vec3 silhouette = vec3(0.2, 0.18, 0.18);',
+    '  return mix(silhouette, hazeColor, 0.2 + 0.5 * smoothstep(250.0, 11000.0, u_towerRange));',
     '}',
     '',
     'void main() {',
@@ -206,7 +221,6 @@ export function buildStudioEnvironmentShaderSource(
     '',
     '  vec4 color = texture(colorTexture, v_textureCoordinates);',
     '  float depth = czm_readDepth(depthTexture, v_textureCoordinates);',
-    '  vec3 sky = skyColor(v_textureCoordinates, hazeColor);',
     '',
     '  // Fix #3 (revised): background is EXACTLY the cleared depth 1.0. Geometry in',
     '  // this scene always writes < 1.0 under either depth encoding (see the module',
@@ -215,7 +229,7 @@ export function buildStudioEnvironmentShaderSource(
     '    // Sky plus the surveyed landmark silhouette. Foreground city geometry has',
     '    // depth < 1 and therefore naturally occludes the screen-space tower.',
     '    vec3 landmark = landmarkColor(hazeColor);',
-    '    vec3 result = mix(sky, landmark, towerMask(v_textureCoordinates));',
+    '    vec3 result = mix(skyColor(v_textureCoordinates, hazeColor), landmark, towerMask(v_textureCoordinates));',
     '    // The authored sky is a real scene surface, not a transparent canvas hole.',
     '    out_FragColor = vec4(result, 1.0);',
     '    return;',
@@ -228,7 +242,9 @@ export function buildStudioEnvironmentShaderSource(
     '  // as a silhouette against the bloom rather than washing to flat white).',
     '  vec4 eye = czm_windowToEyeCoordinates(vec4(gl_FragCoord.xy, depth, 1.0));',
     '  float dist = length(eye.xyz);',
-    '  float fog = smoothstep(fogStart, fogEnd, dist);',
+    '  // Never fully opaque: the farthest buildings stay faintly present as a skyline.',
+    '  float MAX_HAZE = 0.86;',
+    '  float fog = MAX_HAZE * smoothstep(fogStart, fogEnd, dist);',
     '  // Horizon fade (the "horizon seam" fix). The DGM1 globe terrain carries no',
     '  // vertex normals, so it renders at full plaster intensity right up to the globe',
     '  // silhouette and then hard-cuts to sky; at a low eye height the geometric',
@@ -247,14 +263,19 @@ export function buildStudioEnvironmentShaderSource(
     '  // ambient against the tiles real per-face normals, so the tint stays near 1.',
     '  // Darken near geometry and let the distant city open toward the haze. This',
     '  // restores the street-canyon depth a telephoto frame needs without textures.',
-    '  float depthTone = mix(0.66, 1.0, smoothstep(300.0, 6200.0, dist));',
+    '  float depthTone = mix(0.48, 1.0, smoothstep(300.0, 6200.0, dist));',
     '  vec3 plaster = color.rgb * u_sceneTint * depthTone;',
-    '  vec3 result = mix(plaster, sky, fog);',
-    '  // The landmark is an analytical planning surface, rendered after the coarse',
-    '  // LoD2 city mesh so its surveyed silhouette is not lost inside generalized',
-    '  // building blocks. The separate line-of-sight verdict still reports occlusion.',
-    '  vec3 landmark = landmarkColor(hazeColor);',
-    '  result = mix(result, landmark, towerMask(v_textureCoordinates));',
+    '  vec3 result = mix(plaster, airColor(v_textureCoordinates, hazeColor), fog);',
+    '  // The landmark is drawn analytically because the city mesh cannot represent it,',
+    '  // but only over what stands behind it: anything nearer than the tower hides it.',
+    '  if (dist > u_towerRange) {',
+    '    result = mix(result, landmarkColor(hazeColor), towerMask(v_textureCoordinates));',
+    '  }',
+    '',
+    '  // A soft photographic vignette settles the near foreground and holds the eye on',
+    '  // the eclipse. Geometry only: the sky branch returns earlier and stays clean.',
+    '  vec2 vignetteAt = v_textureCoordinates - vec2(0.5, 0.62);',
+    '  result *= 1.0 - 0.55 * smoothstep(0.3, 0.72, length(vignetteAt));',
     '',
     '  // Film grain: temporal dither driven by czm_frameNumber (fix #4).',
     '  float grain = fract(sin(dot(v_textureCoordinates * (czm_frameNumber + 1.0), vec2(12.9898, 78.233))) * 43758.5453);',
@@ -296,6 +317,8 @@ export interface StudioEnvironmentState {
   towerBaseUv: [number, number];
   towerTopUv: [number, number];
   towerVisible: number;
+  /** Eye-to-landmark distance, metres. Nearer geometry hides the landmark. */
+  towerRange: number;
 }
 
 /** A neutral default so the stage renders sanely before the app sets real values. */
@@ -314,6 +337,7 @@ export function defaultStudioEnvironmentState(): StudioEnvironmentState {
     towerBaseUv: [0.5, 0.25],
     towerTopUv: [0.5, 0.75],
     towerVisible: 0,
+    towerRange: 0,
   };
 }
 
@@ -352,6 +376,7 @@ export function createStudioEnvironmentStage(
       u_towerBaseUv: new Cesium.Cartesian2(state.towerBaseUv[0], state.towerBaseUv[1]),
       u_towerTopUv: new Cesium.Cartesian2(state.towerTopUv[0], state.towerTopUv[1]),
       u_towerVisible: state.towerVisible,
+      u_towerRange: state.towerRange,
     },
   });
   return stage;
@@ -399,4 +424,5 @@ export function updateStudioUniforms(
     state.towerTopUv[1],
   );
   stage.uniforms.u_towerVisible = state.towerVisible;
+  stage.uniforms.u_towerRange = state.towerRange;
 }

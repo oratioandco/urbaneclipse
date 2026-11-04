@@ -128,7 +128,7 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
     it('keeps the distance-fog ramp and the haze mix intact (no regression)', () => {
       expect(src).toContain('smoothstep(fogStart, fogEnd, dist)');
       expect(src).toContain('vec3 plaster = color.rgb * u_sceneTint * depthTone');
-      expect(src).toContain('mix(plaster, sky, fog)');
+      expect(src).toContain('mix(plaster, airColor(v_textureCoordinates, hazeColor), fog)');
     });
     it('never touches the background depth test or the disc (additive only)', () => {
       // The fade lives entirely in the geometry branch (depth < 1.0); the background
@@ -193,7 +193,7 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
 
     it('uses the distant-city plaster for analytical landmarks instead of a black silhouette', () => {
       expect(src).toContain('vec3 landmarkColor');
-      expect(src).toContain('mix(distantPlaster, hazeColor, 0.18)');
+      expect(src).toContain('mix(silhouette, hazeColor,');
       expect(src).not.toContain('mix(result, vec3(0.12, 0.115, 0.12)');
     });
 

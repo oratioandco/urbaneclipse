@@ -86,7 +86,9 @@ const SUN_KEYFRAMES: Keyframe[] = [
       haze: [0.98, 0.5, 0.24],
       glowColor: [1.0, 0.58, 0.24],
       glowStrength: 0.9,
-      lightIntensity: 0.62,
+      // Low sun grazes every facade, which picks out mesh facets as streaks. Keep the
+      // key light soft here and let the sky fill carry the form.
+      lightIntensity: 0.3,
       ambientLevel: 0.22,
       discTint: [1, 0.64, 0.24],
       sceneTint: [1.0, 0.86, 0.72],
@@ -99,7 +101,7 @@ const SUN_KEYFRAMES: Keyframe[] = [
       haze: [0.98, 0.74, 0.48],
       glowColor: [1.0, 0.72, 0.38],
       glowStrength: 0.72,
-      lightIntensity: 1.12,
+      lightIntensity: 0.75,
       ambientLevel: 0.36,
       discTint: [1, 0.82, 0.54],
       sceneTint: [1.0, 0.94, 0.84],
