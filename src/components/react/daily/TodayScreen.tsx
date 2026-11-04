@@ -222,8 +222,8 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         moon={moonToday}
         onPickStreet={(m) => {
           setFree(null);
-          setTime(m.peak);
           setExpanded(true);
+          openStreet(m);
         }}
         selected={free}
         onPickPath={({ point }) => {
@@ -530,7 +530,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
             {viewFailed
               ? 'Building data could not be loaded, so these paths may be blocked. Check the preview before you travel.'
               : view
-                ? 'Bright paths have no buildings in the way, though trees are not included. Anywhere on the straight line, the disc is behind some part of the tower.'
+                ? 'Coloured paths show where to stand, with bright stretches free of buildings (trees are not included). The straight line runs from the sun or moon through the tower: its brighter part is where the disc is behind some part of the tower. Highlighted streets line up with the sun or moon right now.'
                 : 'Checking buildings along the paths…'}
           </p>
         </section>

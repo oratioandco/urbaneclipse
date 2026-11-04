@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { formatTime } from '../../../lib/berlinTime.js';
 import {
+  MIN_MOON_ILLUMINATION,
   alignmentLine,
   pointAtTime,
   type AlignmentLine,
@@ -72,8 +73,8 @@ function drawAlignment(
   }).addTo(layer);
   const glyph =
     body === 'moon'
-      ? `<svg viewBox="-1.1 -1.1 2.2 2.2"><circle r="1" class="ue-moon-glyph__dark"/><path class="ue-moon-glyph__lit" d="${litDiscPath(moon.fraction, moon.waxing)}"/></svg>`
-      : '<i></i>';
+      ? `<svg viewBox="-1.1 -1.1 2.2 2.2"><circle r="1" class="ue-moon-glyph__dark"/><path class="ue-moon-glyph__lit" d="${litDiscPath(moon.fraction, moon.waxing)}"/></svg><span>Moon</span>`
+      : '<i></i><span>Sun</span>';
   L.marker(map.layerPointToLatLng(bodyAt), {
     icon: L.divIcon({ className: `ue-map-body ue-map-body--${body}`, iconSize: [0, 0], html: glyph }),
     interactive: false,
@@ -276,12 +277,18 @@ export default function TodayMap({
     if (!layer) return;
     layer.clearLayers();
     for (const path of paths) {
+      // A moon this thin cannot be seen, so a marker for it would only mislead.
+      if (path.body === 'moon' && path.illumination < MIN_MOON_ILLUMINATION) continue;
       const line = alignmentLine(path.body, time, FERNSEHTURM);
       if (line && map) drawAlignment(map, layer, path.body, line, moon);
       const p = pointAtTime(path, time);
       if (!p) continue;
       L.marker([p.lat, p.lon], {
-        icon: L.divIcon({ className: `ue-map-now ue-map-now--${path.body}`, iconSize: [0, 0], html: '<i></i>' }),
+        icon: L.divIcon({
+          className: `ue-map-now ue-map-now--${path.body}`,
+          iconSize: [0, 0],
+          html: '<i></i><span>Stand here</span>',
+        }),
         interactive: false,
         zIndexOffset: 600,
       }).addTo(layer);
@@ -295,39 +302,32 @@ export default function TodayMap({
     }
   }, [paths, time, selected, viewTick, moon]);
 
-  // Streets: faint for today, bright while the sun or moon is in the gap.
+  // Only the streets lined up right now. The list and the slider cover the rest of the day.
   useEffect(() => {
     const layer = streetLayer.current;
     if (!layer) return;
     layer.clearLayers();
     for (const moment of streets) {
-      const live = time >= moment.from - 60_000 && time <= moment.to + 60_000;
+      if (time < moment.from - 60_000 || time > moment.to + 60_000) continue;
       const ends: [number, number][] = [
         [moment.view.from.lat, moment.view.from.lon],
         [moment.view.to.lat, moment.view.to.lon],
       ];
-      const pick = (): void => handlers.current.onPickStreet(moment);
-      L.polyline(ends, {
-        color: COLOR[moment.body],
-        weight: live ? 5 : 2,
-        opacity: live ? 1 : 0.32,
-        interactive: false,
-      }).addTo(layer);
+      L.polyline(ends, { color: COLOR[moment.body], weight: 2.5, opacity: 0.95, interactive: false }).addTo(layer);
       // A wider invisible line makes thin streets easy to tap.
       L.polyline(ends, { color: '#000', weight: 18, opacity: 0.001, bubblingMouseEvents: false })
-        .on('click', pick)
+        .on('click', () => handlers.current.onPickStreet(moment))
         .addTo(layer);
-      if (live) {
-        L.marker([moment.view.from.lat, moment.view.from.lon], {
-          icon: L.divIcon({
-            className: `ue-map-eye ue-map-eye--${moment.body}`,
-            iconSize: [0, 0],
-            html: `<i style="transform:translate(-50%,-50%) rotate(${moment.view.bearingDeg}deg)"></i>`,
-          }),
-          interactive: false,
-          zIndexOffset: 500,
-        }).addTo(layer);
-      }
+      // Where to stand, pointing the way to look.
+      L.marker(ends[0], {
+        icon: L.divIcon({
+          className: `ue-map-eye ue-map-eye--${moment.body}`,
+          iconSize: [0, 0],
+          html: `<i style="transform:translate(-50%,-50%) rotate(${moment.view.bearingDeg}deg)"></i>`,
+        }),
+        interactive: false,
+        zIndexOffset: 500,
+      }).addTo(layer);
     }
   }, [streets, time]);
 
