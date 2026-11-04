@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
+import { STRAUSBERGER_PLATZ, WEBERWIESE } from '../../src/lib/viewpoints';
 import {
   VIEW_BLOCKED,
   VIEW_BUILDING,
@@ -53,7 +54,13 @@ describe('the shipped Fernsehturm viewshed', () => {
     expect(sampleViewshed(view, 52.5205, 13.416)).toBe(VIEW_VISIBLE);
   });
 
-  it('agrees with the 3D scene that the Strausberger Platz pin is blocked', () => {
+  it('agrees with the 3D scene that the old Strausberger Platz pin was blocked', () => {
     expect(sampleViewshed(view, 52.5182, 13.4285)).toBe(VIEW_BLOCKED);
+  });
+
+  it('has a clear view from both moved street-level viewpoints', () => {
+    for (const viewpoint of [STRAUSBERGER_PLATZ, WEBERWIESE]) {
+      expect(sampleViewshed(view, viewpoint.lat, viewpoint.lon)).toBe(VIEW_VISIBLE);
+    }
   });
 });

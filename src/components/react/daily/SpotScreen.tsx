@@ -179,6 +179,8 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
     onChange({ t: e.peak, body: e.body });
   };
 
+  const viewpoint = spot.viewpointId ? findViewpoint(spot.viewpointId) : undefined;
+  const curated = viewpoint !== undefined && !viewpoint.needsSiteCheck;
   const noDates = events !== null && events.length === 0;
   const allHidden = usableEvents !== null && events !== null && events.length > 0 && usableEvents.length === 0;
   const hiddenCount = events && usableEvents ? events.length - usableEvents.length : 0;
@@ -217,7 +219,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
         <header className="ue-spot__head">
           <p className="ue-eyebrow">
             {spot.label}
-            <span className="ue-tag">{spot.viewpointId ? 'Curated' : 'Calculated'}</span>
+            <span className="ue-tag">{curated ? 'Curated' : 'Calculated'}</span>
           </p>
           <div className="ue-spot__when">
             <output className="ue-title">{t === undefined ? '--:--' : formatTime(new Date(t))}</output>

@@ -36,6 +36,8 @@ export interface Viewpoint {
   surfaceUncertaintyM?: number;
   /** Where the elevation came from. */
   source: string;
+  /** Position comes from building data alone and nobody has confirmed you can stand there. */
+  needsSiteCheck?: boolean;
 }
 
 /**
@@ -66,31 +68,37 @@ export const LICHTENBERGER_BRUECKE: Viewpoint = {
 };
 
 /**
- * Karl-Marx-Allee at Strausberger Platz. A grand, wide boulevard plaza with an
- * unobstructed corridor sightline WNW to the Fernsehturm ~1.3 km away — verified clear
- * against the LoD2 geometry by ray-casting. This is the SHOWCASE default: a clean shot
- * of the tower, unlike the Lichtenberger Brücke, whose low sightline is blocked by
- * intervening buildings at a sun transit.
+ * Strausberger Platz, moved 46 m north of the plaza centre.
  *
- * Street-level, so no surface override — the DGM1 terrain gives the ground elevation.
+ * From the centre (52.5182, 13.4285) a 29 m roof clips the sightline about 130 m away.
+ * This position was chosen from the visibility grid (scripts/build_viewshed.py) and
+ * confirmed clear by ray-casting the current tiles, but building data cannot say whether
+ * it is pavement or carriageway. Street level, so the DGM1 terrain gives the elevation.
  */
 export const STRAUSBERGER_PLATZ: Viewpoint = {
   id: 'strausberger-platz',
   name: 'Strausberger Platz',
-  lat: 52.5182,
-  lon: 13.4285,
+  lat: 52.51861,
+  lon: 13.42863,
   kind: 'ground',
-  source: 'Karl-Marx-Allee boulevard plaza; clean corridor sightline to the tower.',
+  source: 'Position from the visibility grid; ground from DGM1. Not checked on site.',
+  needsSiteCheck: true,
 };
 
-/** Weberwiese, further down Karl-Marx-Allee (~1.9 km). Also a clear corridor view. */
+/**
+ * Weberwiese, moved 38 m north-northeast onto the avenue side.
+ *
+ * The earlier position (52.517, 13.436) stood 11 m from a 31 m block that hid the tower
+ * and every pass of the sun and moon. Same provenance and caveat as Strausberger Platz.
+ */
 export const WEBERWIESE: Viewpoint = {
   id: 'weberwiese',
   name: 'Weberwiese',
-  lat: 52.517,
-  lon: 13.436,
+  lat: 52.5173,
+  lon: 13.43628,
   kind: 'ground',
-  source: 'Karl-Marx-Allee; clean corridor sightline to the tower.',
+  source: 'Position from the visibility grid; ground from DGM1. Not checked on site.',
+  needsSiteCheck: true,
 };
 
 /** Alexanderplatz east side (~0.5 km) — the tower looms large. Clear sightline. */
