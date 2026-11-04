@@ -222,7 +222,7 @@ export default function PlacementControls({
 
       <div className="pv-btn-row">
         <button type="button" onClick={reset} className="pv-btn pv-btn--quiet">
-          Reset viewpoint & target
+          Reset view & target
         </button>
       </div>
 

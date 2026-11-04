@@ -620,8 +620,14 @@ body,
 
 .pv-btn-row {
   display: flex;
+  flex-wrap: wrap; /* labels are nowrap: stack when a row is wider than the rail */
   gap: 6px;
   margin-top: 12px;
+}
+
+.pv-btn-row .pv-btn {
+  flex: 1 1 auto;
+  max-width: 100%;
 }
 
 .pv-segment {
