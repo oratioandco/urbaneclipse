@@ -137,33 +137,33 @@ export default function TodayMap({ paths, time, selected, onPickPath, onPickFree
       const color = COLOR[path.body];
       const faint = path.body === 'moon' && path.illumination < 0.25;
       for (const segment of path.segments) {
-        // Split where coverage changes: a heavy line means the disc can be fully hidden.
+        // Split wherever the look changes. Heavy means the disc can be fully hidden;
+        // a faint line means buildings hide the tower from that stretch.
+        const look = (p: PathPoint) => (p.clear === false ? 'blocked' : p.kind === 'full' ? 'full' : 'partial');
         let run: PathPoint[] = [];
-        const flush = (full: boolean) => {
+        const flush = (kind: string) => {
           if (run.length < 2) return;
+          const blocked = kind === 'blocked';
           L.polyline(run.map((p) => [p.lat, p.lon] as [number, number]), {
             color,
-            weight: full ? 4 : 2,
-            opacity: faint ? 0.35 : full ? 1 : 0.8,
-            dashArray: faint ? '2 6' : undefined,
+            weight: blocked ? 1 : kind === 'full' ? 5 : 3,
+            opacity: blocked ? 0.28 : faint ? 0.35 : 1,
+            dashArray: faint && !blocked ? '2 6' : undefined,
             interactive: false,
           }).addTo(layer);
         };
         segment.forEach((p, i) => {
-          const full = p.kind === 'full';
-          const prevFull = i > 0 && segment[i - 1].kind === 'full';
-          if (i > 0 && full !== prevFull) {
+          if (i > 0 && look(p) !== look(segment[i - 1])) {
             run.push(p);
-            flush(prevFull);
+            flush(look(segment[i - 1]));
             run = [];
           }
           run.push(p);
         });
-        flush(run[run.length - 1]?.kind === 'full');
+        if (run.length > 0) flush(look(run[run.length - 1]));
 
         for (const p of segment) {
-          const hourMark = new Date(p.t).getUTCMinutes() < 3;
-          if (!hourMark) continue;
+          if (p.t % 3_600_000 !== 0) continue;
           const at = map.project([p.lat, p.lon], zoom);
           if (placed.some((other) => other.distanceTo(at) < LABEL_ROOM_PX)) continue;
           placed.push(at);

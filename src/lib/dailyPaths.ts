@@ -44,6 +44,8 @@ export interface PathPoint {
   bodyAlt: number;
   kind: OccultationKind;
   coveredFraction: number;
+  /** False when buildings hide the landmark from here. Unset until checked. */
+  clear?: boolean;
 }
 
 export interface DayPath {
@@ -138,11 +140,12 @@ export function pointAtTime(path: DayPath, t: number, toleranceMs = 3 * 60_000):
  */
 export function dayHighlights(path: DayPath, maxAltitudeDeg = 12): PathPoint[] {
   if (path.body === 'moon' && path.illumination < MIN_MOON_ILLUMINATION) return [];
+  const usable = (p: PathPoint) => p.bodyAlt >= 2 && p.bodyAlt <= maxAltitudeDeg && p.clear !== false;
   const out: PathPoint[] = [];
   for (const segment of path.segments) {
     const midpoint = segment[Math.floor(segment.length / 2)]?.t ?? 0;
     for (const half of [segment.filter((p) => p.t <= midpoint), segment.filter((p) => p.t > midpoint)]) {
-      const low = half.filter((p) => p.bodyAlt >= 2 && p.bodyAlt <= maxAltitudeDeg);
+      const low = half.filter(usable);
       if (low.length === 0) continue;
       // Lowest usable light first; among those, the most covered disc.
       const pick = low.reduce((a, b) => {
@@ -164,6 +167,69 @@ export interface SpotEvent {
   kind: OccultationKind;
   coveredFraction: number;
   bodyAlt: number;
+  bodyAz: number;
+}
+
+/** Fine enough to catch a gap between buildings: about 10 m of path near the tower. */
+const VIEW_STEP_MS = 15_000;
+/** A clear stretch shorter than this is a chink between buildings, not a place to shoot. */
+const MIN_CLEAR_MS = 45_000;
+
+function interpolate(a: PathPoint, b: PathPoint, f: number): PathPoint {
+  const mix = (x: number, y: number) => x + (y - x) * f;
+  return {
+    t: Math.round(mix(a.t, b.t)),
+    lat: mix(a.lat, b.lat),
+    lon: mix(a.lon, b.lon),
+    distanceM: mix(a.distanceM, b.distanceM),
+    bearingDeg: mix(a.bearingDeg, b.bearingDeg),
+    bodyAlt: mix(a.bodyAlt, b.bodyAlt),
+    kind: f < 0.5 ? a.kind : b.kind,
+    coveredFraction: mix(a.coveredFraction, b.coveredFraction),
+  };
+}
+
+/**
+ * Check a path against what can be seen from it. Samples more finely than the solved
+ * points, since a street crossing the path can be narrower than a solved step, then marks
+ * each point clear or not. `isClear` is a function so this stays free of the data format.
+ */
+export function applyView(path: DayPath, isClear: (lat: number, lon: number) => boolean): DayPath {
+  const segments = path.segments.map((segment) => {
+    const dense: PathPoint[] = [];
+    segment.forEach((point, i) => {
+      const next = segment[i + 1];
+      const steps = next ? Math.max(1, Math.round((next.t - point.t) / VIEW_STEP_MS)) : 1;
+      for (let k = 0; k < steps; k++) {
+        const p = next ? interpolate(point, next, k / steps) : { ...point };
+        p.clear = isClear(p.lat, p.lon);
+        dense.push(p);
+      }
+    });
+    // Too short to use: treat as blocked, so a chink is never offered as a shot.
+    let start = 0;
+    while (start < dense.length) {
+      let end = start;
+      while (end + 1 < dense.length && dense[end + 1].clear === dense[start].clear) end++;
+      if (dense[start].clear && dense[end].t - dense[start].t < MIN_CLEAR_MS) {
+        for (let i = start; i <= end; i++) dense[i].clear = false;
+      }
+      start = end + 1;
+    }
+    return dense;
+  });
+  return { ...path, segments };
+}
+
+/** The next moment at or after `t` with a clear view, or undefined if none remains today. */
+export function nextClearPoint(path: DayPath, t: number): PathPoint | undefined {
+  let best: PathPoint | undefined;
+  for (const segment of path.segments) {
+    for (const p of segment) {
+      if (p.clear !== false && p.t >= t && (!best || p.t < best.t)) best = p;
+    }
+  }
+  return best;
 }
 
 /** Separate passes are hours apart; anything closer is one pass with a gap in sampling. */
@@ -196,6 +262,7 @@ function refinePeak(
   event.kind = best.kind;
   event.coveredFraction = best.coveredFraction;
   event.bodyAlt = best.bodyAlt;
+  event.bodyAz = best.bodyAz;
 }
 
 /** Coarse scan interval. The body moves at most ~5 deg of azimuth and ~2 deg of altitude in this time. */
@@ -278,6 +345,7 @@ export function findSpotEvents(req: {
         last.peak = t;
         last.coveredFraction = hit.coveredFraction;
         last.bodyAlt = hit.bodyAlt;
+        last.bodyAz = hit.bodyAz;
         last.kind = hit.kind === 'full' ? 'full' : last.kind;
       }
     } else {
@@ -289,6 +357,7 @@ export function findSpotEvents(req: {
         kind: hit.kind,
         coveredFraction: hit.coveredFraction,
         bodyAlt: hit.bodyAlt,
+        bodyAz: hit.bodyAz,
       });
     }
   }

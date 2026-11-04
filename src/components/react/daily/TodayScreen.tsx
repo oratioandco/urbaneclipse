@@ -9,14 +9,23 @@ import {
   type BerlinDay,
 } from '../../../lib/berlinTime.js';
 import {
+  applyView,
   compassPoint,
   computeDayPath,
   dayHighlights,
+  nextClearPoint,
   pointAtTime,
   type DayPath,
   type PathPoint,
 } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
+import {
+  VIEW_BUILDING,
+  VIEW_VISIBLE,
+  loadViewshed,
+  sampleViewshed,
+  type Viewshed,
+} from '../../../lib/viewshed.js';
 import type { Viewpoint } from '../../../lib/viewpoints.js';
 import type { Body } from '../../../lib/bodyPosition.js';
 import TodayMap from './TodayMap.js';
@@ -35,6 +44,25 @@ function placeLabel(p: { distanceM: number; bearingDeg: number }): string {
   return `${(p.distanceM / 1000).toFixed(1)} km ${compassPoint(p.bearingDeg)} of the tower`;
 }
 
+/** The stretches of the day with a usable view, for the bars above the time slider. */
+function clearRuns(path: DayPath): Array<{ from: number; to: number }> {
+  const runs: Array<{ from: number; to: number }> = [];
+  for (const segment of path.segments) {
+    let open: { from: number; to: number } | null = null;
+    for (const p of segment) {
+      if (p.clear === false) {
+        open = null;
+      } else if (open) {
+        open.to = p.t;
+      } else {
+        open = { from: p.t, to: p.t };
+        runs.push(open);
+      }
+    }
+  }
+  return runs;
+}
+
 function openingTime(day: BerlinDay, paths: DayPath[], now: number): number {
   const picks = paths.flatMap(dayHighlights).sort((a, b) => a.t - b.t);
   if (berlinDayOf(new Date(now)) === day) {
@@ -50,12 +78,30 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   const [expanded, setExpanded] = useState(false);
 
   const bounds = useMemo(() => berlinDayBounds(day), [day]);
+  const [view, setView] = useState<Viewshed | null>(null);
+  const [viewFailed, setViewFailed] = useState(false);
+  useEffect(() => {
+    let current = true;
+    loadViewshed().then(
+      (loaded) => current && setView(loaded),
+      (err: unknown) => {
+        console.error('[TodayScreen] visibility data failed', err);
+        if (current) setViewFailed(true);
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, []);
   const allPaths = useMemo(
     () =>
-      (['sun', 'moon'] as const).map((body) =>
-        computeDayPath({ body, start: bounds.start, end: bounds.end, landmark: FERNSEHTURM }),
-      ),
-    [bounds],
+      (['sun', 'moon'] as const).map((body) => {
+        const path = computeDayPath({ body, start: bounds.start, end: bounds.end, landmark: FERNSEHTURM });
+        return view
+          ? applyView(path, (lat, lon) => sampleViewshed(view, lat, lon) === VIEW_VISIBLE)
+          : path;
+      }),
+    [bounds, view],
   );
   const paths = useMemo(() => allPaths.filter((p) => shown[p.body]), [allPaths, shown]);
   const [time, setTime] = useState(() => openingTime(day, allPaths, Date.now()));
@@ -63,6 +109,8 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
     setTime(openingTime(day, allPaths, Date.now()));
     setFree(null);
   }, [day, allPaths]);
+
+  const freeState = free && view ? sampleViewshed(view, free.lat, free.lon) : null;
 
   const highlights = useMemo(
     () =>
@@ -141,13 +189,10 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
           <div className="ue-tracks" aria-hidden="true">
             {paths.map((path) => (
               <div key={path.body} className={`ue-track ue-track--${path.body}`}>
-                {path.segments.map((segment) => (
+                {clearRuns(path).map((run) => (
                   <span
-                    key={segment[0].t}
-                    style={{
-                      left: pct(segment[0].t),
-                      width: `calc(${pct(segment[segment.length - 1].t)} - ${pct(segment[0].t)})`,
-                    }}
+                    key={run.from}
+                    style={{ left: pct(run.from), width: `calc(${pct(run.to)} - ${pct(run.from)})` }}
                   />
                 ))}
               </div>
@@ -180,7 +225,15 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
             >
               <span className="ue-row__main">
                 <strong>Your spot</strong>
-                <small>{free.lat.toFixed(4)}, {free.lon.toFixed(4)} · calculated</small>
+                <small>
+                  {freeState === VIEW_VISIBLE
+                    ? 'No buildings in the way'
+                    : freeState === VIEW_BUILDING
+                      ? 'This is inside a building'
+                      : freeState === null
+                        ? `${free.lat.toFixed(4)}, ${free.lon.toFixed(4)}`
+                        : 'Buildings block the tower from here'}
+                </small>
               </span>
               <span className="ue-row__go">Check dates</span>
             </button>
@@ -190,6 +243,23 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
             {paths.map((path) => {
               const p = pointAtTime(path, time);
               const thin = path.body === 'moon' && path.illumination < 0.25;
+              if (p?.clear === false) {
+                const next = nextClearPoint(path, p.t);
+                return (
+                  <div key={path.body} className="ue-row">
+                    <i className={`ue-dot ue-dot--${path.body} ue-dot--off`} />
+                    <span className="ue-row__main">
+                      <strong>{placeLabel(p)}</strong>
+                      <small>Buildings block the tower here</small>
+                    </span>
+                    {next && (
+                      <button type="button" className="ue-row__go ue-row__go--quiet" onClick={() => setTime(next.t)}>
+                        Clear at {formatTime(new Date(next.t))}
+                      </button>
+                    )}
+                  </div>
+                );
+              }
               return p ? (
                 <button
                   key={path.body}
@@ -242,8 +312,11 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
             ))
           )}
           <p className="ue-note">
-            Paths are calculated from geometry. Buildings may block parts of them, so check the
-            preview before you travel.
+            {viewFailed
+              ? 'Building data could not be loaded, so these paths may be blocked. Check the preview before you travel.'
+              : view
+                ? 'Bright lines have no buildings in the way. Trees are not included, so check on site.'
+                : 'Checking buildings along the paths…'}
           </p>
         </section>
       </aside>

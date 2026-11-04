@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { berlinDayBounds, berlinDayOf, formatTime, shiftDay } from '../../src/lib/berlinTime';
 import {
+  applyView,
+  nextClearPoint,
   compassPoint,
   computeDayPath,
   dayHighlights,
@@ -103,6 +105,7 @@ describe('findSpotEvents', () => {
     for (let i = 1; i < events.length; i++) {
       expect(events[i].peak).toBeGreaterThan(events[i - 1].peak);
     }
+    for (const e of events) expect(Number.isFinite(e.bodyAz)).toBe(true);
     const longest = Math.max(...events.map((e) => e.end - e.start));
     expect(longest).toBeLessThan(40 * 60_000);
   }, 30_000);
@@ -158,5 +161,49 @@ describe('compassPoint', () => {
     expect(compassPoint(0)).toBe('N');
     expect(compassPoint(112.5)).toBe('ESE');
     expect(compassPoint(359)).toBe('N');
+  });
+});
+
+describe('applyView', () => {
+  const path = pathFor('2026-11-04', 'sun');
+  const midLat = path.segments[0][Math.floor(path.segments[0].length / 2)].lat;
+
+  it('marks every sampled point, more finely than the solved path', () => {
+    const viewed = applyView(path, () => true);
+    const solved = path.segments.flat().length;
+    const dense = viewed.segments.flat();
+    expect(dense.length).toBeGreaterThan(solved * 5);
+    expect(dense.every((p) => p.clear === true)).toBe(true);
+  });
+
+  it('keeps points on the solved path when it interpolates', () => {
+    const viewed = applyView(path, () => true);
+    for (const solved of path.segments.flat().slice(0, 20)) {
+      const match = viewed.segments.flat().find((p) => p.t === solved.t);
+      expect(match?.lat).toBeCloseTo(solved.lat, 9);
+    }
+  });
+
+  it('never offers a blocked point as a highlight', () => {
+    const viewed = applyView(path, (lat) => lat > midLat);
+    for (const p of dayHighlights(viewed)) expect(p.clear).toBe(true);
+    expect(dayHighlights(applyView(path, () => false))).toEqual([]);
+  });
+
+  it('treats a chink between buildings as blocked', () => {
+    let calls = 0;
+    const viewed = applyView(path, () => {
+      calls++;
+      // One sample clear, 15 seconds long, and everything else blocked.
+      return calls === 40;
+    });
+    expect(viewed.segments.flat().some((p) => p.clear)).toBe(false);
+  });
+
+  it('finds the next clear moment, and nothing when none remains', () => {
+    const viewed = applyView(path, () => true);
+    const all = viewed.segments.flat();
+    expect(nextClearPoint(viewed, all[5].t)?.t).toBe(all[5].t);
+    expect(nextClearPoint(viewed, all[all.length - 1].t + 1)).toBeUndefined();
   });
 });

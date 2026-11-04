@@ -75,7 +75,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-chip--moon[aria-pressed='true'] i { background: var(--ue-moon); }
 
 .ue-tracks { display: grid; gap: 3px; margin-bottom: 2px; }
-.ue-track { position: relative; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.06); }
+.ue-track { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.06); }
 .ue-track span { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
 .ue-track--sun span { background: var(--ue-sun); }
 .ue-track--moon span { background: var(--ue-moon); }
@@ -97,6 +97,8 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
 .ue-dot--sun { background: var(--ue-sun); }
 .ue-dot--moon { background: var(--ue-moon); }
+.ue-dot--off { opacity: 0.35; }
+.ue-row__go--quiet { color: var(--ue-text); background: none; border: 1px solid var(--ue-line); }
 .ue-empty { margin: 0; color: var(--ue-muted); }
 .ue-note { margin: 10px 0 0; color: var(--ue-muted); font-size: 12px; }
 

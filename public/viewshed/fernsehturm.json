@@ -1,0 +1,23 @@
+{
+  "format": "urban-eclipse-viewshed",
+  "version": 1,
+  "landmark": "fernsehturm",
+  "binary": "fernsehturm.bin",
+  "byteLength": 1574661,
+  "encoding": "one byte per run: value in the top 2 bits, length - 1 in the low 6",
+  "width": 3800,
+  "height": 3800,
+  "latMin": 52.43547543837585,
+  "lonMin": 13.269167028915996,
+  "dLat": 4.4915558749550845e-05,
+  "dLon": 7.381682688631765e-05,
+  "rowOrder": "south-to-north",
+  "values": {
+    "blocked": 0,
+    "visible": 1,
+    "building": 2
+  },
+  "eyeHeightM": 1.5,
+  "aimHeightAglM": 213.0,
+  "limits": "LoD2 buildings only: no trees, street furniture or raised walkways."
+}
