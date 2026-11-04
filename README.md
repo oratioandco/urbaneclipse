@@ -7,7 +7,7 @@ composition: from the surveyed deck of Lichtenberger Brücke, an APS-C camera at
 The scene uses a real Berlin LoD2 model, the bridge elevation, astronomical position,
 camera geometry, and a line-of-sight check rather than a decorative mockup.
 
-[**Open the live prototype**](https://plastervoid-n.2.28.29.90.sslip.io/) · Built by
+[**Open the live prototype**](https://urbaneclipse.oratio.co/) · Built by
 [Tobias Treppmann](https://treppmann.de)
 
 ![Urban Eclipse framing the sun behind Berlin's Fernsehturm from Lichtenberger Brücke](docs/images/urban-eclipse-lichtenberger-bruecke.jpg)
