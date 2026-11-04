@@ -5,6 +5,7 @@ import { findOccultationsAtPosition } from '../../../lib/areaSolver.js';
 import { formatLongDay, formatTime } from '../../../lib/berlinTime.js';
 import { sampleBody } from '../../../lib/bodyPosition.js';
 import { moonLighting, phaseLabel } from '../../../lib/moonPhase.js';
+import { LIGHT_PHASE_NAMES, lightBands, lightPhaseOf } from '../../../lib/lightPhases.js';
 import type { SpotEvent } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { resolveObserverHeight } from '../../../lib/sceneHeights.js';
@@ -27,6 +28,7 @@ import {
   setCameraProfile,
 } from '../../../store.js';
 import type { SceneStatus } from '../CesiumViewer.js';
+import LightRibbon from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
 import ScaleSlider from './ScaleSlider.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
@@ -76,7 +78,8 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
     const now = Date.now();
     worker.onmessage = (ev: MessageEvent<{ events?: SpotEvent[]; error?: string }>) => {
       if (ev.data.error) setError(ev.data.error);
-      else setEvents(ev.data.events ?? []);
+      // A pass that only grazes the tower would read as "0% hidden".
+      else setEvents((ev.data.events ?? []).filter((e) => e.coveredFraction >= 0.01));
       worker.terminate();
     };
     worker.onerror = (e) => {
@@ -158,6 +161,11 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
     return { hit, alt: position.alt, az: position.az };
   }, [t, observer, spot.body, spot.lat, spot.lon]);
 
+  const scrubLight = useMemo(
+    () => lightBands(anchor - SCRUB_MS, anchor + SCRUB_MS, spot.lat, spot.lon),
+    [anchor, spot.lat, spot.lon],
+  );
+
   const moonNow =
     spot.body === 'moon' && t !== undefined ? moonLighting(new Date(t), spot.lat, spot.lon) : null;
 
@@ -222,6 +230,12 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
           <div className="ue-spot__when">
             <output className="ue-title">{t === undefined ? '--:--' : formatTime(new Date(t))}</output>
             {t !== undefined && <span className="ue-sub">{formatLongDay(new Date(t))}</span>}
+            {t !== undefined && (
+              <span className="ue-time__phase" data-testid="light-now">
+                <i className={`ue-light--${lightPhaseOf(t, spot.lat, spot.lon)}`} />
+                {LIGHT_PHASE_NAMES[lightPhaseOf(t, spot.lat, spot.lon)]}
+              </span>
+            )}
           </div>
           <p className="ue-verdict">{verdict}</p>
           {moonNow && (
@@ -237,8 +251,10 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
 
         {t !== undefined && (
           <div className="ue-time">
+            <div className="ue-rail">
+            <LightRibbon bands={scrubLight} from={anchor - SCRUB_MS} to={anchor + SCRUB_MS} />
             <input
-              className="ue-range"
+              className="ue-range ue-range--rail"
               type="range"
               aria-label="Adjust time around this moment"
               min={anchor - SCRUB_MS}
@@ -247,6 +263,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
               value={t}
               onChange={(e) => onChange({ t: Number(e.currentTarget.value) })}
             />
+            </div>
             <div className="ue-scale" aria-hidden="true">
               <span>−30 min</span><span>+30 min</span>
             </div>
@@ -289,6 +306,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
                   {e.body === 'moon'
                     ? ` · ${Math.round(moonLighting(new Date(e.peak), spot.lat, spot.lon).fraction * 100)}% lit`
                     : ''}
+                  {` · ${LIGHT_PHASE_NAMES[lightPhaseOf(e.peak, spot.lat, spot.lon)]}`}
                 </small>
               </span>
             </button>

@@ -67,6 +67,11 @@ function instantAt(day: BerlinDay, minutes: number): Date {
   return new Date(t);
 }
 
+/** The instant of a Berlin wall-clock hour on a given day. */
+export function berlinInstant(day: BerlinDay, hour: number): Date {
+  return instantAt(day, hour * 60);
+}
+
 /** Start (inclusive) and end (exclusive) instants of a Berlin calendar day. */
 export function berlinDayBounds(day: BerlinDay): { start: Date; end: Date } {
   return { start: instantAt(day, 0), end: instantAt(shiftDay(day, 1), 0) };

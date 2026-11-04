@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   berlinDayBounds,
+  berlinInstant,
   berlinDayOf,
   formatDay,
   formatTime,
@@ -20,6 +21,7 @@ import {
 } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { moonLighting, phaseLabel } from '../../../lib/moonPhase.js';
+import { LIGHT_PHASE_NAMES, bandAt, lightBands, lightPhaseOf } from '../../../lib/lightPhases.js';
 import {
   VIEW_BUILDING,
   VIEW_VISIBLE,
@@ -29,6 +31,7 @@ import {
 } from '../../../lib/viewshed.js';
 import type { Viewpoint } from '../../../lib/viewpoints.js';
 import type { Body } from '../../../lib/bodyPosition.js';
+import LightRibbon, { LightLegend } from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
@@ -128,6 +131,12 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
     [bounds],
   );
 
+  const light = useMemo(
+    () => lightBands(bounds.start.getTime(), bounds.end.getTime(), FERNSEHTURM.lat, FERNSEHTURM.lon),
+    [bounds],
+  );
+  const lightNow = bandAt(light, time);
+
   const span = bounds.end.getTime() - bounds.start.getTime();
   const pct = (t: number) => `${((t - bounds.start.getTime()) / span) * 100}%`;
   const isToday = day === berlinDayOf(new Date());
@@ -178,7 +187,18 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
 
         <div className="ue-time">
           <div className="ue-time__value">
-            <output>{formatTime(new Date(time))}</output>
+            <div className="ue-time__now">
+              <output>{formatTime(new Date(time))}</output>
+              {lightNow && (
+                <span className="ue-time__phase" data-testid="light-now">
+                  <i className={`ue-light--${lightNow.phase}`} />
+                  {LIGHT_PHASE_NAMES[lightNow.phase]}
+                  <small>
+                    {formatTime(new Date(lightNow.from))}–{formatTime(new Date(lightNow.to))}
+                  </small>
+                </span>
+              )}
+            </div>
             <div className="ue-chips">
               {(['sun', 'moon'] as const).map((body) => (
                 <button
@@ -206,10 +226,13 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               </div>
             ))}
           </div>
+          <div className="ue-rail">
+          <LightRibbon bands={light} from={bounds.start.getTime()} to={bounds.end.getTime()} />
           <input
-            className="ue-range"
+            className="ue-range ue-range--rail"
             type="range"
             aria-label="Time of day"
+            aria-valuetext={`${formatTime(new Date(time))}, ${lightNow ? LIGHT_PHASE_NAMES[lightNow.phase] : ''}`}
             min={bounds.start.getTime()}
             max={bounds.end.getTime() - 180_000}
             step={180_000}
@@ -219,9 +242,15 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               setTime(Number(e.currentTarget.value));
             }}
           />
-          <div className="ue-scale" aria-hidden="true">
-            <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
           </div>
+          <div className="ue-hours" aria-hidden="true">
+            {[6, 12, 18].map((hour) => (
+              <span key={hour} style={{ left: pct(berlinInstant(day, hour).getTime()) }}>
+                {String(hour).padStart(2, '0')}
+              </span>
+            ))}
+          </div>
+          <LightLegend />
         </div>
 
         {free ? (
@@ -315,7 +344,10 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                 <span className="ue-row__time">{formatTime(new Date(point.t))}</span>
                 <span className="ue-row__main">
                   <strong>{placeLabel(point)}</strong>
-                  <small>{coverageLabel(point.kind, point.coveredFraction)}</small>
+                  <small>
+                    {coverageLabel(point.kind, point.coveredFraction)} ·{' '}
+                    {LIGHT_PHASE_NAMES[lightPhaseOf(point.t, point.lat, point.lon)]}
+                  </small>
                 </span>
               </button>
             ))

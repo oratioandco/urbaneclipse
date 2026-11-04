@@ -80,6 +80,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-track--sun span { background: var(--ue-sun); }
 .ue-track--moon span { background: var(--ue-moon); }
 
+/* Bars inset by half a thumb, so a time lines up with the thumb at that time. */
+.ue-tracks { padding: 0 9px; }
+.ue-rail { position: relative; height: 30px; }
+.ue-ribbon { position: absolute; left: 9px; right: 9px; top: 9px; height: 12px; border-radius: 3px; overflow: hidden; }
+.ue-ribbon span { position: absolute; top: 0; bottom: 0; }
+.ue-light--night { background: #1d2033; }
+.ue-light--twilight { background: #343c70; }
+.ue-light--blue { background: #3f6ccb; }
+.ue-light--golden { background: #f0ae47; }
+.ue-light--day { background: #d8d2c0; }
+.ue-range--rail { position: absolute; inset: 0; -webkit-appearance: none; appearance: none; }
+.ue-range--rail::-webkit-slider-runnable-track { height: 30px; background: transparent; }
+.ue-range--rail::-moz-range-track { height: 30px; background: transparent; }
+.ue-range--rail::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 26px; margin-top: 2px; border-radius: 5px; background: var(--ue-text); border: 2px solid var(--ue-bg); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+.ue-range--rail::-moz-range-thumb { width: 14px; height: 22px; border-radius: 5px; background: var(--ue-text); border: 2px solid var(--ue-bg); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
+.ue-hours { position: relative; height: 16px; margin: 0 9px; color: var(--ue-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.ue-hours span { position: absolute; transform: translateX(-50%); }
+.ue-legend { display: flex; flex-wrap: wrap; gap: 3px 10px; margin: 4px 0 0; padding: 0; list-style: none; color: var(--ue-muted); font-size: 11px; }
+.ue-legend li { display: inline-flex; align-items: center; gap: 4px; }
+.ue-legend i, .ue-time__phase i { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.ue-time__now { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ue-time__phase { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; white-space: nowrap; }
+.ue-time__phase small { color: var(--ue-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .ue-range { width: 100%; height: 30px; margin: 0; background: transparent; accent-color: var(--ue-text); cursor: pointer; }
 .ue-scale { display: flex; justify-content: space-between; color: var(--ue-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 
