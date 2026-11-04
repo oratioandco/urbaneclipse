@@ -98,6 +98,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-dot--sun { background: var(--ue-sun); }
 .ue-dot--moon { background: var(--ue-moon); }
 .ue-dot--off { opacity: 0.35; }
+.ue-moon-glyph { flex: none; width: 14px; height: 14px; margin: 0 -2px; }
+.ue-moon-glyph--large { width: 22px; height: 22px; margin: 0; }
+.ue-moon-glyph__dark { fill: rgba(184, 198, 255, 0.16); }
+.ue-moon-glyph__lit { fill: var(--ue-moon); }
+.ue-phase { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; font-size: 13px; color: var(--ue-muted); }
 .ue-row__go--quiet { color: var(--ue-text); background: none; border: 1px solid var(--ue-line); }
 .ue-empty { margin: 0; color: var(--ue-muted); }
 .ue-note { margin: 10px 0 0; color: var(--ue-muted); font-size: 12px; }
@@ -129,7 +134,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-marks span { position: absolute; top: 6px; left: calc(8px + (100% - 16px) * var(--at)); transform: translateX(calc(-50% * var(--at) * 2 + 0%)); white-space: nowrap; }
 .ue-marks span::before { content: ''; position: absolute; top: -5px; left: calc(100% * var(--at)); width: 1px; height: 4px; background: var(--ue-muted); }
 .ue-chip--auto { margin-top: 6px; }
-.ue-note--tight { margin: 2px 0 4px; }
+.ue-credit { flex: none; margin: 0; font-size: 11px; color: var(--ue-muted); }
 
 /* Phones: the map or shot stays visible above a bottom sheet */
 @media (max-width: 760px) {

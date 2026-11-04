@@ -351,3 +351,8 @@ Deeper design documentation lives under
 - [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — the
   project's non-negotiable engineering principles (TDD, defensive programming,
   build-test-verify, research-before-acting, infra-as-code, git discipline).
+
+## Credits
+
+Lunar surface imagery: NASA's Scientific Visualization Studio, CGI Moon Kit
+(<https://svs.gsfc.nasa.gov/4720>). Map data: OpenStreetMap contributors.

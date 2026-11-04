@@ -193,3 +193,28 @@ export function skyPalette(body: PaletteBody, altitudeDeg: number): SkyPalette {
   }
   return keys[keys.length - 1].palette;
 }
+
+/**
+ * The palette for a moon pass, which depends on three things. The sky comes from where the
+ * sun is, since the moon is often up in daylight. The light and glow it adds follow how
+ * much of it is lit. Its colour reddens near the horizon, as the sun's does.
+ */
+export function moonPalette(moonAltDeg: number, sunAltDeg: number, litFraction: number): SkyPalette {
+  const lit = Math.min(1, Math.max(0, litFraction));
+  const night: SkyPalette = {
+    ...skyPalette('moon', moonAltDeg),
+    lightIntensity: MOON_PALETTE.lightIntensity * (0.2 + 0.8 * lit),
+    ambientLevel: MOON_PALETTE.ambientLevel * (0.5 + 0.5 * lit),
+  };
+  night.glowStrength *= 0.2 + 0.8 * lit;
+
+  // Twilight runs from the sun 12 degrees down to just below the horizon.
+  const t = Math.min(1, Math.max(0, (sunAltDeg + 12) / 10));
+  const day: SkyPalette = { ...skyPalette('sun', sunAltDeg), glowColor: night.glowColor, glowStrength: 0.12 * lit };
+  const blended = lerpPalette(night, day, t * t * (3 - 2 * t));
+
+  const horizonWarmth = 1 - Math.min(1, Math.max(0, moonAltDeg / 12));
+  const paleInDaylight = lerpRgb(MOON_PALETTE.discTint, [0.97, 0.97, 0.98], t);
+  blended.discTint = lerpRgb(paleInDaylight, [1, 0.72, 0.48], horizonWarmth);
+  return blended;
+}

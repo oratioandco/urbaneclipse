@@ -19,6 +19,7 @@ import {
   type PathPoint,
 } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
+import { moonLighting, phaseLabel } from '../../../lib/moonPhase.js';
 import {
   VIEW_BUILDING,
   VIEW_VISIBLE,
@@ -28,6 +29,7 @@ import {
 } from '../../../lib/viewshed.js';
 import type { Viewpoint } from '../../../lib/viewpoints.js';
 import type { Body } from '../../../lib/bodyPosition.js';
+import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
 
@@ -120,6 +122,12 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
     [paths],
   );
 
+  // At midday, so the day's headline phase does not move with the slider.
+  const moonToday = useMemo(
+    () => moonLighting(new Date((bounds.start.getTime() + bounds.end.getTime()) / 2), FERNSEHTURM.lat, FERNSEHTURM.lon),
+    [bounds],
+  );
+
   const span = bounds.end.getTime() - bounds.start.getTime();
   const pct = (t: number) => `${((t - bounds.start.getTime()) / span) * 100}%`;
   const isToday = day === berlinDayOf(new Date());
@@ -180,7 +188,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                   aria-pressed={shown[body]}
                   onClick={() => setShown((s) => ({ ...s, [body]: !s[body] }))}
                 >
-                  <i />
+                  {body === 'moon' ? <MoonGlyph {...moonToday} /> : <i />}
                   {BODY_NAME[body]}
                 </button>
               ))}
@@ -272,7 +280,8 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                     <strong>{placeLabel(p)}</strong>
                     <small>
                       {BODY_NAME[path.body]} {coverageLabel(p.kind, p.coveredFraction)}
-                      {thin ? ' · thin moon, hard to see' : ''}
+                      {path.body === 'moon' ? ` · ${phaseLabel(moonToday.fraction, moonToday.waxing)}` : ''}
+                      {thin ? ', hard to see' : ''}
                     </small>
                   </span>
                   <span className="ue-row__go">Preview</span>

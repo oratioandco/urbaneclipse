@@ -209,6 +209,16 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       expect(src).toContain('mix(u_groundColor, airColor(v_textureCoordinates, hazeColor), groundHaze)');
     });
 
+    it('lights the moon as a sphere, so it shows its phase', () => {
+      expect(src).toContain('uniform vec2 u_moonLimb');
+      expect(src).toContain('texture(u_moonMap, mapUv)');
+      expect(src).toContain('dot(p, u_moonLimb) * u_moonPhase.y + facing * u_moonPhase.x');
+    });
+
+    it('treats undrawn pixels as sky, even when the engine wrote depth there', () => {
+      expect(src).toContain('if (depth >= 1.0 || nothingDrawn)');
+    });
+
     it('works with no opts (sensible plaster-void defaults)', () => {
       const def = buildStudioEnvironmentShaderSource();
       expect(def).toContain('fogStart');

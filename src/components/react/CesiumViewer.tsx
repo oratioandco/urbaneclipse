@@ -84,7 +84,8 @@ import {
 } from '../../cesium/placement.js';
 import { findViewpoint } from '../../lib/viewpoints.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
-import { skyPalette } from '../../lib/skyPalette.js';
+import { moonPalette, skyPalette } from '../../lib/skyPalette.js';
+import { moonLighting } from '../../lib/moonPhase.js';
 import { azAltTo, directionOffsetECEF, geodeticToECEF } from '../../lib/silhouette.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
 import { SPHERE_CENTRE_AGL } from '../../lib/dailyPaths.js';
@@ -100,7 +101,7 @@ function orthometricToEllipsoidalSafe(surfaceOrthometric: number): number {
     ? orthometricToEllipsoidal(surfaceOrthometric)
     : orthometricToEllipsoidal(BERLIN_GROUND_ORTHOMETRIC_FALLBACK);
 }
-import { computeHorizontalFov, fovToCesium, limitFovForFrame } from '../../lib/cameraMath.js';
+import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
 import ControlPanel, { type ScenePhase } from './ControlPanel.js';
 import PlacementControls from './PlacementControls.js';
 import PlanningMap from './PlanningMap.js';
@@ -371,7 +372,7 @@ export default function CesiumViewer({
         canvas.height > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
       const hfov = computeHorizontalFov(sensorWidth, focalLength * zoom);
       const frustum = viewer.camera.frustum as CesiumType.PerspectiveFrustum;
-      frustum.fov = limitFovForFrame(fovToCesium(hfov), aspectRatio);
+      frustum.fov = fovToCesium(hfov);
       frustum.aspectRatio = aspectRatio;
       setFovDeg(Cesium.Math.toDegrees(frustum.fov));
       viewer.scene.requestRender();
@@ -718,30 +719,6 @@ export default function CesiumViewer({
             tgtPos.lat, tgtPos.lon, targetHeight.get(), sample, extrapolate,
           ).ellipsoidalHeight;
 
-          const bodySample = sampleBody(solverBody.get(), dateTime.get(), obsPos.lat, obsPos.lon);
-          let aimEll = tgtTopEll;
-          if (bodySample.alt > 0) {
-            const range = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, tgtTopEll).rangeM;
-            const heightAtBody =
-              obs.ellipsoidalHeight + range * Math.tan((bodySample.alt * Math.PI) / 180);
-            // Put the eclipse in the upper third instead of dead centre. Aiming below
-            // the body reveals the Frankfurter-Allee street valley while keeping the
-            // complete tower inside the telephoto frame.
-            const targetBaseEll = tgtTopEll - targetHeight.get();
-            const compositionDropM = Math.min(90, targetHeight.get() * 0.22);
-            aimEll = Math.min(
-              tgtTopEll,
-              Math.max(targetBaseEll + 5, heightAtBody - compositionDropM),
-            );
-          }
-
-          flyToPreview(
-            viewer,
-            observerGeo,
-            { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: aimEll },
-            durationSec,
-          );
-
           // The lens: AUTO-FIT frames the target from ANY distance (an extreme
           // telephoto that suits a 6 km shot massively overfills the same tower from
           // 1.3 km); the AUTHORED lens (camera profile) applies once the user picks
@@ -750,7 +727,7 @@ export default function CesiumViewer({
             // Horizontal FOV spans the target's angular height with margin (landscape
             // frame → frustum.fov is horizontal; the tower is vertical, so scale by
             // aspect). Clamped to a sane telephoto-to-short range.
-            const rangeToTarget = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, aimEll).rangeM;
+            const rangeToTarget = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, tgtTopEll).rangeM;
             const targetSpanM = targetHeight.get();
             const angularHeightDeg =
               (Math.atan2(targetSpanM, Math.max(rangeToTarget, 1)) * 180) / Math.PI;
@@ -766,6 +743,38 @@ export default function CesiumViewer({
           } else {
             applyPreviewFov();
           }
+
+          const bodySample = sampleBody(solverBody.get(), dateTime.get(), obsPos.lat, obsPos.lon);
+          let aimEll = tgtTopEll;
+          if (bodySample.alt > 0) {
+            const range = azAltTo(observerGeo, tgtPos.lat, tgtPos.lon, tgtTopEll).rangeM;
+            const heightAtBody =
+              obs.ellipsoidalHeight + range * Math.tan((bodySample.alt * Math.PI) / 180);
+            // Put the eclipse in the upper third instead of dead centre. Aiming below
+            // the body reveals the Frankfurter-Allee street valley while keeping the
+            // complete tower inside the telephoto frame.
+            const targetBaseEll = tgtTopEll - targetHeight.get();
+            // Limited to part of what the frame shows, or a long lens would aim the
+            // eclipse right out of the shot.
+            const frame = viewer.canvas as HTMLCanvasElement;
+            const frameAspect = frame.clientHeight > 0 ? frame.clientWidth / frame.clientHeight : 1;
+            const tanHalfFov = Math.tan(frustumOf().fov / 2);
+            const tanHalfVertical = frameAspect >= 1 ? tanHalfFov / frameAspect : tanHalfFov;
+            const frameHeightM = 2 * range * tanHalfVertical;
+            const compositionDropM = Math.min(90, targetHeight.get() * 0.22, frameHeightM * 0.18);
+            aimEll = Math.min(
+              tgtTopEll,
+              Math.max(targetBaseEll + 5, heightAtBody - compositionDropM),
+            );
+          }
+
+          flyToPreview(
+            viewer,
+            observerGeo,
+            { lat: tgtPos.lat, lon: tgtPos.lon, ellipsoidalHeight: aimEll },
+            durationSec,
+          );
+
           setFovDeg(Cesium.Math.toDegrees(frustumOf().fov));
         };
         // Frame the scene NOW that the tileset exists. Instant (duration 0) so tiles
@@ -804,7 +813,17 @@ export default function CesiumViewer({
             // Time-of-day palette from the SAME suncalc altitude the disc and the
             // solver use — sky, haze, bloom, disc tint and scene light all agree.
             const bodySample = sampleBody(body, dateTime.get(), obsPos.lat, obsPos.lon);
-            const palette = skyPalette(body, bodySample.alt);
+            const sunSample = sampleBody('sun', dateTime.get(), obsPos.lat, obsPos.lon);
+            const moon = body === 'moon' ? moonLighting(dateTime.get(), obsPos.lat, obsPos.lon) : null;
+            const palette = moon
+              ? moonPalette(bodySample.alt, sunSample.alt, moon.fraction)
+              : skyPalette(body, bodySample.alt);
+            studioState.isMoon = moon ? 1 : 0;
+            if (moon) {
+              studioState.moonLimb = moon.limb;
+              studioState.moonPhase = [moon.phaseCos, moon.phaseSin];
+              studioState.moonNorth = moon.north;
+            }
             const st = computeDiscState(body, dateTime.get(), obsPos.lat, obsPos.lon);
             setDiscState(st);
 
@@ -812,7 +831,9 @@ export default function CesiumViewer({
             // which sits ~0.37 deg off the prediction): the globe's shading follows
             // the drawn disc and dims to nothing through twilight. MUTATE the one
             // shared light — see the creation site for why.
-            const sunPoint = directionOffsetECEF(observerGeo, bodySample.az, bodySample.alt, 1);
+            // In daylight the sun lights the city even when the shot is of the moon.
+            const lightSource = moon && sunSample.alt > -4 ? sunSample : bodySample;
+            const sunPoint = directionOffsetECEF(observerGeo, lightSource.az, lightSource.alt, 1);
             const obsEcef = geodeticToECEF(obsPos.lat, obsPos.lon, obs.ellipsoidalHeight);
             const lightDir = new Cesium.Cartesian3(
               obsEcef[0] - sunPoint[0],

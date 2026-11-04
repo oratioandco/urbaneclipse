@@ -77,6 +77,9 @@ const DEFAULTS = {
   grainAmount: 0.02,
 };
 
+/** Near side of the moon. Built by scripts/build_moon_texture.py from NASA SVS imagery. */
+const MOON_MAP_URL = '/textures/moon-nearside.jpg';
+
 /** Initial haze colour — the neutral daytime value the palette module replaces. */
 export const DEFAULT_HAZE: [number, number, number] = [0.96, 0.94, 0.9];
 
@@ -122,6 +125,11 @@ export function buildStudioEnvironmentShaderSource(
     'uniform float u_sunVisible;  // 1 when the body is up and on-screen, else 0',
     'uniform float u_sunRadius;   // disc angular radius as a fraction of frame height',
     'uniform vec3 u_discColor;    // disc tint (time-of-day palette)',
+    'uniform float u_isMoon;      // 1 for the moon, which shows a phase instead of a hot core',
+    'uniform vec2 u_moonLimb;     // screen direction to the middle of the bright limb',
+    'uniform vec2 u_moonPhase;    // cos and sin of the sun-moon-observer angle',
+    'uniform vec2 u_moonNorth;    // screen direction of lunar north',
+    'uniform sampler2D u_moonMap; // near side, north up, lunar east on the right',
     'uniform float u_aspect;      // viewport width/height, keeps the bloom circular',
     'uniform vec3 u_skyTop;       // cool sky colour at the top of frame',
     'uniform vec3 u_haze;         // haze/horizon colour (time-of-day palette)',
@@ -166,9 +174,29 @@ export function buildStudioEnvironmentShaderSource(
     '  float r = discDistance(uv);',
     '  float soft = max(u_sunRadius * 0.03, 0.0006);',
     '  float disc = u_sunVisible * (1.0 - smoothstep(u_sunRadius - soft, u_sunRadius + soft, r));',
+    '  // Nothing further applies outside the disc. Stopping here also keeps the surface',
+    '  // maths away from the extreme coordinates of a disc that is far out of frame.',
+    '  if (disc <= 0.0) return sky;',
     '  // Limb darkening: the centre runs hot, the edge keeps the body colour.',
     '  float limb = 1.0 - smoothstep(0.0, 1.0, r / max(u_sunRadius, 0.0001));',
     '  vec3 surface = mix(u_discColor, min(u_discColor + vec3(0.35), vec3(1.0)), limb);',
+    '  if (u_isMoon > 0.5) {',
+    '    // Light a sphere from the sun. The unlit side keeps only a trace of earthshine,',
+    '    // so a crescent stays a crescent and a daytime moon fades into the sky.',
+    '    vec2 d = uv - u_sunUv;',
+    '    d.x *= u_aspect;',
+    '    vec2 p = d / max(u_sunRadius, 0.0001);',
+    '    float facing = sqrt(max(0.0, 1.0 - dot(p, p)));',
+    '    float light = dot(p, u_moonLimb) * u_moonPhase.y + facing * u_moonPhase.x;',
+    '    float lit = smoothstep(-0.05, 0.05, light);',
+    '    vec2 east = vec2(u_moonNorth.y, -u_moonNorth.x);',
+    '    vec2 mapUv = vec2(dot(p, east), dot(p, u_moonNorth)) * 0.5 + 0.5;',
+    '    float albedo = texture(u_moonMap, mapUv).r;',
+    '    vec3 ground = u_discColor * mix(0.34, 1.08, albedo);',
+    '    // Bright sky scatters in front of the moon, which washes out a daytime disc.',
+    '    float veil = 0.55 * clamp(dot(sky, vec3(0.3, 0.6, 0.1)) - 0.2, 0.0, 1.0);',
+    '    surface = mix(mix(sky, ground, 0.05), mix(ground, sky, veil), lit);',
+    '  }',
     '  return mix(sky, surface, disc);',
     '}',
     '',
@@ -227,7 +255,11 @@ export function buildStudioEnvironmentShaderSource(
     '  // Fix #3 (revised): background is EXACTLY the cleared depth 1.0. Geometry in',
     '  // this scene always writes < 1.0 under either depth encoding (see the module',
     '  // header), so an exact test — never a 0.9999 epsilon — separates void from city.',
-    '  if (depth >= 1.0) {',
+    '  // In some camera directions the engine writes depth for its internal ground plane',
+    '  // without drawing anything, leaving the cleared colour. Lit geometry is never pure',
+    '  // black, even at night, so a pure black pixel is sky whatever its depth says.',
+    '  bool nothingDrawn = max(color.r, max(color.g, color.b)) < 0.002;',
+    '  if (depth >= 1.0 || nothingDrawn) {',
     '    // Sky plus the surveyed landmark silhouette. Foreground city geometry has',
     '    // depth < 1 and therefore naturally occludes the screen-space tower.',
     '    vec3 landmark = landmarkColor(hazeColor);',
@@ -317,6 +349,14 @@ export interface StudioEnvironmentState {
   sunRadius: number;
   /** Disc tint (palette discTint). */
   discColor: [number, number, number];
+  /** 1 when the disc is the moon. */
+  isMoon: number;
+  /** Screen direction to the middle of the moon's bright limb. */
+  moonLimb: [number, number];
+  /** Cosine and sine of the sun-moon-observer angle. Full moon is [1, 0]. */
+  moonPhase: [number, number];
+  /** Screen direction of lunar north. */
+  moonNorth: [number, number];
   /** Viewport aspect (width/height) — keeps the bloom circular. */
   aspect: number;
   /** Cool sky colour at the top of frame. */
@@ -348,6 +388,10 @@ export function defaultStudioEnvironmentState(): StudioEnvironmentState {
     sunVisible: 0,
     sunRadius: 0.01,
     discColor: [1, 1, 1],
+    isMoon: 0,
+    moonLimb: [0, 1],
+    moonPhase: [1, 0],
+    moonNorth: [0, 1],
     aspect: 1.6,
     skyTop: [0.8, 0.83, 0.89],
     haze: DEFAULT_HAZE,
@@ -385,6 +429,11 @@ export function createStudioEnvironmentStage(
       u_sunVisible: state.sunVisible,
       u_sunRadius: state.sunRadius,
       u_discColor: new Cesium.Cartesian3(state.discColor[0], state.discColor[1], state.discColor[2]),
+      u_isMoon: state.isMoon,
+      u_moonLimb: new Cesium.Cartesian2(state.moonLimb[0], state.moonLimb[1]),
+      u_moonPhase: new Cesium.Cartesian2(state.moonPhase[0], state.moonPhase[1]),
+      u_moonNorth: new Cesium.Cartesian2(state.moonNorth[0], state.moonNorth[1]),
+      u_moonMap: MOON_MAP_URL,
       u_aspect: state.aspect,
       u_skyTop: new Cesium.Cartesian3(state.skyTop[0], state.skyTop[1], state.skyTop[2]),
       u_haze: new Cesium.Cartesian3(state.haze[0], state.haze[1], state.haze[2]),
@@ -420,6 +469,10 @@ export function updateStudioUniforms(
   stage.uniforms.u_sunUv = new Cesium.Cartesian2(state.sunUv[0], state.sunUv[1]);
   stage.uniforms.u_sunVisible = state.sunVisible;
   stage.uniforms.u_sunRadius = state.sunRadius;
+  stage.uniforms.u_isMoon = state.isMoon;
+  stage.uniforms.u_moonLimb = new Cesium.Cartesian2(state.moonLimb[0], state.moonLimb[1]);
+  stage.uniforms.u_moonPhase = new Cesium.Cartesian2(state.moonPhase[0], state.moonPhase[1]);
+  stage.uniforms.u_moonNorth = new Cesium.Cartesian2(state.moonNorth[0], state.moonNorth[1]);
   stage.uniforms.u_discColor = new Cesium.Cartesian3(
     state.discColor[0],
     state.discColor[1],

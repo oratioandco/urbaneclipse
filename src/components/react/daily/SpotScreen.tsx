@@ -4,6 +4,7 @@ import { useStore } from '@nanostores/react';
 import { findOccultationsAtPosition } from '../../../lib/areaSolver.js';
 import { formatLongDay, formatTime } from '../../../lib/berlinTime.js';
 import { sampleBody } from '../../../lib/bodyPosition.js';
+import { moonLighting, phaseLabel } from '../../../lib/moonPhase.js';
 import type { SpotEvent } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { resolveObserverHeight } from '../../../lib/sceneHeights.js';
@@ -26,6 +27,7 @@ import {
   setCameraProfile,
 } from '../../../store.js';
 import type { SceneStatus } from '../CesiumViewer.js';
+import MoonGlyph from './MoonGlyph.js';
 import ScaleSlider from './ScaleSlider.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
 
@@ -156,6 +158,9 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
     return { hit, alt: position.alt, az: position.az };
   }, [t, observer, spot.body, spot.lat, spot.lon]);
 
+  const moonNow =
+    spot.body === 'moon' && t !== undefined ? moonLighting(new Date(t), spot.lat, spot.lon) : null;
+
   // Checked live, since scrubbing lands between the passes checked above.
   const bodyName = spot.body === 'sun' ? 'Sun' : 'Moon';
   const hiddenNow =
@@ -193,13 +198,6 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
       ? roundFocal(focalForFov(status.fovDeg, format.width))
       : camera.focalLength;
 
-  // The renderer limits very wide angles in a tall frame, so say when the lens is cropped.
-  const framedFocal = status?.fovDeg ? focalForFov(status.fovDeg, format.width) : null;
-  const widestHere =
-    !auto && framedFocal !== null && Math.round(framedFocal) > shownFocal
-      ? Math.round(framedFocal)
-      : null;
-
   /** Keeps the framing mode, and keeps the lens inside the new format's range. */
   const chooseSensor = (f: SensorFormat): void => {
     const focalLength = Math.min(f.maxFocal, Math.max(f.minFocal, camera.focalLength));
@@ -226,6 +224,12 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
             {t !== undefined && <span className="ue-sub">{formatLongDay(new Date(t))}</span>}
           </div>
           <p className="ue-verdict">{verdict}</p>
+          {moonNow && (
+            <p className="ue-phase" data-testid="moon-phase">
+              <MoonGlyph fraction={moonNow.fraction} waxing={moonNow.waxing} />
+              {phaseLabel(moonNow.fraction, moonNow.waxing)}
+            </p>
+          )}
           <p className={`ue-sight ue-sight--${status?.sphereSightline ?? 'unknown'}`} role="status">
             {SIGHT_COPY[status?.sphereSightline ?? 'unknown']}
           </p>
@@ -273,10 +277,19 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
               aria-current={e.peak === spot.t}
               onClick={() => jump(e)}
             >
-              <i className={`ue-dot ue-dot--${e.body}`} />
+              {e.body === 'moon' ? (
+                <MoonGlyph {...moonLighting(new Date(e.peak), spot.lat, spot.lon)} />
+              ) : (
+                <i className="ue-dot ue-dot--sun" />
+              )}
               <span className="ue-row__main">
                 <strong>{formatLongDay(new Date(e.peak))}, {formatTime(new Date(e.peak))}</strong>
-                <small>{coverageLabel(e.kind, e.coveredFraction)} · {e.bodyAlt.toFixed(0)}° high</small>
+                <small>
+                  {coverageLabel(e.kind, e.coveredFraction)} · {e.bodyAlt.toFixed(0)}° high
+                  {e.body === 'moon'
+                    ? ` · ${Math.round(moonLighting(new Date(e.peak), spot.lat, spot.lon).fraction * 100)}% lit`
+                    : ''}
+                </small>
               </span>
             </button>
           ))}
@@ -293,6 +306,10 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
             <p className="ue-note">Checking these against the buildings…</p>
           )}
         </section>
+
+        {spot.body === 'moon' && (
+          <p className="ue-credit">Lunar surface: NASA&rsquo;s Scientific Visualization Studio</p>
+        )}
 
         <section className="ue-adjust">
           <button
@@ -332,12 +349,6 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
                   valueText={`${shownFocal} millimetres`}
                   onChange={(mm) => setCameraProfile({ ...camera, focalLength: mm, zoom: 1 })}
                 />
-                {widestHere !== null && (
-                  <p className="ue-note ue-note--tight" role="status">
-                    This frame is too tall to show {shownFocal} mm. It shows about {widestHere} mm,
-                    and a wider screen shows more.
-                  </p>
-                )}
                 <button
                   type="button"
                   className="ue-chip ue-chip--auto"
