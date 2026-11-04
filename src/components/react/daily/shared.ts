@@ -10,6 +10,13 @@ export interface SpotTarget {
   body: Body;
   label: string;
   viewpointId?: string;
+  /** Set when the view looks down a street rather than at the tower. */
+  street?: {
+    bearingDeg: number;
+    skylineDeg: number;
+    toleranceDeg: number;
+    lengthM: number;
+  };
 }
 
 export function coverageLabel(kind: OccultationKind, fraction: number): string {

@@ -10,28 +10,13 @@ import type { SpotEvent } from '../../../lib/dailyPaths.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { resolveObserverHeight } from '../../../lib/sceneHeights.js';
 import { findViewpoint } from '../../../lib/viewpoints.js';
-import {
-  EYE_MARKS,
-  EYE_MAX_M,
-  EYE_MIN_M,
-  SENSOR_FORMATS,
-  focalForFov,
-  roundEye,
-  roundFocal,
-  sensorFormatFor,
-  type SensorFormat,
-} from '../../../lib/lensScale.js';
-import {
-  cameraProfile,
-  lensAutoFit,
-  observerHeight,
-  setCameraProfile,
-} from '../../../store.js';
+import { observerHeight } from '../../../store.js';
 import type { SceneStatus } from '../CesiumViewer.js';
+import AdjustPanel from './AdjustPanel.js';
 import LightRibbon from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
-import ScaleSlider from './ScaleSlider.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
+import { useBuildingCheck } from './useBuildingCheck.js';
 
 interface Props {
   spot: SpotTarget;
@@ -54,8 +39,6 @@ const SIGHT_COPY: Record<SceneStatus['sphereSightline'], string> = {
 
 export default function SpotScreen({ spot, status, onBack, onChange }: Props): JSX.Element {
   const eye = useStore(observerHeight);
-  const auto = useStore(lensAutoFit);
-  const camera = useStore(cameraProfile);
   const [events, setEvents] = useState<SpotEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
@@ -96,39 +79,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
   // takes the 3D scene, so check each pass there, a few per frame to keep scrubbing smooth.
   const api = status?.api ?? null;
   const sceneSettled = status?.sphereSightline !== 'unknown' && status?.sphereSightline !== undefined;
-  const [hiddenPeaks, setHiddenPeaks] = useState<Set<number> | null>(null);
-  useEffect(() => {
-    setHiddenPeaks(null);
-    if (!api || !events || !sceneSettled) return;
-    let cancelled = false;
-    const hidden = new Set<number>();
-    let i = 0;
-    let unknown = 0;
-    const step = (): void => {
-      if (cancelled) return;
-      const until = performance.now() + 8;
-      while (i < events.length && performance.now() < until) {
-        const verdict = api.bodyBlocked(events[i].bodyAz, events[i].bodyAlt);
-        if (verdict === 'blocked') hidden.add(events[i].peak);
-        if (verdict === 'unknown') unknown++;
-        i++;
-      }
-      if (i < events.length) {
-        requestAnimationFrame(step);
-      } else if (unknown === events.length && events.length > 0) {
-        // Tiles were still streaming: nothing was decided, so look again shortly.
-        i = 0;
-        unknown = 0;
-        window.setTimeout(step, 500);
-      } else {
-        setHiddenPeaks(new Set(hidden));
-      }
-    };
-    requestAnimationFrame(step);
-    return () => {
-      cancelled = true;
-    };
-  }, [api, events, sceneSettled]);
+  const hiddenPeaks = useBuildingCheck(api, events, sceneSettled);
 
   const usableEvents = useMemo(
     () => (events && hiddenPeaks ? events.filter((e) => !hiddenPeaks.has(e.peak)) : null),
@@ -204,19 +155,6 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
   const allHidden = usableEvents !== null && events !== null && events.length > 0 && usableEvents.length === 0;
   const hiddenCount = events && usableEvents ? events.length - usableEvents.length : 0;
   const listed = usableEvents ?? events;
-
-  const format = sensorFormatFor(camera.sensorWidth);
-  // In auto the scene chooses the framing, so the scale shows the lens that matches it.
-  const shownFocal =
-    auto && status?.fovDeg
-      ? roundFocal(focalForFov(status.fovDeg, format.width))
-      : camera.focalLength;
-
-  /** Keeps the framing mode, and keeps the lens inside the new format's range. */
-  const chooseSensor = (f: SensorFormat): void => {
-    const focalLength = Math.min(f.maxFocal, Math.max(f.minFocal, camera.focalLength));
-    cameraProfile.set({ ...camera, sensorWidth: f.width, focalLength, zoom: 1 });
-  };
 
   return (
     <div className="ue-spot-ui" data-testid="spot-screen">
@@ -339,68 +277,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
           <p className="ue-credit">Lunar surface: NASA&rsquo;s Scientific Visualization Studio</p>
         )}
 
-        <section className="ue-adjust">
-          <button
-            type="button"
-            className="ue-adjust__toggle"
-            aria-expanded={adjustOpen}
-            onClick={() => setAdjustOpen((v) => !v)}
-          >
-            Adjust
-            <span>{shownFocal} mm{auto ? ' auto' : ''} · eye {eye.toFixed(1)} m</span>
-          </button>
-          {adjustOpen && (
-            <div className="ue-adjust__body">
-              <div className="ue-chips" role="group" aria-label="Sensor">
-                {SENSOR_FORMATS.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className="ue-chip"
-                    aria-pressed={format.id === f.id}
-                    onClick={() => chooseSensor(f)}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-              <div>
-                <ScaleSlider
-                  label="Lens"
-                  readout={`${shownFocal} mm`}
-                  value={shownFocal}
-                  min={format.minFocal}
-                  max={format.maxFocal}
-                  marks={format.focalMarks}
-                  format={String}
-                  round={roundFocal}
-                  valueText={`${shownFocal} millimetres`}
-                  onChange={(mm) => setCameraProfile({ ...camera, focalLength: mm, zoom: 1 })}
-                />
-                <button
-                  type="button"
-                  className="ue-chip ue-chip--auto"
-                  aria-pressed={auto}
-                  onClick={() => lensAutoFit.set(true)}
-                >
-                  Auto: fit the tower
-                </button>
-              </div>
-              <ScaleSlider
-                label="Eye height"
-                readout={`${eye.toFixed(1)} m`}
-                value={eye}
-                min={EYE_MIN_M}
-                max={EYE_MAX_M}
-                marks={EYE_MARKS}
-                format={(m) => `${m} m`}
-                round={roundEye}
-                valueText={`${eye.toFixed(1)} metres`}
-                onChange={(m) => observerHeight.set(m)}
-              />
-            </div>
-          )}
-        </section>
+        <AdjustPanel fovDeg={status?.fovDeg} autoLabel="Auto: fit the tower" onOpenChange={setAdjustOpen} />
       </aside>
     </div>
   );

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getTimes } from 'suncalc';
 import { berlinDayBounds, berlinInstant } from '../../src/lib/berlinTime';
-import { bandAt, lightBands, lightPhaseAt, lightPhaseOf } from '../../src/lib/lightPhases';
+import { bandAt, lightBands, lightGradientStops, lightPhaseAt, lightPhaseOf } from '../../src/lib/lightPhases';
 
 const LAT = 52.52;
 const LON = 13.41;
@@ -62,5 +62,41 @@ describe('berlinInstant', () => {
     const iso = (day: string, hour: number) => berlinInstant(day, hour).toISOString();
     expect(iso('2027-03-28', 6)).toBe('2027-03-28T04:00:00.000Z');
     expect(iso('2026-11-05', 6)).toBe('2026-11-05T05:00:00.000Z');
+  });
+});
+
+describe('lightGradientStops', () => {
+  const HOUR = 3_600_000;
+  const bands = [
+    { phase: 'night', from: 0, to: 6 * HOUR },
+    { phase: 'golden', from: 6 * HOUR, to: 7 * HOUR },
+    { phase: 'day', from: 7 * HOUR, to: 24 * HOUR },
+  ] as const;
+  const stops = lightGradientStops([...bands], 0, 24 * HOUR);
+
+  it('spans the whole ribbon, in order', () => {
+    expect(stops[0].at).toBe(0);
+    expect(stops[stops.length - 1].at).toBe(1);
+    for (let i = 1; i < stops.length; i++) expect(stops[i].at).toBeGreaterThanOrEqual(stops[i - 1].at);
+  });
+
+  it('never places two colours at one position, so no edge is hard', () => {
+    for (let i = 1; i < stops.length; i++) {
+      if (stops[i].phase !== stops[i - 1].phase) expect(stops[i].at).toBeGreaterThan(stops[i - 1].at);
+    }
+  });
+
+  it('lets a short band still reach its full colour', () => {
+    const golden = stops.filter((s) => s.phase === 'golden');
+    expect(golden).toHaveLength(2);
+    expect(golden[1].at - golden[0].at).toBeGreaterThanOrEqual(0);
+    expect(golden[0].at).toBeGreaterThan(6 / 24);
+    expect(golden[1].at).toBeLessThan(7 / 24);
+  });
+
+  it('handles a window that starts inside a band', () => {
+    const inside = lightGradientStops([...bands], 6.5 * HOUR, 7.5 * HOUR);
+    expect(inside[0]).toEqual({ phase: 'golden', at: 0 });
+    expect(inside[inside.length - 1]).toEqual({ phase: 'day', at: 1 });
   });
 });

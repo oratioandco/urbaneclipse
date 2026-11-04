@@ -57,6 +57,7 @@ import {
   commitOcclusion,
   cameraProfile,
   lensAutoFit,
+  lookBearing,
   viewMode,
   observerPosition,
   targetPosition,
@@ -141,7 +142,7 @@ export interface SceneStatus {
 
 export interface SceneApi {
   /** Whether buildings cover a body at this direction, as seen from the current eye. */
-  bodyBlocked: (azimuthDeg: number, altitudeDeg: number) => 'clear' | 'blocked' | 'unknown';
+  bodyBlocked: (azimuthDeg: number, altitudeDeg: number, rangeM?: number) => 'clear' | 'blocked' | 'unknown';
 }
 
 export interface CesiumViewerProps {
@@ -156,6 +157,9 @@ export interface CesiumViewerProps {
 /** Stop this far short of the landmark axis, so a sightline test cannot hit the
  *  landmark's own coarse mesh and report it as an obstruction. */
 const SIGHTLINE_STANDOFF_M = 40;
+
+/** Auto framing down a street: tight enough to compress it, wide enough to show its walls. */
+const STREET_AUTO_FOV_DEG = 14;
 
 export default function CesiumViewer({
   chrome = 'panels',
@@ -704,6 +708,30 @@ export default function CesiumViewer({
             obsPos.lat, obsPos.lon, observerHeight.get(), sample, viewpoint, extrapolate,
           );
 
+          // Looking down a street: the heading comes from the street, with the disc in the
+          // upper part of the frame and the street's vanishing point below it.
+          const streetHeading = lookBearing.get();
+          if (streetHeading !== null) {
+            if (lensAutoFit.get()) frustumOf().fov = Cesium.Math.toRadians(STREET_AUTO_FOV_DEG);
+            else applyPreviewFov();
+            const frame = viewer.canvas as HTMLCanvasElement;
+            const frameAspect = frame.clientHeight > 0 ? frame.clientWidth / frame.clientHeight : 1;
+            const tanHalfFov = Math.tan(frustumOf().fov / 2);
+            const verticalDeg =
+              2 * Cesium.Math.toDegrees(Math.atan(frameAspect >= 1 ? tanHalfFov / frameAspect : tanHalfFov));
+            const body = sampleBody(solverBody.get(), dateTime.get(), obsPos.lat, obsPos.lon);
+            viewer.camera.setView({
+              destination: Cesium.Cartesian3.fromDegrees(obsPos.lon, obsPos.lat, obs.ellipsoidalHeight),
+              orientation: {
+                heading: Cesium.Math.toRadians(streetHeading),
+                pitch: Cesium.Math.toRadians(Math.max(body.alt - verticalDeg * 0.18, 0.2)),
+                roll: 0,
+              },
+            });
+            setFovDeg(Cesium.Math.toDegrees(frustumOf().fov));
+            return;
+          }
+
           // AIM at the celestial body's height on the target, not the target's tip.
           // At a transit the sun/moon sits partway up the tower; aiming at the tip
           // pushes the disc — and the occultation, the whole point — to the frame edge.
@@ -1085,6 +1113,11 @@ export default function CesiumViewer({
             else settleTimer = window.setTimeout(check, 250);
           }, 500);
         };
+        const unsubLook = lookBearing.listen(() => {
+          applyViewMode(0);
+          applyDisc();
+          recomputeWhenSettled();
+        });
         const unsubObsPos = observerPosition.listen(() => {
           recompute();
           applyViewMode(chrome === 'none' ? 0 : undefined);
@@ -1094,7 +1127,7 @@ export default function CesiumViewer({
         // Lets a host ask whether buildings cover the body in a given direction. Stops
         // short of the landmark, so the landmark's own coverage is not counted as blocked.
         setSceneApi({
-          bodyBlocked: (az, alt) => {
+          bodyBlocked: (az, alt, rangeM) => {
             if (disposed || viewer.isDestroyed()) return 'unknown';
             const sample = groundSamplerRef.current ?? (() => undefined);
             const extrapolate = extrapolateGroundRef.current ?? undefined;
@@ -1105,7 +1138,8 @@ export default function CesiumViewer({
             ).ellipsoidalHeight;
             const geo = { lat: pos.lat, lon: pos.lon, ellipsoidalHeight: eye };
             const range = azAltTo(geo, FERNSEHTURM.lat, FERNSEHTURM.lon, eye).rangeM;
-            const end = directionOffsetECEF(geo, az, alt, Math.max(range - SIGHTLINE_STANDOFF_M, 1));
+            const reach = rangeM ?? Math.max(range - SIGHTLINE_STANDOFF_M, 1);
+            const end = directionOffsetECEF(geo, az, alt, reach);
             const carto = Cesium.Cartographic.fromCartesian(new Cesium.Cartesian3(...end));
             const { state } = computeOcclusion(
               viewer,
@@ -1133,6 +1167,7 @@ export default function CesiumViewer({
         cleanupPlacement = () => {
           window.clearTimeout(settleTimer);
           removeCameraListener();
+          unsubLook();
           setSceneApi(null);
           resizeObserver.disconnect();
           unsubArea();

@@ -1,5 +1,10 @@
 /** The day's light as coloured bands behind a time slider. */
-import { LIGHT_PHASE_NAMES, type LightBand, type LightPhase } from '../../../lib/lightPhases.js';
+import {
+  LIGHT_PHASE_NAMES,
+  lightGradientStops,
+  type LightBand,
+  type LightPhase,
+} from '../../../lib/lightPhases.js';
 
 interface Props {
   bands: LightBand[];
@@ -10,22 +15,10 @@ interface Props {
 const LEGEND: LightPhase[] = ['night', 'twilight', 'blue', 'golden', 'day'];
 
 export default function LightRibbon({ bands, from, to }: Props): JSX.Element {
-  const span = to - from;
-  return (
-    <div className="ue-ribbon" aria-hidden="true">
-      {bands.map((band) => (
-        <span
-          key={band.from}
-          className={`ue-light--${band.phase}`}
-          title={LIGHT_PHASE_NAMES[band.phase]}
-          style={{
-            left: `${((Math.max(band.from, from) - from) / span) * 100}%`,
-            width: `${((Math.min(band.to, to) - Math.max(band.from, from)) / span) * 100}%`,
-          }}
-        />
-      ))}
-    </div>
-  );
+  const stops = lightGradientStops(bands, from, to)
+    .map((stop) => `var(--ue-light-${stop.phase}) ${(stop.at * 100).toFixed(2)}%`)
+    .join(', ');
+  return <div className="ue-ribbon" aria-hidden="true" style={{ background: `linear-gradient(to right, ${stops})` }} />;
 }
 
 /** Names the colours. Shown once per screen. */

@@ -30,6 +30,7 @@ import {
   type Viewshed,
 } from '../../../lib/viewshed.js';
 import type { Viewpoint } from '../../../lib/viewpoints.js';
+import { loadStreets, streetMoments, type StreetMoment, type StreetView } from '../../../lib/streets.js';
 import type { Body } from '../../../lib/bodyPosition.js';
 import LightRibbon, { LightLegend } from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
@@ -80,6 +81,22 @@ function openingTime(day: BerlinDay, paths: DayPath[], now: number): number {
 export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): JSX.Element {
   const [shown, setShown] = useState<Record<Body, boolean>>({ sun: true, moon: true });
   const [free, setFree] = useState<{ lat: number; lon: number } | null>(null);
+  const [layers, setLayers] = useState({ tower: true, streets: true });
+  const [streetViews, setStreetViews] = useState<StreetView[] | null>(null);
+  const [streetsFailed, setStreetsFailed] = useState(false);
+  useEffect(() => {
+    let current = true;
+    loadStreets().then(
+      (loaded) => current && setStreetViews(loaded),
+      (err: unknown) => {
+        console.error('[TodayScreen] street data failed', err);
+        if (current) setStreetsFailed(true);
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, []);
   const [expanded, setExpanded] = useState(false);
 
   const bounds = useMemo(() => berlinDayBounds(day), [day]);
@@ -109,6 +126,16 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
     [bounds, view],
   );
   const paths = useMemo(() => allPaths.filter((p) => shown[p.body]), [allPaths, shown]);
+  const allMoments = useMemo(() => {
+    if (!streetViews) return [];
+    return (['sun', 'moon'] as const).flatMap((body) =>
+      streetMoments(streetViews, body, bounds.start.getTime(), bounds.end.getTime(), FERNSEHTURM.lat, FERNSEHTURM.lon),
+    );
+  }, [streetViews, bounds]);
+  const moments = useMemo(
+    () => (layers.streets ? allMoments.filter((m) => shown[m.body]) : []),
+    [allMoments, layers.streets, shown],
+  );
   const [time, setTime] = useState(() => openingTime(day, allPaths, Date.now()));
   useEffect(() => {
     setTime(openingTime(day, allPaths, Date.now()));
@@ -117,12 +144,49 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
 
   const freeState = free && view ? sampleViewshed(view, free.lat, free.lon) : null;
 
+  const liveStreets = useMemo(
+    () =>
+      moments
+        .filter((m) => time >= m.from - 60_000 && time <= m.to + 60_000)
+        .sort((a, b) => b.view.lengthM - a.view.lengthM),
+    [moments, time],
+  );
+  // Longest first, then in time order, so the list reads like the day.
+  const topStreets = useMemo(
+    () =>
+      [...moments]
+        .sort((a, b) => b.view.lengthM - a.view.lengthM)
+        .slice(0, 6)
+        .sort((a, b) => a.peak - b.peak),
+    [moments],
+  );
+  const nextStreet = useMemo(
+    () => [...moments].filter((m) => m.from > time).sort((a, b) => a.from - b.from)[0],
+    [moments, time],
+  );
+  const openStreet = (m: StreetMoment): void =>
+    onOpenSpot({
+      lat: m.view.from.lat,
+      lon: m.view.from.lon,
+      t: m.peak,
+      body: m.body,
+      label: m.view.name,
+      street: {
+        bearingDeg: m.view.bearingDeg,
+        skylineDeg: m.view.skylineDeg,
+        toleranceDeg: m.view.toleranceDeg,
+        lengthM: m.view.lengthM,
+      },
+    });
+  const towerPaths = layers.tower ? paths : [];
+
   const highlights = useMemo(
     () =>
-      paths
+      towerPaths
         .flatMap((path) => dayHighlights(path).map((point) => ({ body: path.body, point })))
         .sort((a, b) => a.point.t - b.point.t),
-    [paths],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [paths, layers.tower],
   );
 
   // At midday, so the day's headline phase does not move with the slider.
@@ -152,8 +216,15 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   return (
     <div className="ue-screen ue-today" hidden={!active}>
       <TodayMap
-        paths={paths}
+        paths={towerPaths}
         time={time}
+        streets={moments}
+        moon={moonToday}
+        onPickStreet={(m) => {
+          setFree(null);
+          setTime(m.peak);
+          setExpanded(true);
+        }}
         selected={free}
         onPickPath={({ point }) => {
           setFree(null);
@@ -183,6 +254,10 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
             <button type="button" aria-label="Previous day" onClick={() => onDay(shiftDay(day, -1))}>‹</button>
             <label className="ue-daynav__pick">
               <span className="ue-visually-hidden">Choose a date</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="6" width="16" height="14" rx="2" />
+                <path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" />
+              </svg>
               <input
                 type="date"
                 value={day}
@@ -216,6 +291,17 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               )}
             </div>
             <div className="ue-chips">
+              {(['tower', 'streets'] as const).map((layer) => (
+                <button
+                  key={layer}
+                  type="button"
+                  className="ue-chip"
+                  aria-pressed={layers[layer]}
+                  onClick={() => setLayers((l) => ({ ...l, [layer]: !l[layer] }))}
+                >
+                  {layer === 'tower' ? 'Tower' : 'Streets'}
+                </button>
+              ))}
               {(['sun', 'moon'] as const).map((body) => (
                 <button
                   key={body}
@@ -232,7 +318,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
           </div>
           <div className="ue-tracks" aria-hidden="true">
             {paths.map((path) => (
-              <div key={path.body} className={`ue-track ue-track--${path.body}`}>
+              <div key={path.body} className={`ue-track ue-track--${path.body}`} hidden={!layers.tower}>
                 {clearRuns(path).map((run) => (
                   <span
                     key={run.from}
@@ -241,6 +327,16 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                 ))}
               </div>
             ))}
+            {layers.streets && (
+              <div className="ue-track ue-track--streets">
+                {moments.map((m) => (
+                  <span
+                    key={`${m.body}-${m.view.bearingDeg}-${m.view.from.lat}`}
+                    style={{ left: pct(m.from), width: `calc(${pct(m.to)} - ${pct(m.from)} + 2px)` }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <div className="ue-rail">
           <LightRibbon bands={light} from={bounds.start.getTime()} to={bounds.end.getTime()} />
@@ -342,6 +438,30 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
           </section>
         )}
 
+        {layers.streets && liveStreets.length > 0 && (
+          <section className="ue-now" aria-label="Streets lined up at this time" data-testid="streets-now">
+            {liveStreets.slice(0, 3).map((m) => (
+              <button
+                key={`${m.body}-${m.view.bearingDeg}-${m.view.from.lat}`}
+                type="button"
+                className="ue-row ue-row--cta"
+                onClick={() => openStreet(m)}
+              >
+                {m.body === 'moon' ? <MoonGlyph {...moonToday} /> : <i className="ue-dot ue-dot--sun" />}
+                <span className="ue-row__main">
+                  <strong>{m.view.name}</strong>
+                  <small>
+                    {BODY_NAME[m.body]} down the street, looking {compassPoint(m.view.bearingDeg)} ·{' '}
+                    {(m.view.lengthM / 1000).toFixed(1)} km
+                  </small>
+                </span>
+                <span className="ue-row__go">Preview</span>
+              </button>
+            ))}
+            {liveStreets.length > 3 && <p className="ue-note">and {liveStreets.length - 3} more on the map</p>}
+          </section>
+        )}
+
         <section className="ue-list" data-testid="highlights">
           <h2 className="ue-eyebrow">Best shots</h2>
           {highlights.length === 0 ? (
@@ -366,6 +486,45 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                 </span>
               </button>
             ))
+          )}
+          {layers.streets && (
+            <div className="ue-list" data-testid="streets-today">
+              <h2 className="ue-eyebrow">
+                Streets today{moments.length > 0 ? ` · ${moments.length}` : ''}
+              </h2>
+              {streetsFailed && <p className="ue-empty">Street data could not be loaded.</p>}
+              {!streetsFailed && streetViews && moments.length === 0 && (
+                <p className="ue-empty">No street lines up on this day.</p>
+              )}
+              {topStreets.map((m) => (
+                <button
+                  key={`${m.body}-${m.view.bearingDeg}-${m.view.from.lat}`}
+                  type="button"
+                  className="ue-row ue-row--cta"
+                  data-past={m.peak < Date.now()}
+                  onClick={() => openStreet(m)}
+                >
+                  {m.body === 'moon' ? <MoonGlyph {...moonToday} /> : <i className="ue-dot ue-dot--sun" />}
+                  <span className="ue-row__time">{formatTime(new Date(m.peak))}</span>
+                  <span className="ue-row__main">
+                    <strong>{m.view.name}</strong>
+                    <small>
+                      looking {compassPoint(m.view.bearingDeg)} · {(m.view.lengthM / 1000).toFixed(1)} km ·{' '}
+                      {LIGHT_PHASE_NAMES[lightPhaseOf(m.peak, m.view.from.lat, m.view.from.lon)]}
+                    </small>
+                  </span>
+                </button>
+              ))}
+              {layers.streets && liveStreets.length === 0 && nextStreet && (
+                <p className="ue-note">
+                  Next street lines up at{' '}
+                  <button type="button" className="ue-link" onClick={() => setTime(nextStreet.from)}>
+                    {formatTime(new Date(nextStreet.from))}
+                  </button>
+                  .
+                </p>
+              )}
+            </div>
           )}
           <p className="ue-note">
             {viewFailed

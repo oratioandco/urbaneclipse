@@ -54,3 +54,29 @@ export function lightBands(from: number, to: number, lat: number, lon: number, s
 export function bandAt(bands: LightBand[], t: number): LightBand | undefined {
   return bands.find((b) => t >= b.from && t < b.to) ?? (t === bands[bands.length - 1]?.to ? bands[bands.length - 1] : undefined);
 }
+
+/**
+ * Colour stops that blend each phase into the next. Every band holds its colour through
+ * its middle, and a long one only starts to change near its edges, so a short golden hour
+ * still reaches full colour and the long day does not wash out. Positions are 0 to 1.
+ */
+export function lightGradientStops(
+  bands: readonly LightBand[],
+  from: number,
+  to: number,
+  blendMs = 40 * 60_000,
+): Array<{ phase: LightPhase; at: number }> {
+  const span = to - from;
+  const stops: Array<{ phase: LightPhase; at: number }> = [];
+  const position = (t: number) => Math.min(1, Math.max(0, (t - from) / span));
+  const visible = bands.filter((band) => band.to > from && band.from < to);
+  visible.forEach((band, i) => {
+    const start = Math.max(band.from, from);
+    const end = Math.min(band.to, to);
+    const inset = Math.min(blendMs, (end - start) / 2);
+    // The first and last bands have nothing to blend from or into at the outer edge.
+    stops.push({ phase: band.phase, at: i === 0 ? 0 : position(start + inset) });
+    stops.push({ phase: band.phase, at: i === visible.length - 1 ? 1 : position(end - inset) });
+  });
+  return stops;
+}

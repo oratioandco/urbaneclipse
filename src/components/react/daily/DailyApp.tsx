@@ -11,12 +11,14 @@ import type { Body } from '../../../lib/bodyPosition.js';
 import {
   dateTime,
   lensAutoFit,
+  lookBearing,
   setObserverPosition,
   solverBody,
   viewMode,
 } from '../../../store.js';
 import type { SceneStatus } from '../CesiumViewer.js';
 import SpotScreen from './SpotScreen.js';
+import StreetSpotScreen from './StreetSpotScreen.js';
 import TodayScreen from './TodayScreen.js';
 import type { SpotTarget } from './shared.js';
 
@@ -66,6 +68,14 @@ function parseHash(): Route {
       body: (params.get('body') as Body) === 'moon' ? 'moon' : 'sun',
       label: params.get('label') ?? 'Your spot',
       viewpointId: params.get('vp') ?? undefined,
+      street: params.has('look')
+        ? {
+            bearingDeg: Number(params.get('look')),
+            skylineDeg: Number(params.get('sky')),
+            toleranceDeg: Number(params.get('tol')),
+            lengthM: Number(params.get('len')),
+          }
+        : undefined,
     },
   };
 }
@@ -79,6 +89,12 @@ function toHash({ day, spot }: Route): string {
     params.set('label', spot.label);
     if (spot.t !== undefined) params.set('t', String(spot.t));
     if (spot.viewpointId) params.set('vp', spot.viewpointId);
+    if (spot.street) {
+      params.set('look', String(spot.street.bearingDeg));
+      params.set('sky', String(spot.street.skylineDeg));
+      params.set('tol', String(spot.street.toleranceDeg));
+      params.set('len', String(spot.street.lengthM));
+    }
   }
   return `#/${params.toString()}`;
 }
@@ -109,9 +125,10 @@ export default function DailyApp(): JSX.Element {
     setSceneWanted(true);
     viewMode.set('preview');
     lensAutoFit.set(true);
+    lookBearing.set(spot.street?.bearingDeg ?? null);
     // Position only on a real move, so scrubbing time does not re-frame from scratch.
     setObserverPosition({ lat: spot.lat, lon: spot.lon, viewpointId: spot.viewpointId, label: spot.label });
-  }, [spot?.lat, spot?.lon, spot?.viewpointId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [spot?.lat, spot?.lon, spot?.viewpointId, spot?.street?.bearingDeg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!spot) return;
@@ -143,7 +160,16 @@ export default function DailyApp(): JSX.Element {
         onDay={(d) => go({ day: d, spot: null }, true)}
         onOpenSpot={(s) => go({ day, spot: s })}
       />
-      {spot && (
+      {spot?.street && (
+        <StreetSpotScreen
+          key={`${spot.lat},${spot.lon},${spot.street.bearingDeg}`}
+          spot={spot as SpotTarget & { street: NonNullable<SpotTarget['street']> }}
+          status={status}
+          onBack={() => go({ day, spot: null })}
+          onChange={updateSpot}
+        />
+      )}
+      {spot && !spot.street && (
         <SpotScreen
           // A new position starts fresh, so one spot's dates can never apply to the next.
           key={`${spot.lat},${spot.lon}`}

@@ -66,6 +66,12 @@ export const solverBody = atom<SolverBody>('sun');
 // who want to move the observer or target after understanding the product's promise.
 export const viewMode = atom<ViewMode>('preview');
 
+/**
+ * Heading of a preview that looks down a street, degrees from north. Null aims at the
+ * target as usual.
+ */
+export const lookBearing = atom<number | null>(null);
+
 /** What a click in MAP mode places. 'none' disables picking so the map can be panned. */
 export type PickMode = 'none' | 'observer' | 'target' | 'area';
 
