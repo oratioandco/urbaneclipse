@@ -145,6 +145,8 @@ export default function DailyApp(): JSX.Element {
       />
       {spot && (
         <SpotScreen
+          // A new position starts fresh, so one spot's dates can never apply to the next.
+          key={`${spot.lat},${spot.lon}`}
           spot={spot}
           status={status}
           onBack={() => go({ day, spot: null })}

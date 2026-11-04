@@ -87,14 +87,57 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spot.lat, spot.lon]);
 
-  // A place picked without a time opens on its next pass.
+  // The sweep only compares the body with the tower. Whether the city covers it first
+  // takes the 3D scene, so check each pass there, a few per frame to keep scrubbing smooth.
+  const api = status?.api ?? null;
+  const sceneSettled = status?.sphereSightline !== 'unknown' && status?.sphereSightline !== undefined;
+  const [hiddenPeaks, setHiddenPeaks] = useState<Set<number> | null>(null);
   useEffect(() => {
-    if (spot.t === undefined && events && events.length > 0) {
-      const next = events[0];
+    setHiddenPeaks(null);
+    if (!api || !events || !sceneSettled) return;
+    let cancelled = false;
+    const hidden = new Set<number>();
+    let i = 0;
+    let unknown = 0;
+    const step = (): void => {
+      if (cancelled) return;
+      const until = performance.now() + 8;
+      while (i < events.length && performance.now() < until) {
+        const verdict = api.bodyBlocked(events[i].bodyAz, events[i].bodyAlt);
+        if (verdict === 'blocked') hidden.add(events[i].peak);
+        if (verdict === 'unknown') unknown++;
+        i++;
+      }
+      if (i < events.length) {
+        requestAnimationFrame(step);
+      } else if (unknown === events.length && events.length > 0) {
+        // Tiles were still streaming: nothing was decided, so look again shortly.
+        i = 0;
+        unknown = 0;
+        window.setTimeout(step, 500);
+      } else {
+        setHiddenPeaks(new Set(hidden));
+      }
+    };
+    requestAnimationFrame(step);
+    return () => {
+      cancelled = true;
+    };
+  }, [api, events, sceneSettled]);
+
+  const usableEvents = useMemo(
+    () => (events && hiddenPeaks ? events.filter((e) => !hiddenPeaks.has(e.peak)) : null),
+    [events, hiddenPeaks],
+  );
+
+  // A place picked without a time opens on its next pass the city does not hide.
+  useEffect(() => {
+    if (spot.t === undefined && usableEvents && usableEvents.length > 0) {
+      const next = usableEvents[0];
       setAnchor(next.peak);
       onChange({ t: next.peak, body: next.body });
     }
-  }, [events, spot.t, onChange]);
+  }, [usableEvents, spot.t, onChange]);
 
   const t = spot.t;
   const now = useMemo(() => {
@@ -109,17 +152,25 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
       bodyAt: (d: Date) => sampleBody(spot.body, d, spot.lat, spot.lon),
       wanted: ['full', 'partial', 'adjacent'],
     });
-    return { hit, alt: sampleBody(spot.body, when, spot.lat, spot.lon).alt };
+    const position = sampleBody(spot.body, when, spot.lat, spot.lon);
+    return { hit, alt: position.alt, az: position.az };
   }, [t, observer, spot.body, spot.lat, spot.lon]);
 
+  // Checked live, since scrubbing lands between the passes checked above.
+  const bodyName = spot.body === 'sun' ? 'Sun' : 'Moon';
+  const hiddenNow =
+    api && now && now.alt > 0 && sceneSettled ? api.bodyBlocked(now.az, now.alt) === 'blocked' : false;
+
   const verdict =
-    now === null
+    hiddenNow
+      ? `Buildings hide the ${spot.body} at this moment`
+      : now === null
       ? events === null
         ? 'Finding the next date…'
         : 'No date selected'
       : now.alt <= 0
-        ? `${spot.body === 'sun' ? 'Sun' : 'Moon'} below the horizon`
-        : `${spot.body === 'sun' ? 'Sun' : 'Moon'} ${
+        ? `${bodyName} below the horizon`
+        : `${bodyName} ${
             now.hit ? coverageLabel(now.hit.kind, now.hit.coveredFraction) : 'not behind the tower'
           }`;
 
@@ -129,6 +180,9 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
   };
 
   const noDates = events !== null && events.length === 0;
+  const allHidden = usableEvents !== null && events !== null && events.length > 0 && usableEvents.length === 0;
+  const hiddenCount = events && usableEvents ? events.length - usableEvents.length : 0;
+  const listed = usableEvents ?? events;
 
   const format = sensorFormatFor(camera.sensorWidth);
   // In auto the scene chooses the framing, so the scale shows the lens that matches it.
@@ -203,7 +257,13 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
               12 months. Go back to the map and pick a spot on a path.
             </p>
           )}
-          {events?.slice(0, MAX_ROWS).map((e) => (
+          {allHidden && (
+            <p className="ue-empty">
+              All {events?.length} passes in the next 12 months are hidden by buildings from this
+              exact spot. Moving a few metres can change that, so try a point nearby on the map.
+            </p>
+          )}
+          {listed?.slice(0, MAX_ROWS).map((e) => (
             <button
               key={`${e.body}-${e.peak}`}
               type="button"
@@ -218,8 +278,17 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
               </span>
             </button>
           ))}
-          {events && events.length > MAX_ROWS && (
-            <p className="ue-note">Showing the next {MAX_ROWS} of {events.length} passes this year.</p>
+          {listed && listed.length > MAX_ROWS && (
+            <p className="ue-note">Showing the next {MAX_ROWS} of {listed.length} passes this year.</p>
+          )}
+          {hiddenCount > 0 && !allHidden && (
+            <p className="ue-note" data-testid="hidden-count">
+              {hiddenCount} more {hiddenCount === 1 ? 'pass is' : 'passes are'} left out because
+              buildings cover the {hiddenCount === 1 ? 'disc' : 'disc each time'}.
+            </p>
+          )}
+          {!usableEvents && events && events.length > 0 && !error && (
+            <p className="ue-note">Checking these against the buildings…</p>
           )}
         </section>
 

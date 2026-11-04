@@ -134,6 +134,13 @@ export interface SceneStatus {
   sphereSightline: 'clear' | 'blocked' | 'unknown';
   /** Field of view across the frame's long side, degrees. */
   fovDeg?: number;
+  /** Null until the scene is ready to answer. */
+  api: SceneApi | null;
+}
+
+export interface SceneApi {
+  /** Whether buildings cover a body at this direction, as seen from the current eye. */
+  bodyBlocked: (azimuthDeg: number, altitudeDeg: number) => 'clear' | 'blocked' | 'unknown';
 }
 
 export interface CesiumViewerProps {
@@ -207,9 +214,10 @@ export default function CesiumViewer({
   const [sphereSightline, setSphereSightline] =
     useState<SceneStatus['sphereSightline']>('unknown');
   const [fovDeg, setFovDeg] = useState<number | undefined>(undefined);
+  const [sceneApi, setSceneApi] = useState<SceneApi | null>(null);
   useEffect(() => {
-    onStatus?.({ phase: scenePhase, restreaming: sceneRestreaming, sphereSightline, fovDeg });
-  }, [onStatus, scenePhase, sceneRestreaming, sphereSightline, fovDeg]);
+    onStatus?.({ phase: scenePhase, restreaming: sceneRestreaming, sphereSightline, fovDeg, api: sceneApi });
+  }, [onStatus, scenePhase, sceneRestreaming, sphereSightline, fovDeg, sceneApi]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -971,11 +979,17 @@ export default function CesiumViewer({
         applyArea();
 
         const unsubDiscTime = dateTime.listen(() => {
-          applyDisc();
           // Re-aim the preview as the clock scrubs: the sun/moon moves up the tower, so
-          // the eclipse centre moves. Instant re-frame (duration 0) keeps it snappy.
+          // the eclipse centre moves. Frame first: the disc and the tower are projected
+          // through the camera, so doing this the other way round draws them where the
+          // previous framing would have put them.
           if (viewMode.get() === 'preview') applyViewMode(0);
+          applyDisc();
         });
+        // Dragging or flying moves the camera without any store change, and the projected
+        // disc and tower have to follow it.
+        viewer.camera.percentageChanged = 0.001;
+        const removeCameraListener = viewer.camera.changed.addEventListener(() => applyDisc());
         const unsubDiscBody = solverBody.listen(applyDisc);
         applyDisc();
 
@@ -1056,6 +1070,35 @@ export default function CesiumViewer({
           applyDisc();
           recomputeWhenSettled();
         });
+        // Lets a host ask whether buildings cover the body in a given direction. Stops
+        // short of the landmark, so the landmark's own coverage is not counted as blocked.
+        setSceneApi({
+          bodyBlocked: (az, alt) => {
+            if (disposed || viewer.isDestroyed()) return 'unknown';
+            const sample = groundSamplerRef.current ?? (() => undefined);
+            const extrapolate = extrapolateGroundRef.current ?? undefined;
+            const pos = observerPosition.get();
+            const viewpoint = pos.viewpointId ? findViewpoint(pos.viewpointId) : undefined;
+            const eye = resolveObserverHeight(
+              pos.lat, pos.lon, observerHeight.get(), sample, viewpoint, extrapolate,
+            ).ellipsoidalHeight;
+            const geo = { lat: pos.lat, lon: pos.lon, ellipsoidalHeight: eye };
+            const range = azAltTo(geo, FERNSEHTURM.lat, FERNSEHTURM.lon, eye).rangeM;
+            const end = directionOffsetECEF(geo, az, alt, Math.max(range - SIGHTLINE_STANDOFF_M, 1));
+            const carto = Cesium.Cartographic.fromCartesian(new Cesium.Cartesian3(...end));
+            const { state } = computeOcclusion(
+              viewer,
+              { lat: pos.lat, lon: pos.lon, height: eye },
+              {
+                lat: Cesium.Math.toDegrees(carto.latitude),
+                lon: Cesium.Math.toDegrees(carto.longitude),
+                height: carto.height,
+              },
+            );
+            if (state === 'unknown') return 'unknown';
+            return state === 'occluded' || state === 'marginal' ? 'blocked' : 'clear';
+          },
+        });
         const resizeObserver = new ResizeObserver(() => {
           if (disposed || viewer.isDestroyed()) return;
           viewer.resize();
@@ -1068,6 +1111,8 @@ export default function CesiumViewer({
         const unsubTgtPos = targetPosition.listen(() => { recompute(); applyViewMode(); });
         cleanupPlacement = () => {
           window.clearTimeout(settleTimer);
+          removeCameraListener();
+          setSceneApi(null);
           resizeObserver.disconnect();
           unsubArea();
           unsubDiscTime();
