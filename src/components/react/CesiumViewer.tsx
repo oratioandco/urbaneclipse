@@ -24,10 +24,10 @@
  *     built-in sun position + shadows follow the suncalc-authored time (Strategy B:
  *     drive the native clock; do NOT recompute occlusion on time changes).
  *   - US6 camera: a cameraProfile.listen recomputes viewer.camera.frustum.fov via
- *     fovToCesium(computeHorizontalFov(sensor, focal*zoom), aspectRatio). Cesium 1.143
+ *     fovToCesium(computeHorizontalFov(sensor, focal*zoom)). Cesium 1.143
  *     PerspectiveFrustum.fov is documented as: horizontal FOV when width >= height,
- *     otherwise vertical. fovToCesium already returns hfov unchanged for aspect>=1
- *     (the landscape scene case), so we pass its result straight through.
+ *     otherwise vertical. fovToCesium keeps the sensor's long-side angle in both cases,
+ *     so we pass its result straight through.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
@@ -132,6 +132,8 @@ export interface SceneStatus {
   restreaming: boolean;
   /** Whether buildings stand between the eye and the landmark's sphere. */
   sphereSightline: 'clear' | 'blocked' | 'unknown';
+  /** Field of view across the frame's long side, degrees. */
+  fovDeg?: number;
 }
 
 export interface CesiumViewerProps {
@@ -204,9 +206,10 @@ export default function CesiumViewer({
 
   const [sphereSightline, setSphereSightline] =
     useState<SceneStatus['sphereSightline']>('unknown');
+  const [fovDeg, setFovDeg] = useState<number | undefined>(undefined);
   useEffect(() => {
-    onStatus?.({ phase: scenePhase, restreaming: sceneRestreaming, sphereSightline });
-  }, [onStatus, scenePhase, sceneRestreaming, sphereSightline]);
+    onStatus?.({ phase: scenePhase, restreaming: sceneRestreaming, sphereSightline, fovDeg });
+  }, [onStatus, scenePhase, sceneRestreaming, sphereSightline, fovDeg]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -344,8 +347,8 @@ export default function CesiumViewer({
     // --- US6 camera profile listener ---------------------------------------------
     // Translate the authored sensor + focal + zoom into a PerspectiveFrustum.fov.
     // Cesium 1.143 docs: PerspectiveFrustum.fov is the horizontal FOV when width >=
-    // height, otherwise vertical. fovToCesium returns hfov unchanged for landscape
-    // (the only case this plaster-void viewport exercises), so we assign it directly.
+    // height, otherwise vertical. fovToCesium keeps the sensor's long-side angle in both
+    // cases, so we assign it directly.
     // The frustum is replaced in-place: viewer.camera.frustum is always a
     // PerspectiveFrustum by default (no orthographic switch in this app).
     // The telephoto FOV is the PREVIEW shot's lens. It must NOT be applied in map
@@ -360,8 +363,9 @@ export default function CesiumViewer({
         canvas.height > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
       const hfov = computeHorizontalFov(sensorWidth, focalLength * zoom);
       const frustum = viewer.camera.frustum as CesiumType.PerspectiveFrustum;
-      frustum.fov = fovToCesium(hfov, aspectRatio);
+      frustum.fov = fovToCesium(hfov);
       frustum.aspectRatio = aspectRatio;
+      setFovDeg(Cesium.Math.toDegrees(frustum.fov));
       viewer.scene.requestRender();
     };
     // Set once the tileset callback defines applyDisc; lets the (earlier-defined)
@@ -724,6 +728,7 @@ export default function CesiumViewer({
           } else {
             applyPreviewFov();
           }
+          setFovDeg(Cesium.Math.toDegrees(frustumOf().fov));
         };
         // Frame the scene NOW that the tileset exists. Instant (duration 0) so tiles
         // begin streaming at the destination immediately rather than after a 1.2 s fly.

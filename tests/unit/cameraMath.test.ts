@@ -36,34 +36,8 @@ describe('computeHorizontalFov', () => {
 });
 
 describe('fovToCesium', () => {
-  it('at aspectRatio >= 1 returns hfov unchanged', () => {
-    const hfov = computeHorizontalFov(36, 600);
-    const out16x9 = fovToCesium(hfov, 16 / 9);
-    const out1x1 = fovToCesium(hfov, 1);
-    // eslint-disable-next-line no-console
-    console.log(`aspect 16/9 -> ${out16x9} (hfov=${hfov}); aspect 1 -> ${out1x1}`);
-    expect(out16x9).toBe(hfov);
-    expect(out1x1).toBe(hfov);
-  });
-
-  it('at aspectRatio < 1 returns a smaller (converted) value', () => {
-    const hfov = computeHorizontalFov(36, 600);
-    const out9x16 = fovToCesium(hfov, 9 / 16);
-    // eslint-disable-next-line no-console
-    console.log(`aspect 9/16 -> ${out9x16} (hfov=${hfov}); smaller=${out9x16 < hfov}`);
-    expect(out9x16).toBeLessThan(hfov);
-    // Matches the documented vfov conversion: 2*atan(tan(hfov/2)*aspect)
-    const expected = 2 * Math.atan(Math.tan(hfov / 2) * (9 / 16));
-    expect(out9x16).toBeCloseTo(expected, 12);
-  });
-
-  it('round-trip sanity: hfov -> vfov (aspect<1) -> back to hfov recovers input', () => {
-    const hfov = computeHorizontalFov(36, 600);
-    const aspect = 9 / 16;
-    const vfov = fovToCesium(hfov, aspect);
-    const back = 2 * Math.atan(Math.tan(vfov / 2) / aspect);
-    // eslint-disable-next-line no-console
-    console.log(`round-trip hfov=${hfov} -> vfov=${vfov} -> back=${back}`);
-    expect(back).toBeCloseTo(hfov, 12);
+  it('keeps the long-side angle, which Cesium applies to the long side of any frame', () => {
+    const fov = computeHorizontalFov(36, 600);
+    expect(fovToCesium(fov)).toBe(fov);
   });
 });

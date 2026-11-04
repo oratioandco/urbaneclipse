@@ -4,13 +4,9 @@
  * Sensor/focal -> horizontal FOV, and the conversion to the value assigned to
  * Cesium's PerspectiveFrustum.fov.
  *
- * ASSUMPTION (fovToCesium): Cesium's PerspectiveFrustum.fov is a *vertical* FOV.
- * For landscape/portrait framing we therefore:
- *   - return the horizontal FOV unchanged when aspectRatio >= 1 (landscape/square:
- *     horizontal FOV is the wider dimension and is what we want to author against), and
- *   - convert horizontal -> vertical FOV when aspectRatio < 1 (portrait), using
- *     vfov = 2*atan(tan(hfov/2) * aspectRatio), so the assigned vertical FOV reproduces
- *     the authored horizontal FOV under the portrait aspect.
+ * Cesium's PerspectiveFrustum.fov applies to the frame's longer side: horizontal in
+ * landscape, vertical in portrait. A sensor's width is its long side, and a photographer
+ * turns the camera for a portrait frame, so the angle carries over unchanged either way.
  */
 
 /**
@@ -38,21 +34,10 @@ export function computeHorizontalFov(
 }
 
 /**
- * Convert a horizontal FOV (radians) to the value that should be assigned to
- * Cesium's `PerspectiveFrustum.fov`.
- *
- * ASSUMPTION: PerspectiveFrustum.fov is interpreted as the *vertical* FOV.
- *   - aspectRatio >= 1 (landscape/square): return `hfovRadians` unchanged.
- *   - aspectRatio <  1 (portrait): convert to vertical FOV via
- *     vfov = 2 * atan(tan(hfovRadians / 2) * aspectRatio), which is strictly
- *     smaller than `hfovRadians`.
+ * The value for Cesium's `PerspectiveFrustum.fov`, given the angle across the sensor's
+ * long side. Takes no aspect ratio because Cesium already applies it to the frame's
+ * long side.
  */
-export function fovToCesium(
-  hfovRadians: number,
-  aspectRatio: number,
-): number {
-  if (aspectRatio >= 1) {
-    return hfovRadians;
-  }
-  return 2 * Math.atan(Math.tan(hfovRadians / 2) * aspectRatio);
+export function fovToCesium(longSideFovRadians: number): number {
+  return longSideFovRadians;
 }

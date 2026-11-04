@@ -3,7 +3,7 @@
  *
  * Pure presentation + nanostores wiring. Reads/writes `cameraProfile` from the store.
  * The CesiumViewer island listens to the same atom and applies the new frustum.fov
- * via fovToCesium(computeHorizontalFov(sensor, focal*zoom), aspectRatio).
+ * via fovToCesium(computeHorizontalFov(sensor, focal*zoom)).
  *
  * Rendered INSIDE the CesiumViewer island so it shares the client:only lifecycle.
  *

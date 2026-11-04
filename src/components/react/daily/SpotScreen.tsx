@@ -9,12 +9,24 @@ import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { resolveObserverHeight } from '../../../lib/sceneHeights.js';
 import { findViewpoint } from '../../../lib/viewpoints.js';
 import {
+  EYE_MARKS,
+  EYE_MAX_M,
+  EYE_MIN_M,
+  SENSOR_FORMATS,
+  focalForFov,
+  roundEye,
+  roundFocal,
+  sensorFormatFor,
+  type SensorFormat,
+} from '../../../lib/lensScale.js';
+import {
   cameraProfile,
   lensAutoFit,
   observerHeight,
   setCameraProfile,
 } from '../../../store.js';
 import type { SceneStatus } from '../CesiumViewer.js';
+import ScaleSlider from './ScaleSlider.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
 
 interface Props {
@@ -25,7 +37,6 @@ interface Props {
 }
 
 const YEAR_MS = 365 * 86_400_000;
-const LENSES = [150, 300, 600];
 /** The list stays readable; a year from a good spot can hold hundreds of passes. */
 const MAX_ROWS = 40;
 /** Scrub range either side of the chosen moment. */
@@ -119,6 +130,19 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
 
   const noDates = events !== null && events.length === 0;
 
+  const format = sensorFormatFor(camera.sensorWidth);
+  // In auto the scene chooses the framing, so the scale shows the lens that matches it.
+  const shownFocal =
+    auto && status?.fovDeg
+      ? roundFocal(focalForFov(status.fovDeg, format.width))
+      : camera.focalLength;
+
+  /** Keeps the framing mode, and keeps the lens inside the new format's range. */
+  const chooseSensor = (f: SensorFormat): void => {
+    const focalLength = Math.min(f.maxFocal, Math.max(f.minFocal, camera.focalLength));
+    cameraProfile.set({ ...camera, sensorWidth: f.width, focalLength, zoom: 1 });
+  };
+
   return (
     <div className="ue-spot-ui" data-testid="spot-screen">
       <button type="button" className="ue-back" onClick={onBack}>
@@ -128,7 +152,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
         <div className="ue-loader" role="status">Framing the shot…</div>
       )}
 
-      <aside className="ue-sheet ue-sheet--spot" aria-label="Shot details">
+      <aside className="ue-sheet ue-sheet--spot" data-adjust={adjustOpen} aria-label="Shot details">
         <header className="ue-spot__head">
           <p className="ue-eyebrow">
             {spot.label}
@@ -162,7 +186,7 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
           </div>
         )}
 
-        <section className="ue-list" data-testid="spot-events">
+        <section className="ue-list" data-testid="spot-events" hidden={adjustOpen}>
           <h2 className="ue-eyebrow">Next from here</h2>
           {error && <p className="ue-empty" role="alert">Could not load dates: {error}</p>}
           {!error && events === null && <p className="ue-empty">Searching the next 12 months…</p>}
@@ -200,38 +224,57 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
             onClick={() => setAdjustOpen((v) => !v)}
           >
             Adjust
-            <span>{auto ? 'Auto lens' : `${camera.focalLength} mm`} · eye {eye.toFixed(1)} m</span>
+            <span>{shownFocal} mm{auto ? ' auto' : ''} · eye {eye.toFixed(1)} m</span>
           </button>
           {adjustOpen && (
             <div className="ue-adjust__body">
-              <div className="ue-chips" role="group" aria-label="Lens">
-                <button type="button" className="ue-chip" aria-pressed={auto} onClick={() => lensAutoFit.set(true)}>
-                  Auto
-                </button>
-                {LENSES.map((mm) => (
+              <div className="ue-chips" role="group" aria-label="Sensor">
+                {SENSOR_FORMATS.map((f) => (
                   <button
-                    key={mm}
+                    key={f.id}
                     type="button"
                     className="ue-chip"
-                    aria-pressed={!auto && camera.focalLength === mm}
-                    onClick={() => setCameraProfile({ ...camera, focalLength: mm, zoom: 1 })}
+                    aria-pressed={format.id === f.id}
+                    onClick={() => chooseSensor(f)}
                   >
-                    {mm}
+                    {f.label}
                   </button>
                 ))}
               </div>
-              <label className="ue-field">
-                Eye height
-                <input
-                  className="ue-range"
-                  type="range"
-                  min={0.5}
-                  max={50}
-                  step={0.5}
-                  value={eye}
-                  onChange={(e) => observerHeight.set(Number(e.currentTarget.value))}
+              <div>
+                <ScaleSlider
+                  label="Lens"
+                  readout={`${shownFocal} mm`}
+                  value={shownFocal}
+                  min={format.minFocal}
+                  max={format.maxFocal}
+                  marks={format.focalMarks}
+                  format={String}
+                  round={roundFocal}
+                  valueText={`${shownFocal} millimetres`}
+                  onChange={(mm) => setCameraProfile({ ...camera, focalLength: mm, zoom: 1 })}
                 />
-              </label>
+                <button
+                  type="button"
+                  className="ue-chip ue-chip--auto"
+                  aria-pressed={auto}
+                  onClick={() => lensAutoFit.set(true)}
+                >
+                  Auto: fit the tower
+                </button>
+              </div>
+              <ScaleSlider
+                label="Eye height"
+                readout={`${eye.toFixed(1)} m`}
+                value={eye}
+                min={EYE_MIN_M}
+                max={EYE_MAX_M}
+                marks={EYE_MARKS}
+                format={(m) => `${m} m`}
+                round={roundEye}
+                valueText={`${eye.toFixed(1)} metres`}
+                onChange={(m) => observerHeight.set(m)}
+              />
             </div>
           )}
         </section>
