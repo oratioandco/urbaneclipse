@@ -100,7 +100,7 @@ function orthometricToEllipsoidalSafe(surfaceOrthometric: number): number {
     ? orthometricToEllipsoidal(surfaceOrthometric)
     : orthometricToEllipsoidal(BERLIN_GROUND_ORTHOMETRIC_FALLBACK);
 }
-import { computeHorizontalFov, fovToCesium } from '../../lib/cameraMath.js';
+import { computeHorizontalFov, fovToCesium, limitFovForFrame } from '../../lib/cameraMath.js';
 import ControlPanel, { type ScenePhase } from './ControlPanel.js';
 import PlacementControls from './PlacementControls.js';
 import PlanningMap from './PlanningMap.js';
@@ -363,7 +363,7 @@ export default function CesiumViewer({
         canvas.height > 0 ? canvas.clientWidth / canvas.clientHeight : 1;
       const hfov = computeHorizontalFov(sensorWidth, focalLength * zoom);
       const frustum = viewer.camera.frustum as CesiumType.PerspectiveFrustum;
-      frustum.fov = fovToCesium(hfov);
+      frustum.fov = limitFovForFrame(fovToCesium(hfov), aspectRatio);
       frustum.aspectRatio = aspectRatio;
       setFovDeg(Cesium.Math.toDegrees(frustum.fov));
       viewer.scene.requestRender();
@@ -389,6 +389,36 @@ export default function CesiumViewer({
     const studioState = defaultStudioEnvironmentState();
     const studioStage = createStudioEnvironmentStage(Cesium, studioState);
     scene.postProcessStages.add(studioStage);
+
+    // The horizon has to track the camera every frame, or a fallback ground could lag
+    // behind a re-framed shot and open a strip of sky under the horizon.
+    const scratchLevel = new Cesium.Cartesian3();
+    const scratchUp = new Cesium.Cartesian3();
+    const scratchAlongUp = new Cesium.Cartesian3();
+    const updateHorizon = (): void => {
+      const eye = viewer.camera.positionWC;
+      const up = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(eye, scratchUp);
+      // The view direction flattened into the local horizontal plane.
+      const along = Cesium.Cartesian3.multiplyByScalar(
+        up,
+        Cesium.Cartesian3.dot(viewer.camera.directionWC, up),
+        scratchAlongUp,
+      );
+      const level = Cesium.Cartesian3.subtract(viewer.camera.directionWC, along, scratchLevel);
+      if (Cesium.Cartesian3.magnitude(level) < 1e-6) return; // looking straight up or down
+      Cesium.Cartesian3.normalize(level, level);
+      Cesium.Cartesian3.multiplyByScalar(level, 10_000, level);
+      Cesium.Cartesian3.add(eye, level, level);
+      const win = Cesium.SceneTransforms.worldToWindowCoordinates(scene, level);
+      const height = (viewer.canvas as HTMLCanvasElement).clientHeight;
+      if (!win || height <= 0) return;
+      const horizonY = 1 - win.y / height;
+      if (horizonY !== studioState.horizonY) {
+        studioState.horizonY = horizonY;
+        updateStudioUniforms(Cesium, studioStage, studioState);
+      }
+    };
+    const removeHorizonListener = scene.preRender.addEventListener(updateHorizon);
 
     // --- Local self-hosted tileset ---------------------------------------------
     // Cesium3DTileset.fromUrl is the non-deprecated factory (the ctor is deprecated
@@ -794,6 +824,12 @@ export default function CesiumViewer({
               new Cesium.Color(),
             );
             scene.globe.baseColor.alpha = 1;
+            // The vignette and depth tone a nearby ground would get, so the fallback matches.
+            studioState.groundColor = [
+              scene.globe.baseColor.red * 0.48 * palette.sceneTint[0],
+              scene.globe.baseColor.green * 0.48 * palette.sceneTint[1],
+              scene.globe.baseColor.blue * 0.48 * palette.sceneTint[2],
+            ];
 
             // Drive the studio sky + disc from the SAME body position, so the glow
             // sits exactly where the sun/moon is — behind the tower at a real
@@ -1066,7 +1102,15 @@ export default function CesiumViewer({
         }
 
         // Recompute on slider changes (heights). Each .listen fires once per change.
-        const unsubOh = observerHeight.listen(recompute);
+        // Eye height moves the camera too, or the slider only changes the verdict.
+        const unsubOh = observerHeight.listen(() => {
+          recompute();
+          if (viewMode.get() === 'preview') {
+            applyViewMode(0);
+            applyDisc();
+          }
+          recomputeWhenSettled();
+        });
         const unsubTh = targetHeight.listen(recompute);
 
         // Stash unsubs on the viewer for cleanup; Cesium doesn't own them so we
@@ -1094,6 +1138,7 @@ export default function CesiumViewer({
     // --- Cleanup (React 18/19 StrictMode double-mount safe) --------------------
     return () => {
       disposed = true;
+      removeHorizonListener();
       if (restreamRaf !== null) cancelAnimationFrame(restreamRaf);
       window.clearTimeout(slowTimer);
       // Placement listeners + the click handler outlive the tileset promise, so tear

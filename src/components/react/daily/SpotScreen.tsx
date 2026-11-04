@@ -137,6 +137,13 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
       ? roundFocal(focalForFov(status.fovDeg, format.width))
       : camera.focalLength;
 
+  // The renderer limits very wide angles in a tall frame, so say when the lens is cropped.
+  const framedFocal = status?.fovDeg ? focalForFov(status.fovDeg, format.width) : null;
+  const widestHere =
+    !auto && framedFocal !== null && Math.round(framedFocal) > shownFocal
+      ? Math.round(framedFocal)
+      : null;
+
   /** Keeps the framing mode, and keeps the lens inside the new format's range. */
   const chooseSensor = (f: SensorFormat): void => {
     const focalLength = Math.min(f.maxFocal, Math.max(f.minFocal, camera.focalLength));
@@ -254,6 +261,12 @@ export default function SpotScreen({ spot, status, onBack, onChange }: Props): J
                   valueText={`${shownFocal} millimetres`}
                   onChange={(mm) => setCameraProfile({ ...camera, focalLength: mm, zoom: 1 })}
                 />
+                {widestHere !== null && (
+                  <p className="ue-note ue-note--tight" role="status">
+                    This frame is too tall to show {shownFocal} mm. It shows about {widestHere} mm,
+                    and a wider screen shows more.
+                  </p>
+                )}
                 <button
                   type="button"
                   className="ue-chip ue-chip--auto"

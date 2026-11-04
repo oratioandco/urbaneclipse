@@ -127,6 +127,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-marks span { position: absolute; top: 6px; left: calc(8px + (100% - 16px) * var(--at)); transform: translateX(calc(-50% * var(--at) * 2 + 0%)); white-space: nowrap; }
 .ue-marks span::before { content: ''; position: absolute; top: -5px; left: calc(100% * var(--at)); width: 1px; height: 4px; background: var(--ue-muted); }
 .ue-chip--auto { margin-top: 6px; }
+.ue-note--tight { margin: 2px 0 4px; }
 
 /* Phones: the map or shot stays visible above a bottom sheet */
 @media (max-width: 760px) {

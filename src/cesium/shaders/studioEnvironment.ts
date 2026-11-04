@@ -131,6 +131,8 @@ export function buildStudioEnvironmentShaderSource(
     'uniform vec2 u_towerBaseUv;  // landmark base in texture coords',
     'uniform vec2 u_towerTopUv;   // landmark tip in texture coords',
     'uniform float u_towerVisible;',
+    'uniform float u_horizonY;    // the level horizon, in texture coords',
+    'uniform vec3 u_groundColor;  // lit ground, for pixels with no terrain to show',
     'uniform float u_towerRange;  // eye-to-landmark distance, metres',
     '',
     'in vec2 v_textureCoordinates;',
@@ -229,7 +231,16 @@ export function buildStudioEnvironmentShaderSource(
     '    // Sky plus the surveyed landmark silhouette. Foreground city geometry has',
     '    // depth < 1 and therefore naturally occludes the screen-space tower.',
     '    vec3 landmark = landmarkColor(hazeColor);',
-    '    vec3 result = mix(skyColor(v_textureCoordinates, hazeColor), landmark, towerMask(v_textureCoordinates));',
+    '    // No geometry here. Below the horizon that means terrain is still streaming or',
+    '    // has run out, and the answer is ground, never sky. It meets the sky through the',
+    '    // same haze as real distant ground, and the disc is left out of it.',
+    '    float belowHorizon = u_horizonY - v_textureCoordinates.y;',
+    '    vec3 backdrop = skyColor(v_textureCoordinates, hazeColor);',
+    '    if (belowHorizon > 0.0) {',
+    '      float groundHaze = 1.0 - smoothstep(0.0, 0.14, belowHorizon);',
+    '      backdrop = mix(u_groundColor, airColor(v_textureCoordinates, hazeColor), groundHaze);',
+    '    }',
+    '    vec3 result = mix(backdrop, landmark, towerMask(v_textureCoordinates));',
     '    // The authored sky is a real scene surface, not a transparent canvas hole.',
     '    out_FragColor = vec4(result, 1.0);',
     '    return;',
@@ -254,9 +265,14 @@ export function buildStudioEnvironmentShaderSource(
     '  // fade is scoped to a narrow band around the horizon, so steep near-ground and',
     '  // tower/building tops (viewPitch > HORIZON_FADE_ABOVE, above the horizon) keep',
     '  // full intensity and their silhouettes stay sharp.',
-    '  float viewPitch = eye.y / dist;',
+    '  // Measured against the local vertical, not the camera axis: the horizon only sits',
+    '  // mid-frame when the camera happens to be level. Distant ground only, so a wide',
+    '  // lens does not draw a band across nearby buildings at horizon height.',
+    '  vec3 upEC = czm_viewRotation * normalize(czm_viewerPositionWC);',
+    '  float viewPitch = dot(eye.xyz / dist, upEC);',
     '  float horizonFog = smoothstep(HORIZON_FADE_BELOW, 0.0, viewPitch);',
     '  horizonFog *= (1.0 - smoothstep(0.0, HORIZON_FADE_ABOVE, viewPitch));',
+    '  horizonFog *= smoothstep(600.0, 2500.0, dist);',
     '  fog = max(fog, horizonFog * 0.38);',
     '  // u_sceneTint adds a mild warmth (golden hour) / coolness (night) to the',
     '  // clay geometry — brightness comes from the directional light + image-based',
@@ -319,6 +335,10 @@ export interface StudioEnvironmentState {
   towerVisible: number;
   /** Eye-to-landmark distance, metres. Nearer geometry hides the landmark. */
   towerRange: number;
+  /** Where the level horizon crosses the frame, 0 (bottom) to 1 (top). */
+  horizonY: number;
+  /** Ground colour for pixels below the horizon with no terrain to show. */
+  groundColor: [number, number, number];
 }
 
 /** A neutral default so the stage renders sanely before the app sets real values. */
@@ -338,6 +358,8 @@ export function defaultStudioEnvironmentState(): StudioEnvironmentState {
     towerTopUv: [0.5, 0.75],
     towerVisible: 0,
     towerRange: 0,
+    horizonY: 0,
+    groundColor: [0.25, 0.24, 0.23],
   };
 }
 
@@ -377,6 +399,12 @@ export function createStudioEnvironmentStage(
       u_towerTopUv: new Cesium.Cartesian2(state.towerTopUv[0], state.towerTopUv[1]),
       u_towerVisible: state.towerVisible,
       u_towerRange: state.towerRange,
+      u_horizonY: state.horizonY,
+      u_groundColor: new Cesium.Cartesian3(
+        state.groundColor[0],
+        state.groundColor[1],
+        state.groundColor[2],
+      ),
     },
   });
   return stage;
@@ -425,4 +453,10 @@ export function updateStudioUniforms(
   );
   stage.uniforms.u_towerVisible = state.towerVisible;
   stage.uniforms.u_towerRange = state.towerRange;
+  stage.uniforms.u_horizonY = state.horizonY;
+  stage.uniforms.u_groundColor = new Cesium.Cartesian3(
+    state.groundColor[0],
+    state.groundColor[1],
+    state.groundColor[2],
+  );
 }

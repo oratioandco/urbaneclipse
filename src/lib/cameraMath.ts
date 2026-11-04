@@ -41,3 +41,20 @@ export function computeHorizontalFov(
 export function fovToCesium(longSideFovRadians: number): number {
   return longSideFovRadians;
 }
+
+/**
+ * Widest vertical angle the renderer draws correctly, radians. Measured on Cesium 1.143
+ * in a portrait frame: the sky renders at 94 degrees and goes black by 100.
+ */
+export const MAX_VERTICAL_FOV = (92 * Math.PI) / 180;
+
+/**
+ * Limit a frustum angle so its vertical extent stays drawable. Only tall frames with
+ * very short lenses reach this; a 16:10 frame stays clear of it at any supported lens.
+ */
+export function limitFovForFrame(fovRadians: number, aspectRatio: number): number {
+  const halfLimit = Math.tan(MAX_VERTICAL_FOV / 2);
+  // Cesium applies fov to the long side, so landscape frames widen it by the aspect ratio.
+  const widest = aspectRatio >= 1 ? 2 * Math.atan(halfLimit * aspectRatio) : MAX_VERTICAL_FOV;
+  return Math.min(fovRadians, widest);
+}

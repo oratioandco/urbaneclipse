@@ -118,7 +118,7 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
   //      silhouette instead of hard-cutting, scoped so tower/building tops stay sharp. ----
   describe('horizon fade (view-pitch band around the horizon)', () => {
     it('derives view pitch from the eye-space up component and blends toward sky', () => {
-      expect(src).toContain('float viewPitch = eye.y / dist;');
+      expect(src).toContain('float viewPitch = dot(eye.xyz / dist, upEC);');
       expect(src).toContain('float horizonFog = smoothstep(HORIZON_FADE_BELOW, 0.0, viewPitch)');
       expect(src).toContain(
         'horizonFog *= (1.0 - smoothstep(0.0, HORIZON_FADE_ABOVE, viewPitch))',
@@ -200,6 +200,13 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
     it('paints no screen-space building crowns over the city', () => {
       expect(src).not.toContain('gateMask');
       expect(src).not.toContain('u_gate');
+    });
+
+    it('paints ground, not sky, below the horizon where there is no terrain', () => {
+      expect(src).toContain('uniform float u_horizonY');
+      expect(src).toContain('uniform vec3 u_groundColor');
+      expect(src).toContain('float belowHorizon = u_horizonY - v_textureCoordinates.y');
+      expect(src).toContain('mix(u_groundColor, airColor(v_textureCoordinates, hazeColor), groundHaze)');
     });
 
     it('works with no opts (sensible plaster-void defaults)', () => {
