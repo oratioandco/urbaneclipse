@@ -86,7 +86,7 @@ import { findViewpoint } from '../../lib/viewpoints.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
 import { skyPalette } from '../../lib/skyPalette.js';
 import { azAltTo, directionOffsetECEF, geodeticToECEF } from '../../lib/silhouette.js';
-import { FERNSEHTURM, FRANKFURTER_TOR_CROWNS } from '../../lib/landmarks.js';
+import { FERNSEHTURM } from '../../lib/landmarks.js';
 import { computeDiscState } from '../../cesium/celestialDisc.js';
 import {
   BERLIN_GROUND_ORTHOMETRIC_FALLBACK,
@@ -666,8 +666,7 @@ export default function CesiumViewer(): JSX.Element {
             const heightAtBody =
               obs.ellipsoidalHeight + range * Math.tan((bodySample.alt * Math.PI) / 180);
             // Put the eclipse in the upper third instead of dead centre. Aiming below
-            // the body reveals the Frankfurter-Allee street valley and the Frankfurter
-            // Tor crowns while keeping the complete tower inside the telephoto frame.
+            // the body reveals the Frankfurter-Allee street valley while keeping the complete tower inside the telephoto frame.
             const targetBaseEll = tgtTopEll - targetHeight.get();
             const compositionDropM = Math.min(90, targetHeight.get() * 0.22);
             aimEll = Math.min(
@@ -720,7 +719,6 @@ export default function CesiumViewer(): JSX.Element {
             setDiscState(undefined);
             studioState.sunVisible = 0; // no disc/bloom off the preview
             studioState.towerVisible = 0;
-            studioState.gateVisible = 0;
             updateStudioUniforms(Cesium, studioStage, studioState);
             return;
           }
@@ -857,54 +855,11 @@ export default function CesiumViewer(): JSX.Element {
               studioState.towerVisible = 0;
             }
 
-            // Restore the paired Frankfurter Tor cupolas that Berlin's LoD2 blocks
-            // generalise into flat roofs. Only the curved crowns are analytical; their
-            // positions come from the OSM building-part centroids and their absolute
-            // height envelope is recorded in lib/landmarks.ts.
-            const projectCrown = (crown: (typeof FRANKFURTER_TOR_CROWNS)[number]) => {
-              const base = Cesium.Cartesian3.fromDegrees(
-                crown.lon,
-                crown.lat,
-                orthometricToEllipsoidal(crown.crownBaseOrthometric),
-              );
-              const top = Cesium.Cartesian3.fromDegrees(
-                crown.lon,
-                crown.lat,
-                orthometricToEllipsoidal(crown.crownTopOrthometric),
-              );
-              const baseWin = Cesium.SceneTransforms.worldToWindowCoordinates(scene, base);
-              const topWin = Cesium.SceneTransforms.worldToWindowCoordinates(scene, top);
-              if (!baseWin || !topWin || canvas.clientWidth <= 0 || canvas.clientHeight <= 0) {
-                return undefined;
-              }
-              return {
-                base: [
-                  baseWin.x / canvas.clientWidth,
-                  1 - baseWin.y / canvas.clientHeight,
-                ] as [number, number],
-                top: [
-                  topWin.x / canvas.clientWidth,
-                  1 - topWin.y / canvas.clientHeight,
-                ] as [number, number],
-              };
-            };
-            const southCrown = projectCrown(FRANKFURTER_TOR_CROWNS[0]);
-            const northCrown = projectCrown(FRANKFURTER_TOR_CROWNS[1]);
-            if (southCrown && northCrown) {
-              studioState.gateSouthBaseUv = southCrown.base;
-              studioState.gateSouthTopUv = southCrown.top;
-              studioState.gateNorthBaseUv = northCrown.base;
-              studioState.gateNorthTopUv = northCrown.top;
-              studioState.gateVisible = 1;
-            } else {
-              studioState.gateVisible = 0;
-            }
             updateStudioUniforms(Cesium, studioStage, studioState);
           } catch (err) {
             // Never let a drawing failure take down the scene; report it instead.
             setDiscState(undefined);
             studioState.sunVisible = 0;
-            studioState.gateVisible = 0;
             updateStudioUniforms(Cesium, studioStage, studioState);
             console.error('[CesiumViewer] celestial disc failed', err);
           }

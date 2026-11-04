@@ -197,11 +197,9 @@ describe('buildStudioEnvironmentShaderSource — GLSL ES fragment for PostProces
       expect(src).not.toContain('mix(result, vec3(0.12, 0.115, 0.12)');
     });
 
-    it('restores the paired Frankfurter Tor crowns omitted by the LoD2 mesh', () => {
-      expect(src).toContain('uniform vec2 u_gateSouthBaseUv');
-      expect(src).toContain('uniform vec2 u_gateNorthBaseUv');
-      expect(src).toContain('float gateCrownMask');
-      expect(src).toContain('gateMask(v_textureCoordinates)');
+    it('paints no screen-space building crowns over the city', () => {
+      expect(src).not.toContain('gateMask');
+      expect(src).not.toContain('u_gate');
     });
 
     it('works with no opts (sensible plaster-void defaults)', () => {

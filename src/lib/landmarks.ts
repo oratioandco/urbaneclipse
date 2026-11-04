@@ -47,23 +47,6 @@ export interface RevolutionLandmark {
 }
 
 /**
- * A small architectural crown that the city LoD2 mesh generalises into a flat roof.
- * These are compositional landmarks rather than occultation targets, so a surveyed
- * screen silhouette is sufficient while the surrounding building remains the real
- * LoD2 geometry.
- */
-export interface CrownLandmark {
-  id: string;
-  name: string;
-  lat: number;
-  lon: number;
-  /** Absolute DHHN2016 height at the bottom/top of the visible crown. */
-  crownBaseOrthometric: number;
-  crownTopOrthometric: number;
-  notes: string;
-}
-
-/**
  * Sample a sphere's radius profile, unioned with the surrounding shaft.
  * r(h) = sqrt(R^2 - (h - centre)^2) over the sphere's vertical span.
  */
@@ -136,38 +119,6 @@ export const FERNSEHTURM: RevolutionLandmark = {
     'Total height 368.03 m and sphere diameter 32 m are high-confidence published ' +
     'values; antenna base diameter is estimated and is the largest uncertainty.',
 };
-
-/**
- * The paired cupola crowns at Frankfurter Tor, looking west from Lichtenberger Brücke.
- * Their axes use the OSM building-part centroids; ground comes from the committed DGM1
- * heightmap. The vertical envelope follows the OSM 12-14-level crown parts and is
- * deliberately approximate: it restores the recognisable skyline without pretending
- * to be survey geometry. The LoD2 blocks beneath remain authoritative.
- */
-export const FRANKFURTER_TOR_CROWNS: readonly [CrownLandmark, CrownLandmark] = [
-  {
-    id: 'frankfurter-tor-south-crown',
-    name: 'Frankfurter Tor Südturm crown',
-    lat: 52.515653688,
-    lon: 13.452508288,
-    crownBaseOrthometric: 73.6,
-    crownTopOrthometric: 89.6,
-    notes:
-      'OSM building-part centroid (way 288230374); DGM1 ground 37.58 m. ' +
-      'Crown envelope approximated from OSM levels 12-14 and the visible cupola/spire.',
-  },
-  {
-    id: 'frankfurter-tor-north-crown',
-    name: 'Frankfurter Tor Nordturm crown',
-    lat: 52.516501088,
-    lon: 13.452732988,
-    crownBaseOrthometric: 74.3,
-    crownTopOrthometric: 90.3,
-    notes:
-      'OSM building-part centroid (way 288230376); DGM1 ground 38.32 m. ' +
-      'Crown envelope approximated from OSM levels 12-14 and the visible cupola/spire.',
-  },
-];
 
 /**
  * Radius of a landmark at a given height above its base, linearly interpolated.
