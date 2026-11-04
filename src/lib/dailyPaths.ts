@@ -13,6 +13,7 @@ import { getMoonIllumination } from 'suncalc';
 import {
   evaluateCandidate,
   findOccultationsAtPosition,
+  type BodySample,
   type GroundProvider,
 } from './areaSolver.js';
 import { sampleBody, type Body } from './bodyPosition.js';
@@ -168,6 +169,35 @@ export interface SpotEvent {
 /** Separate passes are hours apart; anything closer is one pass with a gap in sampling. */
 const EVENT_GAP_MS = 30 * 60_000;
 
+/** Full cover can last under a minute, so the sweep's own samples can step right over it. */
+const PEAK_SEARCH_MS = 90_000;
+const PEAK_STEP_SECONDS = 5;
+
+function refinePeak(
+  event: SpotEvent,
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  bodyAt: (t: Date) => BodySample,
+): void {
+  const [best] = findOccultationsAtPosition({
+    observer,
+    landmark,
+    start: new Date(event.peak - PEAK_SEARCH_MS),
+    end: new Date(event.peak + PEAK_SEARCH_MS),
+    stepMinutes: PEAK_STEP_SECONDS / 60,
+    bodyAt,
+    wanted: ['full', 'partial'],
+    minAltitudeDeg: MIN_ALTITUDE_DEG,
+  });
+  if (!best) return;
+  const t = best.when.getTime();
+  // Results come back ranked: full cover first, then by coverage.
+  event.peak = t;
+  event.kind = best.kind;
+  event.coveredFraction = best.coveredFraction;
+  event.bodyAlt = best.bodyAlt;
+}
+
 /** Coarse scan interval. The body moves at most ~5 deg of azimuth and ~2 deg of altitude in this time. */
 const SCAN_STEP_MS = 10 * 60_000;
 const SCAN_MARGIN_AZ_DEG = 6;
@@ -181,7 +211,7 @@ const SCAN_MARGIN_ALT_DEG = 3;
 function candidateWindows(
   observer: ObserverGeodetic,
   landmark: RevolutionLandmark,
-  bodyAt: (t: Date) => { az: number; alt: number },
+  bodyAt: (t: Date) => BodySample,
   start: Date,
   end: Date,
 ): Array<[Date, Date]> {
@@ -262,6 +292,7 @@ export function findSpotEvents(req: {
       });
     }
   }
+  for (const event of events) refinePeak(event, observer, landmark, bodyAt);
   if (body !== 'moon') return events;
   return events.filter((e) => getMoonIllumination(new Date(e.peak)).fraction >= MIN_MOON_ILLUMINATION);
 }

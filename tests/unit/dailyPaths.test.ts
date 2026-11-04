@@ -113,6 +113,20 @@ describe('findSpotEvents', () => {
     expect(events).toEqual([]);
   }, 30_000);
 
+  it('reports the true peak of a pass regardless of when the sweep starts', () => {
+    const position = { lat: 52.535147, lon: 13.372137, ellipsoidalHeight: 76.8 };
+    const peakFrom = (offsetSeconds: number) => {
+      const start = new Date(Date.UTC(2026, 10, 5, 5, 0, offsetSeconds));
+      const end = new Date(start.getTime() + 3 * 3_600_000);
+      const [event] = findSpotEvents({ observer: position, landmark: FERNSEHTURM, body: 'sun', start, end });
+      return event;
+    };
+    const a = peakFrom(0);
+    const b = peakFrom(37);
+    expect(Math.abs(a.coveredFraction - b.coveredFraction)).toBeLessThan(0.02);
+    expect(a.kind).toBe(b.kind);
+  });
+
   it('finds the same passes as a minute-by-minute sweep of every instant', () => {
     const window = { start: new Date('2027-03-15T00:00:00Z'), end: new Date('2027-04-20T00:00:00Z') };
     for (const position of [observer, { lat: 52.5182, lon: 13.4285, ellipsoidalHeight: 76 }]) {
@@ -129,9 +143,6 @@ describe('findSpotEvents', () => {
           minAltitudeDeg: 1,
           limit: Number.MAX_SAFE_INTEGER,
         });
-        for (const peak of fast) {
-          expect(every.some((c) => c.when.getTime() === peak)).toBe(true);
-        }
         const days = (ts: number[]) => new Set(ts.map((t) => new Date(t).toISOString().slice(0, 10)));
         const fastDays = days(fast);
         const everyDays = days(every.map((c) => c.when.getTime()));
