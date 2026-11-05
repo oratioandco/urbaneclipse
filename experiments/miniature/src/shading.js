@@ -1,0 +1,189 @@
+/**
+ * The city's lights, added to the Lambert materials. Street light comes from a painted map of
+ * the roads, blurred, so ground and nearby walls pick it up without any real light sources.
+ * Windows are procedural, and fade to their average brightness once too small to resolve.
+ */
+import * as THREE from 'three';
+
+export const cityUniforms = {
+  uMap: { value: null },
+  uTerrain: { value: null },
+  uHalf: { value: 9400 },
+  uLights: { value: 0 },
+  uWindows: { value: 0 },
+  uMirror: { value: null },
+  uMirrorVP: { value: new THREE.Matrix4() },
+  uMirrorOn: { value: 0 },
+  uWaterLevel: { value: -3 },
+  uKeyDir: { value: new THREE.Vector3(0, 1, 0) },
+  uKeyLight: { value: new THREE.Color() },
+  uSkyLight: { value: new THREE.Color() },
+  uHazeColour: { value: new THREE.Color() },
+  uHazeFocus: { value: new THREE.Vector2() },
+  uHazeNear: { value: 1000 },
+  uHazeFar: { value: 4000 },
+};
+
+const WARM = 'vec3(1.0, 0.62, 0.3)';
+
+const sharedFragment = /* glsl */ `
+  uniform sampler2D uMap;
+  uniform sampler2D uTerrain;
+  uniform float uHalf, uLights, uWindows;
+  varying vec3 vWorldP;
+  uniform sampler2D uMirror;
+  uniform mat4 uMirrorVP;
+  uniform float uMirrorOn, uWaterLevel;
+  uniform vec3 uKeyDir, uKeyLight, uSkyLight, uHazeColour;
+  uniform vec2 uHazeFocus;
+  uniform float uHazeNear, uHazeFar;
+  // Air thickening away from the middle of the view, and the model's edge dissolving into it.
+  vec3 hazed(vec3 colour, vec3 world) {
+    float view = smoothstep(uHazeNear, uHazeFar, length(world.xz - uHazeFocus)) * 0.88;
+    float edge = smoothstep(uHalf - 1500.0, uHalf - 60.0, max(abs(world.x), abs(world.z)));
+    return mix(colour, uHazeColour, max(view, edge));
+  }
+  float hash21(vec2 p) {
+    p = fract(p * vec2(123.34, 345.45));
+    p += dot(p, p + 34.345);
+    return fract(p.x * p.y);
+  }
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+`;
+
+function inject(material, name, edit) {
+  // Three.js caches programs by this function's source, which is the same for all of them.
+  material.customProgramCacheKey = () => name;
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, cityUniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWorldP;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${sharedFragment}`);
+    edit(shader);
+  };
+  return material;
+}
+
+export function shadeGround(material) {
+  return inject(material, 'city-ground', (shader) => {
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <color_fragment>',
+        /* glsl */ `#include <color_fragment>
+        vec3 groundMap = texture2D(uMap, vWorldP.xz / (2.0 * uHalf) + 0.5).rgb;
+        float isWater = smoothstep(0.42, 0.58, groundMap.g);
+        float isGreen = smoothstep(0.42, 0.58, groundMap.b);
+        // Mottled at two scales, like grass under trees, fading out before it can shimmer.
+        float mottle = noise(vWorldP.xz * 0.07) * 0.6 + noise(vWorldP.xz * 0.019) * 0.4;
+        vec3 green = mix(vec3(0.15, 0.31, 0.09), vec3(0.3, 0.46, 0.15), mottle);
+        diffuseColor.rgb = mix(diffuseColor.rgb, green, isGreen * (1.0 - isWater));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.05, 0.13, 0.19), isWater);`,
+      )
+      .replace(
+        '#include <opaque_fragment>',
+        /* glsl */ `outgoingLight += uLights * ${WARM} * pow(groundMap.r, 2.6) * 0.8 * (1.0 - isWater);
+        if (isWater > 0.0) {
+          vec3 toEye = normalize(cameraPosition - vWorldP);
+          vec2 ripple = vec2(noise(vWorldP.xz * 0.11) + 0.5 * noise(vWorldP.xz * 0.37), noise(vWorldP.xz * 0.11 + 37.0) + 0.5 * noise(vWorldP.xz * 0.37 + 11.0)) - 0.75;
+          vec3 up = normalize(vec3(ripple.x * 0.09, 1.0, ripple.y * 0.09));
+          float facing = max(dot(up, toEye), 0.0);
+          // More mirror-like than real water seen from above, so the river reads in steep views.
+          float fresnel = 0.3 + 0.7 * pow(1.0 - facing, 3.0);
+          vec3 sky = uSkyLight;
+          if (uMirrorOn > 0.5) {
+            vec4 clip = uMirrorVP * vec4(vWorldP.x, uWaterLevel, vWorldP.z, 1.0);
+            sky = texture2D(uMirror, clip.xy / clip.w * 0.5 + 0.5 + ripple * vec2(0.006, 0.012)).rgb;
+          }
+          vec3 glint = uKeyLight * pow(max(dot(up, normalize(uKeyDir + toEye)), 0.0), 260.0) * 2.5;
+          outgoingLight = mix(outgoingLight, mix(outgoingLight, sky, fresnel) + glint, isWater);
+        }
+        outgoingLight = hazed(outgoingLight, vWorldP);
+        #include <opaque_fragment>`,
+      );
+  });
+}
+
+export function shadeBuildings(material) {
+  return inject(material, 'city-buildings', (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <opaque_fragment>',
+      /* glsl */ `{
+        vec3 worldNormal = inverseTransformDirection(normal, viewMatrix);
+        vec2 uv = vWorldP.xz / (2.0 * uHalf) + 0.5;
+        float street = texture2D(uMap, uv).r;
+        float height = max(vWorldP.y - texture2D(uTerrain, uv).r, 0.0);
+        float wall = 1.0 - smoothstep(0.3, 0.55, abs(worldNormal.y));
+        // Light from the street reaches up the facades, and a little of it onto the roofs.
+        vec3 cityLight = ${WARM} * uLights * mix(0.012 + 0.08 * street, street * (0.02 + 0.5 * exp(-height / 11.0)), wall);
+        if (wall > 0.0 && uWindows > 0.001) {
+          vec2 along = normalize(vec2(-worldNormal.z, worldNormal.x) + 1e-5);
+          vec2 fine = vec2(dot(vWorldP.xz, along) / 3.7, height / 3.3);
+          // Further away, windows merge into larger lit patches rather than dissolving into a
+          // flat tone, so the city keeps its sparkle at every zoom.
+          float scale = pow(2.0, ceil(log2(max(max(fwidth(fine).x, fwidth(fine).y) * 3.2, 1.0))));
+          vec2 cell = fine / scale;
+          vec2 id = floor(cell);
+          vec2 f = fract(cell) - 0.5;
+          vec2 blur = max(fwidth(cell), vec2(1e-4));
+          float seed = hash21(id + floor(dot(vWorldP.xz, worldNormal.xz) / 3.0) * 0.137);
+          float pane = smoothstep(0.27 + blur.x, 0.27 - blur.x, abs(f.x)) * smoothstep(0.3 + blur.y, 0.3 - blur.y, abs(f.y));
+          float shade = hash21(id.yx + 7.3);
+          vec3 tint = mix(vec3(1.0, 0.5, 0.18), vec3(1.0, 0.8, 0.55), shade);
+          cityLight += wall * tint * pane * step(seed, uWindows) * step(0.5, id.y + 0.5) * (0.75 + 1.1 * shade);
+        }
+        outgoingLight = hazed(outgoingLight + cityLight, vWorldP);
+      }
+      #include <opaque_fragment>`,
+    );
+  });
+}
+
+/** At night only the row of windows in the sphere is lit; the red lights are separate points. */
+export function shadeTower(material) {
+  return inject(material, 'city-tower', (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <opaque_fragment>',
+      /* glsl */ `{
+        float y = vWorldP.y;
+        float row = smoothstep(202.6, 203.2, y) * (1.0 - smoothstep(208.0, 208.6, y));
+        float pane = smoothstep(0.1, 0.2, abs(fract(atan(vWorldP.x, vWorldP.z) * 15.28) - 0.5));
+        outgoingLight = hazed(outgoingLight + uLights * vec3(1.0, 0.8, 0.5) * row * (0.5 + 1.5 * pane), vWorldP);
+      }
+      #include <opaque_fragment>`,
+    );
+  });
+}
+
+/**
+ * Stands in for the ground in the water's mirror view: solid banks that hide what could not be
+ * seen in the reflection, with holes where the water is for the view to look out through.
+ */
+export const mirrorGround = new THREE.ShaderMaterial({
+  uniforms: cityUniforms,
+  side: THREE.DoubleSide,
+  vertexShader: 'varying vec2 vPlace; void main() { vPlace = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `
+    uniform sampler2D uMap;
+    uniform float uHalf;
+    uniform vec3 uSkyLight;
+    varying vec2 vPlace;
+    void main() {
+      if (texture2D(uMap, vPlace / (2.0 * uHalf) + 0.5).g > 0.5) discard;
+      gl_FragColor = vec4(uSkyLight * 0.35, 1.0);
+    }`,
+});
+
+export function makeTerrainTexture(heights, size) {
+  const data = new Uint16Array(heights.length);
+  for (let i = 0; i < heights.length; i++) data[i] = THREE.DataUtils.toHalfFloat(heights[i] / 10);
+  const texture = new THREE.DataTexture(data, size, size, THREE.RedFormat, THREE.HalfFloatType);
+  texture.minFilter = texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}

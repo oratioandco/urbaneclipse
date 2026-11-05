@@ -7,7 +7,23 @@
     <style>
       html, body { margin: 0; height: 100%; overflow: hidden; background: #efece6; font: 13px/1.35 ui-sans-serif, system-ui, sans-serif; color: #24221f; }
       canvas { display: block; position: fixed; inset: 0; touch-action: none; }
-      .panel { position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); max-width: 620px; margin: 0 auto; padding: 12px 14px; display: grid; gap: 10px; background: rgba(255, 253, 249, 0.86); backdrop-filter: blur(14px); border-radius: 14px; box-shadow: 0 8px 30px rgba(40, 34, 24, 0.16); }
+      #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
+      body[data-night='true'] { color: #ece8df; }
+      body[data-night='true'] .panel { background: rgba(20, 23, 38, 0.82); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
+      body[data-night='true'] .muted { color: #a7a7b4; }
+      body[data-night='true'] input[type='date'] { background: #262a42; border-color: #3a3f5c; color-scheme: dark; }
+      body[data-night='true'] .modes { background: #262a42; }
+      body[data-night='true'] .modes button[aria-pressed='true'] { background: #454b72; }
+      body[data-night='true'] #moments button { background: #262a42; }
+      input[type='range']#time { appearance: none; -webkit-appearance: none; height: 12px; min-height: 12px; margin: 9px 0; border-radius: 6px; background: linear-gradient(90deg, var(--phases, #ccc)); }
+      #time::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; cursor: grab; }
+      #time::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; }
+      #moments { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+      #moments button { font: inherit; font-size: 12px; white-space: nowrap; padding: 6px 10px; min-height: 30px; border: 0; border-radius: 15px; background: #ece8e0; color: inherit; cursor: pointer; }
+      #moments button::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
+      #moments button[data-body='sun']::before { background: #f26a12; }
+      #moments button[data-body='moon']::before { background: #5b82ff; }
+      .panel { z-index: 2; position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); max-width: 620px; margin: 0 auto; padding: 12px 14px; display: grid; gap: 10px; background: rgba(255, 253, 249, 0.86); backdrop-filter: blur(14px); border-radius: 14px; box-shadow: 0 8px 30px rgba(40, 34, 24, 0.16); }
       .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
       .clock { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 62px; }
       .muted { color: #6f6a62; }
@@ -16,10 +32,11 @@
       .modes { display: flex; gap: 2px; padding: 2px; background: #e8e4dc; border-radius: 9px; margin-left: auto; }
       .modes button { font: inherit; padding: 7px 12px; min-height: 32px; border: 0; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
       .modes button[aria-pressed='true'] { background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14); }
-      #stats { position: fixed; top: 10px; left: 12px; font: 11px/1.4 ui-monospace, monospace; color: #6f6a62; white-space: pre; pointer-events: none; }
+      #stats { z-index: 2; position: fixed; top: 10px; left: 12px; font: 11px/1.4 ui-monospace, monospace; color: #6f6a62; white-space: pre; pointer-events: none; }
     </style>
   </head>
   <body>
+    <canvas id="labels"></canvas>
     <div id="stats"></div>
     <div class="panel">
       <div class="row">
@@ -33,6 +50,9 @@
         </div>
       </div>
       <div class="row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
+      <div id="moments" aria-label="Streets lined up today"></div>
+      <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
+      <div class="muted" style="font-size:11px">Map data &copy; OpenStreetMap contributors</div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

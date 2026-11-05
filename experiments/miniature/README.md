@@ -33,3 +33,20 @@ Ambient occlusion took frames to about 170 ms and barely changed the picture, so
 
 Real phones, Safari, and memory use. Trees and water are not in the data. Ground heights
 partly come from building bases, so they are estimates away from the DGM1 strip.
+
+## Map, light and night (second pass)
+
+`scripts/build_map.py` builds roads, names, water and parks from OpenStreetMap, using the
+checkout's `data/streets/osm` download plus a fetched `areas.json`. Credit OSM (ODbL) if shown.
+
+- **Ground:** one paved surface; parks and water come from a painted 4096 px map of the model.
+  So does street light, as widening strokes, which is why roads have no geometry of their own.
+- **Water:** a half-resolution mirror render of buildings near water. Skipped in Top view.
+- **Windows:** procedural; merge into larger patches with distance instead of a flat tone.
+- **Light shafts:** a pool on the street plus a curtain of lit air, brightest at the body's end.
+- **Tower:** one window row and red lights. Light heights are read off photos, and the flash
+  rhythm is the German "Feuer W, rot" (1 s on, 0.5 off, 1 on, 1.5 off), not confirmed for this tower.
+
+Median frame during a sun scrub, Mac, 1440x900 at scale 2, Chromium Metal, without multisampling
+(with it, Isometric took about 33 ms): Isometric 17 ms, 3D 33 ms, whole city 33 ms; p95 50 to 67 ms.
+URL options added: `blur=0`, `mirror=0` (or a scale), `samples=N`. Phones and Safari are untested.
