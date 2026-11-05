@@ -39,8 +39,8 @@ const CesiumViewer = lazy(async () => {
   return import('../CesiumViewer.js');
 });
 
-// Spots can be anywhere within 9 km of the tower. Production only ships the smaller core
-// set until the wider one is hosted, so spots outside it show no buildings there.
+// Spots can be anywhere within 9 km of the tower. Production serves that set from a volume
+// and sets the URL at build time (see Dockerfile); without it, the viewer's default applies.
 const TILESET_URL =
   import.meta.env.PUBLIC_DAILY_TILESET_URL ??
   (import.meta.env.DEV ? '/berlin-9km/tileset.json' : undefined);

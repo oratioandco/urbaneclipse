@@ -18,7 +18,7 @@ import type { Page } from '@playwright/test';
 
 /** Navigate to the app root and wait for the Cesium viewer + tileset to be constructed. */
 export async function gotoApp(page: Page): Promise<void> {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/classic', { waitUntil: 'load' });
   // Give the client:only React island time to mount and Cesium to construct the
   // viewer/tileset before we start polling window.__cesium.
   // NOTE: waitForFunction's signature is (pageFunction, arg?, options?) — the options

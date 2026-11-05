@@ -1,0 +1,61 @@
+---
+// Plaster Void scene shell.
+//
+// IMPORTANT (Constitution Principle I + ssr-graph-guard.test.ts): this file and
+// everything under src/pages/ + src/layouts/ MUST NOT import the cesium module. The
+// guard test regex-scans these files for a cesium import; keep it out (even in
+// comments, since the scan is a naive text match). Cesium stays inside the
+// client:only island (src/components/react/CesiumViewer.tsx), which Astro never
+// runs on the server.
+//
+// The page is a static shell: only markup + the client:only island mount point.
+// No Cesium, no React, no WebGL in the server-rendered module graph.
+import CesiumViewer from '../components/react/CesiumViewer.tsx';
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Urban Eclipse — Plaster Void</title>
+
+    <!--
+      Cesium UMD loader + widget styles.
+      vite-plugin-esium externalizes the cesium module import to the global
+      `window.Cesium` at build time, and copies the prebuilt UMD + Assets/Workers/etc.
+      into dist/cesium/. HOWEVER its transformIndexHtml injection does NOT fire on
+      Astro 7's statically-generated HTML output, so we load the UMD global here
+      ourselves (synchronous, in <head>, before the client:only island hydrates). The
+      plugin still serves /cesium/ in dev (middleware) and copies it at build, so this
+      one tag works in both. No cesium import lives in this file (ssr-graph-guard).
+    -->
+    <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
+    <script is:inline src="/cesium/Cesium.js"></script>
+  </head>
+  <body class="m-0 h-full w-full overflow-hidden bg-neutral-100">
+    <div class="fixed inset-0">
+      <CesiumViewer client:only="react" />
+    </div>
+  </body>
+</html>
+
+<style>
+  html,
+  body {
+    margin: 0;
+    height: 100%;
+    width: 100%;
+  }
+  :global(#cesium-container) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  :global(.cesium-viewer-bottom) {
+    /* Keep the plaster void uncluttered; credit/toolbar hidden by widget flags too. */
+    display: none;
+  }
+</style>

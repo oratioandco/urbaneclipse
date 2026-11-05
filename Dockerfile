@@ -15,6 +15,10 @@ ARG PUBLIC_CESIUM_ION_TOKEN=""
 # A deployment that has the optional full-Berlin volume mounted may override this with
 # --build-arg PUBLIC_TILESET_URL=/berlin-full/tileset.json (see scripts/README.md).
 ARG PUBLIC_TILESET_URL="/berlin-core/tileset.json?v=enu3"
+# The daily map's spots reach 9 km from the tower. These tiles live on a volume mounted at
+# /berlin-9km (see scripts/README.md), not in the image.
+ARG PUBLIC_DAILY_TILESET_URL="/berlin-9km/tileset.json"
+ENV PUBLIC_DAILY_TILESET_URL=$PUBLIC_DAILY_TILESET_URL
 ENV PUBLIC_CESIUM_ION_TOKEN=$PUBLIC_CESIUM_ION_TOKEN
 ENV PUBLIC_TILESET_URL=$PUBLIC_TILESET_URL
 RUN npm run build
