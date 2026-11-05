@@ -50,3 +50,20 @@ checkout's `data/streets/osm` download plus a fetched `areas.json`. Credit OSM (
 Median frame during a sun scrub, Mac, 1440x900 at scale 2, Chromium Metal, without multisampling
 (with it, Isometric took about 33 ms): Isometric 17 ms, 3D 33 ms, whole city 33 ms; p95 50 to 67 ms.
 URL options added: `blur=0`, `mirror=0` (or a scale), `samples=N`. Phones and Safari are untested.
+
+## Standing in the street (third pass)
+
+- **Overview camera:** one perspective camera with a 28° field of view and free tilt from 0 to 80°.
+  Drag pans, right-drag or two fingers rotate and tilt, and the compass turns north up. The
+  2D/3D button flips between straight down and 55°. Tapping a pill turns the map to face that body.
+- **Photographer:** drag the button onto the map to stand there, or tap it to stand mid-map.
+  The spot moves to the nearest open street point when it lands under a roof or against a wall.
+  Arrival faces a lined-up street, else the sun or moon, else the tower, turning to the nearest
+  open view if a wall is within 60 m. Double-tap the ground to walk up to 600 m. "Map" flies back up.
+- **Eye level:** sky dome with the sun at true size and a moon lit from the sun's direction,
+  lens 16 to 600 mm (35 mm equivalent), drag to look. Shadows are fitted to 1.4 km around the
+  view. Pills only point to bodies out of frame.
+- **Check:** Gitschiner Straße, 22 Mar 2027 18:04, 95 mm, facing 268.6°: the sun sits in the
+  street's gap, as in the Cesium preview. Median frame while the sun moves: 17 ms (Mac).
+- **Limits:** the ground map is about 4.6 m a pixel, so park edges and water banks blur up close.
+  The ground follows a 40 m terrain grid, there are no trees, and phones and Safari are untested.

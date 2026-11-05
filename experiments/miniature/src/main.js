@@ -21,7 +21,10 @@ import { decodeStreets, streetMoments } from '../../../src/lib/streets.ts';
 import { lightAt } from './light.js';
 import { cityUniforms, makeTerrainTexture, mirrorGround, shadeBuildings, shadeGround, shadeTower } from './shading.js';
 import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
-import { drawOverlay, resizeOverlay, setLabels } from './overlay.js';
+import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
+import { makeSky, skyUniforms } from './sky.js';
+import { EYE_HEIGHT, LENS_MAX, LENS_MIN, attachLook, compassName, fovForLens, lookDirection, sceneFromLatLon, setLens } from './eye.js';
+import { skyPalette } from '../../../src/lib/skyPalette.ts';
 
 const params = new URLSearchParams(location.search);
 const isPhone = Math.min(innerWidth, innerHeight) < 600;
@@ -142,69 +145,345 @@ composer.addPass(new OutputPass());
 ribbonUniforms.uViewportH.value = renderer.getDrawingBufferSize(new THREE.Vector2()).y;
 
 // ---- Cameras ------------------------------------------------------------------------
-const FOV = 35;
-const perspective = new THREE.PerspectiveCamera(FOV, innerWidth / innerHeight, 10, 60_000);
-const orthographic = new THREE.OrthographicCamera(-1, 1, 1, -1, 10, 90_000);
-let camera = orthographic;
-let controls = null;
-let mode = 'top';
-let worldHeight = Number(params.get('height')) || (isPhone ? 3200 : 2400);
+// One overview camera tilts continuously from straight down to a low angle. A narrow field of
+// view keeps the angled view close to the miniature look of a parallel projection.
+const FOV = 28;
+const TILT_MAX = THREE.MathUtils.degToRad(80);
+const overview = new THREE.PerspectiveCamera(FOV, innerWidth / innerHeight, 10, 80_000);
+const eyeCamera = new THREE.PerspectiveCamera(fovForLens(50), innerWidth / innerHeight, 1, 40_000);
+let camera = overview;
+const START = { top: [0, 0], iso: [54.7, 35], free: [68, 35] };
+const [startTilt, startHeading] = START[params.get('mode')] ?? START.iso;
+const startHeight = Number(params.get('height')) || (isPhone ? 3200 : 2400);
+overview.position
+  .setFromSphericalCoords(startHeight / (2 * Math.tan((FOV * Math.PI) / 360)), THREE.MathUtils.degToRad(Number(params.get('tilt') ?? startTilt)) + 1e-4, THREE.MathUtils.degToRad(Number(params.get('heading') ?? startHeading)));
+const controls = new MapControls(overview, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+controls.screenSpacePanning = false;
+controls.minDistance = 120;
+controls.maxDistance = 60_000;
+controls.minPolarAngle = 0;
+controls.maxPolarAngle = TILT_MAX;
+controls.addEventListener('change', invalidate);
 
 function worldHeightNow() {
-  if (camera.isOrthographicCamera) return (camera.top - camera.bottom) / camera.zoom;
-  return 2 * camera.position.distanceTo(controls.target) * Math.tan((FOV * Math.PI) / 360);
+  return 2 * overview.position.distanceTo(controls.target) * Math.tan((FOV * Math.PI) / 360);
 }
 
-function fitOrthographic() {
-  const aspect = innerWidth / innerHeight;
-  orthographic.left = (-worldHeight * aspect) / 2;
-  orthographic.right = (worldHeight * aspect) / 2;
-  orthographic.top = worldHeight / 2;
-  orthographic.bottom = -worldHeight / 2;
-  orthographic.zoom = 1;
-  orthographic.updateProjectionMatrix();
-}
-
-const ANGLES = {
-  top: { polar: 0.0001, azimuth: 0 },
-  iso: { polar: THREE.MathUtils.degToRad(54.7), azimuth: THREE.MathUtils.degToRad(35) },
-  free: { polar: THREE.MathUtils.degToRad(68), azimuth: THREE.MathUtils.degToRad(35) },
-};
-
-function setMode(next) {
-  const target = controls ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
-  if (controls) {
-    worldHeight = worldHeightNow();
-    controls.dispose();
-  }
-  mode = next;
-  camera = next === 'free' ? perspective : orthographic;
-  const { polar, azimuth } = ANGLES[next];
-  const distance = next === 'free' ? worldHeight / (2 * Math.tan((FOV * Math.PI) / 360)) : 30_000;
-  if (next !== 'free') fitOrthographic();
-  camera.position.setFromSphericalCoords(distance, polar, azimuth).add(target);
-  camera.lookAt(target);
-  controls = new MapControls(camera, renderer.domElement);
-  controls.target.copy(target);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.12;
-  controls.screenSpacePanning = false;
-  controls.minDistance = 150;
-  controls.maxDistance = 40_000;
-  controls.minZoom = 0.2;
-  controls.maxZoom = 60;
-  if (next === 'free') {
-    controls.minPolarAngle = 0.05;
-    controls.maxPolarAngle = THREE.MathUtils.degToRad(86);
-  } else {
-    controls.minPolarAngle = polar;
-    controls.maxPolarAngle = polar;
-  }
-  controls.addEventListener('change', invalidate);
-  controls.update();
-  for (const b of document.querySelectorAll('[data-mode]')) b.setAttribute('aria-pressed', String(b.dataset.mode === next));
+/** Turn and tilt the overview smoothly; null keeps a value as it is. */
+let orbitAnimation = null;
+function orbitTo(polar, azimuth, ms = 700) {
+  const offset = new THREE.Spherical().setFromVector3(overview.position.clone().sub(controls.target));
+  let to = azimuth ?? offset.theta;
+  to = offset.theta + ((((to - offset.theta) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
+  orbitAnimation = { from: offset.clone(), polar: polar ?? offset.phi, azimuth: to, start: performance.now(), ms };
   invalidate();
 }
+
+function stepOrbit(now) {
+  if (!orbitAnimation) return;
+  const { from, polar, azimuth, start, ms } = orbitAnimation;
+  const t = smooth(Math.min(1, (now - start) / ms), 0, 1);
+  const at = new THREE.Spherical(from.radius, THREE.MathUtils.lerp(from.phi, polar, t) + 1e-4, THREE.MathUtils.lerp(from.theta, azimuth, t));
+  overview.position.setFromSpherical(at).add(controls.target);
+  overview.lookAt(controls.target);
+  shadowsDirty = true;
+  dirty = true;
+  if (t >= 1) orbitAnimation = null;
+}
+
+// ---- Standing in the street ------------------------------------------------------------
+const look = { active: false, x: 0, y: 0, z: 0, heading: 0, pitch: 0, lens: 50 };
+let photographer = null;
+let transition = null;
+let savedOverview = null;
+const skyDome = makeSky();
+scene.add(skyDome);
+
+function eyePose(state) {
+  const position = new THREE.Vector3(state.x, state.y + EYE_HEIGHT, state.z);
+  const helper = new THREE.Object3D();
+  helper.position.copy(position);
+  helper.lookAt(position.clone().add(lookDirection(state.heading, state.pitch)));
+  // Object3D.lookAt points +z at the target; cameras look down -z, so turn round.
+  helper.rotateY(Math.PI);
+  return { position, quaternion: helper.quaternion.clone(), fov: fovForLens(state.lens) };
+}
+
+function overviewPose() {
+  return { position: overview.position.clone(), quaternion: overview.quaternion.clone(), fov: FOV };
+}
+
+/** Which way to face on arrival: down a lined-up street, else toward the sun, moon or tower. */
+function chooseView(x, z) {
+  const y = groundAt(x, z);
+  const t = instant().getTime();
+  const street = moments.find((m) => t >= m.from - 60_000 && t <= m.to + 60_000 && Math.hypot(m.view.a[0] - x, m.view.a[1] - z) < 80);
+  if (street) return { heading: street.view.bearingDeg, pitch: THREE.MathUtils.clamp(street.bodyAlt * 0.9, 0, 12), lens: 85 };
+  for (const body of bodies) {
+    if (body.alt > -1) return { heading: body.az, pitch: THREE.MathUtils.clamp(body.alt * 0.8, 0, 25), lens: body.moon ? 85 : 35 };
+  }
+  const distance = Math.hypot(x, z) || 1;
+  return { heading: (Math.atan2(-x, z) * 180) / Math.PI, pitch: THREE.MathUtils.clamp((Math.atan2(200 - y, distance) * 180) / Math.PI, 0, 30), lens: 50 };
+}
+
+/** How far one can see along a heading from a spot, up to `far` metres. */
+function sightline(x, z, heading, far = 300) {
+  const eye = new THREE.Vector3(x, groundAt(x, z) + EYE_HEIGHT, z);
+  raycaster.set(eye, lookDirection(heading, 0));
+  raycaster.far = far;
+  const meshes = tiles.filter((tile) => tile.mesh && tile.center.distanceTo(eye) < tile.radius + far).map((tile) => tile.mesh);
+  meshes.push(tower);
+  const hit = raycaster.intersectObjects(meshes, false)[0];
+  raycaster.far = Infinity;
+  return hit ? hit.distance : far;
+}
+
+/** Keep the chosen direction unless a wall is right there; then turn to the nearest open view. */
+function openView(x, z, view) {
+  if (sightline(x, z, view.heading) >= 60) return view;
+  let best = view;
+  let bestReach = 0;
+  for (const turn of [30, -30, 60, -60, 90, -90, 135, -135, 180]) {
+    const reach = sightline(x, z, view.heading + turn);
+    if (reach > bestReach) {
+      bestReach = reach;
+      best = { ...view, heading: view.heading + turn, pitch: Math.min(view.pitch, 6) };
+    }
+    if (reach >= 150) break;
+  }
+  return best;
+}
+
+function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
+  const y = groundAt(x, z);
+  Object.assign(look, { x, y, z, ...view, active: false });
+  photographer = { x, y, z, heading: look.heading };
+  orbitAnimation = null;
+  flight = null;
+  const wasStanding = camera === eyeCamera;
+  const from = wasStanding ? { position: eyeCamera.position.clone(), quaternion: eyeCamera.quaternion.clone(), fov: eyeCamera.fov } : overviewPose();
+  if (!wasStanding) savedOverview = { position: overview.position.clone(), target: controls.target.clone() };
+  controls.enabled = false;
+  camera = eyeCamera;
+  transition = { from, to: eyePose(look), start: performance.now(), ms: wasStanding ? 900 : 1700, done: () => (look.active = true) };
+  document.body.dataset.eye = 'true';
+  updateEyeBar();
+  invalidateShadows();
+}
+
+function exitEye() {
+  if (!savedOverview) return;
+  look.active = false;
+  overview.position.copy(savedOverview.position);
+  controls.target.copy(savedOverview.target);
+  overview.lookAt(controls.target);
+  transition = {
+    from: { position: eyeCamera.position.clone(), quaternion: eyeCamera.quaternion.clone(), fov: eyeCamera.fov },
+    to: overviewPose(),
+    start: performance.now(),
+    ms: 1400,
+    done: () => {
+      camera = overview;
+      controls.enabled = true;
+      document.body.dataset.eye = 'false';
+    },
+  };
+  invalidateShadows();
+}
+
+function stepTransition(now) {
+  if (!transition) return false;
+  const { from, to, start, ms } = transition;
+  const raw = Math.min(1, (now - start) / ms);
+  const t = raw < 0.5 ? 4 * raw ** 3 : 1 - (-2 * raw + 2) ** 3 / 2;
+  eyeCamera.position.lerpVectors(from.position, to.position, t);
+  eyeCamera.quaternion.slerpQuaternions(from.quaternion, to.quaternion, t);
+  eyeCamera.fov = THREE.MathUtils.lerp(from.fov, to.fov, t);
+  if (raw >= 1) {
+    const done = transition.done;
+    transition = null;
+    done();
+  }
+  return true;
+}
+
+function placeEyeCamera() {
+  if (!look.active) return;
+  const pose = eyePose(look);
+  eyeCamera.position.copy(pose.position);
+  eyeCamera.quaternion.copy(pose.quaternion);
+  eyeCamera.fov = pose.fov;
+  photographer.heading = look.heading;
+}
+
+const lensInput = document.getElementById('lens');
+const lensLabel = document.getElementById('lens-label');
+const facingLabel = document.getElementById('facing');
+function updateEyeBar() {
+  lensInput.value = String((Math.log(look.lens / LENS_MIN) / Math.log(LENS_MAX / LENS_MIN)) * 1000);
+  lensLabel.textContent = `${Math.round(look.lens)} mm`;
+  const heading = ((look.heading % 360) + 360) % 360;
+  facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
+}
+
+attachLook(renderer.domElement, look, () => {
+  updateEyeBar();
+  invalidateShadows();
+});
+lensInput.addEventListener('input', () => setLens(look, LENS_MIN * (LENS_MAX / LENS_MIN) ** (Number(lensInput.value) / 1000), () => {
+  updateEyeBar();
+  invalidateShadows();
+}));
+document.getElementById('back').addEventListener('click', exitEye);
+
+let lookAnimation = null;
+function turnTo(heading, pitch) {
+  const delta = ((((heading - look.heading) % 360) + 540) % 360) - 180;
+  lookAnimation = { from: [look.heading, look.pitch], to: [look.heading + delta, pitch], start: performance.now() };
+  invalidate();
+}
+function stepLook(now) {
+  if (!lookAnimation) return;
+  const t = smooth(Math.min(1, (now - lookAnimation.start) / 600), 0, 1);
+  look.heading = THREE.MathUtils.lerp(lookAnimation.from[0], lookAnimation.to[0], t);
+  look.pitch = THREE.MathUtils.lerp(lookAnimation.from[1], lookAnimation.to[1], t);
+  updateEyeBar();
+  shadowsDirty = true;
+  dirty = true;
+  if (t >= 1) lookAnimation = null;
+}
+
+/** Face a body: at eye level by turning, from above by rotating the map so it lies ahead. */
+function face(body) {
+  if (camera === eyeCamera) turnTo(body.az, THREE.MathUtils.clamp(body.alt * 0.8, -5, 40));
+  else orbitTo(null, -THREE.MathUtils.degToRad(body.az));
+}
+
+// ---- Putting the photographer down -------------------------------------------------------
+const raycaster = new THREE.Raycaster();
+let roadXZ = null;
+
+/** Where a screen point meets the ground, refined against the terrain heights. */
+function groundUnder(clientX, clientY) {
+  const ndc = new THREE.Vector2((clientX / innerWidth) * 2 - 1, -(clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const { origin, direction } = raycaster.ray;
+  if (direction.y >= -1e-4) return null;
+  let height = groundAt(controls.target.x, controls.target.z);
+  let point = null;
+  for (let i = 0; i < 4; i++) {
+    point = origin.clone().addScaledVector(direction, (height - origin.y) / direction.y);
+    height = groundAt(point.x, point.z);
+  }
+  return point;
+}
+
+function underRoof(x, z) {
+  raycaster.set(new THREE.Vector3(x, 2000, z), new THREE.Vector3(0, -1, 0));
+  const near = tiles.filter((tile) => tile.mesh && Math.abs(tile.center.x - x) < tile.radius && Math.abs(tile.center.z - z) < tile.radius).map((tile) => tile.mesh);
+  near.push(tower);
+  const hit = raycaster.intersectObjects(near, false)[0];
+  return Boolean(hit) && hit.point.y > groundAt(x, z) + 1.5;
+}
+
+/** Somewhere to stand: out in the open, with a view at least one way. */
+const roomy = (x, z) => !underRoof(x, z) && [0, 90, 180, 270].some((heading) => sightline(x, z, heading, 120) >= 80);
+
+/** The spot itself if it is roomy, else the nearest roomy point on a street. */
+function standable(point) {
+  if (roomy(point.x, point.z) || !roadXZ) return point;
+  const candidates = [];
+  for (let i = 0; i < roadXZ.length; i += 2) {
+    const x = roadXZ[i] / 2;
+    const z = roadXZ[i + 1] / 2;
+    const d = Math.hypot(x - point.x, z - point.z);
+    if (d < 500) candidates.push([d, x, z]);
+  }
+  candidates.sort((a, b) => a[0] - b[0]);
+  for (const [, x, z] of candidates.slice(0, 40)) {
+    if (roomy(x, z)) return new THREE.Vector3(x, groundAt(x, z), z);
+  }
+  return point;
+}
+
+const tool = document.getElementById('photographer');
+const ghost = document.getElementById('ghost');
+{
+  const context = ghost.getContext('2d');
+  ghost.width = ghost.height = 2 * 48;
+  context.scale(2, 2);
+  drawPhotographer(24, 44, context);
+}
+let drag = null;
+// The drag is followed on the window, so it ends wherever the pointer is let go.
+function dragMove(event) {
+  if (!drag) return;
+  if (Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 6) drag.moved = true;
+  if (!drag.moved) return;
+  ghost.hidden = false;
+  ghost.style.transform = `translate(${event.clientX - 24}px, ${event.clientY - 44}px)`;
+}
+function dragEnd(event) {
+  removeEventListener('pointermove', dragMove);
+  removeEventListener('pointerup', dragEnd);
+  removeEventListener('pointercancel', dragEnd);
+  if (!drag) return;
+  const { moved } = drag;
+  drag = null;
+  ghost.hidden = true;
+  if (event.type === 'pointercancel') return;
+  if (!moved) {
+    // A tap stands the photographer in the middle of the map.
+    const spot = standable(controls.target.clone().setY(groundAt(controls.target.x, controls.target.z)));
+    enterEye(spot.x, spot.z);
+    return;
+  }
+  const over = document.elementFromPoint(event.clientX, event.clientY);
+  if (over !== renderer.domElement) return;
+  const point = groundUnder(event.clientX, event.clientY);
+  if (!point) return;
+  const spot = standable(point);
+  enterEye(spot.x, spot.z);
+}
+tool.addEventListener('pointerdown', (event) => {
+  event.preventDefault();
+  drag = { x: event.clientX, y: event.clientY, moved: false };
+  addEventListener('pointermove', dragMove);
+  addEventListener('pointerup', dragEnd);
+  addEventListener('pointercancel', dragEnd);
+});
+
+// Taps on the overlay: the pills turn the view toward their body, the marker goes back down.
+let taps = [];
+let press = null;
+renderer.domElement.addEventListener('pointerdown', (event) => {
+  press = { x: event.clientX, y: event.clientY };
+});
+renderer.domElement.addEventListener('pointerup', (event) => {
+  if (!press || Math.hypot(event.clientX - press.x, event.clientY - press.y) > 5) return;
+  const hit = taps.find((t) => event.clientX >= t.x && event.clientX <= t.x + t.w && event.clientY >= t.y && event.clientY <= t.y + t.h);
+  if (hit?.kind === 'pill') face(hit.body);
+  if (hit?.kind === 'photographer' && photographer) enterEye(photographer.x, photographer.z, { heading: photographer.heading, pitch: look.pitch, lens: look.lens });
+});
+renderer.domElement.addEventListener('dblclick', (event) => {
+  // At eye level, a double tap on the ground walks there.
+  if (!look.active) return;
+  const point = groundUnder(event.clientX, event.clientY);
+  if (!point || point.distanceTo(eyeCamera.position) > 600) return;
+  const spot = standable(point);
+  enterEye(spot.x, spot.z, { heading: look.heading, pitch: look.pitch, lens: look.lens });
+});
+
+const compass = document.getElementById('compass');
+const needle = compass.querySelector('svg');
+compass.addEventListener('click', () => {
+  if (camera === eyeCamera) turnTo(0, look.pitch);
+  else orbitTo(null, 0);
+});
+const tiltButton = document.getElementById('tilt');
+tiltButton.addEventListener('click', () => orbitTo(controls.getPolarAngle() < 0.2 ? THREE.MathUtils.degToRad(55) : 0, null));
 
 // ---- City tiles ---------------------------------------------------------------------
 const tiles = [];
@@ -248,10 +527,11 @@ function showLevel(tile, level, geometry) {
 }
 
 function metresPerPixelAt(point) {
-  const pixels = innerHeight;
-  if (camera.isOrthographicCamera) return worldHeightNow() / pixels;
-  return (2 * camera.position.distanceTo(point) * Math.tan((FOV * Math.PI) / 360)) / pixels;
+  return (2 * camera.position.distanceTo(point) * Math.tan((camera.fov * Math.PI) / 360)) / innerHeight;
 }
+
+/** What the view is about: the map's centre, or where the photographer stands. */
+const focusPoint = () => (camera === eyeCamera ? eyeCamera.position : controls.target);
 
 const viewFrustum = new THREE.Frustum();
 const viewMatrix = new THREE.Matrix4();
@@ -274,7 +554,7 @@ function updateLevels() {
       lod = tile.lods.find((l) => l.error <= ERROR_PX * metres) ?? coarsest;
       total += lod.triangles;
     }
-    wanted.push({ tile, lod, inView, distance: tile.center.distanceTo(controls.target) });
+    wanted.push({ tile, lod, inView, distance: tile.center.distanceTo(focusPoint()) });
   }
   wanted.sort((a, b) => b.distance - a.distance);
   for (const entry of wanted) {
@@ -340,6 +620,7 @@ let bodies = [];
 const mirrorSky = new THREE.Color();
 const WATER_TINT = new THREE.Color(0.62, 0.84, 1.22);
 let night = false;
+let bloomLights = 0;
 
 function updateSun() {
   const when = instant();
@@ -367,8 +648,17 @@ function updateSun() {
   // What the water mirrors where no building stands: the sky, a little brighter than the ground.
   mirrorSky.copy(sky.color).multiply(WATER_TINT).multiplyScalar((sky.intensity / Math.PI) * 1.15);
   cityUniforms.uSkyLight.value.copy(mirrorSky);
-  bloom.strength = 0.55 * rig.lights;
-  bloom.enabled = rig.lights > 0.02;
+
+  const palette = skyPalette('sun', sunAt.alt);
+  skyUniforms.uHorizon.value.copy(background);
+  skyUniforms.uZenith.value.setRGB(...palette.skyTop, THREE.SRGBColorSpace);
+  skyUniforms.uSunDir.value.copy(sunDirection);
+  skyUniforms.uMoonDir.value.copy(moonDirection);
+  skyUniforms.uSunColour.value.setRGB(...palette.discTint, THREE.SRGBColorSpace);
+  skyUniforms.uGlowColour.value.setRGB(...palette.glowColor, THREE.SRGBColorSpace);
+  skyUniforms.uGlow.value = palette.glowStrength * smooth(sunAt.alt, -4, 0);
+  skyUniforms.uMoonLight.value = THREE.MathUtils.lerp(1.6, 0.55, smooth(sunAt.alt, -6, 4));
+  bloomLights = rig.lights;
 
   night = sunAt.alt < -3;
   document.body.dataset.night = String(night);
@@ -437,7 +727,11 @@ function updateDay() {
     chip.addEventListener('click', () => {
       timeInput.value = String(minutes);
       updateSun();
-      flyTo((moment.view.a[0] + moment.view.b[0]) / 2, (moment.view.a[1] + moment.view.b[1]) / 2);
+      const [x, z] = moment.view.a;
+      photographer = { x, y: groundAt(x, z), z, heading: moment.view.bearingDeg };
+      if (camera === eyeCamera) enterEye(x, z, { heading: moment.view.bearingDeg, pitch: THREE.MathUtils.clamp(moment.bodyAlt * 0.9, 0, 12), lens: 85 });
+      else flyTo((moment.view.a[0] + moment.view.b[0]) / 2, (moment.view.a[1] + moment.view.b[1]) / 2);
+      invalidate();
     });
     list.append(chip);
   }
@@ -469,9 +763,14 @@ const corner = new THREE.Vector3();
 const farCorner = new THREE.Vector3();
 const lightView = new THREE.Matrix4();
 
+/** Standing up, shadows matter most within a few hundred metres ahead. */
+const EYE_SHADOW_SPAN = 1400;
+
 function fitShadow() {
   const distance = LIGHT_DISTANCE;
-  const anchor = controls.target;
+  const standing = camera === eyeCamera && eyeCamera.position.y - groundAt(eyeCamera.position.x, eyeCamera.position.z) < 300;
+  const ahead = lookDirection(look.heading, 0).multiplyScalar(EYE_SHADOW_SPAN * 0.3);
+  const anchor = standing ? eyeCamera.position.clone().add(ahead).setY(look.y) : controls.target;
   sun.target.position.copy(anchor);
   sun.position.copy(anchor).addScaledVector(keyDirection, distance);
   sun.target.updateMatrixWorld();
@@ -487,6 +786,13 @@ function fitShadow() {
   let maxY = -Infinity;
   for (const x of [-1, 1]) {
     for (const y of [-1, 1]) {
+      if (standing) {
+        minX = Math.min(minX, (x * EYE_SHADOW_SPAN) / 2);
+        maxX = Math.max(maxX, (x * EYE_SHADOW_SPAN) / 2);
+        minY = Math.min(minY, (y * EYE_SHADOW_SPAN) / 2);
+        maxY = Math.max(maxY, (y * EYE_SHADOW_SPAN) / 2);
+        continue;
+      }
       corner.set(x, y, -1).unproject(camera);
       farCorner.set(x, y, 1).unproject(camera);
       const dy = farCorner.y - corner.y;
@@ -546,21 +852,22 @@ let lastFrame = performance.now();
 const panel = document.querySelector('.panel');
 const history = [];
 
-/** Haze starts beyond the middle of the view, whatever the zoom. */
-function updateHaze() {
+/** Haze starts beyond the middle of the view, whatever the zoom; standing, it is the real air. */
+function updateHaze(street) {
   const u = cityUniforms;
-  u.uHazeFocus.value.set(controls.target.x, controls.target.z);
   const height = worldHeightNow();
-  if (camera.isPerspectiveCamera) {
-    u.uHazeNear.value = height * 1.5;
-    u.uHazeFar.value = height * 6;
-    edgeBlur.uniforms.uFar.value = 1;
-  } else {
-    const across = Math.hypot(height, (height * innerWidth) / innerHeight) / 2;
-    u.uHazeNear.value = across * 0.62;
-    u.uHazeFar.value = across * 1.5;
-    edgeBlur.uniforms.uFar.value = mode === 'iso' ? 0.6 : 0;
-  }
+  const across = Math.hypot(height, (height * innerWidth) / innerHeight) / 2;
+  const tilt = smooth(controls.getPolarAngle(), THREE.MathUtils.degToRad(35), THREE.MathUtils.degToRad(68));
+  let near = THREE.MathUtils.lerp(across * 0.62, height * 1.5, tilt);
+  let far = THREE.MathUtils.lerp(across * 1.5, height * 6, tilt);
+  const focus = camera === eyeCamera ? eyeCamera.position : controls.target;
+  near = THREE.MathUtils.lerp(near, 1200, street);
+  far = THREE.MathUtils.lerp(far, 14_000, street);
+  u.uHazeFocus.value.set(focus.x, focus.z);
+  u.uHazeNear.value = near;
+  u.uHazeFar.value = far;
+  edgeBlur.uniforms.uFar.value = tilt * 0.8;
+  edgeBlur.enabled = params.get('blur') !== '0' && street < 0.5;
 }
 
 const mirrorCameras = new Map();
@@ -573,7 +880,7 @@ const mirrorUp = new THREE.Vector3();
  */
 function renderMirror() {
   cityUniforms.uMirrorOn.value = 0;
-  if (mode === 'top' || !base || MIRROR_SCALE <= 0) return;
+  if ((camera === overview && controls.getPolarAngle() < 0.14) || !base || MIRROR_SCALE <= 0) return;
   const near = tiles.filter((tile) => tile.nearWater && tile.mesh);
   tileSphere.radius = 0;
   viewMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
@@ -611,6 +918,8 @@ function renderMirror() {
   }
   base.material = mirrorGround;
   highlights.group.visible = false;
+  const domeShown = skyDome.visible;
+  skyDome.visible = false;
   const shadowsWanted = renderer.shadowMap.needsUpdate;
   renderer.shadowMap.needsUpdate = false;
   const page = scene.background;
@@ -622,6 +931,7 @@ function renderMirror() {
   scene.background = page;
   renderer.shadowMap.needsUpdate = shadowsWanted;
   highlights.group.visible = true;
+  skyDome.visible = domeShown;
   base.material = groundMaterial;
   for (const mesh of hidden) mesh.visible = true;
   cityUniforms.uMirrorOn.value = 1;
@@ -630,6 +940,14 @@ function renderMirror() {
 function frame(now) {
   requestAnimationFrame(frame);
   stepFlight(now);
+  stepOrbit(now);
+  stepLook(now);
+  const flying = stepTransition(now);
+  placeEyeCamera();
+  if (flying) {
+    shadowsDirty = true;
+    dirty = true;
+  }
   const litNow = cityUniforms.uLights.value > 0.12 && beaconLit(Date.now());
   if (litNow !== beacons.visible) {
     beacons.visible = litNow;
@@ -638,7 +956,7 @@ function frame(now) {
     viewFrustum.setFromProjectionMatrix(viewMatrix);
     if (viewFrustum.intersectsSphere(TOWER_BOUND)) invalidate();
   }
-  const moved = controls.update();
+  const moved = controls.enabled && controls.update();
   if (moved) shadowsDirty = true;
   if (!dirty && !moved && !window.__forceRender) {
     lastFrame = now;
@@ -648,6 +966,21 @@ function frame(now) {
   history.push(now - lastFrame);
   if (history.length > 60) history.shift();
   lastFrame = now;
+  // How far into the street the camera has come: 0 high above, 1 standing.
+  let street = 0;
+  if (camera === eyeCamera) {
+    const above = eyeCamera.position.y - groundAt(eyeCamera.position.x, eyeCamera.position.z);
+    street = 1 - smooth(above, 120, 900);
+    eyeCamera.near = THREE.MathUtils.clamp(above / 150, 0.8, 10);
+    eyeCamera.updateProjectionMatrix();
+  }
+  skyDome.visible = street > 0.001;
+  skyDome.position.copy(camera.position);
+  skyUniforms.uFade.value = street;
+  // The sun's disc needs bloom at street level; from above only the city's lights do.
+  bloom.enabled = bloomLights > 0.02 || street > 0.5;
+  bloom.strength = Math.max(0.55 * bloomLights, 0.45 * street);
+  bloom.threshold = street > 0.5 ? 1.2 : 0.95;
   camera.updateMatrixWorld();
   updateLevels();
   // Without a key light the existing shadow map goes unread, so it can wait.
@@ -656,11 +989,22 @@ function frame(now) {
     shadowsDirty = false;
   }
   renderer.info.reset();
-  updateHaze();
+  updateHaze(street);
   renderMirror();
   renderPass.camera = camera;
   composer.render();
-  drawOverlay({ camera, target: controls.target, night, bodies, stands, bottomInset: panel.offsetHeight + 16 });
+  taps = drawOverlay({
+    camera,
+    target: controls.target,
+    night,
+    bodies,
+    stands: street > 0 ? [] : stands,
+    bottomInset: panel.offsetHeight + 16,
+    eye: street > 0.5 ? look : null,
+    photographer: street > 0 ? null : photographer,
+  });
+  needle.style.transform = `rotate(${camera === eyeCamera ? -look.heading : THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
+  tiltButton.textContent = controls.getPolarAngle() < 0.2 ? '3D' : '2D';
   stats.triangles = renderer.info.render.triangles;
   stats.calls = renderer.info.render.calls;
   stats.frames++;
@@ -674,6 +1018,7 @@ async function start() {
   const manifest = await (await fetch('/city/manifest.json')).json();
   const mapData = await (await fetch('/city/map.json')).json();
   const roadPoints = new Int16Array(await (await fetch('/city/roads.bin')).arrayBuffer());
+  roadXZ = roadPoints;
   const streetsDoc = await (await fetch('/city/streets.json')).json();
   const terrainInfo = await (await fetch('/city/terrain.json')).json();
   const terrain = new Int16Array(await (await fetch('/city/terrain.bin')).arrayBuffer());
@@ -760,7 +1105,6 @@ dateInput.addEventListener('input', () => {
   updateSun();
 });
 timeInput.addEventListener('input', updateSun);
-for (const b of document.querySelectorAll('[data-mode]')) b.addEventListener('click', () => setMode(b.dataset.mode));
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
@@ -768,17 +1112,15 @@ addEventListener('resize', () => {
   ribbonUniforms.uViewportH.value = renderer.getDrawingBufferSize(new THREE.Vector2()).y;
   sizeMirror();
   sizeBlur();
-  perspective.aspect = innerWidth / innerHeight;
-  perspective.updateProjectionMatrix();
-  const h = worldHeightNow();
-  worldHeight = h;
-  if (camera.isOrthographicCamera) fitOrthographic();
+  for (const c of [overview, eyeCamera]) {
+    c.aspect = innerWidth / innerHeight;
+    c.updateProjectionMatrix();
+  }
   invalidateShadows();
 });
 
 resizeOverlay();
-setMode(params.get('mode') ?? 'iso');
 updateSun();
 requestAnimationFrame(frame);
 start();
-window.__mini = { cityUniforms, sun, sky, bloom, scene, groundMaterial, setMode, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
+window.__mini = { cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };

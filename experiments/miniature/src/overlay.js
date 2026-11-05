@@ -89,7 +89,7 @@ const PILL_H = 30;
  * A compass pill, not a sun in the scene: the arrow says which way the body lies, whereas a
  * disc on the map would be read as a position that the shadows then seem to contradict.
  */
-function drawPill({ text, look, moon, x, y, ux, uy, night }) {
+function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
   ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
   const width = 40 + ctx.measureText(text).width + 12;
   const left = x - width / 2;
@@ -116,13 +116,18 @@ function drawPill({ text, look, moon, x, y, ux, uy, night }) {
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+  return { kind: 'pill', x: left, y: top, w: width, h: PILL_H, body };
 }
 
 /**
  * @param scene.bodies [{ az, alt, sunAlt, moon? }] above the horizon
  * @param scene.stands [{ x, y, z, name, colour }] lit-up streets
+ * @param scene.eye { heading, pitch } when standing in the street, else null
+ * @param scene.photographer { x, y, z, heading } where the photographer was put down, or null
+ * @returns what can be tapped: [{ kind, x, y, w, h, body? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer }) {
+  const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
   const m = camera.projectionMatrix.clone().multiply(camera.matrixWorldInverse).elements;
@@ -158,6 +163,8 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     for (const key of cells) taken.add(key);
     return true;
   };
+
+  if (eye) return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
 
   for (const s of stands) {
     if (!project(s.x, s.y, s.z, here)) continue;
@@ -198,6 +205,26 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
 
   if (project(0, 395, 0, here)) drawName('Fernsehturm', here.x, here.y - 14, 0, '700 13px', fill, halo);
 
+  if (photographer && project(photographer.x, photographer.y, photographer.z, here)) {
+    // A cone along the way the photographer faces, then the marker itself.
+    const reach = 2 / (p11 * innerHeight) * (ortho ? 1 : here.w) * 70;
+    const cone = [-18, 18].map((spread) => {
+      const angle = ((photographer.heading + spread) * Math.PI) / 180;
+      const end = {};
+      project(photographer.x + Math.sin(angle) * reach, photographer.y, photographer.z - Math.cos(angle) * reach, end);
+      return end;
+    });
+    ctx.fillStyle = night ? 'rgba(255, 230, 190, 0.22)' : 'rgba(40, 36, 30, 0.16)';
+    ctx.beginPath();
+    ctx.moveTo(here.x, here.y);
+    ctx.lineTo(cone[0].x, cone[0].y);
+    ctx.lineTo(cone[1].x, cone[1].y);
+    ctx.closePath();
+    ctx.fill();
+    drawPhotographer(here.x, here.y);
+    taps.push({ kind: 'photographer', x: here.x - 18, y: here.y - 36, w: 36, h: 40 });
+  }
+
   // Each pill sits on the view's edge, on the line from its centre toward the body.
   const pills = [];
   for (const body of bodies) {
@@ -212,9 +239,62 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     const cy = (innerHeight - bottomInset) / 2;
     const reach = Math.min(Math.abs(ux) > 1e-3 ? (w2 - 76) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? (cy - 34) / Math.abs(uy) : Infinity);
     const look = body.moon ? moonLook(body.alt, body.sunAlt, body.moon.fraction) : sunLook(body.alt);
-    pills.push({ text: `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up`, look, moon: body.moon, x: w2 + ux * reach, y: cy + uy * reach, ux, uy, night });
+    pills.push({ text: `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up`, look, moon: body.moon, x: w2 + ux * reach, y: cy + uy * reach, ux, uy, night, body });
   }
   // Two bodies in nearly the same direction would otherwise stack.
   if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < 130 && Math.abs(pills[0].y - pills[1].y) < PILL_H + 6) pills[1].y += pills[1].y >= pills[0].y ? PILL_H + 6 : -(PILL_H + 6);
-  for (const pill of pills) drawPill(pill);
+  for (const pill of pills) taps.push(drawPill(pill));
+  return taps;
+}
+
+/** The marker: a round badge with a camera, on a short stem down to the spot. */
+export function drawPhotographer(x, y, context = ctx) {
+  context.save();
+  context.fillStyle = '#24221f';
+  context.beginPath();
+  context.moveTo(x, y);
+  context.lineTo(x - 6, y - 14);
+  context.lineTo(x + 6, y - 14);
+  context.closePath();
+  context.fill();
+  context.beginPath();
+  context.arc(x, y - 22, 13, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = '#fff';
+  context.lineWidth = 2;
+  context.stroke();
+  context.fillStyle = '#fff';
+  context.beginPath();
+  context.roundRect(x - 7, y - 26, 14, 9, 2);
+  context.fill();
+  context.fillRect(x - 3, y - 28, 6, 3);
+  context.fillStyle = '#24221f';
+  context.beginPath();
+  context.arc(x, y - 21.5, 2.6, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+}
+
+/** At eye level the real discs are in the sky; a pill only points to one that is out of frame. */
+function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
+  const top = 70;
+  const bottom = innerHeight - bottomInset;
+  const cx = innerWidth / 2;
+  const cy = (top + bottom) / 2;
+  const fov = camera.fov;
+  const aspect = innerWidth / innerHeight;
+  for (const body of bodies) {
+    let yaw = (((body.az - eye.heading) % 360) + 540) % 360 - 180;
+    const rise = body.alt - eye.pitch;
+    const inFrame = Math.abs(yaw) < (fov * aspect) / 2 - 1 && Math.abs(rise) < fov / 2 - 1;
+    if (inFrame && body.alt > -0.5) continue;
+    const length = Math.hypot(yaw, rise) || 1;
+    const ux = yaw / length;
+    const uy = -rise / length;
+    const reach = Math.min(Math.abs(ux) > 1e-3 ? (cx - 76) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? ((bottom - top) / 2 - 24) / Math.abs(uy) : Infinity);
+    const look = body.moon ? moonLook(body.alt, body.sunAlt, body.moon.fraction) : sunLook(body.alt);
+    const side = Math.abs(yaw) < 2 ? '' : ` \u00b7 ${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
+    taps.push(drawPill({ text: `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${side}`, look, moon: body.moon, x: cx + ux * reach, y: cy + uy * reach, ux, uy, night, body }));
+  }
+  return taps;
 }

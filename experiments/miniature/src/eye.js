@@ -1,0 +1,89 @@
+/**
+ * Standing in the city: looking around by dragging, a lens instead of a zoom, and the maths to
+ * turn a heading and a pitch into a view. Headings are compass degrees, pitch is up from level.
+ */
+import * as THREE from 'three';
+
+/** Vertical field of view of a 35 mm-equivalent lens, degrees, for a landscape frame. */
+export const fovForLens = (mm) => (2 * Math.atan(12 / mm) * 180) / Math.PI;
+export const LENS_MIN = 16;
+export const LENS_MAX = 600;
+export const EYE_HEIGHT = 1.6;
+
+const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+export const compassName = (deg) => COMPASS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+
+export function lookDirection(heading, pitch, out = new THREE.Vector3()) {
+  const a = THREE.MathUtils.degToRad(heading);
+  const p = THREE.MathUtils.degToRad(pitch);
+  return out.set(Math.sin(a) * Math.cos(p), Math.sin(p), -Math.cos(a) * Math.cos(p));
+}
+
+/** Drag to look around, wheel or pinch to change lens. Calls `onChange` after each change. */
+export function attachLook(element, state, onChange) {
+  const pointers = new Map();
+  let pinch = 0;
+  const down = (event) => {
+    if (!state.active) return;
+    element.setPointerCapture(event.pointerId);
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinch = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+  };
+  const move = (event) => {
+    if (!state.active || !pointers.has(event.pointerId)) return;
+    const last = pointers.get(event.pointerId);
+    if (pointers.size === 1) {
+      // Grab the scene: what is under the finger stays under it, whatever the lens.
+      const degreesPerPixel = fovForLens(state.lens) / element.clientHeight;
+      state.heading -= (event.clientX - last.x) * degreesPerPixel;
+      state.pitch = THREE.MathUtils.clamp(state.pitch + (event.clientY - last.y) * degreesPerPixel, -35, 70);
+      onChange();
+    }
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const spread = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch > 0) setLens(state, state.lens * (spread / pinch), onChange);
+      pinch = spread;
+    }
+  };
+  const up = (event) => {
+    pointers.delete(event.pointerId);
+    pinch = 0;
+  };
+  element.addEventListener('pointerdown', down);
+  element.addEventListener('pointermove', move);
+  element.addEventListener('pointerup', up);
+  element.addEventListener('pointercancel', up);
+  element.addEventListener(
+    'wheel',
+    (event) => {
+      if (!state.active) return;
+      event.preventDefault();
+      setLens(state, state.lens * Math.exp(-event.deltaY * 0.0015), onChange);
+    },
+    { passive: false },
+  );
+}
+
+export function setLens(state, mm, onChange) {
+  state.lens = THREE.MathUtils.clamp(mm, LENS_MIN, LENS_MAX);
+  onChange();
+}
+
+/** Latitude and longitude to scene metres, on the transverse Mercator the build scripts use. */
+export function sceneFromLatLon(lat, lon, lat0, lon0) {
+  const rad = Math.PI / 180;
+  const a = 6378137;
+  const e2 = 0.00669437999014;
+  const meridian = (phi) => a * ((1 - e2 / 4 - (3 * e2 * e2) / 64) * phi - ((3 * e2) / 8 + (3 * e2 * e2) / 32) * Math.sin(2 * phi) + ((15 * e2 * e2) / 256) * Math.sin(4 * phi));
+  const phi = lat * rad;
+  const n = a / Math.sqrt(1 - e2 * Math.sin(phi) ** 2);
+  const across = Math.cos(phi) * (lon - lon0) * rad;
+  const east = n * (across + ((1 - Math.tan(phi) ** 2) * across ** 3) / 6);
+  const north = meridian(phi) - meridian(lat0 * rad) + n * Math.tan(phi) * (across ** 2 / 2);
+  return [east, -north];
+}

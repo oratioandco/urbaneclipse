@@ -7,6 +7,21 @@
     <style>
       html, body { margin: 0; height: 100%; overflow: hidden; background: #efece6; font: 13px/1.35 ui-sans-serif, system-ui, sans-serif; color: #24221f; }
       canvas { display: block; position: fixed; inset: 0; touch-action: none; }
+      .tools { position: fixed; z-index: 3; top: max(12px, env(safe-area-inset-top)); right: 12px; display: grid; gap: 8px; }
+      .round { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; font: 600 13px ui-sans-serif, system-ui, sans-serif; color: #24221f; background: rgba(255, 253, 249, 0.92); box-shadow: 0 3px 12px rgba(40, 34, 24, 0.2); cursor: pointer; touch-action: none; }
+      #compass svg { transition: none; }
+      #photographer { cursor: grab; }
+      body[data-night='true'] .round { background: rgba(20, 23, 38, 0.86); color: #ece8df; }
+      body[data-eye='true'] .overview-only { display: none; }
+      .eyebar { position: fixed; z-index: 3; top: max(12px, env(safe-area-inset-top)); left: 12px; right: 68px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
+      body[data-eye='true'] .eyebar { display: flex; }
+      .eyebar > * { background: rgba(255, 253, 249, 0.9); border-radius: 22px; padding: 0 14px; min-height: 40px; display: flex; align-items: center; gap: 8px; box-shadow: 0 3px 12px rgba(40, 34, 24, 0.18); }
+      .eyebar button { border: 0; font: 600 13px ui-sans-serif, system-ui, sans-serif; color: inherit; cursor: pointer; }
+      .eyebar .lens input { width: 140px; accent-color: #d9772b; }
+      body[data-night='true'] .eyebar > * { background: rgba(20, 23, 38, 0.86); }
+      body[data-eye='true'] #stats { top: 64px; }
+      #ghost[hidden] { display: none; }
+      #ghost { position: fixed; left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
       #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
       body[data-night='true'] { color: #ece8df; }
       body[data-night='true'] .panel { background: rgba(20, 23, 38, 0.82); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
@@ -37,17 +52,26 @@
   </head>
   <body>
     <canvas id="labels"></canvas>
+    <div class="tools">
+      <button id="compass" class="round" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
+      <button id="tilt" class="round overview-only" aria-label="Switch between flat and angled view">2D</button>
+      <button id="photographer" class="round overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="3"/><path d="M8 10h8l1 6h-3v6h-4v-6H7z"/><rect x="13.5" y="9" width="6" height="4.2" rx="1"/></svg>
+      </button>
+    </div>
+    <div class="eyebar">
+      <button id="back">&larr; Map</button>
+      <span id="facing" class="muted"></span>
+      <label class="lens"><input id="lens" type="range" min="0" max="1000" aria-label="Lens" /><span id="lens-label"></span></label>
+    </div>
+    <canvas id="ghost" hidden></canvas>
     <div id="stats"></div>
     <div class="panel">
       <div class="row">
         <span class="clock" id="clock">--:--</span>
         <input id="date" type="date" aria-label="Date" />
         <span class="muted" id="sun"></span>
-        <div class="modes" role="group" aria-label="View">
-          <button data-mode="top">Top</button>
-          <button data-mode="iso">Isometric</button>
-          <button data-mode="free">3D</button>
-        </div>
+
       </div>
       <div class="row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
       <div id="moments" aria-label="Streets lined up today"></div>
