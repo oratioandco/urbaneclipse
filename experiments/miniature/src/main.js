@@ -20,7 +20,7 @@ const TRIANGLE_BUDGET = Number(params.get('budget')) || (isPhone ? 1_200_000 : 5
 const ERROR_PX = 1.5;
 const LIGHT_DISTANCE = 30_000;
 const MAX_SUN = 5;
-const GROUND_FROM_SUN = 1.9;
+const GROUND_FROM_SUN = 1.05;
 const VIEW_RADIUS = 12_000;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -34,7 +34,7 @@ document.body.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
 const buildingMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide, shadowSide: THREE.BackSide });
-const groundMaterial = new THREE.MeshLambertMaterial({ color: 0xe9e6df });
+const groundMaterial = new THREE.MeshLambertMaterial({ color: 0xe2dfd7 });
 
 const sky = new THREE.HemisphereLight(0xffffff, 0xd8d3ca, 1.7);
 scene.add(sky);
