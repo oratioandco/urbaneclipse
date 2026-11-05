@@ -75,15 +75,20 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-map-selected i { width: 16px; height: 16px; background: var(--ue-text); border: 3px solid var(--ue-bg); box-shadow: 0 0 0 2px var(--ue-text); }
 
 .ue-map-body svg { position: absolute; width: 28px; height: 28px; transform: translate(-50%, -50%); }
-.ue-map-body b { position: absolute; width: 84px; height: 84px; border-radius: 50%; transform: translate(-50%, -50%); opacity: var(--ue-body-glow-opacity); background: radial-gradient(circle, var(--ue-body-glow) 16%, color-mix(in srgb, var(--ue-body-glow) 34%, transparent) 34%, transparent 70%); }
-.ue-map-body__grain { fill: #000; opacity: 0.34; }
+/* Light adds to the map below it, so glows brighten the streets they cross instead of veiling them. */
+.ue-map .leaflet-ue-body-glow-pane, .ue-map .leaflet-ue-street-glow-wide-pane, .ue-map .leaflet-ue-street-glow-tight-pane { mix-blend-mode: screen; pointer-events: none; }
+.ue-map .leaflet-ue-street-glow-wide-pane { filter: blur(10px); }
+.ue-map .leaflet-ue-street-glow-tight-pane { filter: blur(2.5px); }
+.ue-map-glow { opacity: var(--ue-body-glow-opacity); }
+.ue-map-glow svg { position: absolute; width: 28px; height: 28px; overflow: visible; transform: translate(-50%, -50%); fill: var(--ue-body-glow); filter: drop-shadow(0 0 2px var(--ue-body-glow)) drop-shadow(0 0 6px var(--ue-body-glow)) drop-shadow(0 0 14px var(--ue-body-glow)); }
+.ue-map-glow b { position: absolute; width: 190px; height: 190px; border-radius: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle closest-side, color-mix(in srgb, var(--ue-body-glow) 42%, transparent) 0%, color-mix(in srgb, var(--ue-body-glow) 26%, transparent) 18%, color-mix(in srgb, var(--ue-body-glow) 13%, transparent) 36%, color-mix(in srgb, var(--ue-body-glow) 5%, transparent) 60%, color-mix(in srgb, var(--ue-body-glow) 1.5%, transparent) 80%, transparent 100%); }
 .ue-map-body__night { fill: #0c0d14; }
 .ue-map-body__shade { opacity: 0.22; }
 .ue-map-body__lit { isolation: isolate; filter: brightness(1.2); }
 .ue-map-body__tint { fill: var(--ue-body-core); mix-blend-mode: multiply; }
 .ue-map-eye i { position: absolute; display: block; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 9px solid var(--ue-text); }
-.ue-map-eye--sun i { border-bottom-color: var(--ue-sun); }
-.ue-map-eye--moon i { border-bottom-color: var(--ue-moon); }
+.ue-map-eye--sun i { border-bottom-color: #ffe2bd; filter: drop-shadow(0 0 2px #ff6a12) drop-shadow(0 0 6px #ff6a12); }
+.ue-map-eye--moon i { border-bottom-color: #e6ebff; filter: drop-shadow(0 0 2px #6f8cff) drop-shadow(0 0 6px #6f8cff); }
 .ue-track--streets span { background: var(--ue-text); opacity: 0.75; }
 .ue-link { padding: 0; color: var(--ue-text); text-decoration: underline; }
 

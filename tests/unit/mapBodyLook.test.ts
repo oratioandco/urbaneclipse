@@ -23,8 +23,16 @@ describe('sunLook', () => {
     expect(sunLook(1).glowOpacity).toBeLessThanOrEqual(1);
   });
 
-  it('takes its glow colour from the preview palette', () => {
-    expect(sunLook(6).glow).toEqual(skyPalette('sun', 6).glowColor);
+  it('takes its disc colour from the preview palette', () => {
+    const tint = skyPalette('sun', 6).discTint;
+    expect(sunLook(6).limb[0]).toBe(tint[0]);
+    expect(sunLook(6).limb[1]).toBeCloseTo(tint[1] * 0.82);
+  });
+
+  it('keeps a saturated glow that reddens as the sun sinks', () => {
+    const greens = [45, 20, 6, 0].map((alt) => sunLook(alt).glow[1]);
+    for (let i = 1; i < greens.length; i++) expect(greens[i]!).toBeLessThan(greens[i - 1]!);
+    expect(sunLook(45).glow[2]).toBeLessThan(0.5);
   });
 });
 
@@ -38,6 +46,13 @@ describe('moonLook', () => {
     const high = moonLook(40, -30, 1).core;
     expect(low[2]).toBeLessThan(high[2]);
     expect(low[0]).toBeGreaterThan(low[2]);
+  });
+});
+
+describe('moon glow', () => {
+  it('is cool overhead and warm at the horizon', () => {
+    expect(moonLook(40, -30, 1).glow[2]).toBeGreaterThan(moonLook(40, -30, 1).glow[0]);
+    expect(moonLook(0, -30, 1).glow[0]).toBeGreaterThan(moonLook(0, -30, 1).glow[2]);
   });
 });
 

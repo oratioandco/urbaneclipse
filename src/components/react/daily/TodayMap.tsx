@@ -36,6 +36,9 @@ interface Props {
 }
 
 const COLOR: Record<Body, string> = { sun: '#ff9d3c', moon: '#b8c6ff' };
+/** A neon tube: saturated light around a nearly white core. */
+const STREET_GLOW: Record<Body, string> = { sun: '#ff6a12', moon: '#6f8cff' };
+const STREET_CORE: Record<Body, string> = { sun: '#fff0d8', moon: '#f0f3ff' };
 /** Tapping within this many pixels of a path counts as tapping the path. */
 const SNAP_PX = 26;
 const LABEL_ROOM_PX = 34;
@@ -74,25 +77,22 @@ function distanceToEdge(start: L.Point, direction: L.Point, area: ReturnType<typ
 
 const MOON_MAP_URL = '/textures/moon-nearside.jpg';
 
-/** Limb darkening and a mottled surface. Stylised: not an image of the real sun. */
-const SUN_ICON = `<b></b><svg viewBox="-1 -1 2 2" aria-hidden="true">
+/** A hot centre falling to a coloured limb, which is what the sun's visible surface does. */
+const SUN_ICON = `<svg viewBox="-1 -1 2 2" aria-hidden="true">
   <defs>
     <radialGradient id="ue-sun-disc">
-      <stop offset="0.35" style="stop-color:var(--ue-body-core)"/>
+      <stop offset="0.45" style="stop-color:var(--ue-body-core)"/>
       <stop offset="1" style="stop-color:var(--ue-body-limb)"/>
     </radialGradient>
-    <filter id="ue-sun-grain" x="0" y="0" width="1" height="1">
-      <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="3" seed="7"/>
-      <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.16  0 0 0 0 0  3.2 0 0 0 -1.35"/>
-      <feComposite in2="SourceGraphic" operator="in"/>
-    </filter>
   </defs>
   <circle r="1" fill="url(#ue-sun-disc)"/>
-  <circle r="1" filter="url(#ue-sun-grain)" class="ue-map-body__grain"/>
 </svg><span>Sun</span>`;
 
+/** The light behind a disc takes the shape of its lit part, so a crescent glows as a crescent. */
+const glowIcon = (shape: string) => `<b></b><svg viewBox="-1 -1 2 2" aria-hidden="true">${shape}</svg>`;
+
 /** The real near side: faint where it is in shadow, full strength where it is lit. */
-const moonIcon = (litPath: string) => `<b></b><svg viewBox="-1 -1 2 2" aria-hidden="true">
+const moonIcon = (litPath: string) => `<svg viewBox="-1 -1 2 2" aria-hidden="true">
   <defs>
     <clipPath id="ue-moon-disc"><circle r="0.98"/></clipPath>
     <clipPath id="ue-moon-lit"><path d="${litPath}"/></clipPath>
@@ -181,7 +181,9 @@ export default function TodayMap({
   const pathLayer = useRef<L.LayerGroup | null>(null);
   const liveLayer = useRef<L.LayerGroup | null>(null);
   // Kept between frames, so the slider moves the sun and moon instead of reloading them.
-  const bodyMarkers = useRef<Partial<Record<Body, L.Marker>>>({});
+  const bodyMarkers = useRef<Partial<Record<Body, { disc: L.Marker; glow: L.Marker }>>>({});
+  const streetRenderers = useRef<{ wide: L.Renderer; tight: L.Renderer; core: L.Renderer } | null>(null);
+  const shownStreets = useRef('');
   const [zoom, setZoom] = useState(12);
   const streetLayer = useRef<L.LayerGroup | null>(null);
   const [viewTick, setViewTick] = useState(0);
@@ -203,6 +205,20 @@ export default function TodayMap({
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
     L.control.zoom({ position: 'topright' }).addTo(map);
+    // Each layer of light has its own pane, so it can be blurred and added to the map below.
+    const neonPane = (name: string, zIndex: number): void => {
+      map.createPane(name).style.zIndex = String(zIndex);
+    };
+    neonPane('ue-street-glow-wide', 380);
+    neonPane('ue-street-glow-tight', 381);
+    neonPane('ue-street-core', 382);
+    neonPane('ue-body-glow', 590);
+    streetRenderers.current = {
+      wide: L.svg({ pane: 'ue-street-glow-wide', padding: 0.5 }),
+      tight: L.svg({ pane: 'ue-street-glow-tight', padding: 0.5 }),
+      core: L.svg({ pane: 'ue-street-core', padding: 0.5 }),
+    };
+    shownStreets.current = '';
     streetLayer.current = L.layerGroup().addTo(map);
     pathLayer.current = L.layerGroup().addTo(map);
     liveLayer.current = L.layerGroup().addTo(map);
@@ -343,31 +359,44 @@ export default function TodayMap({
       if (line && map) {
         const at = drawAlignment(map, layer, path.body, line);
         const litPath = litDiscPath(moon.fraction, moon.waxing);
+        const glowShape = path.body === 'sun' ? '<circle r="1"/>' : `<path d="${litPath}"/>`;
         let marker = bodyMarkers.current[path.body];
         if (!marker) {
-          marker = L.marker(at, {
-            icon: L.divIcon({
-              className: `ue-map-body ue-map-body--${path.body}`,
-              iconSize: [0, 0],
-              html: path.body === 'sun' ? SUN_ICON : moonIcon(litPath),
-            }),
-            interactive: false,
-            zIndexOffset: 650,
-          }).addTo(map);
+          marker = {
+            glow: L.marker(at, {
+              icon: L.divIcon({ className: 'ue-map-glow', iconSize: [0, 0], html: glowIcon(glowShape) }),
+              interactive: false,
+              pane: 'ue-body-glow',
+            }).addTo(map),
+            disc: L.marker(at, {
+              icon: L.divIcon({
+                className: `ue-map-body ue-map-body--${path.body}`,
+                iconSize: [0, 0],
+                html: path.body === 'sun' ? SUN_ICON : moonIcon(litPath),
+              }),
+              interactive: false,
+              zIndexOffset: 650,
+            }).addTo(map),
+          };
           bodyMarkers.current[path.body] = marker;
         } else {
-          marker.setLatLng(at);
+          marker.disc.setLatLng(at);
+          marker.glow.setLatLng(at);
         }
         const look =
           path.body === 'sun'
             ? sunLook(line.bodyAlt)
             : moonLook(line.bodyAlt, sampleBody('sun', new Date(time), FERNSEHTURM.lat, FERNSEHTURM.lon).alt, moon.fraction);
-        const element = marker.getElement();
-        element?.style.setProperty('--ue-body-core', cssRgb(look.core));
-        element?.style.setProperty('--ue-body-limb', cssRgb(look.limb));
-        element?.style.setProperty('--ue-body-glow', cssRgb(look.glow));
-        element?.style.setProperty('--ue-body-glow-opacity', look.glowOpacity.toFixed(2));
-        if (path.body === 'moon') element?.querySelector('#ue-moon-lit path')?.setAttribute('d', litPath);
+        const disc = marker.disc.getElement();
+        disc?.style.setProperty('--ue-body-core', cssRgb(look.core));
+        disc?.style.setProperty('--ue-body-limb', cssRgb(look.limb));
+        const glow = marker.glow.getElement();
+        glow?.style.setProperty('--ue-body-glow', cssRgb(look.glow));
+        glow?.style.setProperty('--ue-body-glow-opacity', look.glowOpacity.toFixed(2));
+        if (path.body === 'moon') {
+          disc?.querySelector('#ue-moon-lit path')?.setAttribute('d', litPath);
+          glow?.querySelector('path')?.setAttribute('d', litPath);
+        }
         drawn.add(path.body);
       }
       const p = pointAtTime(path, time);
@@ -384,7 +413,8 @@ export default function TodayMap({
     }
     for (const body of ['sun', 'moon'] as const) {
       if (drawn.has(body)) continue;
-      bodyMarkers.current[body]?.remove();
+      bodyMarkers.current[body]?.disc.remove();
+      bodyMarkers.current[body]?.glow.remove();
       delete bodyMarkers.current[body];
     }
     if (selected) {
@@ -399,25 +429,31 @@ export default function TodayMap({
   // Only the streets lined up right now. The list and the slider cover the rest of the day.
   useEffect(() => {
     const layer = streetLayer.current;
-    if (!layer) return;
+    const renderers = streetRenderers.current;
+    if (!layer || !renderers) return;
+    const live = streets.filter((moment) => time >= moment.from - 60_000 && time <= moment.to + 60_000);
+    // Blurred layers are costly to repaint, so the slider only redraws when the set changes.
+    const key = live.map((m) => `${m.body}:${m.from}:${m.view.from.lat}:${m.view.from.lon}`).join('|');
+    if (key === shownStreets.current) return;
+    shownStreets.current = key;
     layer.clearLayers();
-    for (const moment of streets) {
-      if (time < moment.from - 60_000 || time > moment.to + 60_000) continue;
+    for (const moment of live) {
       const ends: [number, number][] = [
         [moment.view.from.lat, moment.view.from.lon],
         [moment.view.to.lat, moment.view.to.lon],
       ];
-      // Two soft, wider lines underneath give the street its glow.
-      for (const [weight, opacity] of [[10, 0.12], [6, 0.2]] as const) {
-        L.polyline(ends, { color: COLOR[moment.body], weight, opacity, interactive: false }).addTo(layer);
-      }
-      L.polyline(ends, { color: COLOR[moment.body], weight: 2.5, opacity: 0.95, interactive: false }).addTo(layer);
+      const glow = STREET_GLOW[moment.body];
+      const tube = (renderer: L.Renderer, color: string, weight: number) =>
+        L.polyline(ends, { renderer, color, weight, opacity: 1, lineCap: 'round', interactive: false }).addTo(layer);
+      tube(renderers.wide, glow, 15);
+      tube(renderers.tight, glow, 5.5);
+      tube(renderers.core, STREET_CORE[moment.body], 1.75);
       // A wider invisible line makes thin streets easy to tap.
       L.polyline(ends, { color: '#000', weight: 18, opacity: 0.001, bubblingMouseEvents: false })
         .on('click', () => handlers.current.onPickStreet(moment))
         .addTo(layer);
       // Where to stand, pointing the way to look.
-      L.marker(ends[0], {
+      L.marker(ends[0]!, {
         icon: L.divIcon({
           className: `ue-map-eye ue-map-eye--${moment.body}`,
           iconSize: [0, 0],
