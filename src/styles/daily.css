@@ -57,7 +57,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-map-now--sun i { box-shadow: 0 0 0 2px var(--ue-sun); }
 .ue-map-now--moon i { box-shadow: 0 0 0 2px var(--ue-moon); }
 .ue-map-now span, .ue-map-body span { position: absolute; left: 12px; top: -8px; white-space: nowrap; font-size: 11px; color: var(--ue-text); text-shadow: 0 1px 3px #000, 0 0 8px #000; }
-.ue-map-body span { left: 15px; }
+.ue-map-body span { left: 0; top: 17px; transform: translateX(-50%); }
 .ue-map-selected i { position: absolute; display: block; border-radius: 50%; transform: translate(-50%, -50%); }
 .ue-map-tower i { width: 12px; height: 12px; background: var(--ue-text); box-shadow: 0 0 0 4px rgba(246, 239, 230, 0.2); }
 .ue-map-tower span, .ue-map-viewpoint span { position: absolute; left: 10px; top: -9px; white-space: nowrap; font-size: 12px; text-shadow: 0 1px 3px #000, 0 0 8px #000; color: var(--ue-text); }
@@ -70,13 +70,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ue-text); o
 .ue-map-hour--sun span { color: var(--ue-sun); }
 .ue-map-hour--moon span { color: var(--ue-moon); }
 .ue-map-now i { width: 18px; height: 18px; border: 3px solid var(--ue-bg); }
-.ue-map-now--sun i { background: var(--ue-sun); box-shadow: 0 0 0 2px var(--ue-sun), 0 0 22px 6px rgba(255, 157, 60, 0.55); }
-.ue-map-now--moon i { background: var(--ue-moon); box-shadow: 0 0 0 2px var(--ue-moon), 0 0 22px 6px rgba(184, 198, 255, 0.45); }
+.ue-map-now--sun i { background: var(--ue-sun); box-shadow: 0 0 0 2px var(--ue-sun); }
+.ue-map-now--moon i { background: var(--ue-moon); box-shadow: 0 0 0 2px var(--ue-moon); }
 .ue-map-selected i { width: 16px; height: 16px; background: var(--ue-text); border: 3px solid var(--ue-bg); box-shadow: 0 0 0 2px var(--ue-text); }
 
-.ue-map-body i, .ue-map-body svg { position: absolute; width: 20px; height: 20px; border-radius: 50%; transform: translate(-50%, -50%); overflow: visible; }
-.ue-map-body--sun i { background: var(--ue-sun); box-shadow: 0 0 16px 5px rgba(255, 157, 60, 0.55); }
-.ue-map-body--moon svg { filter: drop-shadow(0 0 7px rgba(184, 198, 255, 0.55)); }
+.ue-map-body svg { position: absolute; width: 28px; height: 28px; transform: translate(-50%, -50%); }
+.ue-map-body b { position: absolute; width: 84px; height: 84px; border-radius: 50%; transform: translate(-50%, -50%); opacity: var(--ue-body-glow-opacity); background: radial-gradient(circle, var(--ue-body-glow) 16%, color-mix(in srgb, var(--ue-body-glow) 34%, transparent) 34%, transparent 70%); }
+.ue-map-body__grain { fill: #000; opacity: 0.34; }
+.ue-map-body__night { fill: #0c0d14; }
+.ue-map-body__shade { opacity: 0.22; }
+.ue-map-body__lit { isolation: isolate; filter: brightness(1.2); }
+.ue-map-body__tint { fill: var(--ue-body-core); mix-blend-mode: multiply; }
 .ue-map-eye i { position: absolute; display: block; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 9px solid var(--ue-text); }
 .ue-map-eye--sun i { border-bottom-color: var(--ue-sun); }
 .ue-map-eye--moon i { border-bottom-color: var(--ue-moon); }

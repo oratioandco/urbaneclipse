@@ -15,7 +15,8 @@ import { litDiscPath } from '../../../lib/moonPhase.js';
 import type { StreetMoment } from '../../../lib/streets.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { VIEWPOINTS, type Viewpoint } from '../../../lib/viewpoints.js';
-import type { Body } from '../../../lib/bodyPosition.js';
+import { sampleBody, type Body } from '../../../lib/bodyPosition.js';
+import { cssRgb, moonLook, sunLook } from '../../../lib/mapBodyLook.js';
 
 export interface PathPick {
   body: Body;
@@ -44,8 +45,67 @@ const label = (text: string, className: string) =>
 
 /** Leaflet has no gradient lines, so a fade is drawn as short pieces. */
 const FADE_PIECES = 24;
-/** The sun or moon sits this far from the tower on screen, at any zoom. */
-const BODY_OFFSET_PX = 70;
+/** The sun or moon never sits closer to the tower than this on screen. */
+const BODY_MIN_OFFSET_PX = 70;
+/** Room kept between the sun or moon and the edge of the visible map, for its glow and label. */
+const BODY_EDGE_MARGIN_PX = 52;
+
+/** The part of the map the sheet leaves visible, in container pixels. */
+function visibleArea(map: L.Map): { left: number; top: number; right: number; bottom: number } {
+  const size = map.getSize();
+  const area = { left: 0, top: 0, right: size.x, bottom: size.y };
+  const host = map.getContainer();
+  const sheet = host.parentElement?.querySelector<HTMLElement>('.ue-sheet');
+  if (!sheet) return area;
+  const box = sheet.getBoundingClientRect();
+  const origin = host.getBoundingClientRect();
+  // The sheet is a side panel on wide screens and a bottom panel on phones.
+  if (window.innerWidth > 760) area.left = box.right - origin.left;
+  else area.bottom = box.top - origin.top;
+  return area;
+}
+
+/** How far a ray travels from `start` before leaving a rectangle. */
+function distanceToEdge(start: L.Point, direction: L.Point, area: ReturnType<typeof visibleArea>): number {
+  const alongX = direction.x > 0 ? (area.right - start.x) / direction.x : direction.x < 0 ? (area.left - start.x) / direction.x : Infinity;
+  const alongY = direction.y > 0 ? (area.bottom - start.y) / direction.y : direction.y < 0 ? (area.top - start.y) / direction.y : Infinity;
+  return Math.min(alongX, alongY);
+}
+
+const MOON_MAP_URL = '/textures/moon-nearside.jpg';
+
+/** Limb darkening and a mottled surface. Stylised: not an image of the real sun. */
+const SUN_ICON = `<b></b><svg viewBox="-1 -1 2 2" aria-hidden="true">
+  <defs>
+    <radialGradient id="ue-sun-disc">
+      <stop offset="0.35" style="stop-color:var(--ue-body-core)"/>
+      <stop offset="1" style="stop-color:var(--ue-body-limb)"/>
+    </radialGradient>
+    <filter id="ue-sun-grain" x="0" y="0" width="1" height="1">
+      <feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="3" seed="7"/>
+      <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.16  0 0 0 0 0  3.2 0 0 0 -1.35"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+  <circle r="1" fill="url(#ue-sun-disc)"/>
+  <circle r="1" filter="url(#ue-sun-grain)" class="ue-map-body__grain"/>
+</svg><span>Sun</span>`;
+
+/** The real near side: faint where it is in shadow, full strength where it is lit. */
+const moonIcon = (litPath: string) => `<b></b><svg viewBox="-1 -1 2 2" aria-hidden="true">
+  <defs>
+    <clipPath id="ue-moon-disc"><circle r="0.98"/></clipPath>
+    <clipPath id="ue-moon-lit"><path d="${litPath}"/></clipPath>
+  </defs>
+  <g clip-path="url(#ue-moon-disc)">
+    <rect x="-1" y="-1" width="2" height="2" class="ue-map-body__night"/>
+    <image href="${MOON_MAP_URL}" x="-1" y="-1" width="2" height="2" class="ue-map-body__shade"/>
+    <g clip-path="url(#ue-moon-lit)" class="ue-map-body__lit">
+      <image href="${MOON_MAP_URL}" x="-1" y="-1" width="2" height="2"/>
+      <rect x="-1" y="-1" width="2" height="2" class="ue-map-body__tint"/>
+    </g>
+  </g>
+</svg><span>Moon</span>`;
 
 /**
  * The line through the tower: it ends at the sun or moon on one side, and on the other runs
@@ -56,31 +116,25 @@ function drawAlignment(
   layer: L.LayerGroup,
   body: Body,
   line: AlignmentLine,
-  moon: { fraction: number; waxing: boolean },
-): void {
+): L.LatLng {
   const tower = map.latLngToLayerPoint([FERNSEHTURM.lat, FERNSEHTURM.lon]);
   // Web Mercator keeps angles, so a bearing is also a direction on screen.
   const radians = (line.bodyAz * Math.PI) / 180;
   const toBody = L.point(Math.sin(radians), -Math.cos(radians));
   const color = COLOR[body];
 
-  const bodyAt = tower.add(toBody.multiplyBy(BODY_OFFSET_PX));
+  // The sun and moon are effectively infinitely far away, so they sit at the edge of the
+  // view, beyond the streets lit by them, rather than beside the tower.
+  const area = visibleArea(map);
+  const towerOnScreen = map.layerPointToContainerPoint(tower);
+  const bodyOffset = Math.max(BODY_MIN_OFFSET_PX, distanceToEdge(towerOnScreen, toBody, area) - BODY_EDGE_MARGIN_PX);
+  const bodyAt = tower.add(toBody.multiplyBy(bodyOffset));
   L.polyline([map.layerPointToLatLng(tower), map.layerPointToLatLng(bodyAt)], {
     color,
     weight: 1.5,
     opacity: 0.8,
     interactive: false,
   }).addTo(layer);
-  const glyph =
-    body === 'moon'
-      ? `<svg viewBox="-1.1 -1.1 2.2 2.2"><circle r="1" class="ue-moon-glyph__dark"/><path class="ue-moon-glyph__lit" d="${litDiscPath(moon.fraction, moon.waxing)}"/></svg><span>Moon</span>`
-      : '<i></i><span>Sun</span>';
-  L.marker(map.layerPointToLatLng(bodyAt), {
-    icon: L.divIcon({ className: `ue-map-body ue-map-body--${body}`, iconSize: [0, 0], html: glyph }),
-    interactive: false,
-    zIndexOffset: 650,
-  }).addTo(layer);
-
   // Out the far side, to wherever the view ends in that direction.
   const size = map.getSize();
   const start = map.layerPointToContainerPoint(tower);
@@ -89,7 +143,8 @@ function drawAlignment(
     away.x > 0 ? (size.x - start.x) / away.x : away.x < 0 ? -start.x / away.x : Infinity,
     away.y > 0 ? (size.y - start.y) / away.y : away.y < 0 ? -start.y / away.y : Infinity,
   );
-  if (!(toEdge > 0) || !Number.isFinite(toEdge)) return;
+  const bodyLatLng = map.layerPointToLatLng(bodyAt);
+  if (!(toEdge > 0) || !Number.isFinite(toEdge)) return bodyLatLng;
   const metresPerPixel =
     map.distance(map.layerPointToLatLng(tower), map.layerPointToLatLng(tower.add(L.point(100, 0)))) / 100;
   const alignedPx = map.distance([FERNSEHTURM.lat, FERNSEHTURM.lon], [line.farEnd.lat, line.farEnd.lon]) / metresPerPixel;
@@ -107,6 +162,7 @@ function drawAlignment(
       },
     ).addTo(layer);
   }
+  return bodyLatLng;
 }
 
 export default function TodayMap({
@@ -124,6 +180,8 @@ export default function TodayMap({
   const mapRef = useRef<L.Map | null>(null);
   const pathLayer = useRef<L.LayerGroup | null>(null);
   const liveLayer = useRef<L.LayerGroup | null>(null);
+  // Kept between frames, so the slider moves the sun and moon instead of reloading them.
+  const bodyMarkers = useRef<Partial<Record<Body, L.Marker>>>({});
   const [zoom, setZoom] = useState(12);
   const streetLayer = useRef<L.LayerGroup | null>(null);
   const [viewTick, setViewTick] = useState(0);
@@ -215,6 +273,7 @@ export default function TodayMap({
       observer.disconnect();
       map.remove();
       mapRef.current = null;
+      bodyMarkers.current = {};
     };
   }, []);
 
@@ -276,11 +335,41 @@ export default function TodayMap({
     const map = mapRef.current;
     if (!layer) return;
     layer.clearLayers();
+    const drawn = new Set<Body>();
     for (const path of paths) {
       // A moon this thin cannot be seen, so a marker for it would only mislead.
       if (path.body === 'moon' && path.illumination < MIN_MOON_ILLUMINATION) continue;
       const line = alignmentLine(path.body, time, FERNSEHTURM);
-      if (line && map) drawAlignment(map, layer, path.body, line, moon);
+      if (line && map) {
+        const at = drawAlignment(map, layer, path.body, line);
+        const litPath = litDiscPath(moon.fraction, moon.waxing);
+        let marker = bodyMarkers.current[path.body];
+        if (!marker) {
+          marker = L.marker(at, {
+            icon: L.divIcon({
+              className: `ue-map-body ue-map-body--${path.body}`,
+              iconSize: [0, 0],
+              html: path.body === 'sun' ? SUN_ICON : moonIcon(litPath),
+            }),
+            interactive: false,
+            zIndexOffset: 650,
+          }).addTo(map);
+          bodyMarkers.current[path.body] = marker;
+        } else {
+          marker.setLatLng(at);
+        }
+        const look =
+          path.body === 'sun'
+            ? sunLook(line.bodyAlt)
+            : moonLook(line.bodyAlt, sampleBody('sun', new Date(time), FERNSEHTURM.lat, FERNSEHTURM.lon).alt, moon.fraction);
+        const element = marker.getElement();
+        element?.style.setProperty('--ue-body-core', cssRgb(look.core));
+        element?.style.setProperty('--ue-body-limb', cssRgb(look.limb));
+        element?.style.setProperty('--ue-body-glow', cssRgb(look.glow));
+        element?.style.setProperty('--ue-body-glow-opacity', look.glowOpacity.toFixed(2));
+        if (path.body === 'moon') element?.querySelector('#ue-moon-lit path')?.setAttribute('d', litPath);
+        drawn.add(path.body);
+      }
       const p = pointAtTime(path, time);
       if (!p) continue;
       L.marker([p.lat, p.lon], {
@@ -292,6 +381,11 @@ export default function TodayMap({
         interactive: false,
         zIndexOffset: 600,
       }).addTo(layer);
+    }
+    for (const body of ['sun', 'moon'] as const) {
+      if (drawn.has(body)) continue;
+      bodyMarkers.current[body]?.remove();
+      delete bodyMarkers.current[body];
     }
     if (selected) {
       L.marker([selected.lat, selected.lon], {
@@ -313,6 +407,10 @@ export default function TodayMap({
         [moment.view.from.lat, moment.view.from.lon],
         [moment.view.to.lat, moment.view.to.lon],
       ];
+      // Two soft, wider lines underneath give the street its glow.
+      for (const [weight, opacity] of [[10, 0.12], [6, 0.2]] as const) {
+        L.polyline(ends, { color: COLOR[moment.body], weight, opacity, interactive: false }).addTo(layer);
+      }
       L.polyline(ends, { color: COLOR[moment.body], weight: 2.5, opacity: 0.95, interactive: false }).addTo(layer);
       // A wider invisible line makes thin streets easy to tap.
       L.polyline(ends, { color: '#000', weight: 18, opacity: 0.001, bubblingMouseEvents: false })
