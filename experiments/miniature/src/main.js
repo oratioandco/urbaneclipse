@@ -268,7 +268,8 @@ function openView(x, z, view) {
 
 function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   const y = groundAt(x, z);
-  Object.assign(look, { x, y, z, lift: 0, ...view, active: false });
+  Object.assign(look, { x, y, z, lift: 0, mode: 'walk', ...view, active: false });
+  liftAnimation = null;
   photographer = { x, y, z, heading: look.heading };
   orbitAnimation = null;
   flight = null;
@@ -281,6 +282,7 @@ function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   if (document.body.dataset.eye !== 'true') nudgeKeys();
   document.body.dataset.eye = 'true';
   updateEyeBar();
+  showFlight();
   invalidateShadows();
 }
 
@@ -389,7 +391,7 @@ function updateEyeBar() {
   const heading = ((look.heading % 360) + 360) % 360;
   facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
   const lift = look.lift ?? 0;
-  if (lift >= 1) facingLabel.textContent += ` \u00b7 ${Math.round(lift)} m up`;
+  if (lift >= 1 && look.mode !== 'drone') facingLabel.textContent += ` \u00b7 on a roof, ${Math.round(lift)} m up`;
 }
 
 attachLook(renderer.domElement, look, () => {
@@ -424,7 +426,9 @@ const WALK_MPS = 14;
 const RUN_MPS = 45;
 const TURN_DPS = 70;
 const CLIMB_MPS = 12;
-const MAX_LIFT_M = 600;
+/** The open-category ceiling for drones in the EU, metres above the ground. */
+const MAX_LIFT_M = 120;
+const TAKEOFF_M = 30;
 const held = new Set();
 let pad = 0;
 let lastStep = 0;
@@ -460,17 +464,129 @@ function nudgeKeys() {
   void keyHint.offsetWidth;
   keyHint.classList.add('hint');
 }
-let climbPad = 0;
-for (const [id, set] of [['walk-fwd', (v) => (pad = v)], ['walk-back', (v) => (pad = -v)], ['fly-up', (v) => (climbPad = v)], ['fly-down', (v) => (climbPad = -v)]]) {
-  const button = document.getElementById(id);
-  button.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
-    button.setPointerCapture(event.pointerId);
-    set(1);
+// Touch: a stick for walking, like a game or a drone's controller. Up walks forward.
+let padSide = 0;
+{
+  const stick = document.getElementById('stick');
+  const knob = stick.querySelector('.knob');
+  let centre = null;
+  const move = (event) => {
+    if (!centre) return;
+    const reach = stick.clientWidth / 2 - 14;
+    let dx = event.clientX - centre.x;
+    let dy = event.clientY - centre.y;
+    const d = Math.hypot(dx, dy);
+    if (d > reach) {
+      dx = (dx / d) * reach;
+      dy = (dy / d) * reach;
+    }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    // A small dead zone, so resting a thumb does not creep.
+    const scale = (v) => (Math.abs(v) < 0.15 ? 0 : v);
+    pad = scale(-dy / reach);
+    padSide = scale(dx / reach);
     invalidate();
+  };
+  const end = () => {
+    centre = null;
+    pad = 0;
+    padSide = 0;
+    knob.style.transform = '';
+  };
+  stick.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    try {
+      stick.setPointerCapture(event.pointerId);
+    } catch {}
+    const box = stick.getBoundingClientRect();
+    centre = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    move(event);
   });
-  for (const end of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(end, () => set(0));
+  stick.addEventListener('pointermove', move);
+  for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) stick.addEventListener(name, end);
 }
+
+// ---- Flying: take off, the height, and landing again ---------------------------------------
+const takeoffButton = document.getElementById('takeoff');
+const heightInput = document.getElementById('height');
+const heightLabel = document.getElementById('height-label');
+const airspace = document.getElementById('airspace');
+let liftAnimation = null;
+let formatBeforeFlight = null;
+/** Feet on the ground, or on the roof below once you have landed on one. */
+function floorUnder(x, z) {
+  const roof = roofAt(x, z);
+  return roof > -Infinity ? roof - groundAt(x, z) : 0;
+}
+function animateLift(to, done) {
+  liftAnimation = { from: look.lift ?? 0, to, start: performance.now(), done };
+  invalidate();
+}
+function stepLift(now) {
+  if (!liftAnimation) return;
+  const t = smooth(Math.min(1, (now - liftAnimation.start) / 1500), 0, 1);
+  look.lift = THREE.MathUtils.lerp(liftAnimation.from, liftAnimation.to, t);
+  showFlight();
+  shadowsDirty = true;
+  dirty = true;
+  if (t >= 1) {
+    const { done } = liftAnimation;
+    liftAnimation = null;
+    done?.();
+  }
+}
+// The restricted area over the government quarter: 3 nautical miles round the Reichstag.
+const ED_R_146 = { lat: 52.51861, lon: 13.37611, radiusM: 3 * 1852 };
+const edr146 = sceneFromLatLon(ED_R_146.lat, ED_R_146.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
+function showFlight() {
+  const flying = look.mode === 'drone';
+  document.body.dataset.drone = String(flying);
+  takeoffButton.textContent = flying ? '\u2193 Land' : '\u2191 Take off';
+  takeoffButton.setAttribute('aria-label', flying ? 'Land' : 'Take off as a drone');
+  heightInput.value = String(Math.round(look.lift ?? 0));
+  heightLabel.textContent = `${Math.round(look.lift ?? 0)} m`;
+  if (!flying) {
+    airspace.hidden = true;
+    return;
+  }
+  const inside = Math.hypot(look.x - edr146[0], look.z - edr146[1]) < ED_R_146.radiusM;
+  airspace.hidden = false;
+  airspace.dataset.inside = String(inside);
+  airspace.querySelector('span').textContent = inside
+    ? 'Inside ED-R 146: drones only commercially, with a permit.'
+    : 'Check the geo zones before you fly.';
+}
+function takeOff() {
+  look.mode = 'drone';
+  if (!cameraFormat.format.id.startsWith('drone')) {
+    formatBeforeFlight = { id: cameraFormat.format.id, lens: look.lens };
+    setFormat(look, 'drone-3', () => {});
+  }
+  updateEyeBar();
+  animateLift(Math.min(MAX_LIFT_M, floorUnder(look.x, look.z) + TAKEOFF_M));
+  showFlight();
+  nudgeKeys();
+}
+function land() {
+  animateLift(floorUnder(look.x, look.z), () => {
+    look.mode = 'walk';
+    if (formatBeforeFlight) {
+      setFormat(look, formatBeforeFlight.id, () => {});
+      setLens(look, formatBeforeFlight.lens, () => {});
+    }
+    formatBeforeFlight = null;
+    updateEyeBar();
+    showFlight();
+  });
+}
+takeoffButton.addEventListener('click', () => (look.mode === 'drone' ? land() : takeOff()));
+heightInput.addEventListener('input', () => {
+  liftAnimation = null;
+  look.lift = Math.max(floorUnder(look.x, look.z), Number(heightInput.value));
+  showFlight();
+  shadowsDirty = true;
+  invalidate();
+});
 
 /** Somewhere you can be: open ground, or anywhere above the roofs once you have risen. */
 const passable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && roofAt(x, z) < groundAt(x, z) + EYE_HEIGHT + (look.lift ?? 0) - 0.5;
@@ -479,17 +595,18 @@ function stepWalk(now) {
   const dt = Math.min(0.1, (now - lastStep) / 1000);
   lastStep = now;
   if (!look.active || lookAnimation) return;
-  const forward = (held.has('fwd') ? 1 : 0) - (held.has('back') ? 1 : 0) + pad;
-  const sideways = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
+  const forward = THREE.MathUtils.clamp((held.has('fwd') ? 1 : 0) - (held.has('back') ? 1 : 0) + pad, -1, 1);
+  const sideways = THREE.MathUtils.clamp((held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) + padSide, -1, 1);
   const turn = (held.has('turnR') ? 1 : 0) - (held.has('turnL') ? 1 : 0);
-  const climb = (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) + climbPad;
+  // Only a drone changes height; on foot the keys for it do nothing.
+  const climb = look.mode === 'drone' && !liftAnimation ? (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) : 0;
   if (!forward && !sideways && !turn && !climb) return;
   look.heading += turn * TURN_DPS * dt;
   if (climb) {
-    const next = THREE.MathUtils.clamp((look.lift ?? 0) + climb * CLIMB_MPS * (held.has('run') ? 4 : 1) * dt, 0, MAX_LIFT_M);
+    const next = THREE.MathUtils.clamp((look.lift ?? 0) + climb * CLIMB_MPS * (held.has('run') ? 3 : 1) * dt, 0, MAX_LIFT_M);
     // Sinking stops on a roof rather than going through it.
-    const floor = Math.max(0, roofAt(look.x, look.z) - groundAt(look.x, look.z) - EYE_HEIGHT + 0.5);
-    look.lift = climb < 0 ? Math.max(next, Math.min(floor, look.lift ?? 0)) : next;
+    look.lift = Math.max(next, Math.min(floorUnder(look.x, look.z), look.lift ?? 0));
+    showFlight();
   }
   const step = (held.has('run') ? RUN_MPS : WALK_MPS) * dt;
   const a = THREE.MathUtils.degToRad(look.heading);
@@ -507,6 +624,11 @@ function stepWalk(now) {
     }
   }
   look.y = groundAt(look.x, look.z);
+  if (look.mode !== 'drone') {
+    // On foot on a roof: stay on it, and step down where it ends.
+    const below = floorUnder(look.x, look.z);
+    look.lift = below <= (look.lift ?? 0) + 0.6 ? below : look.lift ?? 0;
+  } else showFlight();
   photographer.x = look.x;
   photographer.z = look.z;
   photographer.y = look.y;
@@ -1410,6 +1532,7 @@ function frame(now) {
   stepOrbit(now);
   stepLook(now);
   stepWalk(now);
+  stepLift(now);
   const flying = stepTransition(now);
   placeEyeCamera();
   if (flying) {
