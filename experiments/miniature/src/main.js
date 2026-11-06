@@ -919,22 +919,25 @@ function buildPaths() {
     body: path.body,
     source: path,
     faint: path.body === 'moon' && path.illumination < 0.5,
-    segments: path.segments.map((segment) => {
-      let lastHour = null;
-      return segment.map((p) => {
-        const hour = Math.floor((p.t - from) / 3_600_000);
-        const point = { ...toScene(p), t: p.t, clear: p.clear };
-        if (lastHour !== null && hour !== lastHour) point.hour = hour % 24;
-        lastHour = hour;
-        return point;
-      });
-    }),
+    segments: path.segments.map((segment) => segment.map((p) => ({ ...toScene(p), t: p.t, clear: p.clear }))),
   }));
+  // One line through the tower per hour, like the hours on a clock face: along each, the disc
+  // sits behind some part of the tower at that hour.
+  hourRays = [];
+  const base = { x: 0, y: groundAt(0, 0) + 1, z: 0 };
+  for (const path of dayPaths) {
+    for (let hour = 0; hour < 24; hour++) {
+      const t = from + hour * 3_600_000;
+      const line = alignmentLine(path.body, t, FERNSEHTURM);
+      if (line) hourRays.push({ body: path.body, hour, t, base, far: toScene(line.farEnd) });
+    }
+  }
   updateTracks();
   updateSpots(instant().getTime());
 }
 
 let rays = [];
+let hourRays = [];
 function updateSpots(t) {
   spots = [];
   // The line through the tower for this instant: anywhere along its bright part the disc sits
@@ -1284,6 +1287,7 @@ function frame(now) {
     paths: dayPaths,
     spots,
     rays,
+    hourRays,
     drop: drag?.drop ?? null,
   });
   if (street > 0.5) {

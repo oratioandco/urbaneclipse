@@ -127,10 +127,11 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
  * @param scene.paths [{ body, faint, segments: [[{ x, y, z, t, clear, hour? }]] }] where the tower covers each body
  * @param scene.spots [{ body, x, y, z, t }] where to stand on each path at the chosen time
  * @param scene.rays [{ body, base, far, near }] the line through the tower toward each body now
+ * @param scene.hourRays [{ body, hour, t, base, far }] the line through the tower at each whole hour
  * @param scene.drop { x, y, z } where a dragged photographer would land, or null
  * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], drop = null }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -171,8 +172,9 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   if (eye) return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
 
   const metresPerPx = (w) => (ortho ? 2 / (p11 * innerHeight) : (2 * w) / (p11 * innerHeight));
-  for (const ray of rays) drawRay(ray, project, night);
+  drawHourRays(hourRays, project, night, taps, bottomInset);
   drawPaths(paths, project, night, taps);
+  for (const ray of rays) drawRay(ray, project, night);
   for (const spot of spots) {
     if (!project(spot.x, spot.y, spot.z, here)) continue;
     drawGroundDisc(spot.x, spot.y, spot.z, 11 * metresPerPx(here.w), project, PATH_CSS[spot.body], 0.28);
@@ -301,12 +303,11 @@ function drawStandDot(x, y, z, metresPerPx, project, night, centre) {
 }
 
 /**
- * The day's eclipse paths: bright where no building hides the tower, faint where one does,
- * with the hour marked along them. Each point can be tapped to go to its time.
+ * The day's eclipse paths: solid where no building hides the tower, dashed where one does.
+ * The hours are on the hour lines; each point here can still be tapped to go to its time.
  */
 function drawPaths(paths, project, night, taps) {
   const p = {};
-  const labels = [];
   for (const path of paths) {
     const colour = PATH_CSS[path.body];
     for (const segment of path.segments) {
@@ -330,25 +331,9 @@ function drawPaths(paths, project, night, taps) {
         clear = state;
         run.push({ x: p.x, y: p.y });
         taps.push({ kind: 'path', x: p.x - 9, y: p.y - 9, w: 18, h: 18, body: path.body, t: point.t });
-        if (point.hour !== undefined) labels.push({ x: p.x, y: p.y, text: String(point.hour).padStart(2, '0'), colour });
       }
       flush();
     }
-  }
-  const placed = [];
-  for (const label of labels) {
-    if (placed.some((q) => Math.hypot(q.x - label.x, q.y - label.y) < 34)) continue;
-    placed.push(label);
-    ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
-    const width = ctx.measureText(label.text).width + 9;
-    ctx.fillStyle = label.colour;
-    ctx.beginPath();
-    ctx.roundRect(label.x - width / 2, label.y - 8, width, 16, 8);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label.text, label.x, label.y + 0.5);
   }
 }
 
@@ -366,6 +351,61 @@ function groundLine(a, b, project) {
     if (open) ctx.lineTo(p.x, p.y);
     else ctx.moveTo(p.x, p.y);
     open = true;
+  }
+}
+
+/**
+ * The hour lines: faint, each labelled where it leaves the view, so the hours sit around the
+ * edge like a clock face, with the sun and moon pills, rather than on the map like names.
+ */
+function drawHourRays(hourRays, project, night, taps, bottomInset) {
+  const top = 64;
+  const bottom = innerHeight - bottomInset - 8;
+  const left = 10;
+  const right = innerWidth - 60;
+  const placed = [];
+  const p = {};
+  for (const ray of hourRays) {
+    groundLine(ray.base, ray.far, project);
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = PATH_CSS[ray.body];
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    // The label sits on the edge of the view in the line's direction from the tower, however
+    // long the line is, so the hours ring the view like a clock face.
+    if (!project(ray.base.x, ray.base.y, ray.base.z, p)) continue;
+    const ox = Math.min(right - 30, Math.max(left + 30, p.x));
+    const oy = Math.min(bottom - 30, Math.max(top + 30, p.y));
+    const dx = ray.far.x - ray.base.x;
+    const dz = ray.far.z - ray.base.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const q = {};
+    if (!project(ray.base.x + (dx / length) * 60, ray.base.y, ray.base.z + (dz / length) * 60, q)) continue;
+    const sx = q.x - p.x;
+    const sy = q.y - p.y;
+    const s = Math.hypot(sx, sy) || 1;
+    const ux = sx / s;
+    const uy = sy / s;
+    const reach = Math.min(ux > 0 ? (right - 16 - ox) / ux : ux < 0 ? (left + 16 - ox) / ux : Infinity, uy > 0 ? (bottom - 12 - oy) / uy : uy < 0 ? (top + 12 - oy) / uy : Infinity);
+    const label = { x: ox + ux * reach, y: oy + uy * reach };
+    if (!label || placed.some((q) => Math.hypot(q.x - label.x, q.y - label.y) < 24)) continue;
+    placed.push(label);
+    const text = String(ray.hour).padStart(2, '0');
+    ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
+    const width = ctx.measureText(text).width + 10;
+    ctx.fillStyle = night ? 'rgba(20, 23, 38, 0.86)' : 'rgba(255, 253, 249, 0.94)';
+    ctx.beginPath();
+    ctx.roundRect(label.x - width / 2, label.y - 9, width, 18, 9);
+    ctx.fill();
+    ctx.strokeStyle = PATH_CSS[ray.body];
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = PATH_CSS[ray.body];
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, label.x, label.y + 0.5);
+    taps.push({ kind: 'path', x: label.x - width / 2 - 4, y: label.y - 13, w: width + 8, h: 26, body: ray.body, t: ray.t });
   }
 }
 
@@ -391,6 +431,7 @@ function drawRay(ray, project, night) {
   ctx.globalAlpha = 1;
 }
 
+/** The day's path: a fine line joining where the sphere covers the body, hour by hour. */
 function strokeRun(run, colour, clear, faint, night) {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
@@ -398,13 +439,13 @@ function strokeRun(run, colour, clear, faint, night) {
   ctx.moveTo(run[0].x, run[0].y);
   for (let i = 1; i < run.length; i++) ctx.lineTo(run[i].x, run[i].y);
   if (clear) {
-    ctx.strokeStyle = night ? 'rgba(10, 12, 24, 0.7)' : 'rgba(255, 253, 248, 0.85)';
-    ctx.lineWidth = 6.5;
+    ctx.strokeStyle = night ? 'rgba(10, 12, 24, 0.5)' : 'rgba(255, 253, 248, 0.6)';
+    ctx.lineWidth = 4;
     ctx.stroke();
   }
-  ctx.globalAlpha = (clear ? 1 : 0.45) * (faint ? 0.55 : 1);
+  ctx.globalAlpha = (clear ? 0.85 : 0.35) * (faint ? 0.55 : 1);
   ctx.strokeStyle = colour;
-  ctx.lineWidth = clear ? 3.5 : 2;
+  ctx.lineWidth = clear ? 2 : 1.25;
   ctx.setLineDash(clear ? [] : [5, 5]);
   ctx.stroke();
   ctx.setLineDash([]);
