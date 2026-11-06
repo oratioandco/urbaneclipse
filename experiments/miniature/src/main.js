@@ -713,7 +713,9 @@ function updateHighlights(t) {
   const key = live.map((m) => `${m.body}${views.indexOf(m.view)}`).join('|');
   if (key === shownKey) return;
   shownKey = key;
-  highlights.set(live.map((m) => ({ a: m.view.a, b: m.view.b, colour: RAY_COLOUR[m.body], altitude: m.bodyAlt })));
+  const when = new Date(t);
+  const azimuth = { sun: sampleBody('sun', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az, moon: sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az };
+  highlights.set(live.map((m) => ({ a: m.view.a, b: m.view.b, body: m.body, az: azimuth[m.body], colour: RAY_COLOUR[m.body], altitude: m.bodyAlt, strength: m.body === 'moon' ? 0.3 : 1 })));
   stands = live.map((m) => ({ x: m.view.a[0], z: m.view.a[1], y: groundAt(m.view.a[0], m.view.a[1]) + 2, name: m.view.name, css: NEON_CSS[m.body] }));
 }
 
@@ -1121,6 +1123,8 @@ function frame(now) {
   skyDome.visible = street > 0.001;
   skyDome.position.copy(camera.position);
   skyUniforms.uFade.value = street;
+  // At street level the real sun or moon is down the street; the beams are a map device.
+  ribbonUniforms.uBeams.value = 1 - street;
   // The sun's disc needs bloom at street level; from above only the city's lights do.
   bloom.enabled = bloomLights > 0.02 || street > 0.5;
   bloom.strength = Math.max(0.55 * bloomLights, 0.45 * street);

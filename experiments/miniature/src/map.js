@@ -19,7 +19,7 @@ const blend = {
   blendDstAlpha: THREE.OneFactor,
 };
 
-export const ribbonUniforms = { uViewportH: { value: 1 }, uDay: { value: 1 } };
+export const ribbonUniforms = { uViewportH: { value: 1 }, uDay: { value: 1 }, uBeams: { value: 1 } };
 
 const rayVertex = /* glsl */ `
   attribute vec2 aAcross;
@@ -103,13 +103,13 @@ function rayGeometry(lines, groundAt) {
   const seeds = [];
   const colours = [];
   const indices = [];
-  lines.forEach(({ a, b, colour, altitude }, lineIndex) => {
+  lines.forEach(({ a, b, colour, altitude, strength = 1 }, lineIndex) => {
     const dx = b[0] - a[0];
     const dz = b[1] - a[1];
     const length = Math.hypot(dx, dz) || 1;
     const steps = Math.max(2, Math.ceil(length / SUBDIVIDE_M));
     const slope = Math.tan((Math.max(altitude, 0.5) * Math.PI) / 180);
-    for (const standing of [false, true]) {
+    for (const standing of [false]) {
       const first = positions.length / 3;
       for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -123,7 +123,7 @@ function rayGeometry(lines, groundAt) {
           alongs.push(t);
           heights.push(height);
           seeds.push(lineIndex * 3.7);
-          colours.push(colour[0], colour[1], colour[2]);
+          colours.push(colour[0] * strength, colour[1] * strength, colour[2] * strength);
         }
         if (i > 0) {
           const v = first + i * 2;
@@ -144,16 +144,209 @@ function rayGeometry(lines, groundAt) {
   return geometry;
 }
 
+// ---- Rays from the sun or moon -----------------------------------------------------------
+// Real light down a lined-up street runs nearly level, since the body is only a few degrees
+// up. On the map, one beam per street instead comes down from a single bright point far out
+// in the body's direction, so all of them meet where the sun or moon lies, as sunbeams through
+// clouds appear to. Like the direction pills, they say where the light comes from.
+const SOURCE_DISTANCE_M = 12000;
+const SOURCE_ELEVATION_DEG = 14;
+
+const beamVertex = /* glsl */ `
+  attribute vec3 aFrom;
+  attribute vec3 aTo;
+  attribute float aU;
+  attribute float aSide;
+  attribute vec2 aWidth;
+  attribute float aSeed;
+  attribute vec3 aColour;
+  varying float vU;
+  varying float vSide;
+  varying float vSeed;
+  varying vec3 vColour;
+  void main() {
+    vec3 at = mix(aFrom, aTo, aU);
+    vec3 axis = normalize(aTo - aFrom);
+    // A flat strip turned about its own axis to face the camera, so it reads as a beam of light.
+    vec3 across = normalize(cross(axis, cameraPosition - at) + vec3(1e-4, 0.0, 0.0));
+    vec3 world = at + across * aSide * mix(aWidth.x, aWidth.y, aU);
+    gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
+    vU = aU;
+    vSide = aSide;
+    vSeed = aSeed;
+    vColour = aColour;
+  }
+`;
+
+const beamFragment = (strength) => /* glsl */ `
+  uniform float uDay;
+  uniform float uBeams;
+  varying float vU;
+  varying float vSide;
+  varying float vSeed;
+  varying vec3 vColour;
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 345.45));
+    p += dot(p, p + 34.345);
+    return fract(p.x * p.y);
+  }
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  void main() {
+    float core = exp(-vSide * vSide * 2.6);
+    // Faint streaks along the beam, the way light catches in haze.
+    float streaks = 0.7 + 0.3 * noise(vec2(vSide * 4.0 + vSeed, vU * 18.0 + vSeed));
+    // Thin near the source, gathering strength as it comes down over the city.
+    float along = smoothstep(0.0, 0.6, vU) * (1.0 - smoothstep(0.96, 1.0, vU) * 0.4);
+    float light = core * streaks * along * ${strength} * uBeams;
+    gl_FragColor = vec4(vColour * light * mix(1.6, 1.0, uDay), 1.0 - light * uDay * 0.9);
+  }
+`;
+
+const beamOptions = { ...blend, side: THREE.DoubleSide, uniforms: ribbonUniforms, vertexShader: beamVertex };
+const beams = new THREE.ShaderMaterial({ ...beamOptions, fragmentShader: beamFragment('0.6') });
+const beamsGhost = new THREE.ShaderMaterial({ ...beamOptions, depthTest: false, fragmentShader: beamFragment('0.12') });
+
+const gapVertex = /* glsl */ `
+  attribute vec3 aColour;
+  attribute vec2 aCorner;
+  attribute float aSize;
+  varying vec2 vCorner;
+  varying vec3 vColour;
+  void main() {
+    vec4 view = viewMatrix * vec4(position, 1.0);
+    view.xy += aCorner * aSize;
+    gl_Position = projectionMatrix * view;
+    vCorner = aCorner;
+    vColour = aColour;
+  }
+`;
+const gapFragment = /* glsl */ `
+  uniform float uDay;
+  uniform float uBeams;
+  varying vec2 vCorner;
+  varying vec3 vColour;
+  void main() {
+    float r = length(vCorner);
+    float light = (exp(-r * r * 14.0) * 0.9 + exp(-r * r * 3.0) * 0.3) * uBeams;
+    gl_FragColor = vec4(vColour * light * mix(1.8, 1.1, uDay), 1.0 - light * uDay * 0.8);
+  }
+`;
+const gaps = new THREE.ShaderMaterial({ ...blend, depthTest: false, uniforms: ribbonUniforms, vertexShader: gapVertex, fragmentShader: gapFragment });
+
+/** One source per body: far out from the lit streets' middle, in the body's direction. */
+function sourcesFor(lines, groundAt) {
+  const sources = new Map();
+  for (const line of lines) {
+    const key = line.body ?? 'sun';
+    const entry = sources.get(key) ?? { x: 0, z: 0, n: 0, az: line.az, colour: line.colour, strength: line.strength ?? 1 };
+    entry.x += (line.a[0] + line.b[0]) / 2;
+    entry.z += (line.a[1] + line.b[1]) / 2;
+    entry.n++;
+    sources.set(key, entry);
+  }
+  for (const entry of sources.values()) {
+    const az = (entry.az * Math.PI) / 180;
+    const cx = entry.x / entry.n;
+    const cz = entry.z / entry.n;
+    entry.x = cx + Math.sin(az) * SOURCE_DISTANCE_M;
+    entry.z = cz - Math.cos(az) * SOURCE_DISTANCE_M;
+    entry.y = groundAt(cx, cz) + SOURCE_DISTANCE_M * Math.tan((SOURCE_ELEVATION_DEG * Math.PI) / 180);
+  }
+  return sources;
+}
+
+function beamGeometry(lines, sources, groundAt) {
+  const from = [];
+  const to = [];
+  const us = [];
+  const sides = [];
+  const widths = [];
+  const seeds = [];
+  const colours = [];
+  const positions = [];
+  const indices = [];
+  lines.forEach(({ a, b, colour, strength = 1, body = 'sun' }, lineIndex) => {
+    const source = sources.get(body);
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    // The beam lands on the middle of the street and is as wide as a good part of it.
+    const x = (a[0] + b[0]) / 2;
+    const z = (a[1] + b[1]) / 2;
+    const end = [x, groundAt(x, z) + 1.5, z];
+    const first = positions.length / 3;
+    const steps = 24;
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps;
+      for (const side of [-1, 1]) {
+        from.push(source.x, source.y, source.z);
+        to.push(...end);
+        us.push(u);
+        sides.push(side);
+        widths.push(14, 20 + length * 0.025);
+        seeds.push(lineIndex * 3.7);
+        colours.push(...colour.map((v) => v * strength));
+        positions.push(...end);
+      }
+      if (i > 0) {
+        const v = first + i * 2;
+        indices.push(v - 2, v - 1, v, v - 1, v + 1, v);
+      }
+    }
+  });
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('aFrom', new THREE.Float32BufferAttribute(from, 3));
+  geometry.setAttribute('aTo', new THREE.Float32BufferAttribute(to, 3));
+  geometry.setAttribute('aU', new THREE.Float32BufferAttribute(us, 1));
+  geometry.setAttribute('aSide', new THREE.Float32BufferAttribute(sides, 1));
+  geometry.setAttribute('aWidth', new THREE.Float32BufferAttribute(widths, 2));
+  geometry.setAttribute('aSeed', new THREE.Float32BufferAttribute(seeds, 1));
+  geometry.setAttribute('aColour', new THREE.Float32BufferAttribute(colours, 3));
+  geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(indices), 1));
+  return geometry;
+}
+
+function gapGeometry(sources) {
+  const positions = [];
+  const corners = [];
+  const sizes = [];
+  const colours = [];
+  const indices = [];
+  for (const source of sources.values()) {
+    const first = positions.length / 3;
+    for (const [cx, cy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      positions.push(source.x, source.y, source.z);
+      corners.push(cx, cy);
+      sizes.push(900);
+      colours.push(...source.colour.map((v) => v * source.strength));
+    }
+    indices.push(first, first + 1, first + 2, first, first + 2, first + 3);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('aCorner', new THREE.Float32BufferAttribute(corners, 2));
+  geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
+  geometry.setAttribute('aColour', new THREE.Float32BufferAttribute(colours, 3));
+  geometry.setIndex(indices);
+  return geometry;
+}
+
 export function makeHighlights(scene, groundAt) {
   const group = new THREE.Group();
   scene.add(group);
   let meshes = [];
   return {
     group,
-    /** @param lines [{ a: [x, z], b: [x, z] toward the body, colour, altitude }] */
+    /** @param lines [{ a: [x, z], b: [x, z] toward the body, body, az, colour, altitude, strength }] */
     set(lines) {
-      for (const mesh of meshes) group.remove(mesh);
-      meshes[0]?.geometry.dispose();
+      for (const mesh of meshes) {
+        group.remove(mesh);
+        mesh.geometry.dispose();
+      }
       meshes = [];
       if (lines.length === 0) return;
       const geometry = rayGeometry(lines, groundAt);
@@ -161,9 +354,17 @@ export function makeHighlights(scene, groundAt) {
       const ghost = new THREE.Mesh(geometry, raysGhost);
       solid.renderOrder = 3;
       ghost.renderOrder = 2;
-      solid.frustumCulled = ghost.frustumCulled = false;
-      meshes = [solid, ghost];
-      group.add(solid, ghost);
+      const sources = sourcesFor(lines, groundAt);
+      const fan = beamGeometry(lines, sources, groundAt);
+      const beam = new THREE.Mesh(fan, beams);
+      const beamGhost = new THREE.Mesh(fan, beamsGhost);
+      beam.renderOrder = 4;
+      beamGhost.renderOrder = 2;
+      const glow = new THREE.Mesh(gapGeometry(sources), gaps);
+      glow.renderOrder = 5;
+      meshes = [solid, ghost, beam, beamGhost, glow];
+      for (const mesh of meshes) mesh.frustumCulled = false;
+      group.add(...meshes);
     },
   };
 }
