@@ -168,6 +168,13 @@
       #moments button[data-body='sun']::before { background: var(--sun); }
       #moments button[data-body='moon']::before { background: var(--moon); }
       .credit { font-size: 11px; }
+      .credit a { color: inherit; }
+      .weather-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
+      .weather-line span::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #b9b2a6; vertical-align: 1px; }
+      .weather-line span[data-grade='good']::before { background: #3aa65b; }
+      .weather-line span[data-grade='poor']::before { background: #c7503d; }
+      .track--clouds { position: static; display: block; width: 100%; height: 9px; image-rendering: pixelated; border-radius: 2px; }
+      body[data-eye='true'] .weather-line { display: none; }
       /* The sheet: a handle that opens the day as a list. */
       #sheet-toggle { display: flex; align-items: center; gap: 8px; margin: -4px -4px 0; padding: 2px 4px; border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; }
       #sheet-toggle i { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin-right: 4px; }
@@ -238,6 +245,7 @@
       <label><input type="checkbox" data-layer="tower" /> <span><b>Tower alignments</b><small>Where to stand for the sun or moon behind the TV tower</small></span></label>
       <label><input type="checkbox" data-layer="streets" /> <span><b>Street henges</b><small>Streets lined up with the sun or moon, like Manhattanhenge</small></span></label>
       <label><input type="checkbox" data-layer="names" /> <span><b>Street names</b></span></label>
+      <label><input type="checkbox" data-layer="weather" /> <span><b>Weather</b><small>Forecast clouds: in the light, the sky and the timeline</small></span></label>
       <div class="layers-bodies">
         <label class="body-toggle"><input type="checkbox" data-layer="sun" /> <i style="background: var(--sun)"></i>Sun</label>
         <label class="body-toggle"><input type="checkbox" data-layer="moon" /> <i style="background: var(--moon)"></i>Moon</label>
@@ -311,6 +319,7 @@
           </div>
           <span class="muted" id="sun"></span>
         </div>
+        <div id="weather" class="weather-line" aria-live="polite"></div>
         <div id="tracks" aria-hidden="true"></div>
         <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
         <div id="moments" aria-label="Streets lined up today"></div>
@@ -323,7 +332,7 @@
         </div>
         <div id="daylist" aria-label="Every chance today"></div>
         <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
-        <div class="muted credit">Map data &copy; OpenStreetMap contributors</div>
+        <div class="muted credit">Map data &copy; OpenStreetMap contributors &middot; Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>
       </div>
       <div id="stick" class="walkpad surface" role="application" aria-label="Walk: drag the knob"><div class="knob"></div></div>
     </div>

@@ -27,6 +27,7 @@ import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overl
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
 import { litDiscPath } from '../../../src/lib/moonPhase.ts';
+import { cloudsAt, cloudsFor, forecastReach, readSky } from './weather.js';
 import { formatClock, formatHour, formatMinutes, parseTime, uses12h } from './time.js';
 import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
@@ -1096,7 +1097,7 @@ renderer.domElement.addEventListener('dblclick', (event) => {
 });
 
 // ---- What the map shows ---------------------------------------------------------------------
-const layers = { tower: true, streets: true, names: true, sun: true, moon: true };
+const layers = { tower: true, streets: true, names: true, sun: true, moon: true, weather: true };
 try {
   Object.assign(layers, JSON.parse(localStorage.getItem('miniature.layers') ?? '{}'));
 } catch {}
@@ -1318,6 +1319,23 @@ function updateSun() {
   sky.intensity = rig.skyI;
   sky.groundColor.copy(sky.color).multiplyScalar(0.84);
   background.setRGB(...rig.haze);
+  // Clouds: they hold back the direct light, soften shadows, and grey the sky and the haze.
+  cloudNow = weather && layers.weather ? cloudsAt(weather, Number(timeInput.value)) : null;
+  const passes = cloudNow ? (1 - 0.85 * cloudNow.low) * (1 - 0.55 * cloudNow.mid) * (1 - 0.2 * cloudNow.high) : 1;
+  cloudPasses = passes;
+  skyUniforms.uCloudLow.value = cloudNow?.low ?? 0;
+  skyUniforms.uCloudMid.value = cloudNow?.mid ?? 0;
+  skyUniforms.uCloudHigh.value = cloudNow?.high ?? 0;
+  const cloudiness = 1 - passes;
+  sun.intensity *= passes;
+  glow.intensity *= Math.max(passes, 1 - (cloudNow?.low ?? 0));
+  sun.shadow.radius = 1.6 + 7 * cloudiness;
+  if (cloudiness > 0) {
+    const grey = new THREE.Color(0.82, 0.84, 0.88);
+    sky.color.lerp(grey, 0.75 * cloudiness);
+    sky.intensity *= 1 + 0.3 * cloudiness * smooth(sunAt.alt, -2, 10);
+    background.lerp(grey.clone().multiplyScalar(Math.max(0.05, background.r + background.g + background.b) / 2.5), 0.5 * cloudiness);
+  }
   scene.background = background;
   cityUniforms.uHazeColour.value.copy(background);
 
@@ -1397,6 +1415,7 @@ function updateDay() {
     ...streetMoments(views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
   ].sort((a, b) => a.peak - b.peak);
   shownKey = null;
+  loadWeather();
   computePaths(from, to);
   const list = document.getElementById('moments');
   list.replaceChildren();
@@ -1510,6 +1529,58 @@ function buildPaths() {
   updateTracks();
   updateSpots(instant().getTime());
   renderDayList();
+}
+
+// ---- Weather: clouds for the day ----------------------------------------------------------------
+const weatherLine = document.getElementById('weather');
+function loadWeather() {
+  const date = dateInput.value;
+  weather = null;
+  const reach = forecastReach(date);
+  if (!reach.ok) {
+    weatherLine.textContent = reach.reason;
+    weatherLine.dataset.state = 'none';
+    return;
+  }
+  weatherLine.textContent = 'Loading the cloud forecast\u2026';
+  weatherLine.dataset.state = 'loading';
+  cloudsFor(date, dayStart()).then((day) => {
+    if (dateInput.value !== date) return;
+    weather = day;
+    showWeather();
+    updateTracks();
+    renderDayList();
+    updateSun();
+    invalidate();
+  });
+}
+
+/** Sunrise and sunset, read for colour: will the sun get through, and will clouds catch it? */
+function showWeather() {
+  if (!weather) {
+    weatherLine.textContent = 'No cloud forecast available';
+    weatherLine.dataset.state = 'none';
+    return;
+  }
+  weatherLine.dataset.state = 'ok';
+  weatherLine.replaceChildren(
+    ...['rise', 'set'].map((which) => {
+      const reading = readSky(weather, which);
+      const part = document.createElement('span');
+      if (!reading) return part;
+      part.dataset.grade = reading.grade;
+      part.textContent = `${which === 'rise' ? 'Sunrise' : 'Sunset'} ${formatClock(reading.t)}: ${reading.text}`;
+      return part;
+    }),
+  );
+}
+
+/** Cloud at an instant, as a short note for the list. */
+function cloudNote(t) {
+  if (!weather || !layers.weather) return '';
+  const c = cloudsAt(weather, (t - dayStart()) / 60_000);
+  const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
+  return ` \u00b7 ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`;
 }
 
 // ---- The day as a list, in the expanded sheet -------------------------------------------------
@@ -1645,7 +1716,7 @@ function renderDayList() {
       item.dataset.kind = row.kind;
       item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><em>Go \u203a</em>`;
       item.querySelector('b').textContent = row.title;
-      item.querySelector('small').textContent = row.detail;
+      item.querySelector('small').textContent = row.detail + cloudNote(row.t);
       item.addEventListener('click', () => {
         row.go();
         setSheet(false);
@@ -1696,6 +1767,10 @@ for (const chip of document.querySelectorAll('#dayfilter [data-layer]')) {
 
 let rays = [];
 let hourRays = [];
+let weather = null;
+let cloudNow = null;
+/** How much direct light gets through the clouds now, 0 to 1. */
+let cloudPasses = 1;
 function updateSpots(t) {
   spots = [];
   // The line through the tower for this instant: anywhere along its bright part the disc sits
@@ -1742,7 +1817,9 @@ function updateTracks() {
   }
   if (layers.streets) rows.push({ cls: 'streets', runs: moments.filter(shownBody).map((m) => ({ from: m.from, to: m.to })) });
   const tracks = document.getElementById('tracks');
+  const cloudRow = cloudTrack();
   tracks.replaceChildren(
+    ...(cloudRow ? [cloudRow] : []),
     ...rows.map((row) => {
       const line = document.createElement('div');
       line.className = `track track--${row.cls}`;
@@ -1755,6 +1832,25 @@ function updateTracks() {
       return line;
     }),
   );
+}
+
+/** The day's clouds above the slider: high, mid and low in three thin bands, darker with more cover. */
+function cloudTrack() {
+  if (!weather || !layers.weather) return null;
+  const canvas = document.createElement('canvas');
+  canvas.className = 'track track--clouds';
+  canvas.width = 24 * 4;
+  canvas.height = 3;
+  const ctx = canvas.getContext('2d');
+  [['high', '#9aa3b5'], ['mid', '#6f788b'], ['low', '#454c5c']].forEach(([layer, colour], row) => {
+    weather.berlin[layer].forEach((cover, hour) => {
+      ctx.globalAlpha = Math.min(1, cover * 1.1);
+      ctx.fillStyle = colour;
+      ctx.fillRect(hour * 4, row, 4, 1);
+    });
+  });
+  canvas.title = 'Cloud through the day: high, middle and low';
+  return canvas;
 }
 
 const PHASE_COLOURS = { night: '#1b2140', twilight: '#2f3a6e', blue: '#3f62b5', golden: '#f0a03c', day: '#f3e6c4' };
@@ -2022,7 +2118,7 @@ function frame(now) {
   skyDome.position.copy(camera.position);
   skyUniforms.uFade.value = street;
   // At street level the real sun or moon is down the street; the beams are a map device.
-  ribbonUniforms.uBeams.value = 1 - street;
+  ribbonUniforms.uBeams.value = (1 - street) * cloudPasses;
   // The sun's disc needs bloom at street level; from above only the city's lights do.
   bloom.enabled = bloomLights > 0.02 || street > 0.5;
   bloom.strength = Math.max(0.55 * bloomLights, 0.45 * street);
@@ -2225,4 +2321,5 @@ resizeOverlay();
 updateSun();
 requestAnimationFrame(frame);
 start();
+window.__sky = skyUniforms;
 window.__mini = { get rays() { return rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
