@@ -759,7 +759,7 @@ function showEclipseStatus(now) {
       const metres = Math.hypot(dx, dz);
       const bearing = (THREE.MathUtils.radToDeg(Math.atan2(dx, -dz)) + 360) % 360;
       text = `Sphere spot for now: ${metres < 1000 ? `${Math.round(metres / 10) * 10} m` : `${(metres / 1000).toFixed(1)} km`} ${compassName(bearing)} \u2192 go`;
-      eclipseAction = () => standOnPath(spot);
+      eclipseAction = () => goViewHere({ kind: 'tower', body: spot.body, t: spot.t, x: spot.x, z: spot.z });
     } else {
       const closest = forecast.sort((a, b) => a.sepDeg - b.sepDeg)[0];
       if (closest && closest.beside < 8) {
@@ -821,10 +821,28 @@ function groundUnder(clientX, clientY) {
   return point;
 }
 
+/**
+ * Something to cast rays against for a tile: what is on screen, or else the coarse level every
+ * tile loads at the start, so checks never see an unloaded tile as empty ground.
+ */
+function rayTarget(tile) {
+  if (tile.fineMesh) return tile.fineMesh;
+  if (tile.mesh) return tile.mesh;
+  if (!tile.coarse) return null;
+  if (!tile.rayMesh) {
+    const lod = tile.lods[tile.lods.length - 1];
+    tile.rayMesh = new THREE.Mesh(tile.coarse, buildingMaterial);
+    tile.rayMesh.position.fromArray(lod.min);
+    tile.rayMesh.scale.setScalar(lod.step);
+    tile.rayMesh.updateMatrixWorld(true);
+  }
+  return tile.rayMesh;
+}
+
 /** The highest building surface over a point, or -Infinity on open ground. */
 function roofAt(x, z) {
   raycaster.set(new THREE.Vector3(x, 2000, z), new THREE.Vector3(0, -1, 0));
-  const near = tiles.filter((tile) => tile.mesh && Math.abs(tile.center.x - x) < tile.radius && Math.abs(tile.center.z - z) < tile.radius).map((tile) => tile.mesh);
+  const near = tiles.filter((tile) => Math.abs(tile.center.x - x) < tile.radius && Math.abs(tile.center.z - z) < tile.radius).map(rayTarget).filter(Boolean);
   near.push(tower);
   const hit = raycaster.intersectObjects(near, false)[0];
   return hit && hit.point.y > groundAt(x, z) + 1.5 ? hit.point.y : -Infinity;
@@ -972,6 +990,46 @@ viewHere.addEventListener('pointerleave', (event) => {
   if (!viewableAt(event.clientX, event.clientY)) showViewHere(null);
 });
 
+/** Load full detail, for checks only, for the tiles along a sightline that do not have it on screen. */
+async function fineAlong(x, z, direction, distance) {
+  const origin = new THREE.Vector3(x, groundAt(x, z) + EYE_HEIGHT, z);
+  const end = origin.clone().addScaledVector(direction, Math.min(distance, 1500));
+  const box = new THREE.Box3().setFromPoints([origin, end]).expandByScalar(60);
+  await Promise.all(
+    tiles
+      .filter((tile) => box.distanceToPoint(tile.center) < tile.radius && !tile.fineMesh && tile.level !== tile.lods[0].level)
+      .map(async (tile) => {
+        const lod = tile.lods[0];
+        const mesh = new THREE.Mesh(await loadLevel(tile, lod), buildingMaterial);
+        mesh.position.fromArray(lod.min);
+        mesh.scale.setScalar(lod.step);
+        mesh.updateMatrixWorld(true);
+        tile.fineMesh = mesh;
+      }),
+  );
+}
+
+/**
+ * A clear spot near (x, z) along a line, checked in full detail: the quick search runs on
+ * whatever detail is loaded, then each find is confirmed with the full-detail buildings along
+ * its sightline, and the search goes on past any that turn out blocked.
+ */
+async function confirmedSpotAlong(x, z, ux, uz, viewFrom, keep = () => true) {
+  const rejected = new Set();
+  const key = (px, pz) => `${Math.round(px)},${Math.round(pz)}`;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const spot = clearSpotAlong(x, z, ux, uz, viewFrom, (px, pz) => keep(px, pz) && !rejected.has(key(px, pz)));
+    if (!spot) return null;
+    const view = viewFrom(spot.x, spot.z);
+    await fineAlong(spot.x, spot.z, view.direction, view.distance);
+    if (clearView(spot.x, spot.z, view.direction, view.distance)) return spot;
+    rejected.add(key(spot.x, spot.z));
+  }
+  return null;
+}
+
+/** For checking by hand: what the last sightline check ran into. */
+let lastBlock = null;
 /** Whether nothing built stands between an eye at (x, z) and a point along a direction. */
 function clearView(x, z, direction, distance) {
   if (underRoof(x, z)) return false;
@@ -981,10 +1039,11 @@ function clearView(x, z, direction, distance) {
   raycaster.far = distance;
   const end = origin.clone().addScaledVector(direction, distance);
   const box = new THREE.Box3().setFromPoints([origin, end]).expandByScalar(60);
-  const meshes = tiles.filter((tile) => tile.mesh && box.distanceToPoint(tile.center) < tile.radius).map((tile) => tile.mesh);
+  const meshes = tiles.filter((tile) => box.distanceToPoint(tile.center) < tile.radius).map(rayTarget).filter(Boolean);
   const hit = raycaster.intersectObjects(meshes, false)[0];
   raycaster.near = 0;
   raycaster.far = Infinity;
+  lastBlock = hit ? { distance: hit.distance, point: hit.point.clone() } : null;
   return !hit;
 }
 
@@ -1027,7 +1086,7 @@ viewHere.addEventListener('click', () => {
   setTimeout(() => goViewHere(target), 30);
 });
 
-function goViewHere(target) {
+async function goViewHere(target) {
   viewHere.hidden = true;
   setMinute(target.t);
   const p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
@@ -1038,16 +1097,16 @@ function goViewHere(target) {
     const length = Math.hypot(target.x, target.z) || 1;
     // Stay on the line's useful part: out from the tower, within the model.
     const keep = (x, z) => Math.hypot(x, z) > 150 && Math.abs(x) < 9000 && Math.abs(z) < 9000 && x * target.x + z * target.z > 0;
-    const spot = clearSpotAlong(target.x, target.z, target.x / length, target.z / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x, z) - 40) }), keep);
+    const spot = await confirmedSpotAlong(target.x, target.z, target.x / length, target.z / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x, z) - 40) }), keep);
     if (!spot) return noClearView(target);
     // Face the body: on a tower line it is behind some part of the tower, not always the sphere.
-    enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(200) });
+    enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
   } else if (target.kind === 'street') {
     const m = target.moment;
     const dx = m.view.b[0] - m.view.a[0];
     const dz = m.view.b[1] - m.view.a[1];
     const length = Math.hypot(dx, dz) || 1;
-    const spot = clearSpotAlong(target.x, target.z, dx / length, dz / length, () => ({ direction: towards, distance: 600 }));
+    const spot = await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, () => ({ direction: towards, distance: 600 }));
     if (!spot) return noClearView(target);
     enterEye(spot.x, spot.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
   }
@@ -1078,7 +1137,10 @@ renderer.domElement.addEventListener('pointerup', (event) => {
   const inside = (t) => event.clientX >= t.x && event.clientX <= t.x + t.w && event.clientY >= t.y && event.clientY <= t.y + t.h;
   // A path lies under everything else, so it only takes a tap nothing else wants.
   const hit = taps.find((t) => t.kind !== 'path' && inside(t)) ?? taps.find((t) => t.kind === 'path' && inside(t));
-  if (hit?.kind === 'spot') standOnPath(spots.find((s) => s.body === hit.body));
+  if (hit?.kind === 'spot') {
+    const spot = spots.find((s) => s.body === hit.body);
+    goViewHere({ kind: 'tower', body: spot.body, t: spot.t, x: spot.x, z: spot.z });
+  }
   if (hit?.kind === 'path') {
     timeInput.value = String(Math.round((hit.t - dayStart()) / 60_000));
     updateSun();
@@ -1642,10 +1704,7 @@ function renderDayList() {
                 ? 'Ring of sun round the TV tower\u2019s sphere'
                 : 'Sun behind the TV tower\u2019s sphere',
           detail: `${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
-          go: () => {
-            setMinute(mid.t);
-            standOnPath(toScene(mid));
-          },
+          go: () => goViewHere({ kind: 'tower', body: path.body, t: mid.t, ...toScene(mid) }),
         });
       }
     }
@@ -1682,24 +1741,10 @@ function renderDayList() {
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
           detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
           go: () => {
-            setMinute(mid.t);
-            // Along the stretch for that moment, the point nearest its middle with the tower in view.
+            // Start from the middle of the antenna stretch; the search finds a clear view near it.
             const a = THREE.MathUtils.degToRad(bearing);
-            const from = reach(SPHERE_TOP_AGL, mid.alt);
-            const to = reach(TIP_AGL, mid.alt);
-            const middle = (from + to) / 2;
-            const candidates = [];
-            for (let d = from; d <= to; d += 25) candidates.push(d);
-            candidates.sort((p, q) => Math.abs(p - middle) - Math.abs(q - middle));
-            const open = (d) => {
-              const lat = FERNSEHTURM.lat + (-Math.cos(a) * -d) / 110574;
-              const lon = FERNSEHTURM.lon + (Math.sin(a) * d) / (111320 * Math.cos(THREE.MathUtils.degToRad(FERNSEHTURM.lat)));
-              return !viewshed || sampleViewshed(viewshed, lat, lon) === VIEW_VISIBLE;
-            };
-            const d = candidates.find(open) ?? middle;
-            const x = Math.sin(a) * d;
-            const z = -Math.cos(a) * d;
-            enterEye(x, z, { heading: mid.az, pitch: mid.alt, lens: fullFrame(400) });
+            const d = (reach(SPHERE_TOP_AGL, mid.alt) + reach(TIP_AGL, mid.alt)) / 2;
+            goViewHere({ kind: 'tower', body: 'moon', t: mid.t, x: Math.sin(a) * d, z: -Math.cos(a) * d, lens: 400 });
           },
         });
       }
@@ -1718,11 +1763,7 @@ function renderDayList() {
         kind: 'street',
         title: `${m.view.name}`,
         detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
-        go: () => {
-          setMinute(m.peak);
-          const [x, z] = m.view.a;
-          enterEye(x, z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
-        },
+        go: () => goViewHere({ kind: 'street', body: m.body, t: m.peak, x: m.view.a[0], z: m.view.a[1], moment: m }),
       });
     }
   }
@@ -2342,4 +2383,4 @@ updateSun();
 requestAnimationFrame(frame);
 start();
 window.__sky = skyUniforms;
-window.__mini = { get rays() { return rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
+window.__mini = { get lastBlock() { return lastBlock; }, get rays() { return rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
