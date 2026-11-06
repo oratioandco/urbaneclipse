@@ -26,7 +26,7 @@ import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
-import { EYE_HEIGHT, LENS_MAX, LENS_MIN, attachLook, compassName, fovForLens, lookDirection, sceneFromLatLon, setLens } from './eye.js';
+import { EYE_HEIGHT, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
 
 const params = new URLSearchParams(location.search);
@@ -202,6 +202,8 @@ function stepOrbit(now) {
 }
 
 // ---- Standing in the street ------------------------------------------------------------
+/** A full-frame focal length on the current format, for the same framing. */
+const fullFrame = (mm) => (mm * cameraFormat.format.width) / 36;
 const look = { active: false, x: 0, y: 0, z: 0, heading: 0, pitch: 0, lens: 50 };
 let photographer = null;
 let transition = null;
@@ -228,12 +230,12 @@ function chooseView(x, z) {
   const y = groundAt(x, z);
   const t = instant().getTime();
   const street = moments.find((m) => t >= m.from - 60_000 && t <= m.to + 60_000 && Math.hypot(m.view.a[0] - x, m.view.a[1] - z) < 80);
-  if (street) return { heading: street.view.bearingDeg, pitch: THREE.MathUtils.clamp(street.bodyAlt * 0.9, 0, 12), lens: 85 };
+  if (street) return { heading: street.view.bearingDeg, pitch: THREE.MathUtils.clamp(street.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) };
   for (const body of bodies) {
-    if (body.alt > -1) return { heading: body.az, pitch: THREE.MathUtils.clamp(body.alt * 0.8, 0, 25), lens: body.moon ? 85 : 35 };
+    if (body.alt > -1) return { heading: body.az, pitch: THREE.MathUtils.clamp(body.alt * 0.8, 0, 25), lens: body.moon ? fullFrame(85) : fullFrame(35) };
   }
   const distance = Math.hypot(x, z) || 1;
-  return { heading: (Math.atan2(-x, z) * 180) / Math.PI, pitch: THREE.MathUtils.clamp((Math.atan2(200 - y, distance) * 180) / Math.PI, 0, 30), lens: 50 };
+  return { heading: (Math.atan2(-x, z) * 180) / Math.PI, pitch: THREE.MathUtils.clamp((Math.atan2(200 - y, distance) * 180) / Math.PI, 0, 30), lens: fullFrame(50) };
 }
 
 /** How far one can see along a heading from a spot, up to `far` metres. */
@@ -328,10 +330,28 @@ function placeEyeCamera() {
 }
 
 const lensInput = document.getElementById('lens');
+const formatSelect = document.getElementById('format');
+for (const format of SENSOR_FORMATS) formatSelect.append(new Option(format.label, format.id));
+try {
+  const saved = localStorage.getItem('miniature.format');
+  if (SENSOR_FORMATS.some((f) => f.id === saved)) cameraFormat.format = SENSOR_FORMATS.find((f) => f.id === saved);
+} catch {}
+formatSelect.value = cameraFormat.format.id;
+formatSelect.addEventListener('change', () => {
+  setFormat(look, formatSelect.value, () => {
+    updateEyeBar();
+    invalidate();
+  });
+  try {
+    localStorage.setItem('miniature.format', formatSelect.value);
+  } catch {}
+});
 const lensLabel = document.getElementById('lens-label');
 const facingLabel = document.getElementById('facing');
 function updateEyeBar() {
-  lensInput.value = String((Math.log(look.lens / LENS_MIN) / Math.log(LENS_MAX / LENS_MIN)) * 1000);
+  const [lensMin, lensMax] = lensRange();
+  lensInput.value = String((Math.log(look.lens / lensMin) / Math.log(lensMax / lensMin)) * 1000);
+  formatSelect.value = cameraFormat.format.id;
   lensLabel.textContent = `${Math.round(look.lens)} mm`;
   const heading = ((look.heading % 360) + 360) % 360;
   facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
@@ -343,7 +363,7 @@ attachLook(renderer.domElement, look, () => {
   updateEyeBar();
   invalidateShadows();
 });
-lensInput.addEventListener('input', () => setLens(look, LENS_MIN * (LENS_MAX / LENS_MIN) ** (Number(lensInput.value) / 1000), () => {
+lensInput.addEventListener('input', () => setLens(look, lensRange()[0] * (lensRange()[1] / lensRange()[0]) ** (Number(lensInput.value) / 1000), () => {
   updateEyeBar();
   invalidateShadows();
 }));
@@ -865,7 +885,7 @@ function updateDay() {
       updateSun();
       const [x, z] = moment.view.a;
       photographer = { x, y: groundAt(x, z), z, heading: moment.view.bearingDeg };
-      if (camera === eyeCamera) enterEye(x, z, { heading: moment.view.bearingDeg, pitch: THREE.MathUtils.clamp(moment.bodyAlt * 0.9, 0, 12), lens: 85 });
+      if (camera === eyeCamera) enterEye(x, z, { heading: moment.view.bearingDeg, pitch: THREE.MathUtils.clamp(moment.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
       else flyTo((moment.view.a[0] + moment.view.b[0]) / 2, (moment.view.a[1] + moment.view.b[1]) / 2);
       invalidate();
     });
@@ -938,7 +958,7 @@ function standOnPath(spot) {
   const pitch = THREE.MathUtils.radToDeg(Math.atan2(groundAt(0, 0) + SPHERE_CENTRE_AGL - eye, distance));
   // The sphere (about 32 m across) a fifth of the frame's height.
   const fov = 5 * (32 / distance);
-  const lens = THREE.MathUtils.clamp(12 / Math.tan(fov / 2), LENS_MIN, LENS_MAX);
+  const lens = THREE.MathUtils.clamp(lensForFov(fov), ...lensRange());
   enterEye(spot.x, spot.z, { heading, pitch, lens });
 }
 

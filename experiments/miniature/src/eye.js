@@ -3,12 +3,42 @@
  * turn a heading and a pitch into a view. Headings are compass degrees, pitch is up from level.
  */
 import * as THREE from 'three';
+import { SENSOR_FORMATS } from '../../../src/lib/lensScale.ts';
 
-/** Vertical field of view of a 35 mm-equivalent lens, degrees, for a landscape frame. */
-export const fovForLens = (mm) => (2 * Math.atan(12 / mm) * 180) / Math.PI;
-export const LENS_MIN = 16;
-export const LENS_MAX = 600;
+export { SENSOR_FORMATS };
 export const EYE_HEIGHT = 1.6;
+
+/** The camera being simulated. Full-frame unless the photographer picked another format. */
+export const camera = { format: SENSOR_FORMATS.find((f) => f.id === 'ff') };
+
+/**
+ * Vertical field of view on screen, degrees. The sensor's long side runs across a landscape
+ * screen and up a portrait one, as a photographer would hold the camera.
+ */
+export function fovForLens(mm, format = camera.format) {
+  const aspect = innerWidth / innerHeight;
+  const along = Math.atan(format.width / (2 * mm));
+  const vertical = aspect >= 1 ? Math.atan(Math.tan(along) / aspect) : along;
+  return (2 * vertical * 180) / Math.PI;
+}
+
+/** The focal length that gives a vertical field of view on screen, radians. */
+export function lensForFov(fov, format = camera.format) {
+  const aspect = innerWidth / innerHeight;
+  const along = aspect >= 1 ? Math.atan(Math.tan(fov / 2) * aspect) : fov / 2;
+  return format.width / (2 * Math.tan(along));
+}
+
+export const lensRange = (format = camera.format) => [format.minFocal, format.maxFocal];
+
+/** Switch format, keeping the framing: the focal length scales with the sensor. */
+export function setFormat(state, id, onChange) {
+  const next = SENSOR_FORMATS.find((f) => f.id === id);
+  if (!next) return;
+  const mm = state.lens * (next.width / camera.format.width);
+  camera.format = next;
+  setLens(state, mm, onChange);
+}
 
 const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 export const compassName = (deg) => COMPASS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
@@ -70,7 +100,8 @@ export function attachLook(element, state, onChange) {
 }
 
 export function setLens(state, mm, onChange) {
-  state.lens = THREE.MathUtils.clamp(mm, LENS_MIN, LENS_MAX);
+  const [min, max] = lensRange();
+  state.lens = THREE.MathUtils.clamp(mm, min, max);
   onChange();
 }
 
