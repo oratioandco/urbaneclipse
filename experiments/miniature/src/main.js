@@ -885,6 +885,9 @@ const lightView = new THREE.Matrix4();
 /** Standing up, shadows matter most within a few hundred metres ahead. */
 const EYE_SHADOW_SPAN = 1400;
 
+/** Above the tallest roof and the tower's tip, metres. */
+const SHADOW_TOP_M = 420;
+const depthPoint = new THREE.Vector3();
 function fitShadow() {
   const distance = LIGHT_DISTANCE;
   const standing = camera === eyeCamera && eyeCamera.position.y - groundAt(eyeCamera.position.x, eyeCamera.position.z) < 300;
@@ -903,6 +906,14 @@ function fitShadow() {
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
+  // Depth along the light. With a low sun the view stretches a long way along it, so a fixed
+  // range would leave shadows only in a strip across the city.
+  let nearest = distance - 1500;
+  let farthest = distance + 1500;
+  if (!standing) {
+    nearest = Infinity;
+    farthest = -Infinity;
+  }
   for (const x of [-1, 1]) {
     for (const y of [-1, 1]) {
       if (standing) {
@@ -926,6 +937,11 @@ function fitShadow() {
         corner.x = anchor.x + (dx * VIEW_RADIUS) / reach;
         corner.z = anchor.z + (dz * VIEW_RADIUS) / reach;
       }
+      for (const height of [-15, SHADOW_TOP_M]) {
+        depthPoint.set(corner.x, height, corner.z).applyMatrix4(lightView);
+        nearest = Math.min(nearest, -depthPoint.z);
+        farthest = Math.max(farthest, -depthPoint.z);
+      }
       corner.y = 0;
       corner.applyMatrix4(lightView);
       minX = Math.min(minX, corner.x);
@@ -944,10 +960,11 @@ function fitShadow() {
   shadowCamera.right = centreX + span / 2;
   shadowCamera.bottom = centreY - span / 2;
   shadowCamera.top = centreY + span / 2;
-  shadowCamera.near = distance - 1500;
-  shadowCamera.far = distance + 1500;
+  // The box's sides reach past the view, and tall buildings there cast into it.
+  shadowCamera.near = Math.max(1, nearest - margin - SHADOW_TOP_M);
+  shadowCamera.far = farthest + margin + SHADOW_TOP_M;
   shadowCamera.updateProjectionMatrix();
-  sun.shadow.bias = -Math.max(0.2, texel * 0.6) / 3000;
+  sun.shadow.bias = -Math.max(0.2, texel * 0.6) / (shadowCamera.far - shadowCamera.near);
   sun.shadow.needsUpdate = true;
   renderer.shadowMap.needsUpdate = true;
   stats.texel = texel;
