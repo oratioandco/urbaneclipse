@@ -18,6 +18,8 @@ import { sampleBody } from '../../../src/lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../../../src/lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../../../src/lib/lightPhases.ts';
 import { decodeStreets, streetMoments } from '../../../src/lib/streets.ts';
+import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, applyView, computeDayPath, pointAtTime } from '../../../src/lib/dailyPaths.ts';
+import { VIEW_VISIBLE, loadViewshed, sampleViewshed } from '../../../src/lib/viewshed.ts';
 import { lightAt } from './light.js';
 import { cityUniforms, makeTerrainTexture, mirrorGround, shadeBuildings, shadeGround, shadeTower } from './shading.js';
 import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
@@ -41,6 +43,8 @@ const REFLECTION_REACH_M = 280;
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
+// Neutral keeps a colour's hue as it nears white, so low sun on a pale wall reads gold, not white.
+renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.shadowMap.autoUpdate = false;
@@ -58,6 +62,9 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(SHADOW_SIZE, SHADOW_SIZE);
 sun.shadow.radius = 1.6;
 scene.add(sun, sun.target);
+// The sunset sky's glow on walls facing it; see lightAt.
+const glow = new THREE.DirectionalLight(0xffffff, 0);
+scene.add(glow, glow.target);
 
 // Tower: the same solid of revolution the eclipse maths uses.
 const towerPoints = FERNSEHTURM.profile.map(([h, r]) => new THREE.Vector2(r, h));
@@ -424,6 +431,9 @@ function dragMove(event) {
   if (!drag.moved) return;
   ghost.hidden = false;
   ghost.style.transform = `translate(${event.clientX - 24}px, ${event.clientY - 44}px)`;
+  const over = document.elementFromPoint(event.clientX, event.clientY);
+  drag.drop = over === renderer.domElement || over?.id === 'labels' ? groundUnder(event.clientX, event.clientY) : null;
+  invalidate();
 }
 function dragEnd(event) {
   removeEventListener('pointermove', dragMove);
@@ -433,6 +443,7 @@ function dragEnd(event) {
   const { moved } = drag;
   drag = null;
   ghost.hidden = true;
+  invalidate();
   if (event.type === 'pointercancel') return;
   if (!moved) {
     // A tap stands the photographer in the middle of the map.
@@ -463,7 +474,15 @@ renderer.domElement.addEventListener('pointerdown', (event) => {
 });
 renderer.domElement.addEventListener('pointerup', (event) => {
   if (!press || Math.hypot(event.clientX - press.x, event.clientY - press.y) > 5) return;
-  const hit = taps.find((t) => event.clientX >= t.x && event.clientX <= t.x + t.w && event.clientY >= t.y && event.clientY <= t.y + t.h);
+  const inside = (t) => event.clientX >= t.x && event.clientX <= t.x + t.w && event.clientY >= t.y && event.clientY <= t.y + t.h;
+  // A path lies under everything else, so it only takes a tap nothing else wants.
+  const hit = taps.find((t) => t.kind !== 'path' && inside(t)) ?? taps.find((t) => t.kind === 'path' && inside(t));
+  if (hit?.kind === 'spot') standOnPath(spots.find((s) => s.body === hit.body));
+  if (hit?.kind === 'path') {
+    timeInput.value = String(Math.round((hit.t - dayStart()) / 60_000));
+    updateSun();
+    invalidate();
+  }
   if (hit?.kind === 'pill') face(hit.body);
   if (hit?.kind === 'photographer' && photographer) enterEye(photographer.x, photographer.z, { heading: photographer.heading, pitch: look.pitch, lens: look.lens });
 });
@@ -632,6 +651,9 @@ function updateSun() {
   const rig = lightAt(sunAt.alt, moonAt.alt, illumination.fraction, Number(timeInput.value));
   keyDirection.copy(rig.key.body === 'sun' ? sunDirection : moonDirection);
   sun.color.setRGB(...rig.key.colour);
+  glow.color.setRGB(...rig.glow.colour);
+  glow.intensity = rig.glow.intensity;
+  toDirection(glow.position, sunAt.az, 9).multiplyScalar(1000);
   sun.intensity = rig.key.intensity;
   sky.color.setRGB(...rig.sky);
   sky.intensity = rig.skyI;
@@ -641,6 +663,7 @@ function updateSun() {
   cityUniforms.uHazeColour.value.copy(background);
 
   cityUniforms.uLights.value = rig.lights;
+  cityUniforms.uGroundTone.value = rig.groundTone;
   cityUniforms.uWindows.value = rig.lights * rig.windows;
   ribbonUniforms.uDay.value = 1 - smooth(rig.lights, 0.1, 0.7);
   cityUniforms.uKeyDir.value.copy(keyDirection);
@@ -670,6 +693,7 @@ function updateSun() {
   const phase = LIGHT_PHASE_NAMES[lightPhaseAt(sunAt.alt)];
   sunLabel.textContent = `${phase} \u00b7 ${sunAt.alt > -0.5 ? `sun ${sunAt.alt.toFixed(0)}\u00b0` : moonAt.alt > 0 ? `moon ${Math.round(illumination.fraction * 100)}% lit` : 'moon down'}`;
   updateHighlights(when.getTime());
+  updateSpots(when.getTime());
   invalidateShadows();
 }
 
@@ -709,6 +733,7 @@ function updateDay() {
     ...streetMoments(views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
   ].sort((a, b) => a.peak - b.peak);
   shownKey = null;
+  computePaths(from, to);
   const list = document.getElementById('moments');
   list.replaceChildren();
   const seen = new Set();
@@ -736,6 +761,100 @@ function updateDay() {
     list.append(chip);
   }
   document.getElementById('moments-empty').hidden = seen.size > 0;
+}
+
+// ---- Where the tower covers the sun or moon ------------------------------------------------
+let rawPaths = [];
+let viewshed = null;
+let dayPaths = [];
+let spots = [];
+const toScene = (p) => {
+  const [x, z] = sceneFromLatLon(p.lat, p.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
+  return { x, z, y: groundAt(x, z) + 1 };
+};
+
+function computePaths(from, to) {
+  rawPaths = ['sun', 'moon'].map((body) => computeDayPath({ body, start: new Date(from), end: new Date(to), landmark: FERNSEHTURM }));
+  buildPaths();
+}
+
+/** The paths in scene coordinates, checked against the buildings once that data is in. */
+function buildPaths() {
+  const from = dayStart();
+  const viewed = rawPaths
+    .filter((path) => path.body === 'sun' || path.illumination >= MIN_MOON_ILLUMINATION)
+    .map((path) => (viewshed ? applyView(path, (lat, lon) => sampleViewshed(viewshed, lat, lon) === VIEW_VISIBLE) : path));
+  dayPaths = viewed.map((path) => ({
+    body: path.body,
+    source: path,
+    faint: path.body === 'moon' && path.illumination < 0.5,
+    segments: path.segments.map((segment) => {
+      let lastHour = null;
+      return segment.map((p) => {
+        const hour = Math.floor((p.t - from) / 3_600_000);
+        const point = { ...toScene(p), t: p.t, clear: p.clear };
+        if (lastHour !== null && hour !== lastHour) point.hour = hour % 24;
+        lastHour = hour;
+        return point;
+      });
+    }),
+  }));
+  updateTracks();
+  updateSpots(instant().getTime());
+}
+
+function updateSpots(t) {
+  spots = [];
+  for (const path of dayPaths) {
+    const p = pointAtTime(path.source, t);
+    if (p && p.clear !== false) spots.push({ body: path.body, t: p.t, ...toScene(p) });
+  }
+}
+
+/** Stand at a point on a path, facing the tower's sphere, with a lens that frames it. */
+function standOnPath(spot) {
+  const distance = Math.hypot(spot.x, spot.z);
+  const eye = groundAt(spot.x, spot.z) + EYE_HEIGHT;
+  const heading = (THREE.MathUtils.radToDeg(Math.atan2(-spot.x, spot.z)) + 360) % 360;
+  const pitch = THREE.MathUtils.radToDeg(Math.atan2(groundAt(0, 0) + SPHERE_CENTRE_AGL - eye, distance));
+  // The sphere (about 32 m across) a fifth of the frame's height.
+  const fov = 5 * (32 / distance);
+  const lens = THREE.MathUtils.clamp(12 / Math.tan(fov / 2), LENS_MIN, LENS_MAX);
+  enterEye(spot.x, spot.z, { heading, pitch, lens });
+}
+
+/** Bars above the time slider for when each path is clear and when streets line up. */
+function updateTracks() {
+  const from = dayStart();
+  const pct = (t) => `${(((t - from) / 86_400_000) * 100).toFixed(2)}%`;
+  const rows = [];
+  for (const path of dayPaths) {
+    const runs = [];
+    for (const segment of path.source.segments) {
+      let open = null;
+      for (const p of segment) {
+        if (p.clear === false) open = null;
+        else if (open) open.to = p.t;
+        else runs.push((open = { from: p.t, to: p.t }));
+      }
+    }
+    rows.push({ cls: path.body, runs });
+  }
+  rows.push({ cls: 'streets', runs: moments.map((m) => ({ from: m.from, to: m.to })) });
+  const tracks = document.getElementById('tracks');
+  tracks.replaceChildren(
+    ...rows.map((row) => {
+      const line = document.createElement('div');
+      line.className = `track track--${row.cls}`;
+      for (const run of row.runs) {
+        const bar = document.createElement('span');
+        bar.style.left = pct(run.from);
+        bar.style.width = `calc(${pct(run.to)} - ${pct(run.from)} + 3px)`;
+        line.append(bar);
+      }
+      return line;
+    }),
+  );
 }
 
 const PHASE_COLOURS = { night: '#1b2140', twilight: '#2f3a6e', blue: '#3f62b5', golden: '#f0a03c', day: '#f3e6c4' };
@@ -1001,7 +1120,10 @@ function frame(now) {
     stands: street > 0 ? [] : stands,
     bottomInset: panel.offsetHeight + 16,
     eye: street > 0.5 ? look : null,
-    photographer: street > 0 ? null : photographer,
+    photographer: street > 0 || drag?.moved ? null : photographer,
+    paths: dayPaths,
+    spots,
+    drop: drag?.drop ?? null,
   });
   needle.style.transform = `rotate(${camera === eyeCamera ? -look.heading : THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
   tiltButton.textContent = controls.getPolarAngle() < 0.2 ? '3D' : '2D';
@@ -1105,6 +1227,14 @@ dateInput.addEventListener('input', () => {
   updateSun();
 });
 timeInput.addEventListener('input', updateSun);
+loadViewshed().then(
+  (loaded) => {
+    viewshed = loaded;
+    if (rawPaths.length) buildPaths();
+    invalidate();
+  },
+  (error) => console.error('[miniature] visibility data failed', error),
+);
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);

@@ -22,6 +22,8 @@ export const cityUniforms = {
   uHazeFocus: { value: new THREE.Vector2() },
   uHazeNear: { value: 1000 },
   uHazeFar: { value: 4000 },
+  /** Brightness of the paved ground: lowered in low sun so the buildings stand off it. */
+  uGroundTone: { value: 1 },
 };
 
 const WARM = 'vec3(1.0, 0.62, 0.3)';
@@ -35,6 +37,7 @@ const sharedFragment = /* glsl */ `
   uniform mat4 uMirrorVP;
   uniform float uMirrorOn, uWaterLevel;
   uniform vec3 uKeyDir, uKeyLight, uSkyLight, uHazeColour;
+  uniform float uGroundTone;
   uniform vec2 uHazeFocus;
   uniform float uHazeNear, uHazeFar;
   // Air thickening away from the middle of the view, and the model's edge dissolving into it.

@@ -124,9 +124,12 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
  * @param scene.stands [{ x, y, z, name, colour }] lit-up streets
  * @param scene.eye { heading, pitch } when standing in the street, else null
  * @param scene.photographer { x, y, z, heading } where the photographer was put down, or null
- * @returns what can be tapped: [{ kind, x, y, w, h, body? }]
+ * @param scene.paths [{ body, faint, segments: [[{ x, y, z, t, clear, hour? }]] }] where the tower covers each body
+ * @param scene.spots [{ body, x, y, z, t }] where to stand on each path at the chosen time
+ * @param scene.drop { x, y, z } where a dragged photographer would land, or null
+ * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], drop = null }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -165,6 +168,22 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   };
 
   if (eye) return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
+
+  const metresPerPx = (w) => (ortho ? 2 / (p11 * innerHeight) : (2 * w) / (p11 * innerHeight));
+  drawPaths(paths, project, night, taps);
+  for (const spot of spots) {
+    if (!project(spot.x, spot.y, spot.z, here)) continue;
+    drawGroundDisc(spot.x, spot.y, spot.z, 11 * metresPerPx(here.w), project, PATH_CSS[spot.body], 0.28);
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = PATH_CSS[spot.body];
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.arc(here.x, here.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    taps.push({ kind: 'spot', x: here.x - 16, y: here.y - 16, w: 32, h: 32, body: spot.body, t: spot.t });
+  }
+  if (drop && project(drop.x, drop.y, drop.z, here)) drawStandDot(drop.x, drop.y, drop.z, metresPerPx(here.w), project, night, here);
 
   for (const s of stands) {
     if (!project(s.x, s.y, s.z, here)) continue;
@@ -221,6 +240,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     ctx.lineTo(cone[1].x, cone[1].y);
     ctx.closePath();
     ctx.fill();
+    drawStandDot(photographer.x, photographer.y, photographer.z, 2 / (p11 * innerHeight) * (ortho ? 1 : here.w), project, night, here);
     drawPhotographer(here.x, here.y);
     taps.push({ kind: 'photographer', x: here.x - 18, y: here.y - 36, w: 36, h: 40 });
   }
@@ -245,6 +265,109 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < 130 && Math.abs(pills[0].y - pills[1].y) < PILL_H + 6) pills[1].y += pills[1].y >= pills[0].y ? PILL_H + 6 : -(PILL_H + 6);
   for (const pill of pills) taps.push(drawPill(pill));
   return taps;
+}
+
+const PATH_CSS = { sun: '#f26a12', moon: '#5b82ff' };
+
+/** A circle lying on the ground, so it foreshortens with the view like the map under it. */
+function drawGroundDisc(x, y, z, radius, project, fill, alpha) {
+  const p = {};
+  ctx.beginPath();
+  for (let i = 0; i <= 32; i++) {
+    const a = (i / 32) * Math.PI * 2;
+    if (!project(x + Math.cos(a) * radius, y, z + Math.sin(a) * radius, p)) return;
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+/** Where the photographer stands, as on a phone map: a soft halo and a ringed dot on the ground. */
+function drawStandDot(x, y, z, metresPerPx, project, night, centre) {
+  const ink = night ? '#ffe9c8' : '#24221f';
+  drawGroundDisc(x, y, z, 28 * metresPerPx, project, ink, 0.2);
+  drawGroundDisc(x, y, z, 12 * metresPerPx, project, '#fff', 1);
+  drawGroundDisc(x, y, z, 8.5 * metresPerPx, project, ink, 1);
+  // A dot too flat to see in a steep view still needs a centre.
+  ctx.fillStyle = ink;
+  ctx.beginPath();
+  ctx.arc(centre.x, centre.y, 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
+ * The day's eclipse paths: bright where no building hides the tower, faint where one does,
+ * with the hour marked along them. Each point can be tapped to go to its time.
+ */
+function drawPaths(paths, project, night, taps) {
+  const p = {};
+  const labels = [];
+  for (const path of paths) {
+    const colour = PATH_CSS[path.body];
+    for (const segment of path.segments) {
+      // Runs of one state, each drawn as its own line.
+      let run = [];
+      let clear = null;
+      const flush = () => {
+        if (run.length > 1) strokeRun(run, colour, clear, path.faint, night);
+        run = [];
+      };
+      for (const point of segment) {
+        if (!project(point.x, point.y, point.z, p) || p.x < -200 || p.x > innerWidth + 200 || p.y < -200 || p.y > innerHeight + 200) {
+          flush();
+          continue;
+        }
+        const state = point.clear !== false;
+        if (state !== clear && run.length) {
+          run.push({ x: p.x, y: p.y });
+          flush();
+        }
+        clear = state;
+        run.push({ x: p.x, y: p.y });
+        taps.push({ kind: 'path', x: p.x - 9, y: p.y - 9, w: 18, h: 18, body: path.body, t: point.t });
+        if (point.hour !== undefined) labels.push({ x: p.x, y: p.y, text: String(point.hour).padStart(2, '0'), colour });
+      }
+      flush();
+    }
+  }
+  const placed = [];
+  for (const label of labels) {
+    if (placed.some((q) => Math.hypot(q.x - label.x, q.y - label.y) < 34)) continue;
+    placed.push(label);
+    ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
+    const width = ctx.measureText(label.text).width + 9;
+    ctx.fillStyle = label.colour;
+    ctx.beginPath();
+    ctx.roundRect(label.x - width / 2, label.y - 8, width, 16, 8);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label.text, label.x, label.y + 0.5);
+  }
+}
+
+function strokeRun(run, colour, clear, faint, night) {
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(run[0].x, run[0].y);
+  for (let i = 1; i < run.length; i++) ctx.lineTo(run[i].x, run[i].y);
+  if (clear) {
+    ctx.strokeStyle = night ? 'rgba(10, 12, 24, 0.7)' : 'rgba(255, 253, 248, 0.85)';
+    ctx.lineWidth = 6.5;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = (clear ? 1 : 0.45) * (faint ? 0.55 : 1);
+  ctx.strokeStyle = colour;
+  ctx.lineWidth = clear ? 3.5 : 2;
+  ctx.setLineDash(clear ? [] : [5, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
 }
 
 /** The marker: a round badge with a camera, on a short stem down to the spot. */

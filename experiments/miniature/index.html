@@ -33,6 +33,12 @@
       input[type='range']#time { appearance: none; -webkit-appearance: none; height: 12px; min-height: 12px; margin: 9px 0; border-radius: 6px; background: linear-gradient(90deg, var(--phases, #ccc)); }
       #time::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; cursor: grab; }
       #time::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; }
+      #tracks { display: grid; gap: 3px; margin: 0 11px -6px; }
+      .track { position: relative; height: 4px; }
+      .track span { position: absolute; top: 0; bottom: 0; border-radius: 2px; min-width: 3px; }
+      .track--sun span { background: #f26a12; }
+      .track--moon span { background: #5b82ff; }
+      .track--streets span { background: #d9a441; opacity: 0.8; }
       #moments { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
       #moments button { font: inherit; font-size: 12px; white-space: nowrap; padding: 6px 10px; min-height: 30px; border: 0; border-radius: 15px; background: #ece8e0; color: inherit; cursor: pointer; }
       #moments button::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
@@ -73,6 +79,7 @@
         <span class="muted" id="sun"></span>
 
       </div>
+      <div id="tracks" aria-hidden="true"></div>
       <div class="row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
       <div id="moments" aria-label="Streets lined up today"></div>
       <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
