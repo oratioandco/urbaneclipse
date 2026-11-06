@@ -1134,6 +1134,12 @@ addEventListener('pointerdown', (event) => {
     layersButton.setAttribute('aria-expanded', 'false');
   }
 });
+// The moon in the layers menu shows today's phase.
+function showLayersMoon() {
+  const moon = getMoonIllumination(new Date(dayStart() + 43_200_000));
+  document.getElementById('layers-moon').innerHTML = `<circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/>`;
+}
+layersButton.addEventListener('click', showLayersMoon);
 for (const input of layersMenu.querySelectorAll('input[data-layer]')) {
   input.checked = layers[input.dataset.layer];
   input.addEventListener('change', () => setLayer(input.dataset.layer, input.checked));

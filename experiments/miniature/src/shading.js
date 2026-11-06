@@ -33,6 +33,7 @@ const sharedFragment = /* glsl */ `
   uniform sampler2D uTerrain;
   uniform float uHalf, uLights, uWindows;
   varying vec3 vWorldP;
+  varying vec3 vRel;
   uniform sampler2D uMirror;
   uniform mat4 uMirrorVP;
   uniform float uMirrorOn, uWaterLevel;
@@ -65,8 +66,9 @@ function inject(material, name, edit) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, cityUniforms);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWorldP;')
-      .replace('#include <project_vertex>', '#include <project_vertex>\nvWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWorldP;\nvarying vec3 vRel;')
+      // Relative to the camera as well: small numbers, so their screen derivatives stay precise.
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvRel = vWorldP - cameraPosition;');
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${sharedFragment}`);
     edit(shader);
   };
@@ -125,7 +127,14 @@ export function shadeBuildings(material) {
         // Light from the street reaches up the facades, and a little of it onto the roofs.
         vec3 cityLight = ${WARM} * uLights * mix(0.012 + 0.08 * street, street * (0.02 + 0.5 * exp(-height / 11.0)), wall);
         if (wall > 0.0 && uWindows > 0.001) {
-          vec2 along = normalize(vec2(-worldNormal.z, worldNormal.x) + 1e-5);
+          // The wall's direction, steady across the whole wall: from camera-relative positions,
+          // whose derivatives are precise, and snapped to whole degrees. Taken from the large
+          // world coordinates, it jittered per pixel and the window grid with it.
+          vec3 face = normalize(cross(dFdx(vRel), dFdy(vRel)));
+          float angle = atan(face.z, face.x);
+          angle = floor(angle / 0.017453 + 0.5) * 0.017453;
+          vec2 facing = vec2(cos(angle), sin(angle));
+          vec2 along = vec2(-facing.y, facing.x);
           vec2 fine = vec2(dot(vWorldP.xz, along) / 3.7, height / 3.3);
           // Further away, windows merge into larger lit patches rather than dissolving into a
           // flat tone, so the city keeps its sparkle at every zoom.
@@ -134,7 +143,7 @@ export function shadeBuildings(material) {
           vec2 id = floor(cell);
           vec2 f = fract(cell) - 0.5;
           vec2 blur = max(fwidth(cell), vec2(1e-4));
-          float seed = hash21(id + floor(dot(vWorldP.xz, worldNormal.xz) / 3.0) * 0.137);
+          float seed = hash21(id + floor(dot(vWorldP.xz, facing) / 3.0 + 0.5) * 0.137);
           float pane = smoothstep(0.27 + blur.x, 0.27 - blur.x, abs(f.x)) * smoothstep(0.3 + blur.y, 0.3 - blur.y, abs(f.y));
           float shade = hash21(id.yx + 7.3);
           vec3 tint = mix(vec3(1.0, 0.5, 0.18), vec3(1.0, 0.8, 0.55), shade);
