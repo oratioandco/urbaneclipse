@@ -18,7 +18,7 @@ import { sampleBody } from '../../../src/lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../../../src/lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../../../src/lib/lightPhases.ts';
 import { decodeStreets, streetMoments } from '../../../src/lib/streets.ts';
-import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, alignmentLine, applyView, computeDayPath, pointAtTime } from '../../../src/lib/dailyPaths.ts';
+import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, alignmentLine, applyView, compassPoint, computeDayPath, pointAtTime } from '../../../src/lib/dailyPaths.ts';
 import { VIEW_VISIBLE, loadViewshed, sampleViewshed } from '../../../src/lib/viewshed.ts';
 import { lightAt } from './light.js';
 import { cityUniforms, makeTerrainTexture, mirrorGround, shadeBuildings, shadeGround, shadeTower } from './shading.js';
@@ -927,16 +927,7 @@ addEventListener('pointerdown', (event) => {
 });
 for (const input of layersMenu.querySelectorAll('input[data-layer]')) {
   input.checked = layers[input.dataset.layer];
-  input.addEventListener('change', () => {
-    layers[input.dataset.layer] = input.checked;
-    try {
-      localStorage.setItem('miniature.layers', JSON.stringify(layers));
-    } catch {}
-    shownKey = null;
-    updateDay();
-    updateSun();
-    invalidate();
-  });
+  input.addEventListener('change', () => setLayer(input.dataset.layer, input.checked));
 }
 const compass = document.getElementById('compass');
 const needle = compass.querySelector('svg');
@@ -1268,6 +1259,122 @@ function buildPaths() {
   }
   updateTracks();
   updateSpots(instant().getTime());
+  renderDayList();
+}
+
+// ---- The day as a list, in the expanded sheet -------------------------------------------------
+const dayList = document.getElementById('daylist');
+const sheetToggle = document.getElementById('sheet-toggle');
+const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
+
+/** Every chance of the day, in time order: tower alignments and street henges. */
+function renderDayList() {
+  const rows = [];
+  if (layers.tower) {
+    for (const path of dayPaths.filter(shownBody)) {
+      // Stretches with a clear view of the tower, joined across short gaps (a building in
+      // the way for a few minutes), and kept only when long enough to get to.
+      const windows = [];
+      for (const segment of path.source.segments) {
+        for (const p of segment) {
+          if (p.clear === false) continue;
+          const last = windows[windows.length - 1];
+          if (last && p.t - last.points[last.points.length - 1].t <= 12 * 60_000) {
+            if (p.t - last.points[last.points.length - 1].t > 4 * 60_000) last.broken = true;
+            last.points.push(p);
+          } else windows.push({ points: [p], broken: false });
+        }
+      }
+      for (const w of windows) {
+        const first = w.points[0];
+        const lastPoint = w.points[w.points.length - 1];
+        if (lastPoint.t - first.t < 4 * 60_000) continue;
+        const mid = w.points[Math.floor(w.points.length / 2)];
+        rows.push({
+          t: first.t,
+          body: path.body,
+          kind: 'tower',
+          title: `${BODY_NAME[path.body]} behind the TV tower`,
+          detail: `${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
+          go: () => {
+            setMinute(mid.t);
+            standOnPath(toScene(mid));
+          },
+        });
+      }
+    }
+  }
+  if (layers.streets) {
+    const seen = new Set();
+    // The longest views are the ones worth a trip; the rest still show on the map and slider.
+    for (const m of [...moments].filter(shownBody).sort((a, b) => b.view.lengthM - a.view.lengthM)) {
+      const key = `${m.view.name}${m.body}`;
+      if (seen.has(key) || seen.size >= 12) continue;
+      seen.add(key);
+      rows.push({
+        t: m.peak,
+        body: m.body,
+        kind: 'street',
+        title: `${m.view.name}`,
+        detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
+        go: () => {
+          setMinute(m.peak);
+          const [x, z] = m.view.a;
+          enterEye(x, z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
+        },
+      });
+    }
+  }
+  rows.sort((a, b) => a.t - b.t);
+  dayList.replaceChildren(
+    ...rows.map((row) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'dayrow';
+      item.dataset.body = row.body;
+      item.dataset.kind = row.kind;
+      item.innerHTML = `<i></i><span><b></b><small></small></span><em>Go \u203a</em>`;
+      item.querySelector('b').textContent = row.title;
+      item.querySelector('small').textContent = row.detail;
+      item.addEventListener('click', () => {
+        row.go();
+        setSheet(false);
+        invalidate();
+      });
+      return item;
+    }),
+  );
+  if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up today. Try another day.</p>';
+  sheetToggle.querySelector('span').textContent = `${rows.length} chance${rows.length === 1 ? '' : 's'} today`;
+}
+
+function setMinute(t) {
+  timeInput.value = String(Math.round((t - dayStart()) / 60_000));
+  updateSun();
+}
+
+function setSheet(open) {
+  document.body.dataset.sheet = open ? 'open' : 'closed';
+  sheetToggle.setAttribute('aria-expanded', String(open));
+}
+sheetToggle.addEventListener('click', () => setSheet(document.body.dataset.sheet !== 'open'));
+
+/** The list's filters are the map's layers, so both always agree. */
+function setLayer(name, on) {
+  layers[name] = on;
+  try {
+    localStorage.setItem('miniature.layers', JSON.stringify(layers));
+  } catch {}
+  for (const input of document.querySelectorAll(`input[data-layer="${name}"]`)) input.checked = on;
+  for (const chip of document.querySelectorAll(`#dayfilter [data-layer="${name}"]`)) chip.setAttribute('aria-pressed', String(on));
+  shownKey = null;
+  updateDay();
+  updateSun();
+  invalidate();
+}
+for (const chip of document.querySelectorAll('#dayfilter [data-layer]')) {
+  chip.setAttribute('aria-pressed', String(layers[chip.dataset.layer]));
+  chip.addEventListener('click', () => setLayer(chip.dataset.layer, !layers[chip.dataset.layer]));
 }
 
 let rays = [];

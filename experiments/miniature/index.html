@@ -148,6 +148,31 @@
       #moments button[data-body='sun']::before { background: var(--sun); }
       #moments button[data-body='moon']::before { background: var(--moon); }
       .credit { font-size: 11px; }
+      /* The sheet: a handle that opens the day as a list. */
+      #sheet-toggle { display: flex; align-items: center; gap: 8px; margin: -4px -4px 0; padding: 2px 4px; border: 0; background: none; color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; }
+      #sheet-toggle i { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin-right: 4px; }
+      #sheet-toggle b { margin-left: auto; font-size: 14px; transition: transform 0.2s; }
+      body[data-sheet='open'] #sheet-toggle b { transform: rotate(180deg); }
+      body[data-eye='true'] #sheet-toggle, body[data-eye='true'] #daylist { display: none; }
+      #dayfilter { display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
+      body[data-sheet='open']:not([data-eye='true']) #dayfilter { display: flex; }
+      #dayfilter button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--line); border-radius: 14px; background: none; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
+      #dayfilter button i { width: 8px; height: 8px; border-radius: 50%; }
+      #dayfilter button[aria-pressed='true'] { background: var(--field); color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+      #dayfilter .sep { width: 1px; height: 18px; background: var(--line); }
+      #daylist { display: none; max-height: 46vh; overflow-y: auto; margin: 0 -6px; }
+      body[data-sheet='open'] #daylist { display: grid; }
+      body[data-sheet='open'] #moments { display: none; }
+      .dayrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 6px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
+      .dayrow:first-child { border-top: 0; }
+      .dayrow:hover { background: var(--field); }
+      .dayrow i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--sun); }
+      .dayrow[data-body='moon'] i { background: var(--moon); }
+      .dayrow[data-kind='street'] i { border-radius: 2px; transform: rotate(45deg); }
+      .dayrow span { flex: 1; min-width: 0; display: grid; gap: 2px; }
+      .dayrow b { font-weight: 600; }
+      .dayrow small { color: var(--muted); font-size: 11.5px; }
+      .dayrow em { font-style: normal; font-weight: 600; color: var(--accent); white-space: nowrap; }
 
       #ghost[hidden] { display: none; }
       #ghost { left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
@@ -165,6 +190,8 @@
         body[data-eye='true'] .panel { grid-area: card; min-height: 0; }
         #lens-chips button { padding: 0 4px; }
         #format { max-width: 112px; }
+        /* Below the map tools, so they never cover the list. */
+        #daylist { max-height: 30vh; }
         body[data-eye='true'] .bottom { gap: 6px; }
         #lens-label { min-width: 44px; }
         .clock { font-size: 20px; min-width: 0; }
@@ -209,6 +236,7 @@
     <div class="bottom">
       <canvas id="minimap" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
       <div class="panel surface">
+        <button id="sheet-toggle" type="button" aria-expanded="false" aria-controls="daylist"><i></i><span>Today</span><b aria-hidden="true">&#8963;</b></button>
         <div class="camera-rows">
           <div class="row">
             <span id="facing"></span>
@@ -242,6 +270,14 @@
         <div id="tracks" aria-hidden="true"></div>
         <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
         <div id="moments" aria-label="Streets lined up today"></div>
+        <div id="dayfilter" role="group" aria-label="Show">
+          <button type="button" data-layer="sun"><i style="background: var(--sun)"></i>Sun</button>
+          <button type="button" data-layer="moon"><i style="background: var(--moon)"></i>Moon</button>
+          <span class="sep"></span>
+          <button type="button" data-layer="tower">Tower</button>
+          <button type="button" data-layer="streets">Streets</button>
+        </div>
+        <div id="daylist" aria-label="Every chance today"></div>
         <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
         <div class="muted credit">Map data &copy; OpenStreetMap contributors</div>
       </div>
