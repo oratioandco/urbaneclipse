@@ -26,6 +26,7 @@ import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
+import { litDiscPath } from '../../../src/lib/moonPhase.ts';
 import { formatClock, formatHour, formatMinutes, parseTime, uses12h } from './time.js';
 import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
@@ -1457,7 +1458,7 @@ function renderDayList() {
       item.className = 'dayrow';
       item.dataset.body = row.body;
       item.dataset.kind = row.kind;
-      item.innerHTML = `<i></i><span><b></b><small></small></span><em>Go \u203a</em>`;
+      item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><em>Go \u203a</em>`;
       item.querySelector('b').textContent = row.title;
       item.querySelector('small').textContent = row.detail;
       item.addEventListener('click', () => {
@@ -1470,6 +1471,13 @@ function renderDayList() {
   );
   if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up today. Try another day.</p>';
   sheetToggle.querySelector('span').textContent = `${rows.length} chance${rows.length === 1 ? '' : 's'} today`;
+}
+
+/** A small sun, or the moon in its phase at that time, for the list. */
+function bodyIcon(body, t) {
+  if (body === 'sun') return '<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#f8a03a"/><circle r="0.62" fill="#ffd27a"/></svg>';
+  const moon = getMoonIllumination(new Date(t));
+  return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/><circle r="0.92" fill="none" stroke="#5b82ff" stroke-width="0.12"/></svg>`;
 }
 
 function setMinute(t) {

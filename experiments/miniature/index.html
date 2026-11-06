@@ -167,9 +167,7 @@
       .dayrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 6px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
       .dayrow:first-child { border-top: 0; }
       .dayrow:hover { background: var(--field); }
-      .dayrow i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--sun); }
-      .dayrow[data-body='moon'] i { background: var(--moon); }
-      .dayrow[data-kind='street'] i { border-radius: 2px; transform: rotate(45deg); }
+      .dayrow .disc { flex: none; width: 18px; height: 18px; }
       .dayrow span { flex: 1; min-width: 0; display: grid; gap: 2px; }
       .dayrow b { font-weight: 600; }
       .dayrow small { color: var(--muted); font-size: 11.5px; }
