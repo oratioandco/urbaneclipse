@@ -46,6 +46,9 @@
       .topleft { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); left: var(--gutter); display: none; }
       body[data-eye='true'] .topleft { display: flex; }
       body[data-eye='true'] .overview-only { display: none; }
+      .eye-only { display: none; }
+      body[data-eye='true'] .eye-only { display: grid; }
+      [hidden] { display: none !important; }
 
       /* Bottom: the sheet. Standing, it shrinks to one compact card beside the mini map, so the
          view stays open: the camera, then the time. Planning tools wait on the map. */
@@ -62,6 +65,10 @@
       body[data-eye='true'] #time-row { grid-column: 2; }
       body[data-eye='true'] .credit { grid-column: 1 / -1; font-size: 10px; }
       .camera-rows .row { justify-content: space-between; min-height: 22px; }
+      #eclipse { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 22px; padding: 0 9px 0 7px; border: 0; border-radius: 11px; background: var(--field); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+      #eclipse::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--sun)); }
+      #eclipse[data-state='now'] { background: var(--dot, var(--sun)); color: #fff; }
+      #eclipse[data-state='now']::before { background: #fff; }
       #facing { font-weight: 600; font-variant-numeric: tabular-nums; }
       .lens { display: flex; align-items: center; gap: 10px; }
       .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }
@@ -128,6 +135,9 @@
     <canvas id="labels"></canvas>
     <div class="tools">
       <button id="compass" class="round surface" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
+      <button id="face-tower" class="round surface eye-only" aria-label="Turn to the TV tower" title="TV tower"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="11.2" y="1.5" width="1.6" height="7"/><circle cx="12" cy="11" r="3.6"/><path d="M10.6 14.2h2.8l.9 8.3h-4.6z"/></svg></button>
+      <button id="face-sun" class="round surface eye-only" aria-label="Turn to the sun" title="Sun" hidden><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="6" fill="#f26a12"/></svg></button>
+      <button id="face-moon" class="round surface eye-only" aria-label="Turn to the moon" title="Moon" hidden><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 4.2a8 8 0 1 0 4.3 12.6A7 7 0 0 1 15.5 4.2z" fill="#5b82ff"/></svg></button>
       <button id="tilt" class="round surface overview-only" aria-label="Switch between flat and angled view">2D</button>
       <button id="photographer" class="round surface overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="3"/><path d="M8 10h8l1 6h-3v6h-4v-6H7z"/><rect x="13.5" y="9" width="6" height="4.2" rx="1"/></svg>
@@ -151,6 +161,7 @@
               <kbd data-key="run">&#8679;</kbd>&nbsp;faster
             </span>
           </div>
+          <button id="eclipse" type="button" hidden></button>
           <div class="lens"><select id="format" aria-label="Camera format"></select><input id="lens" type="range" min="0" max="1000" aria-label="Focal length" /><span id="lens-label"></span></div>
         </div>
         <div class="row" id="moment-row">

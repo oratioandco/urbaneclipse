@@ -485,6 +485,124 @@ function stepWalk(now) {
   dirty = true;
 }
 
+// ---- Behind the sphere: the indicator at eye level -----------------------------------------
+const SPHERE_RADIUS_M = 16;
+const DISC_RADIUS_DEG = 0.27;
+const eyePoint = () => new THREE.Vector3(look.x, look.y + EYE_HEIGHT + (look.lift ?? 0), look.z);
+const sphereCentre = () => new THREE.Vector3(0, groundAt(0, 0) + SPHERE_CENTRE_AGL, 0);
+const degreesBetween = (a, b) => THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)));
+const bodyDirection = new THREE.Vector3();
+
+/** How far each body is from the sphere as seen from here, and the sphere's size. */
+function eclipseNow() {
+  const eye = eyePoint();
+  const toSphere = sphereCentre().sub(eye);
+  const distance = toSphere.length();
+  const radiusDeg = THREE.MathUtils.radToDeg(Math.asin(Math.min(1, SPHERE_RADIUS_M / distance)));
+  toSphere.normalize();
+  const items = bodies.map((body) => {
+    toDirection(bodyDirection, body.az, body.alt);
+    const sepDeg = degreesBetween(bodyDirection, toSphere);
+    return { body: body.moon ? 'moon' : 'sun', az: body.az, alt: body.alt, sepDeg, covered: sepDeg < radiusDeg + DISC_RADIUS_DEG, full: sepDeg < radiusDeg - DISC_RADIUS_DEG };
+  });
+  return { centre: sphereCentre(), radiusDeg, items };
+}
+
+/** From here, when each body comes closest to the sphere within an hour and a half either way. */
+let forecastAt = 0;
+let forecast = [];
+function updateForecast(now) {
+  if (now - forecastAt < 300) return;
+  forecastAt = now;
+  const t = instant().getTime();
+  const eye = eyePoint();
+  const toSphere = sphereCentre().sub(eye);
+  const radiusDeg = THREE.MathUtils.radToDeg(Math.asin(Math.min(1, SPHERE_RADIUS_M / toSphere.length())));
+  toSphere.normalize();
+  forecast = [];
+  for (const path of dayPaths) {
+    let best = { sepDeg: Infinity, t };
+    for (let k = -90; k <= 90; k++) {
+      const at = t + k * 60_000;
+      const p = sampleBody(path.body, new Date(at), FERNSEHTURM.lat, FERNSEHTURM.lon);
+      if (p.alt < -0.5) continue;
+      const sepDeg = degreesBetween(toDirection(bodyDirection, p.az, p.alt), toSphere);
+      if (sepDeg < best.sepDeg) best = { sepDeg, t: at };
+    }
+    if (best.sepDeg < Infinity) forecast.push({ body: path.body, ...best, covers: best.sepDeg < radiusDeg + DISC_RADIUS_DEG, beside: best.sepDeg - radiusDeg });
+  }
+}
+
+const eclipseButton = document.getElementById('eclipse');
+const clockOf = (t) => new Date(t).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
+const BODY_NAME = { sun: 'Sun', moon: 'Moon' };
+let eclipseAction = null;
+/** One line in the camera card: covered now, how long until, or where to go instead. */
+function showEclipseStatus(now) {
+  const here = eclipseNow();
+  const covering = here.items.find((item) => item.covered);
+  const t = instant().getTime();
+  let text = '';
+  let state = 'soon';
+  let body = 'sun';
+  eclipseAction = null;
+  if (covering) {
+    body = covering.body;
+    state = 'now';
+    text = covering.full ? `${BODY_NAME[body]} behind the sphere now` : `${BODY_NAME[body]} at the edge of the sphere now`;
+  } else {
+    const next = forecast.filter((f) => f.covers).sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
+    const spot = spots[0];
+    if (next) {
+      body = next.body;
+      const minutes = Math.round((next.t - t) / 60_000);
+      text = minutes > 0 ? `${BODY_NAME[body]} behind the sphere in ${minutes} min (${clockOf(next.t)})` : `${BODY_NAME[body]} was behind the sphere ${-minutes} min ago`;
+      eclipseAction = () => {
+        timeInput.value = String(Math.round((next.t - dayStart()) / 60_000));
+        updateSun();
+      };
+    } else if (spot) {
+      body = spot.body;
+      const dx = spot.x - look.x;
+      const dz = spot.z - look.z;
+      const metres = Math.hypot(dx, dz);
+      const bearing = (THREE.MathUtils.radToDeg(Math.atan2(dx, -dz)) + 360) % 360;
+      text = `Sphere spot for now: ${metres < 1000 ? `${Math.round(metres / 10) * 10} m` : `${(metres / 1000).toFixed(1)} km`} ${compassName(bearing)} \u2192 go`;
+      eclipseAction = () => standOnPath(spot);
+    } else {
+      const closest = forecast.sort((a, b) => a.sepDeg - b.sepDeg)[0];
+      if (closest && closest.beside < 8) {
+        body = closest.body;
+        text = `Closest at ${clockOf(closest.t)}: ${closest.beside.toFixed(1)}\u00b0 beside the sphere`;
+      }
+    }
+  }
+  eclipseButton.hidden = !text;
+  eclipseButton.textContent = text;
+  eclipseButton.dataset.state = state;
+  eclipseButton.style.setProperty('--dot', body === 'moon' ? '#5b82ff' : '#f26a12');
+  return here;
+}
+eclipseButton.addEventListener('click', () => {
+  eclipseAction?.();
+  invalidate();
+});
+
+// ---- Turning to the tower, the sun or the moon ----------------------------------------------
+function faceTower() {
+  const eye = eyePoint();
+  const heading = (THREE.MathUtils.radToDeg(Math.atan2(-eye.x, eye.z)) + 360) % 360;
+  const pitch = THREE.MathUtils.radToDeg(Math.atan2(sphereCentre().y - eye.y, Math.hypot(eye.x, eye.z)));
+  turnTo(heading, pitch);
+}
+document.getElementById('face-tower').addEventListener('click', faceTower);
+for (const kind of ['sun', 'moon']) {
+  document.getElementById(`face-${kind}`).addEventListener('click', () => {
+    const body = bodies.find((b) => (kind === 'moon') === Boolean(b.moon));
+    if (body) face(body);
+  });
+}
+
 /** Face a body: at eye level by turning, from above by rotating the map so it lies ahead. */
 function face(body) {
   if (camera === eyeCamera) turnTo(body.az, THREE.MathUtils.clamp(body.alt * 0.8, -5, 40));
@@ -817,6 +935,8 @@ function updateSun() {
   bodies = [];
   if (sunAt.alt > -1) bodies.push({ az: sunAt.az, alt: sunAt.alt, sunAlt: sunAt.alt });
   if (moonAt.alt > -1) bodies.push({ az: moonAt.az, alt: moonAt.alt, sunAlt: sunAt.alt, moon: illumination });
+  document.getElementById('face-sun').hidden = !bodies.some((b) => !b.moon);
+  document.getElementById('face-moon').hidden = !bodies.some((b) => b.moon);
 
   clock.textContent = `${String(Math.floor(timeInput.value / 60)).padStart(2, '0')}:${String(timeInput.value % 60).padStart(2, '0')}`;
   const phase = LIGHT_PHASE_NAMES[lightPhaseAt(sunAt.alt)];
@@ -1275,6 +1395,11 @@ function frame(now) {
   renderMirror();
   renderPass.camera = camera;
   composer.render();
+  let eclipseHere = null;
+  if (street > 0.5) {
+    updateForecast(now);
+    eclipseHere = showEclipseStatus(now);
+  }
   taps = drawOverlay({
     camera,
     target: controls.target,
@@ -1283,6 +1408,7 @@ function frame(now) {
     stands: street > 0 ? [] : stands,
     bottomInset: panel.offsetHeight + 16,
     eye: street > 0.5 ? look : null,
+    eclipse: street > 0.5 ? eclipseHere : null,
     photographer: street > 0 || drag?.moved ? null : photographer,
     paths: dayPaths,
     spots,

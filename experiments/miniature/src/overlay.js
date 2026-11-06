@@ -131,7 +131,7 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
  * @param scene.drop { x, y, z } where a dragged photographer would land, or null
  * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -169,7 +169,10 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     return true;
   };
 
-  if (eye) return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
+  if (eye) {
+    if (eclipse) drawEclipse(eclipse, camera, project);
+    return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
+  }
 
   const metresPerPx = (w) => (ortho ? 2 / (p11 * innerHeight) : (2 * w) / (p11 * innerHeight));
   drawHourRays(hourRays, project, night, taps, bottomInset);
@@ -478,6 +481,54 @@ export function drawPhotographer(x, y, context = ctx) {
   context.arc(x, y - 21.5, 2.6, 0, Math.PI * 2);
   context.fill();
   context.restore();
+}
+
+/**
+ * Around the sphere at eye level: a ring that tightens and brightens as the sun or moon comes
+ * near, the gap in degrees beside it, and a glow once the disc is behind the sphere.
+ */
+function drawEclipse({ centre, radiusDeg, items }, camera, project) {
+  const near = items.filter((item) => item.sepDeg < radiusDeg + 6).sort((a, b) => a.sepDeg - b.sepDeg)[0];
+  const c = {};
+  if (!near || !project(centre.x, centre.y, centre.z, c)) return;
+  const pxPerDeg = innerHeight / camera.fov;
+  const radius = (radiusDeg + 0.4) * pxPerDeg + 6;
+  const colour = PATH_CSS[near.body];
+  const closeness = 1 - Math.min(1, Math.max(0, (near.sepDeg - radiusDeg) / 6));
+  ctx.save();
+  if (near.covered) {
+    ctx.shadowColor = colour;
+    ctx.shadowBlur = 22;
+  }
+  ctx.strokeStyle = colour;
+  ctx.globalAlpha = near.covered ? 1 : 0.35 + 0.55 * closeness;
+  ctx.lineWidth = near.covered ? 3.5 : 2;
+  ctx.setLineDash(near.covered ? [] : [6, 6]);
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  // The gap, written on the side the disc is on.
+  const a = (near.az * Math.PI) / 180;
+  const h = (near.alt * Math.PI) / 180;
+  const far = {};
+  if (!project(camera.position.x + Math.sin(a) * Math.cos(h) * 5000, camera.position.y + Math.sin(h) * 5000, camera.position.z - Math.cos(a) * Math.cos(h) * 5000, far)) return;
+  const dx = far.x - c.x;
+  const dy = far.y - c.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const text = near.full ? 'Behind the sphere' : near.covered ? 'At the edge' : `${(near.sepDeg - radiusDeg).toFixed(1)}\u00b0`;
+  const lx = c.x + (dx / d) * (radius + 26);
+  const ly = c.y + (dy / d) * (radius + 14);
+  ctx.font = '700 11.5px ui-sans-serif, system-ui, sans-serif';
+  const width = ctx.measureText(text).width + 14;
+  ctx.fillStyle = near.covered ? colour : 'rgba(255, 253, 249, 0.92)';
+  ctx.beginPath();
+  ctx.roundRect(lx - width / 2, ly - 11, width, 22, 11);
+  ctx.fill();
+  ctx.fillStyle = near.covered ? '#fff' : colour;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, lx, ly + 0.5);
 }
 
 /** At eye level the real discs are in the sky; a pill only points to one that is out of frame. */
