@@ -131,7 +131,7 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
  * @param scene.drop { x, y, z } where a dragged photographer would land, or null
  * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null, names: showNames = true }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -205,7 +205,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     drawName(s.name, here.x, here.y - 18, 0, '700 13px', fill, halo);
   }
 
-  for (const anchor of anchors) {
+  for (const anchor of showNames ? anchors : []) {
     if (placed.length >= MAX_LABELS) break;
     if (!project(anchor.x, anchor.y, anchor.z, here)) continue;
     if (here.x < -40 || here.x > innerWidth + 40 || here.y < 0 || here.y > innerHeight - bottomInset) continue;

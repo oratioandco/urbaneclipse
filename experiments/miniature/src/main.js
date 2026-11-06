@@ -741,7 +741,41 @@ renderer.domElement.addEventListener('dblclick', (event) => {
   enterEye(spot.x, spot.z, { heading: look.heading, pitch: look.pitch, lens: look.lens });
 });
 
+// ---- What the map shows ---------------------------------------------------------------------
+const layers = { tower: true, streets: true, names: true, sun: true, moon: true };
+try {
+  Object.assign(layers, JSON.parse(localStorage.getItem('miniature.layers') ?? '{}'));
+} catch {}
+const shownBody = (item) => layers[item.body] !== false;
+const towerItems = (items) => (layers.tower ? items.filter(shownBody) : []);
+
 document.getElementById('minimap').addEventListener('click', () => exitEye());
+
+const layersButton = document.getElementById('layers');
+const layersMenu = document.getElementById('layers-menu');
+layersButton.addEventListener('click', () => {
+  layersMenu.hidden = !layersMenu.hidden;
+  layersButton.setAttribute('aria-expanded', String(!layersMenu.hidden));
+});
+addEventListener('pointerdown', (event) => {
+  if (!layersMenu.hidden && !layersMenu.contains(event.target) && !layersButton.contains(event.target)) {
+    layersMenu.hidden = true;
+    layersButton.setAttribute('aria-expanded', 'false');
+  }
+});
+for (const input of layersMenu.querySelectorAll('input[data-layer]')) {
+  input.checked = layers[input.dataset.layer];
+  input.addEventListener('change', () => {
+    layers[input.dataset.layer] = input.checked;
+    try {
+      localStorage.setItem('miniature.layers', JSON.stringify(layers));
+    } catch {}
+    shownKey = null;
+    updateDay();
+    updateSun();
+    invalidate();
+  });
+}
 const compass = document.getElementById('compass');
 const needle = compass.querySelector('svg');
 compass.addEventListener('click', () => {
@@ -958,7 +992,7 @@ let stands = [];
 
 function updateHighlights(t) {
   if (!highlights) return;
-  const live = moments.filter((m) => t >= m.from - 60_000 && t <= m.to + 60_000);
+  const live = layers.streets ? moments.filter((m) => shownBody(m) && t >= m.from - 60_000 && t <= m.to + 60_000) : [];
   const key = live.map((m) => `${m.body}${views.indexOf(m.view)}`).join('|');
   if (key === shownKey) return;
   shownKey = key;
@@ -990,7 +1024,7 @@ function updateDay() {
   const seen = new Set();
   // The longest views are the ones worth a trip; the rest can still be found with the slider.
   const best = [...moments].sort((a, b) => b.view.lengthM - a.view.lengthM).slice(0, 14).sort((a, b) => a.peak - b.peak);
-  for (const moment of best) {
+  for (const moment of best.filter((m) => layers.streets && shownBody(m))) {
     // One chip per street: both directions of a street rarely share a moment, but parts can.
     const key = `${moment.view.name}${moment.body}`;
     if (seen.has(key)) continue;
@@ -1011,7 +1045,8 @@ function updateDay() {
     });
     list.append(chip);
   }
-  document.getElementById('moments-empty').hidden = seen.size > 0;
+  // Saying no street lines up would be wrong while the streets are merely hidden.
+  document.getElementById('moments-empty').hidden = seen.size > 0 || !layers.streets;
 }
 
 // ---- Where the tower covers the sun or moon ------------------------------------------------
@@ -1100,9 +1135,9 @@ function updateTracks() {
         else runs.push((open = { from: p.t, to: p.t }));
       }
     }
-    rows.push({ cls: path.body, runs });
+    if (layers.tower && shownBody(path)) rows.push({ cls: path.body, runs });
   }
-  rows.push({ cls: 'streets', runs: moments.map((m) => ({ from: m.from, to: m.to })) });
+  if (layers.streets) rows.push({ cls: 'streets', runs: moments.filter(shownBody).map((m) => ({ from: m.from, to: m.to })) });
   const tracks = document.getElementById('tracks');
   tracks.replaceChildren(
     ...rows.map((row) => {
@@ -1329,7 +1364,7 @@ function renderMirror() {
   renderer.setRenderTarget(null);
   scene.background = page;
   renderer.shadowMap.needsUpdate = shadowsWanted;
-  highlights.group.visible = true;
+  highlights.group.visible = layers.streets;
   skyDome.visible = domeShown;
   base.material = groundMaterial;
   for (const mesh of hidden) mesh.visible = true;
@@ -1410,16 +1445,17 @@ function frame(now) {
     eye: street > 0.5 ? look : null,
     eclipse: street > 0.5 ? eclipseHere : null,
     photographer: street > 0 || drag?.moved ? null : photographer,
-    paths: dayPaths,
-    spots,
-    rays,
-    hourRays,
+    paths: towerItems(dayPaths),
+    spots: towerItems(spots),
+    rays: towerItems(rays),
+    hourRays: towerItems(hourRays),
+    names: layers.names,
     drop: drag?.drop ?? null,
   });
   if (street > 0.5) {
     const aspect = innerWidth / innerHeight;
     const hfov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(eyeCamera.fov) / 2) * aspect));
-    drawMinimap({ look, fov: hfov, paths: dayPaths, rays, spots, bodies, night });
+    drawMinimap({ look, fov: hfov, paths: towerItems(dayPaths), rays: towerItems(rays), spots: towerItems(spots), bodies, night });
   }
   needle.style.transform = `rotate(${camera === eyeCamera ? -look.heading : THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
   tiltButton.textContent = controls.getPolarAngle() < 0.2 ? '3D' : '2D';

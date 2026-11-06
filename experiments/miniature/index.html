@@ -43,6 +43,15 @@
       /* Top: map tools on the right; at eye level, the way back on the left. */
       .tools { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); right: var(--gutter); display: grid; gap: 8px; }
       #photographer { cursor: grab; }
+      .layers { position: fixed; z-index: 4; top: max(var(--gutter), env(safe-area-inset-top)); right: calc(var(--gutter) + 56px); width: 250px; padding: 10px 12px; border-radius: var(--radius); display: grid; gap: 4px; }
+      .layers-title { font-size: 11.5px; font-weight: 600; color: var(--muted); padding-bottom: 2px; }
+      .layers label { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; cursor: pointer; }
+      .layers label span { display: grid; gap: 1px; }
+      .layers small { color: var(--muted); font-size: 11.5px; }
+      .layers input { margin: 2px 0 0; accent-color: var(--accent); width: 16px; height: 16px; }
+      .layers-bodies { display: flex; gap: 8px; padding-top: 6px; border-top: 1px solid var(--line); margin-top: 2px; }
+      .layers .body-toggle { flex: 1; align-items: center; gap: 7px; }
+      .layers .body-toggle i { width: 9px; height: 9px; border-radius: 50%; }
       .topleft { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); left: var(--gutter); display: none; }
       body[data-eye='true'] .topleft { display: flex; }
       body[data-eye='true'] .overview-only { display: none; }
@@ -138,10 +147,21 @@
       <button id="face-tower" class="round surface eye-only" aria-label="Turn to the TV tower" title="TV tower"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="11.2" y="1.5" width="1.6" height="7"/><circle cx="12" cy="11" r="3.6"/><path d="M10.6 14.2h2.8l.9 8.3h-4.6z"/></svg></button>
       <button id="face-sun" class="round surface eye-only" aria-label="Turn to the sun" title="Sun" hidden><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="6" fill="#f26a12"/></svg></button>
       <button id="face-moon" class="round surface eye-only" aria-label="Turn to the moon" title="Moon" hidden><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 4.2a8 8 0 1 0 4.3 12.6A7 7 0 0 1 15.5 4.2z" fill="#5b82ff"/></svg></button>
+      <button id="layers" class="round surface" aria-label="What the map shows" aria-expanded="false" aria-controls="layers-menu" title="Layers"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5 21 8.5 12 13.5 3 8.5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity="0.5"/></svg></button>
       <button id="tilt" class="round surface overview-only" aria-label="Switch between flat and angled view">2D</button>
       <button id="photographer" class="round surface overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="3"/><path d="M8 10h8l1 6h-3v6h-4v-6H7z"/><rect x="13.5" y="9" width="6" height="4.2" rx="1"/></svg>
       </button>
+    </div>
+    <div id="layers-menu" class="layers surface" hidden>
+      <div class="layers-title">Show on the map</div>
+      <label><input type="checkbox" data-layer="tower" /> <span><b>Tower lines</b><small>Where the sun or moon is behind the tower</small></span></label>
+      <label><input type="checkbox" data-layer="streets" /> <span><b>Street valleys</b><small>Streets lined up with the sun or moon</small></span></label>
+      <label><input type="checkbox" data-layer="names" /> <span><b>Street names</b></span></label>
+      <div class="layers-bodies">
+        <label class="body-toggle"><input type="checkbox" data-layer="sun" /> <i style="background: var(--sun)"></i>Sun</label>
+        <label class="body-toggle"><input type="checkbox" data-layer="moon" /> <i style="background: var(--moon)"></i>Moon</label>
+      </div>
     </div>
     <div class="topleft">
       <button id="back" class="chip surface">&larr; Map</button>
