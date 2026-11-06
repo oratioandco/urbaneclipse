@@ -9,12 +9,13 @@ const stops = [
   { alt: -12, haze: [0.026, 0.036, 0.08], sky: [0.4, 0.52, 1], skyI: 0.12, sun: [1, 0.5, 0.2], ground: 0, cap: 4, lights: 1 },
   { alt: -8, haze: [0.05, 0.085, 0.24], sky: [0.24, 0.38, 1], skyI: 0.22, sun: [1, 0.5, 0.2], ground: 0, cap: 4, lights: 1 },
   { alt: -4, haze: [0.13, 0.18, 0.42], sky: [0.32, 0.44, 1], skyI: 0.5, sun: [1, 0.5, 0.2], ground: 0, cap: 3.5, lights: 0.85 },
-  // Golden hour keeps a warm sky fill throughout. Blending a blue fill into a warm one goes
-  // through grey, so that change happens quickly, low down, while the light is already dim.
-  { alt: -1.5, haze: [0.62, 0.38, 0.42], sky: [0.64, 0.52, 0.8], skyI: 0.52, sun: [1, 0.42, 0.14], ground: 0, cap: 3.5, lights: 0.45 },
-  { alt: 0.5, haze: [0.84, 0.5, 0.34], sky: [1, 0.72, 0.58], skyI: 0.7, sun: [1, 0.45, 0.14], ground: 0.5, cap: 3.5, lights: 0.1 },
-  { alt: 3, haze: [0.9, 0.6, 0.4], sky: [1, 0.8, 0.64], skyI: 0.78, sun: [1, 0.52, 0.18], ground: 0.9, cap: 3.5, lights: 0 },
-  { alt: 6, haze: [0.98, 0.8, 0.58], sky: [1, 0.85, 0.68], skyI: 0.9, sun: [1, 0.66, 0.32], ground: 1.15, cap: 3.5, lights: 0 },
+  // Golden hour: the gold is in the sunlight, against a slightly cool, dim sky fill. A warm
+  // fill on grey concrete reads as mud; the low sun is allowed to reach flat roofs more than
+  // it physically would, so they catch the gold too.
+  { alt: -1.5, haze: [0.55, 0.42, 0.48], sky: [0.6, 0.6, 0.8], skyI: 0.5, sun: [1, 0.42, 0.14], ground: 0, cap: 4, lights: 0.45 },
+  { alt: 0.5, haze: [0.88, 0.66, 0.52], sky: [0.8, 0.84, 0.96], skyI: 0.66, sun: [1, 0.5, 0.16], ground: 0.9, cap: 7, lights: 0.1 },
+  { alt: 3, haze: [0.93, 0.76, 0.6], sky: [0.82, 0.86, 0.96], skyI: 0.76, sun: [1, 0.58, 0.22], ground: 1.2, cap: 7, lights: 0 },
+  { alt: 6, haze: [0.94, 0.84, 0.72], sky: [0.86, 0.88, 0.96], skyI: 0.9, sun: [1, 0.7, 0.38], ground: 1.3, cap: 5.5, lights: 0 },
   { alt: 14, haze: [0.86, 0.84, 0.8], sky: [0.86, 0.89, 1], skyI: 1.12, sun: [1, 0.83, 0.62], ground: 1.3, cap: 4, lights: 0 },
   { alt: 35, haze: [0.8, 0.85, 0.92], sky: [0.9, 0.94, 1.02], skyI: 1.2, sun: [1, 0.98, 0.94], ground: 1.45, cap: 4, lights: 0 },
 ];
