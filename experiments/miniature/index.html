@@ -49,6 +49,15 @@
       .clock { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 62px; }
       .muted { color: #6f6a62; }
       input[type='range'] { flex: 1; min-width: 180px; min-height: 28px; accent-color: #d9772b; }
+      .daynav { display: flex; gap: 4px; align-items: center; }
+      .daynav button, .daypick { height: 34px; min-width: 34px; padding: 0 9px; border: 1px solid #d8d3ca; border-radius: 9px; background: #fff; color: inherit; font: inherit; font-size: 16px; cursor: pointer; }
+      .daynav #today { font-size: 12px; }
+      .daypick { position: relative; display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+      .daypick svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+      /* The real input covers the label invisibly, so a tap opens the browser's own calendar. */
+      .daypick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+      .daypick input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; }
+      body[data-night='true'] .daynav button, body[data-night='true'] .daypick { background: #262a42; border-color: #3a3f5c; }
       input[type='date'] { font: inherit; padding: 5px 7px; border: 1px solid #d8d3ca; border-radius: 8px; background: #fff; color: inherit; }
       .modes { display: flex; gap: 2px; padding: 2px; background: #e8e4dc; border-radius: 9px; margin-left: auto; }
       .modes button { font: inherit; padding: 7px 12px; min-height: 32px; border: 0; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
@@ -75,7 +84,16 @@
     <div class="panel">
       <div class="row">
         <span class="clock" id="clock">--:--</span>
-        <input id="date" type="date" aria-label="Date" />
+        <div class="daynav">
+          <button id="prev-day" type="button" aria-label="Previous day">&lsaquo;</button>
+          <label class="daypick">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></svg>
+            <span id="day-label"></span>
+            <input id="date" type="date" aria-label="Choose a date" />
+          </label>
+          <button id="today" type="button" hidden>Today</button>
+          <button id="next-day" type="button" aria-label="Next day">&rsaquo;</button>
+        </div>
         <span class="muted" id="sun"></span>
 
       </div>

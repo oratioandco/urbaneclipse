@@ -1252,10 +1252,31 @@ async function start() {
 const startAt = params.get('date') ?? new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
 dateInput.value = startAt;
 timeInput.value = params.get('time') ?? '960';
-dateInput.addEventListener('input', () => {
+const todayInBerlin = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
+function showDay() {
+  const [y, m, d] = dateInput.value.split('-').map(Number);
+  const isToday = dateInput.value === todayInBerlin();
+  const label = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: y === new Date().getFullYear() ? undefined : 'numeric' });
+  document.getElementById('day-label').textContent = isToday ? `Today, ${label}` : label;
+  document.getElementById('today').hidden = isToday;
+}
+function setDay(value) {
+  if (!value) return;
+  dateInput.value = value;
+  showDay();
   updateDay();
   updateSun();
-});
+  invalidate();
+}
+function shiftDay(days) {
+  const [y, m, d] = dateInput.value.split('-').map(Number);
+  setDay(new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10));
+}
+dateInput.addEventListener('input', () => setDay(dateInput.value));
+document.getElementById('prev-day').addEventListener('click', () => shiftDay(-1));
+document.getElementById('next-day').addEventListener('click', () => shiftDay(1));
+document.getElementById('today').addEventListener('click', () => setDay(todayInBerlin()));
+showDay();
 timeInput.addEventListener('input', updateSun);
 loadViewshed().then(
   (loaded) => {
