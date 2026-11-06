@@ -1105,6 +1105,22 @@ const towerItems = (items) => (layers.tower ? items.filter(shownBody) : []);
 
 document.getElementById('minimap').addEventListener('click', () => exitEye());
 
+// ---- How it works: once on a first visit, and again from the ? button -----------------------
+const intro = document.getElementById('intro');
+const openIntro = () => {
+  if (!intro.open) intro.showModal();
+};
+document.getElementById('help').addEventListener('click', openIntro);
+document.getElementById('intro-start').addEventListener('click', () => intro.close());
+intro.addEventListener('close', () => {
+  try {
+    localStorage.setItem('miniature.intro', 'seen');
+  } catch {}
+});
+try {
+  if (!localStorage.getItem('miniature.intro') && !params.has('nointro')) setTimeout(openIntro, 600);
+} catch {}
+
 const layersButton = document.getElementById('layers');
 const layersMenu = document.getElementById('layers-menu');
 layersButton.addEventListener('click', () => {

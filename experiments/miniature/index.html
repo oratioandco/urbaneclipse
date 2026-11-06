@@ -53,6 +53,24 @@
       .layers-bodies { display: flex; gap: 8px; padding-top: 6px; border-top: 1px solid var(--line); margin-top: 2px; }
       .layers .body-toggle { flex: 1; align-items: center; gap: 7px; }
       .layers .body-toggle i { width: 9px; height: 9px; border-radius: 50%; }
+      .legend { display: grid; gap: 7px; padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--line); }
+      .legend > div:not(.layers-title) { display: flex; gap: 9px; align-items: flex-start; font-size: 11.5px; color: var(--muted); }
+      .legend svg { flex: none; margin-top: 2px; }
+      .layers { max-height: calc(100vh - 140px); overflow-y: auto; }
+      #help { font-size: 17px; }
+      .intro { max-width: 460px; width: calc(100vw - 48px); padding: 22px 22px 18px; border: 0; border-radius: 18px; color: var(--ink); }
+      .intro::backdrop { background: rgba(20, 18, 14, 0.35); backdrop-filter: blur(2px); }
+      .intro h2 { margin: 0 0 6px; font-size: 19px; line-height: 1.25; }
+      .intro p { margin: 0 0 14px; }
+      .intro ol { margin: 0 0 16px; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+      .intro li { counter-increment: step; display: grid; grid-template-columns: 26px 1fr; column-gap: 10px; }
+      .intro li::before { content: counter(step); grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 12px; }
+      .intro li span { color: var(--muted); }
+      .intro em { font-style: normal; font-weight: 600; color: var(--ink); }
+      .intro em.sun { color: #c4520d; }
+      .intro em.street { color: #a87512; }
+      .intro-actions { display: flex; align-items: center; gap: 12px; }
+      #intro-start { background: var(--accent); color: #fff; padding: 0 20px; }
       .topleft { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); left: var(--gutter); display: none; gap: 8px; }
       body[data-eye='true'] .topleft { display: flex; }
       body[data-eye='true'] .overview-only { display: none; }
@@ -208,6 +226,7 @@
       <button id="face-tower" class="round surface eye-only" aria-label="Turn to the TV tower" title="TV tower"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="11.2" y="1.5" width="1.6" height="7"/><circle cx="12" cy="11" r="3.6"/><path d="M10.6 14.2h2.8l.9 8.3h-4.6z"/></svg></button>
       <button id="face-sun" class="round surface eye-only" aria-label="Turn to the sun" title="Sun" hidden><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="6" fill="#f26a12"/></svg></button>
       <button id="face-moon" class="round surface eye-only" aria-label="Turn to the moon" title="Moon" hidden><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 4.2a8 8 0 1 0 4.3 12.6A7 7 0 0 1 15.5 4.2z" fill="#5b82ff"/></svg></button>
+      <button id="help" class="round surface" aria-label="How this works" title="How this works">?</button>
       <button id="layers" class="round surface" aria-label="What the map shows" aria-expanded="false" aria-controls="layers-menu" title="Layers"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5 21 8.5 12 13.5 3 8.5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity="0.5"/></svg></button>
       <button id="tilt" class="round surface overview-only" aria-label="Switch between flat and angled view">2D</button>
       <button id="photographer" class="round surface overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
@@ -216,14 +235,35 @@
     </div>
     <div id="layers-menu" class="layers surface" hidden>
       <div class="layers-title">Show on the map</div>
-      <label><input type="checkbox" data-layer="tower" /> <span><b>Tower lines</b><small>Where the sun or moon is behind the tower</small></span></label>
-      <label><input type="checkbox" data-layer="streets" /> <span><b>Street valleys</b><small>Streets lined up with the sun or moon</small></span></label>
+      <label><input type="checkbox" data-layer="tower" /> <span><b>Tower alignments</b><small>Where to stand for the sun or moon behind the TV tower</small></span></label>
+      <label><input type="checkbox" data-layer="streets" /> <span><b>Street henges</b><small>Streets lined up with the sun or moon, like Manhattanhenge</small></span></label>
       <label><input type="checkbox" data-layer="names" /> <span><b>Street names</b></span></label>
       <div class="layers-bodies">
         <label class="body-toggle"><input type="checkbox" data-layer="sun" /> <i style="background: var(--sun)"></i>Sun</label>
         <label class="body-toggle"><input type="checkbox" data-layer="moon" /> <i style="background: var(--moon)"></i>Moon</label>
       </div>
+      <div class="legend">
+        <div class="layers-title">What the marks mean</div>
+        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="2.5" stroke-linecap="round"  fill="none"/><circle cx="30" cy="6" r="4" fill="#fff" stroke="#f26a12" stroke-width="2.2"/></svg><span>The line for the chosen time: stand anywhere on it and the sun is behind part of the tower. The ring is where it is behind the sphere.</span></div>
+        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="1.2" stroke-linecap="round" opacity="0.5" fill="none"/><rect x="24" y="1" width="14" height="10" rx="5" fill="#fff" stroke="#f26a12"/></svg><span>The same line at each hour, with its time at the end or the edge of the view.</span></div>
+        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#5b82ff" stroke-width="4" stroke-linecap="round"  fill="none"/></svg><span>The moon behind the antenna: it still shows round the thin mast.</span></div>
+        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" fill="none"/></svg><span>The day’s path of sphere spots; dashed where a building is in the way.</span></div>
+        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f2b33d" stroke-width="7" stroke-linecap="round" opacity="0.6" fill="none"/></svg><span>A street henge: sunlight or moonlight runs down the street now.</span></div>
+      </div>
     </div>
+    <dialog id="intro" class="intro surface" aria-labelledby="intro-title">
+      <h2 id="intro-title">Line up the sun and moon with Berlin</h2>
+      <p class="muted">Find where to stand so the sun or moon sits behind the TV tower, or shines straight down a street.</p>
+      <ol>
+        <li><b>Pick a day and a time.</b> <span>The coloured bars above the slider show when something lines up. Open the panel for the day’s list.</span></li>
+        <li><b>Read the map.</b> <span><em class="sun">Tower alignments</em>: stand on a line and the sun or moon is behind the tower at that hour. <em class="street">Street henges</em>: glowing streets line up with the sun or moon, like Manhattanhenge.</span></li>
+        <li><b>See the shot.</b> <span>Drag the photographer onto the map, or hover a line and choose “View from here”. Walk, change lenses, or take off as a drone.</span></li>
+      </ol>
+      <div class="intro-actions">
+        <button id="intro-start" class="chip" type="button">Start</button>
+        <span class="muted">Open this again with <b>?</b></span>
+      </div>
+    </dialog>
     <div class="topleft">
       <button id="back" class="chip surface">&larr; Map</button>
       <button id="takeoff" class="chip surface">&uarr; Take off</button>
