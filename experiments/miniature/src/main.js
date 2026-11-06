@@ -282,6 +282,7 @@ function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   camera = eyeCamera;
   transition = { from, to: eyePose(look), start: performance.now(), ms: wasStanding ? 900 : 1700, done: () => (look.active = true) };
   if (document.body.dataset.eye !== 'true') nudgeKeys();
+  showViewHere(null);
   document.body.dataset.eye = 'true';
   updateEyeBar();
   showFlight();
@@ -676,13 +677,15 @@ function eclipseNow() {
     const towerAz = (THREE.MathUtils.radToDeg(Math.atan2(-eye.x, eye.z)) + 360) % 360;
     const off = Math.abs(((((body.az - towerAz) % 360) + 540) % 360) - 180) * Math.cos(THREE.MathUtils.degToRad(body.alt));
     const base = groundAt(0, 0);
-    const lowest = THREE.MathUtils.radToDeg(Math.atan2(base + SPHERE_TOP_AGL + 8 - eye.y, flat));
-    const highest = THREE.MathUtils.radToDeg(Math.atan2(base + TIP_AGL - eye.y, flat));
-    if (off < DISC_RADIUS_DEG && body.alt > lowest && body.alt < highest + DISC_RADIUS_DEG) state = 'antenna';
+    const angleTo = (h) => THREE.MathUtils.radToDeg(Math.atan2(base + h - eye.y, flat));
+    if (off < DISC_RADIUS_DEG + 0.1) {
+      if (body.alt > angleTo(SPHERE_TOP_AGL + 8) && body.alt < angleTo(TIP_AGL) + DISC_RADIUS_DEG) state = 'antenna';
+      else if (body.alt > angleTo(0) && body.alt < angleTo(SPHERE_CENTRE_AGL - SPHERE_RADIUS_M - 4)) state = 'shaft';
+    }
     if (inside && radiusDeg >= DISC_RADIUS_DEG) state = 'hidden';
     else if (inside) state = 'ring';
     else if (touching) state = 'edge';
-    return { body: kind, az: body.az, alt: body.alt, sepDeg, state, covered: touching || state === 'antenna', full: state === 'hidden' };
+    return { body: kind, az: body.az, alt: body.alt, sepDeg, state, covered: touching || state === 'antenna' || state === 'shaft', full: state === 'hidden' };
   });
   return { centre: sphereCentre(), radiusDeg, items };
 }
@@ -734,6 +737,7 @@ function showEclipseStatus(now) {
       ring: body === 'sun' ? 'Ring of sun round the sphere now' : 'Sphere in front of the moon now',
       edge: `${name} at the edge of the sphere now`,
       antenna: `${name} behind the antenna now`,
+      shaft: `${name} behind the tower\u2019s shaft now`,
     }[covering.state];
     if (body === 'moon' && covering.state === 'hidden') state = 'warn';
   } else {
@@ -763,8 +767,10 @@ function showEclipseStatus(now) {
       }
     }
   }
-  eclipseButton.hidden = !text;
-  eclipseButton.textContent = text;
+  // The line keeps its place when empty, so the card does not jump while the time is slid.
+  eclipseButton.hidden = false;
+  eclipseButton.textContent = text || 'Nothing lines up with the tower from here';
+  if (!text) state = 'idle';
   eclipseButton.dataset.state = state;
   eclipseButton.style.setProperty('--dot', body === 'moon' ? '#5b82ff' : '#f26a12');
   return here;
@@ -904,8 +910,98 @@ let press = null;
 renderer.domElement.addEventListener('pointerdown', (event) => {
   press = { x: event.clientX, y: event.clientY };
 });
+// ---- View from here: lines and streets on the map lead into the view ------------------------
+const viewHere = document.getElementById('viewhere');
+let viewTarget = null;
+let liveStreets = [];
+
+/** The closest point on a ground segment to (x, z), and how far away it is. */
+function nearestOnSegment(a, b, x, z) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const t = THREE.MathUtils.clamp(((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1), 0, 1);
+  const px = a.x + dx * t;
+  const pz = a.z + dz * t;
+  return { x: px, z: pz, d: Math.hypot(px - x, pz - z) };
+}
+
+/** What lies under a screen point that can be viewed from: a tower line, the path, a lit street. */
+function viewableAt(clientX, clientY) {
+  if (camera !== overview) return null;
+  const point = groundUnder(clientX, clientY);
+  if (!point) return null;
+  // About twelve pixels on screen, in metres at that spot.
+  const metresPerPx = (2 * camera.position.distanceTo(point) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / innerHeight;
+  const reach = 12 * metresPerPx;
+  let best = null;
+  const offer = (candidate) => {
+    if (candidate.d < reach && (!best || candidate.d < best.d)) best = candidate;
+  };
+  for (const ray of [...towerItems(rays), ...towerItems(hourRays)]) {
+    const near = nearestOnSegment(ray.base, ray.far, point.x, point.z);
+    if (Math.hypot(near.x, near.z) < 120) continue;
+    offer({ ...near, kind: 'tower', body: ray.body, t: ray.t ?? instant().getTime() });
+  }
+  for (const path of towerItems(dayPaths)) {
+    for (const segment of path.segments) {
+      for (const p of segment) offer({ x: p.x, z: p.z, d: Math.hypot(p.x - point.x, p.z - point.z), kind: 'tower', body: path.body, t: p.t });
+    }
+  }
+  for (const m of liveStreets) {
+    const near = nearestOnSegment({ x: m.view.a[0], z: m.view.a[1] }, { x: m.view.b[0], z: m.view.b[1] }, point.x, point.z);
+    offer({ ...near, d: near.d * 0.8, kind: 'street', body: m.body, t: m.peak, moment: m });
+  }
+  return best;
+}
+
+function showViewHere(target, clientX, clientY) {
+  viewTarget = target;
+  viewHere.hidden = !target;
+  if (!target) return;
+  const what = target.kind === 'street' ? target.moment.view.name : `${BODY_NAME[target.body]} & tower`;
+  viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>View from here <small>${what} \u00b7 ${formatClock(target.t)}</small>`;
+  const width = viewHere.offsetWidth || 220;
+  viewHere.style.left = `${Math.min(innerWidth - width - 8, clientX + 14)}px`;
+  viewHere.style.top = `${Math.max(8, clientY - 52)}px`;
+}
+
+viewHere.addEventListener('click', () => {
+  const target = viewTarget;
+  showViewHere(null);
+  if (!target) return;
+  setMinute(target.t);
+  if (target.kind === 'tower') {
+    // Face the body: on a tower line it is behind some part of the tower, not always the sphere.
+    const p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+    enterEye(target.x, target.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(200) });
+  } else if (target.kind === 'street') {
+    const m = target.moment;
+    enterEye(target.x, target.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
+  }
+});
+
+let hoverFrame = 0;
+renderer.domElement.addEventListener('pointermove', (event) => {
+  if (event.pointerType !== 'mouse' || event.buttons || drag || hoverFrame) return;
+  const { clientX, clientY } = event;
+  hoverFrame = requestAnimationFrame(() => {
+    hoverFrame = 0;
+    const target = viewableAt(clientX, clientY);
+    renderer.domElement.style.cursor = target ? 'pointer' : '';
+    // Keep the button while the pointer heads for it.
+    if (target || !viewTarget) showViewHere(target, clientX, clientY);
+  });
+});
+renderer.domElement.addEventListener('pointerleave', () => {
+  renderer.domElement.style.cursor = '';
+});
+
 renderer.domElement.addEventListener('pointerup', (event) => {
   if (!press || Math.hypot(event.clientX - press.x, event.clientY - press.y) > 5) return;
+  // A tap on a line or a lit street offers the view from there, as hovering does with a mouse.
+  const viewable = viewableAt(event.clientX, event.clientY);
+  if (event.pointerType !== 'mouse') showViewHere(viewable, event.clientX, event.clientY);
+  else if (!viewable) showViewHere(null);
   const inside = (t) => event.clientX >= t.x && event.clientX <= t.x + t.w && event.clientY >= t.y && event.clientY <= t.y + t.h;
   // A path lies under everything else, so it only takes a tap nothing else wants.
   const hit = taps.find((t) => t.kind !== 'path' && inside(t)) ?? taps.find((t) => t.kind === 'path' && inside(t));
@@ -1193,6 +1289,7 @@ function updateHighlights(t) {
   const when = new Date(t);
   const azimuth = { sun: sampleBody('sun', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az, moon: sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az };
   highlights.set(live.map((m) => ({ a: m.view.a, b: m.view.b, body: m.body, az: azimuth[m.body], colour: RAY_COLOUR[m.body], altitude: m.bodyAlt, strength: m.body === 'moon' ? 0.3 : 1 })));
+  liveStreets = live;
   stands = live.map((m) => ({ x: m.view.a[0], z: m.view.a[1], y: groundAt(m.view.a[0], m.view.a[1]) + 2, name: m.view.name, css: NEON_CSS[m.body] }));
 }
 
@@ -2040,4 +2137,4 @@ resizeOverlay();
 updateSun();
 requestAnimationFrame(frame);
 start();
-window.__mini = { roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
+window.__mini = { get rays() { return rays; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };

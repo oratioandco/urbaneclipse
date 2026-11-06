@@ -512,7 +512,7 @@ function drawEclipse({ centre, radiusDeg, items }, camera, project) {
   const near = items.filter((item) => item.sepDeg < radiusDeg + 6).sort((a, b) => a.sepDeg - b.sepDeg)[0];
   const c = {};
   // Behind the antenna the sphere is beside the point; the status line says it, a ring would mislead.
-  if (!near || near.state === 'antenna' || !project(centre.x, centre.y, centre.z, c)) return;
+  if (!near || near.state === 'antenna' || near.state === 'shaft' || !project(centre.x, centre.y, centre.z, c)) return;
   const pxPerDeg = innerHeight / camera.fov;
   const radius = (radiusDeg + 0.4) * pxPerDeg + 6;
   const colour = PATH_CSS[near.body];

@@ -80,6 +80,8 @@
       #eclipse[data-state='now'] { background: var(--dot, var(--sun)); color: #fff; }
       #eclipse[data-state='now']::before { background: #fff; }
       #eclipse[data-state='warn'] { background: var(--field); color: var(--muted); }
+      #eclipse[data-state='idle'] { background: none; padding-left: 0; color: var(--muted); font-weight: 500; cursor: default; }
+      #eclipse[data-state='idle']::before { display: none; }
       #facing { font-weight: 600; font-variant-numeric: tabular-nums; }
       .lens { display: flex; align-items: center; gap: 10px; }
       .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }
@@ -106,7 +108,6 @@
       body[data-eye='true'][data-drone='true'] .heightbar { display: flex; }
       #height { writing-mode: vertical-lr; direction: rtl; width: 28px; height: 160px; min-width: 0; min-height: 0; margin: 0; flex: none; accent-color: var(--accent); }
       .status-row { display: flex; flex-wrap: wrap; gap: 6px; }
-      .status-row:not(:has(> :not([hidden]))) { display: none; }
       #airspace { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 11px; background: var(--field); color: var(--muted); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
       #airspace[data-inside='true'] { background: #fde8e4; color: #b4321f; }
       body[data-night='true'] #airspace[data-inside='true'] { background: #4a2228; color: #ffb3a6; }
@@ -173,6 +174,9 @@
       .dayrow small { color: var(--muted); font-size: 11.5px; }
       .dayrow em { font-style: normal; font-weight: 600; color: var(--accent); white-space: nowrap; }
 
+      #viewhere { position: fixed; z-index: 4; height: 36px; padding: 0 12px; font-size: 12.5px; white-space: nowrap; }
+      #viewhere i { width: 9px; height: 9px; border-radius: 50%; }
+      #viewhere small { font-weight: 500; color: var(--muted); }
       #ghost[hidden] { display: none; }
       #ghost { left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
       #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
@@ -231,6 +235,7 @@
       <span id="height-label" hidden></span>
     </div>
     <canvas id="ghost" hidden></canvas>
+    <button id="viewhere" class="chip surface" hidden></button>
     <div id="stats"></div>
     <div class="bottom">
       <canvas id="minimap" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
