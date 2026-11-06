@@ -5,115 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Berlin miniature</title>
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #efece6; font: 13px/1.35 ui-sans-serif, system-ui, sans-serif; color: #24221f; }
+      /*
+       * Chrome: two zones. Map tools stand top right; everything about the moment and, at eye
+       * level, about the camera docks to the bottom sheet as one block. Every surface shares
+       * one look, and every control one size.
+       */
+      :root {
+        --gutter: 12px;
+        --surface: rgba(255, 253, 249, 0.88);
+        --field: #fff;
+        --ink: #24221f;
+        --muted: #6f6a62;
+        --line: #dcd7ce;
+        --shadow: 0 4px 18px rgba(40, 34, 24, 0.16);
+        --accent: #d9772b;
+        --sun: #f26a12;
+        --moon: #5b82ff;
+        --control: 40px;
+        --radius: 14px;
+      }
+      body[data-night='true'] {
+        --surface: rgba(20, 23, 38, 0.84);
+        --field: #262a42;
+        --ink: #ece8df;
+        --muted: #a7a7b4;
+        --line: #3a3f5c;
+        --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+      }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #efece6; font: 13px/1.35 ui-sans-serif, system-ui, sans-serif; color: var(--ink); }
       canvas { display: block; position: fixed; inset: 0; touch-action: none; }
-      .tools { position: fixed; z-index: 3; top: max(12px, env(safe-area-inset-top)); right: 12px; display: grid; gap: 8px; }
-      .round { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; font: 600 13px ui-sans-serif, system-ui, sans-serif; color: #24221f; background: rgba(255, 253, 249, 0.92); box-shadow: 0 3px 12px rgba(40, 34, 24, 0.2); cursor: pointer; touch-action: none; }
-      #compass svg { transition: none; }
+      button { font: inherit; color: inherit; }
+
+      .surface { background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: var(--shadow); }
+      .round { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; font-weight: 600; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+      .chip { height: var(--control); padding: 0 14px; border: 0; border-radius: calc(var(--control) / 2); display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+
+      /* Top: map tools on the right; at eye level, the way back on the left. */
+      .tools { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); right: var(--gutter); display: grid; gap: 8px; }
       #photographer { cursor: grab; }
-      body[data-night='true'] .round { background: rgba(20, 23, 38, 0.86); color: #ece8df; }
+      .topleft { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); left: var(--gutter); display: none; }
+      body[data-eye='true'] .topleft { display: flex; }
       body[data-eye='true'] .overview-only { display: none; }
-      .eyebar { position: fixed; z-index: 3; top: max(12px, env(safe-area-inset-top)); left: 12px; right: 68px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
-      body[data-eye='true'] .eyebar { display: flex; }
-      .eyebar > * { background: rgba(255, 253, 249, 0.9); border-radius: 22px; padding: 0 14px; min-height: 40px; display: flex; align-items: center; gap: 8px; box-shadow: 0 3px 12px rgba(40, 34, 24, 0.18); }
-      .eyebar button { border: 0; font: 600 13px ui-sans-serif, system-ui, sans-serif; color: inherit; cursor: pointer; }
-      .eyebar .lens input { width: 140px; accent-color: #d9772b; }
-      body[data-night='true'] .eyebar > * { background: rgba(20, 23, 38, 0.86); }
-      body[data-eye='true'] #stats { top: 64px; }
-      .eye-only { display: none; }
-      #minimap { position: fixed; z-index: 3; inset: auto auto auto 12px; left: 12px; bottom: calc(var(--panel-h, 150px) + 28px); width: 132px; height: 132px; border-radius: 50%; box-shadow: 0 4px 16px rgba(40, 34, 24, 0.28); cursor: pointer; }
-      .walkpad { position: fixed; z-index: 3; right: 12px; bottom: calc(var(--panel-h, 150px) + 28px); gap: 8px; flex-direction: column; }
+
+      /* Bottom: the sheet. Standing, it shrinks to one compact card beside the mini map, so the
+         view stays open: the camera, then the time. Planning tools wait on the map. */
+      .bottom { position: fixed; z-index: 2; left: var(--gutter); right: var(--gutter); bottom: max(var(--gutter), env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+      #minimap, .camera-rows { display: none; }
+      #minimap { position: static; width: 104px; height: 104px; flex: none; border-radius: 50%; box-shadow: var(--shadow); cursor: pointer; touch-action: manipulation; }
+      body[data-eye='true'] .bottom { display: flex; align-items: flex-end; max-width: 720px; }
       body[data-eye='true'] #minimap { display: block; }
-      body[data-eye='true'] .walkpad { display: flex; }
-      .walkpad .round { font-size: 15px; user-select: none; -webkit-user-select: none; }
-      body[data-night='true'] .walkpad .round { background: rgba(20, 23, 38, 0.86); color: #ece8df; }
-      #ghost[hidden] { display: none; }
-      #ghost { position: fixed; left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
-      #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
-      body[data-night='true'] { color: #ece8df; }
-      body[data-night='true'] .panel { background: rgba(20, 23, 38, 0.82); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); }
-      body[data-night='true'] .muted { color: #a7a7b4; }
-      body[data-night='true'] input[type='date'] { background: #262a42; border-color: #3a3f5c; color-scheme: dark; }
-      body[data-night='true'] .modes { background: #262a42; }
-      body[data-night='true'] .modes button[aria-pressed='true'] { background: #454b72; }
-      body[data-night='true'] #moments button { background: #262a42; }
-      input[type='range']#time { appearance: none; -webkit-appearance: none; height: 12px; min-height: 12px; margin: 9px 0; border-radius: 6px; background: linear-gradient(90deg, var(--phases, #ccc)); }
-      #time::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; cursor: grab; }
-      #time::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; }
-      #tracks { display: grid; gap: 3px; margin: 0 11px -6px; }
-      .track { position: relative; height: 4px; }
-      .track span { position: absolute; top: 0; bottom: 0; border-radius: 2px; min-width: 3px; }
-      .track--sun span { background: #f26a12; }
-      .track--moon span { background: #5b82ff; }
-      .track--streets span { background: #d9a441; opacity: 0.8; }
-      #moments { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-      #moments button { font: inherit; font-size: 12px; white-space: nowrap; padding: 6px 10px; min-height: 30px; border: 0; border-radius: 15px; background: #ece8e0; color: inherit; cursor: pointer; }
-      #moments button::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
-      #moments button[data-body='sun']::before { background: #f26a12; }
-      #moments button[data-body='moon']::before { background: #5b82ff; }
-      .panel { z-index: 2; position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); max-width: 620px; margin: 0 auto; padding: 12px 14px; display: grid; gap: 10px; background: rgba(255, 253, 249, 0.86); backdrop-filter: blur(14px); border-radius: 14px; box-shadow: 0 8px 30px rgba(40, 34, 24, 0.16); }
+      body[data-eye='true'] .panel { flex: 1; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 4px; padding: 8px 12px 6px; }
+      body[data-eye='true'] .camera-rows { display: grid; gap: 2px; grid-column: 1 / -1; }
+      body[data-eye='true'] #moment-row { display: contents; }
+      body[data-eye='true'] .daynav, body[data-eye='true'] #sun, body[data-eye='true'] #tracks, body[data-eye='true'] #moments, body[data-eye='true'] #moments-empty { display: none; }
+      body[data-eye='true'] .clock { grid-column: 1; align-self: center; font-size: 17px; min-width: 0; }
+      body[data-eye='true'] #time-row { grid-column: 2; }
+      body[data-eye='true'] .credit { grid-column: 1 / -1; font-size: 10px; }
+      .camera-rows .row { justify-content: space-between; min-height: 22px; }
+      #facing { font-weight: 600; font-variant-numeric: tabular-nums; }
+      .lens { display: flex; align-items: center; gap: 10px; }
+      .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }
+      #lens-label { font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; color: var(--muted); }
+      .keys { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+      .keys .gap { width: 6px; }
+      kbd { min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; display: inline-grid; place-items: center; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--field); font: 600 10.5px ui-sans-serif, system-ui, sans-serif; color: var(--ink); transition: background 0.12s, color 0.12s; }
+      kbd.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .keys.hint kbd { animation: nudge 1.4s ease-in-out 2; }
+      @keyframes nudge { 50% { background: var(--accent); border-color: var(--accent); color: #fff; } }
+      .walkpad { display: none; flex-direction: column; gap: 8px; }
+      /* Touch screens walk with buttons; a keyboard walks with keys. */
+      @media (pointer: coarse) {
+        .keys { display: none; }
+        body[data-eye='true'] .walkpad { display: flex; }
+      }
+
+      .panel { min-width: 0; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; border-radius: var(--radius); }
       .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
       .clock { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 62px; }
-      .muted { color: #6f6a62; }
-      input[type='range'] { flex: 1; min-width: 180px; min-height: 28px; accent-color: #d9772b; }
+      .muted { color: var(--muted); }
       .daynav { display: flex; gap: 4px; align-items: center; }
-      .daynav button, .daypick { height: 34px; min-width: 34px; padding: 0 9px; border: 1px solid #d8d3ca; border-radius: 9px; background: #fff; color: inherit; font: inherit; font-size: 16px; cursor: pointer; }
+      .daynav button, .daypick { height: 34px; min-width: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--field); color: inherit; font-size: 16px; cursor: pointer; box-sizing: border-box; }
       .daynav #today { font-size: 12px; }
       .daypick { position: relative; display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
       .daypick svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
       /* The real input covers the label invisibly, so a tap opens the browser's own calendar. */
       .daypick input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
       .daypick input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: pointer; }
-      body[data-night='true'] .daynav button, body[data-night='true'] .daypick { background: #262a42; border-color: #3a3f5c; }
-      input[type='date'] { font: inherit; padding: 5px 7px; border: 1px solid #d8d3ca; border-radius: 8px; background: #fff; color: inherit; }
-      .modes { display: flex; gap: 2px; padding: 2px; background: #e8e4dc; border-radius: 9px; margin-left: auto; }
-      .modes button { font: inherit; padding: 7px 12px; min-height: 32px; border: 0; border-radius: 7px; background: transparent; color: inherit; cursor: pointer; }
-      .modes button[aria-pressed='true'] { background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14); }
-      #stats { z-index: 2; position: fixed; top: 10px; left: 12px; font: 11px/1.4 ui-monospace, monospace; color: #6f6a62; white-space: pre; pointer-events: none; }
+      body[data-night='true'] .daypick input { color-scheme: dark; }
+      input[type='range'] { flex: 1; min-width: 120px; min-height: 28px; accent-color: var(--accent); }
+      input[type='range']#time { appearance: none; -webkit-appearance: none; height: 12px; min-height: 12px; margin: 9px 0; border-radius: 6px; background: linear-gradient(90deg, var(--phases, #ccc)); }
+      #time::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; cursor: grab; }
+      #time::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #4a463f; }
+      #tracks { display: grid; gap: 3px; margin: 0 11px -6px; }
+      .track { position: relative; height: 4px; }
+      .track span { position: absolute; top: 0; bottom: 0; border-radius: 2px; min-width: 3px; }
+      .track--sun span { background: var(--sun); }
+      .track--moon span { background: var(--moon); }
+      .track--streets span { background: #d9a441; opacity: 0.8; }
+      #moments { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+      #moments button { font-size: 12px; white-space: nowrap; padding: 6px 10px; min-height: 30px; border: 0; border-radius: 15px; background: var(--field); cursor: pointer; }
+      #moments button::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
+      #moments button[data-body='sun']::before { background: var(--sun); }
+      #moments button[data-body='moon']::before { background: var(--moon); }
+      .credit { font-size: 11px; }
+
+      #ghost[hidden] { display: none; }
+      #ghost { left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
+      #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
+      #stats { z-index: 2; position: fixed; top: 10px; left: 12px; font: 11px/1.4 ui-monospace, monospace; color: var(--muted); white-space: pre; pointer-events: none; }
+
+      @media (max-width: 480px) {
+        #minimap { width: 76px; height: 76px; }
+        body[data-eye='true'] .bottom { gap: 6px; }
+        .walkpad .round { width: 40px; height: 40px; }
+        #lens-label { min-width: 44px; }
+        .clock { font-size: 20px; min-width: 0; }
+      }
     </style>
   </head>
   <body>
     <canvas id="labels"></canvas>
     <div class="tools">
-      <button id="compass" class="round" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
-      <button id="tilt" class="round overview-only" aria-label="Switch between flat and angled view">2D</button>
-      <button id="photographer" class="round overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
+      <button id="compass" class="round surface" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
+      <button id="tilt" class="round surface overview-only" aria-label="Switch between flat and angled view">2D</button>
+      <button id="photographer" class="round surface overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="3"/><path d="M8 10h8l1 6h-3v6h-4v-6H7z"/><rect x="13.5" y="9" width="6" height="4.2" rx="1"/></svg>
       </button>
     </div>
-    <div class="eyebar">
-      <button id="back">&larr; Map</button>
-      <span id="facing" class="muted"></span>
-      <label class="lens"><input id="lens" type="range" min="0" max="1000" aria-label="Lens" /><span id="lens-label"></span></label>
+    <div class="topleft">
+      <button id="back" class="chip surface">&larr; Map</button>
     </div>
     <canvas id="ghost" hidden></canvas>
-    <canvas id="minimap" class="eye-only" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
-    <div class="walkpad eye-only">
-      <button id="walk-fwd" class="round" aria-label="Walk forward (W)">&#9650;</button>
-      <button id="walk-back" class="round" aria-label="Walk back (S)">&#9660;</button>
-    </div>
     <div id="stats"></div>
-    <div class="panel">
-      <div class="row">
-        <span class="clock" id="clock">--:--</span>
-        <div class="daynav">
-          <button id="prev-day" type="button" aria-label="Previous day">&lsaquo;</button>
-          <label class="daypick">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></svg>
-            <span id="day-label"></span>
-            <input id="date" type="date" aria-label="Choose a date" />
-          </label>
-          <button id="today" type="button" hidden>Today</button>
-          <button id="next-day" type="button" aria-label="Next day">&rsaquo;</button>
+    <div class="bottom">
+      <canvas id="minimap" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
+      <div class="panel surface">
+        <div class="camera-rows">
+          <div class="row">
+            <span id="facing"></span>
+            <span class="keys" aria-label="Walk with W, A, S and D, turn with the arrow keys, hold Shift to go faster">
+              <kbd data-key="fwd">W</kbd><kbd data-key="left">A</kbd><kbd data-key="back">S</kbd><kbd data-key="right">D</kbd>&nbsp;walk<span class="gap"></span>
+              <kbd data-key="turnL">&larr;</kbd><kbd data-key="turnR">&rarr;</kbd>&nbsp;turn<span class="gap"></span>
+              <kbd data-key="run">&#8679;</kbd>&nbsp;faster
+            </span>
+          </div>
+          <label class="lens"><span class="muted">Lens</span><input id="lens" type="range" min="0" max="1000" aria-label="Lens" /><span id="lens-label"></span></label>
         </div>
-        <span class="muted" id="sun"></span>
-
+        <div class="row" id="moment-row">
+          <span class="clock" id="clock">--:--</span>
+          <div class="daynav">
+            <button id="prev-day" type="button" aria-label="Previous day">&lsaquo;</button>
+            <label class="daypick">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></svg>
+              <span id="day-label"></span>
+              <input id="date" type="date" aria-label="Choose a date" />
+            </label>
+            <button id="today" type="button" hidden>Today</button>
+            <button id="next-day" type="button" aria-label="Next day">&rsaquo;</button>
+          </div>
+          <span class="muted" id="sun"></span>
+        </div>
+        <div id="tracks" aria-hidden="true"></div>
+        <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
+        <div id="moments" aria-label="Streets lined up today"></div>
+        <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
+        <div class="muted credit">Map data &copy; OpenStreetMap contributors</div>
       </div>
-      <div id="tracks" aria-hidden="true"></div>
-      <div class="row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
-      <div id="moments" aria-label="Streets lined up today"></div>
-      <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
-      <div class="muted" style="font-size:11px">Map data &copy; OpenStreetMap contributors</div>
+      <div class="walkpad">
+        <button id="walk-fwd" class="round surface" aria-label="Walk forward">&#9650;</button>
+        <button id="walk-back" class="round surface" aria-label="Walk back">&#9660;</button>
+      </div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

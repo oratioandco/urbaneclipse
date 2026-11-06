@@ -276,6 +276,7 @@ function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   controls.enabled = false;
   camera = eyeCamera;
   transition = { from, to: eyePose(look), start: performance.now(), ms: wasStanding ? 900 : 1700, done: () => (look.active = true) };
+  if (document.body.dataset.eye !== 'true') nudgeKeys();
   document.body.dataset.eye = 'true';
   updateEyeBar();
   invalidateShadows();
@@ -371,21 +372,37 @@ const held = new Set();
 let pad = 0;
 let lastStep = 0;
 let shadowFrom = null;
-const KEYS = { w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
+const KEYS = { shift: 'run', w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
 addEventListener('keydown', (event) => {
   if (!look.active || event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
   const key = KEYS[event.key.toLowerCase()];
   if (!key) return;
   held.add(key);
   if (event.shiftKey) held.add('run');
+  showKeys();
   event.preventDefault();
   invalidate();
 });
 addEventListener('keyup', (event) => {
   held.delete(KEYS[event.key.toLowerCase()]);
   if (event.key === 'Shift') held.delete('run');
+  showKeys();
 });
-addEventListener('blur', () => held.clear());
+addEventListener('blur', () => {
+  held.clear();
+  showKeys();
+});
+// The keys on screen light up while held, so it is clear they do something.
+const keycaps = document.querySelectorAll('kbd[data-key]');
+function showKeys() {
+  for (const cap of keycaps) cap.classList.toggle('on', held.has(cap.dataset.key));
+}
+const keyHint = document.querySelector('.keys');
+function nudgeKeys() {
+  keyHint.classList.remove('hint');
+  void keyHint.offsetWidth;
+  keyHint.classList.add('hint');
+}
 for (const [id, dir] of [['walk-fwd', 1], ['walk-back', -1]]) {
   const button = document.getElementById(id);
   button.addEventListener('pointerdown', (event) => {
@@ -1067,9 +1084,8 @@ const stats = { texel: 0, ms: 0, frames: 0, triangles: 0, calls: 0 };
 const statsEl = document.getElementById('stats');
 let base = null;
 let lastFrame = performance.now();
-const panel = document.querySelector('.panel');
-// The eye-level controls sit just above the panel, whatever its height.
-new ResizeObserver(() => document.body.style.setProperty('--panel-h', `${panel.offsetHeight}px`)).observe(panel);
+// The bottom block: the sheet, and at eye level the camera row above it.
+const panel = document.querySelector('.bottom');
 const history = [];
 
 /** Haze starts beyond the middle of the view, whatever the zoom; standing, it is the real air. */
