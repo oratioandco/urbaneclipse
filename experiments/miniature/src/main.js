@@ -2067,9 +2067,15 @@ const statsEl = document.getElementById('stats');
 let base = null;
 let lastFrame = performance.now();
 // At eye level the mini map stands as tall as the card beside it.
+// Set on the next frame and only when it changes: the map's size feeds back into the card's.
+let mapSize = 0;
 new ResizeObserver(() => {
-  const card = document.querySelector('.panel');
-  if (document.body.dataset.eye === 'true') document.body.style.setProperty('--map-size', `${card.offsetHeight}px`);
+  requestAnimationFrame(() => {
+    const height = document.querySelector('.panel').offsetHeight;
+    if (document.body.dataset.eye !== 'true' || height === mapSize) return;
+    mapSize = height;
+    document.body.style.setProperty('--map-size', `${height}px`);
+  });
 }).observe(document.querySelector('.panel'));
 // The bottom block: the sheet, and at eye level the camera row above it.
 const panel = document.querySelector('.bottom');
@@ -2380,14 +2386,21 @@ document.getElementById('next-day').addEventListener('click', () => shiftDay(1))
 document.getElementById('today').addEventListener('click', () => setDay(todayInBerlin()));
 showDay();
 timeInput.addEventListener('input', updateSun);
-loadViewshed().then(
-  (loaded) => {
-    viewshed = loaded;
-    if (rawPaths.length) buildPaths();
-    invalidate();
-  },
-  (error) => console.error('[miniature] visibility data failed', error),
-);
+// Safari drops a request now and then while the first load is busy; try again a few times.
+function loadVisibility(attempt = 0) {
+  loadViewshed().then(
+    (loaded) => {
+      viewshed = loaded;
+      if (rawPaths.length) buildPaths();
+      invalidate();
+    },
+    (error) => {
+      if (attempt < 3) setTimeout(() => loadVisibility(attempt + 1), 1500 * (attempt + 1));
+      else console.error('[miniature] visibility data failed', error);
+    },
+  );
+}
+loadVisibility();
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
