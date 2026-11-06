@@ -1,0 +1,33 @@
+/**
+ * Times as the viewer's own locale writes them: 17:50 or 5:50 PM. Always Berlin time, since
+ * the light and the city are Berlin's wherever the viewer is.
+ */
+export const uses12h = new Intl.DateTimeFormat(undefined, { hour: 'numeric' }).resolvedOptions().hour12 === true;
+
+const clock = new Intl.DateTimeFormat(undefined, { hour: uses12h ? 'numeric' : '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' });
+const dayClock = new Intl.DateTimeFormat(undefined, { hour: uses12h ? 'numeric' : '2-digit', minute: '2-digit', timeZone: 'UTC' });
+const hourOnly = new Intl.DateTimeFormat(undefined, { hour: uses12h ? 'numeric' : '2-digit', timeZone: 'UTC' });
+
+/** An instant, as a Berlin wall-clock time. */
+export const formatClock = (t) => clock.format(new Date(t));
+/** Minutes after local midnight. */
+export const formatMinutes = (minutes) => dayClock.format(new Date(Date.UTC(2000, 0, 1, 0, minutes)));
+/** A whole hour, short: 07 or 7 AM. */
+export const formatHour = (hour) => hourOnly.format(new Date(Date.UTC(2000, 0, 1, hour))).replace(/\s?Uhr$/, '');
+
+/**
+ * A typed time, as people write them: 17:50, 1750, 17.50, 5:50 pm, 5pm. Minutes after
+ * midnight, or null if it cannot be read.
+ */
+export function parseTime(text) {
+  const match = text.trim().toLowerCase().match(/^(\d{1,2})(?:[:.h\s]?(\d{2}))?\s*(a|p)?\.?\s*m?\.?$/);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2] ?? 0);
+  if (match[3]) {
+    if (hour < 1 || hour > 12) return null;
+    hour = (hour % 12) + (match[3] === 'p' ? 12 : 0);
+  }
+  if (hour > 23 || minute > 59) return null;
+  return hour * 60 + minute;
+}

@@ -375,8 +375,8 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
     ctx.lineWidth = 1.2;
     ctx.stroke();
     ctx.globalAlpha = 1;
-    // The label sits on the edge of the view in the line's direction from the tower, however
-    // long the line is, so the hours ring the view like a clock face.
+    // The label sits on the edge of the view in the line's direction from the tower when the
+    // line runs out of view, like a clock face; otherwise on the line's end.
     if (!project(ray.base.x, ray.base.y, ray.base.z, p)) continue;
     const ox = Math.min(right - 30, Math.max(left + 30, p.x));
     const oy = Math.min(bottom - 30, Math.max(top + 30, p.y));
@@ -391,10 +391,15 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
     const ux = sx / s;
     const uy = sy / s;
     const reach = Math.min(ux > 0 ? (right - 16 - ox) / ux : ux < 0 ? (left + 16 - ox) / ux : Infinity, uy > 0 ? (bottom - 12 - oy) / uy : uy < 0 ? (top + 12 - oy) / uy : Infinity);
-    const label = { x: ox + ux * reach, y: oy + uy * reach };
+    let label = { x: ox + ux * reach, y: oy + uy * reach };
+    // Where the line ends in view, the hour sits on its end: that is a real place to stand.
+    const end = {};
+    if (project(ray.far.x, ray.far.y, ray.far.z, end) && end.x > left + 16 && end.x < right - 16 && end.y > top + 12 && end.y < bottom - 12) {
+      label = { x: end.x + ux * 14, y: end.y + uy * 14 };
+    }
     if (!label || placed.some((q) => Math.hypot(q.x - label.x, q.y - label.y) < 24)) continue;
     placed.push(label);
-    const text = String(ray.hour).padStart(2, '0');
+    const text = ray.label ?? String(ray.hour).padStart(2, '0');
     ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
     const width = ctx.measureText(text).width + 10;
     ctx.fillStyle = night ? 'rgba(20, 23, 38, 0.86)' : 'rgba(255, 253, 249, 0.94)';

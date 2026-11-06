@@ -64,18 +64,18 @@
          view stays open: the camera, then the time. Planning tools wait on the map. */
       .bottom { position: fixed; z-index: 2; left: var(--gutter); right: var(--gutter); bottom: max(var(--gutter), env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
       #minimap, .camera-rows { display: none; }
-      #minimap { position: static; width: var(--eye-card); height: var(--eye-card); flex: none; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; touch-action: manipulation; }
+      #minimap { position: static; width: var(--map-size, var(--eye-card)); height: var(--map-size, var(--eye-card)); flex: none; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; touch-action: manipulation; }
       body[data-eye='true'] .bottom { display: flex; align-items: flex-end; max-width: 720px; }
       body[data-eye='true'] #minimap { display: block; }
       body[data-eye='true'] .panel { flex: 1; min-height: var(--eye-card); box-sizing: border-box; align-content: center; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 4px; padding: 8px 12px 6px; }
       body[data-eye='true'] .camera-rows { display: grid; gap: 2px; grid-column: 1 / -1; }
       body[data-eye='true'] #moment-row { display: contents; }
       body[data-eye='true'] .daynav, body[data-eye='true'] #sun, body[data-eye='true'] #tracks, body[data-eye='true'] #moments, body[data-eye='true'] #moments-empty { display: none; }
-      body[data-eye='true'] .clock { grid-column: 1; align-self: center; font-size: 17px; min-width: 0; }
+      body[data-eye='true'] .clock { grid-column: 1; align-self: center; font-size: 17px; }
       body[data-eye='true'] #time-row { grid-column: 2; }
       body[data-eye='true'] .credit { grid-column: 1 / -1; font-size: 10px; }
       .camera-rows .row { justify-content: space-between; min-height: 22px; }
-      #eclipse { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 22px; padding: 0 9px 0 7px; border: 0; border-radius: 11px; background: var(--field); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+      #eclipse { display: inline-flex; align-items: center; gap: 6px; min-height: 22px; padding: 0 9px 0 7px; border: 0; border-radius: 11px; background: var(--field); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
       #eclipse::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--sun)); }
       #eclipse[data-state='now'] { background: var(--dot, var(--sun)); color: #fff; }
       #eclipse[data-state='now']::before { background: #fff; }
@@ -84,7 +84,7 @@
       .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }
       #format { height: 26px; padding: 0 22px 0 8px; border: 1px solid var(--line); border-radius: 13px; background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236f6a62' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center / 9px; color: inherit; font: 600 11.5px ui-sans-serif, system-ui, sans-serif; appearance: none; -webkit-appearance: none; cursor: pointer; }
       #lens-chips { flex: 1; display: flex; gap: 4px; }
-      #lens-chips button { flex: 1; max-width: 72px; height: 26px; padding: 0 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--field); display: inline-flex; align-items: baseline; justify-content: center; gap: 3px; font: 600 12px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+      #lens-chips button { flex: 1; max-width: 72px; height: 26px; padding: 0 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--field); display: inline-flex; align-items: center; justify-content: center; gap: 3px; line-height: 1; font: 600 12px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
       #lens-chips button small { font-weight: 500; font-size: 10px; color: var(--muted); }
       #lens-chips button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #fff; }
       #lens-chips button[aria-pressed='true'] small { color: rgba(255, 255, 255, 0.8); }
@@ -104,9 +104,11 @@
       .heightbar small { color: var(--muted); font-weight: 500; font-size: 10px; }
       body[data-eye='true'][data-drone='true'] .heightbar { display: flex; }
       #height { writing-mode: vertical-lr; direction: rtl; width: 28px; height: 160px; min-width: 0; min-height: 0; margin: 0; flex: none; accent-color: var(--accent); }
-      #airspace { font-size: 11.5px; color: var(--muted); }
-      #airspace[data-inside='true'] span { color: #c0392b; font-weight: 600; }
-      #airspace a { color: inherit; font-weight: 600; }
+      .status-row { display: flex; flex-wrap: wrap; gap: 6px; }
+      .status-row:not(:has(> :not([hidden]))) { display: none; }
+      #airspace { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 11px; background: var(--field); color: var(--muted); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
+      #airspace[data-inside='true'] { background: #fde8e4; color: #b4321f; }
+      body[data-night='true'] #airspace[data-inside='true'] { background: #4a2228; color: #ffb3a6; }
       /* Touch screens walk with buttons; a keyboard walks with keys. */
       @media (pointer: coarse) {
         .keys { display: none; }
@@ -115,7 +117,11 @@
 
       .panel { min-width: 0; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; border-radius: var(--radius); }
       .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-      .clock { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 62px; }
+      .clock { width: 5.4ch; padding: 0 2px; margin: 0 -2px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: 400 22px/1.2 ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; cursor: text; }
+      .clock.h12 { width: 7.6ch; }
+      .clock:hover, .clock:focus { background: var(--field); outline: none; }
+      .clock::-webkit-calendar-picker-indicator { display: none; }
+      body[data-night='true'] .clock { color-scheme: dark; }
       .muted { color: var(--muted); }
       .daynav { display: flex; gap: 4px; align-items: center; }
       .daynav button, .daypick { height: 34px; min-width: 34px; padding: 0 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--field); color: inherit; font-size: 16px; cursor: pointer; box-sizing: border-box; }
@@ -150,6 +156,7 @@
 
       @media (max-width: 480px) {
         :root { --eye-card: 84px; }
+        body[data-eye='true'] #minimap { width: var(--eye-card); height: var(--eye-card); }
         /* Phone: a full-width strip at the bottom; above it the stick on the left, where a
            thumb walks in games, and the mini map on the right. The middle stays open. */
         body[data-eye='true'] .bottom { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'pad . map' 'card card card'; align-items: end; }
@@ -192,9 +199,10 @@
       <button id="takeoff" class="chip surface">&uarr; Take off</button>
     </div>
     <div class="heightbar surface">
-      <span id="height-label">0 m</span>
-      <input id="height" type="range" min="0" max="120" step="1" aria-label="Height above the ground" />
-      <small>max</small>
+      <small>120</small>
+      <input id="height" type="range" min="0" max="120" step="1" aria-label="Height above the ground, metres" />
+      <small>0</small>
+      <span id="height-label" hidden></span>
     </div>
     <canvas id="ghost" hidden></canvas>
     <div id="stats"></div>
@@ -211,12 +219,14 @@
               <kbd data-key="run">&#8679;</kbd>&nbsp;faster
             </span>
           </div>
-          <button id="eclipse" type="button" hidden></button>
-          <div id="airspace" hidden><span></span> <a href="https://maptool-dipul.dfs.de/" target="_blank" rel="noopener">Geo zones on dipul &nearr;</a></div>
+          <div class="status-row">
+            <button id="eclipse" type="button" hidden></button>
+            <a id="airspace" class="status-pill" href="https://maptool-dipul.dfs.de/" target="_blank" rel="noopener" hidden><span></span>&nbsp;&nearr;</a>
+          </div>
           <div class="lens"><select id="format" aria-label="Camera format"></select><input id="lens" type="range" min="0" max="1000" aria-label="Focal length" /><span id="lens-label"></span><div id="lens-chips" role="group" aria-label="Lens" hidden></div></div>
         </div>
         <div class="row" id="moment-row">
-          <span class="clock" id="clock">--:--</span>
+          <input class="clock" id="clock" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Time: type one, such as 17:50 or 5:50 pm" />
           <div class="daynav">
             <button id="prev-day" type="button" aria-label="Previous day">&lsaquo;</button>
             <label class="daypick">

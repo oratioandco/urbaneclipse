@@ -26,6 +26,7 @@ import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
+import { formatClock, formatHour, formatMinutes, parseTime, uses12h } from './time.js';
 import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
 
@@ -391,7 +392,8 @@ function updateEyeBar() {
   const heading = ((look.heading % 360) + 360) % 360;
   facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
   const lift = look.lift ?? 0;
-  if (lift >= 1 && look.mode !== 'drone') facingLabel.textContent += ` \u00b7 on a roof, ${Math.round(lift)} m up`;
+  if (look.mode === 'drone') facingLabel.textContent += ` \u00b7 ${Math.round(lift)} m up`;
+  else if (lift >= 1) facingLabel.textContent += ` \u00b7 on a roof, ${Math.round(lift)} m up`;
 }
 
 attachLook(renderer.domElement, look, () => {
@@ -508,6 +510,7 @@ let padSide = 0;
 
 // ---- Flying: take off, the height, and landing again ---------------------------------------
 const takeoffButton = document.getElementById('takeoff');
+const DRONE_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/><circle cx="5.5" cy="18.5" r="3"/><circle cx="18.5" cy="18.5" r="3"/><path d="M7.6 7.6l2.4 2.4M16.4 7.6 14 10M7.6 16.4l2.4-2.4M16.4 16.4 14 14"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg>';
 const heightInput = document.getElementById('height');
 const heightLabel = document.getElementById('height-label');
 const airspace = document.getElementById('airspace');
@@ -541,10 +544,11 @@ const edr146 = sceneFromLatLon(ED_R_146.lat, ED_R_146.lon, FERNSEHTURM.lat, FERN
 function showFlight() {
   const flying = look.mode === 'drone';
   document.body.dataset.drone = String(flying);
-  takeoffButton.textContent = flying ? '\u2193 Land' : '\u2191 Take off';
+  takeoffButton.innerHTML = `${DRONE_ICON}${flying ? 'Land' : 'Take off'}`;
   takeoffButton.setAttribute('aria-label', flying ? 'Land' : 'Take off as a drone');
   heightInput.value = String(Math.round(look.lift ?? 0));
   heightLabel.textContent = `${Math.round(look.lift ?? 0)} m`;
+  updateEyeBar();
   if (!flying) {
     airspace.hidden = true;
     return;
@@ -553,8 +557,11 @@ function showFlight() {
   airspace.hidden = false;
   airspace.dataset.inside = String(inside);
   airspace.querySelector('span').textContent = inside
-    ? 'Inside ED-R 146: drones only commercially, with a permit.'
-    : 'Check the geo zones before you fly.';
+    ? 'ED-R 146 \u00b7 permit only'
+    : 'Check geo zones';
+  airspace.title = inside
+    ? 'Inside the restricted area ED-R 146 round the Reichstag: drones only commercially, with a permit. Tap for the official geo zones on dipul.'
+    : 'Other geo zones may apply here. Tap for the official map on dipul.';
 }
 function takeOff() {
   look.mode = 'drone';
@@ -689,7 +696,7 @@ function updateForecast(now) {
 }
 
 const eclipseButton = document.getElementById('eclipse');
-const clockOf = (t) => new Date(t).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
+const clockOf = formatClock;
 const BODY_NAME = { sun: 'Sun', moon: 'Moon' };
 let eclipseAction = null;
 /** One line in the camera card: covered now, how long until, or where to go instead. */
@@ -1046,6 +1053,23 @@ function updateLevels() {
 const dateInput = document.getElementById('date');
 const timeInput = document.getElementById('time');
 const clock = document.getElementById('clock');
+// The time can be typed or picked as well as slid; the browser shows it in the viewer's format.
+clock.classList.toggle('h12', uses12h);
+clock.addEventListener('focus', () => clock.select());
+clock.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') clock.blur();
+  if (event.key === 'Escape') {
+    clock.value = formatMinutes(Number(timeInput.value));
+    clock.blur();
+  }
+});
+clock.addEventListener('change', () => {
+  const minutes = parseTime(clock.value);
+  if (minutes !== null) timeInput.value = String(minutes);
+  clock.value = formatMinutes(Number(timeInput.value));
+  updateSun();
+  invalidate();
+});
 const sunLabel = document.getElementById('sun');
 const berlinOffsetMinutes = (date) => {
   const local = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
@@ -1127,7 +1151,7 @@ function updateSun() {
   document.getElementById('face-sun').hidden = !bodies.some((b) => !b.moon);
   document.getElementById('face-moon').hidden = !bodies.some((b) => b.moon);
 
-  clock.textContent = `${String(Math.floor(timeInput.value / 60)).padStart(2, '0')}:${String(timeInput.value % 60).padStart(2, '0')}`;
+  if (document.activeElement !== clock) clock.value = formatMinutes(Number(timeInput.value));
   const phase = LIGHT_PHASE_NAMES[lightPhaseAt(sunAt.alt)];
   sunLabel.textContent = `${phase} \u00b7 ${sunAt.alt > -0.5 ? `sun ${sunAt.alt.toFixed(0)}\u00b0` : moonAt.alt > 0 ? `moon ${Math.round(illumination.fraction * 100)}% lit` : 'moon down'}`;
   updateHighlights(when.getTime());
@@ -1186,7 +1210,7 @@ function updateDay() {
     seen.add(key);
     const chip = document.createElement('button');
     const minutes = Math.round((moment.peak - from) / 60_000);
-    const stamp = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const stamp = formatMinutes(minutes);
     chip.textContent = `${stamp} ${moment.view.name}`;
     chip.dataset.body = moment.body;
     chip.addEventListener('click', () => {
@@ -1239,7 +1263,7 @@ function buildPaths() {
     for (let hour = 0; hour < 24; hour++) {
       const t = from + hour * 3_600_000;
       const line = alignmentLine(path.body, t, FERNSEHTURM);
-      if (line) hourRays.push({ body: path.body, hour, t, base, far: toScene(line.farEnd) });
+      if (line) hourRays.push({ body: path.body, hour, label: formatHour(hour), t, base, far: toScene(line.farEnd) });
     }
   }
   updateTracks();
@@ -1437,6 +1461,11 @@ const stats = { texel: 0, ms: 0, frames: 0, triangles: 0, calls: 0 };
 const statsEl = document.getElementById('stats');
 let base = null;
 let lastFrame = performance.now();
+// At eye level the mini map stands as tall as the card beside it.
+new ResizeObserver(() => {
+  const card = document.querySelector('.panel');
+  if (document.body.dataset.eye === 'true') document.body.style.setProperty('--map-size', `${card.offsetHeight}px`);
+}).observe(document.querySelector('.panel'));
 // The bottom block: the sheet, and at eye level the camera row above it.
 const panel = document.querySelector('.bottom');
 const history = [];
@@ -1587,9 +1616,17 @@ function frame(now) {
   renderPass.camera = camera;
   composer.render();
   let eclipseHere = null;
+  skyUniforms.uCorona.value = 0;
   if (street > 0.5) {
     updateForecast(now);
     eclipseHere = showEclipseStatus(now);
+    const sun = eclipseHere.items.find((item) => item.body === 'sun');
+    if (sun) {
+      // Full behind the sphere: the whole corona. Grazing its edge: a hint of it.
+      const overlap = THREE.MathUtils.clamp((eclipseHere.radiusDeg + DISC_RADIUS_DEG - sun.sepDeg) / (2 * DISC_RADIUS_DEG), 0, 1);
+      skyUniforms.uCorona.value = overlap * overlap;
+      skyUniforms.uCoronaR.value = THREE.MathUtils.degToRad(eclipseHere.radiusDeg);
+    }
   }
   taps = drawOverlay({
     camera,
