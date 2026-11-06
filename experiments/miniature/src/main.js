@@ -665,7 +665,23 @@ function eclipseNow() {
   const items = bodies.map((body) => {
     toDirection(bodyDirection, body.az, body.alt);
     const sepDeg = degreesBetween(bodyDirection, toSphere);
-    return { body: body.moon ? 'moon' : 'sun', az: body.az, alt: body.alt, sepDeg, covered: sepDeg < radiusDeg + DISC_RADIUS_DEG, full: sepDeg < radiusDeg - DISC_RADIUS_DEG };
+    const kind = body.moon ? 'moon' : 'sun';
+    const touching = sepDeg < radiusDeg + DISC_RADIUS_DEG;
+    // Inside the disc's outline: the sphere in front of a bigger disc, or the disc behind a bigger sphere.
+    const inside = sepDeg < Math.abs(radiusDeg - DISC_RADIUS_DEG);
+    let state = 'near';
+    // Behind the antenna: in line with the mast, between the sphere's top and the tip.
+    const flat = Math.hypot(eye.x, eye.z);
+    const towerAz = (THREE.MathUtils.radToDeg(Math.atan2(-eye.x, eye.z)) + 360) % 360;
+    const off = Math.abs(((((body.az - towerAz) % 360) + 540) % 360) - 180) * Math.cos(THREE.MathUtils.degToRad(body.alt));
+    const base = groundAt(0, 0);
+    const lowest = THREE.MathUtils.radToDeg(Math.atan2(base + SPHERE_TOP_AGL + 8 - eye.y, flat));
+    const highest = THREE.MathUtils.radToDeg(Math.atan2(base + TIP_AGL - eye.y, flat));
+    if (off < DISC_RADIUS_DEG && body.alt > lowest && body.alt < highest + DISC_RADIUS_DEG) state = 'antenna';
+    if (inside && radiusDeg >= DISC_RADIUS_DEG) state = 'hidden';
+    else if (inside) state = 'ring';
+    else if (touching) state = 'edge';
+    return { body: kind, az: body.az, alt: body.alt, sepDeg, state, covered: touching || state === 'antenna', full: state === 'hidden' };
   });
   return { centre: sphereCentre(), radiusDeg, items };
 }
@@ -711,7 +727,14 @@ function showEclipseStatus(now) {
   if (covering) {
     body = covering.body;
     state = 'now';
-    text = covering.full ? `${BODY_NAME[body]} behind the sphere now` : `${BODY_NAME[body]} at the edge of the sphere now`;
+    const name = BODY_NAME[body];
+    text = {
+      hidden: body === 'sun' ? 'Sun behind the sphere now' : 'Moon hidden behind the sphere: move further away',
+      ring: body === 'sun' ? 'Ring of sun round the sphere now' : 'Sphere in front of the moon now',
+      edge: `${name} at the edge of the sphere now`,
+      antenna: `${name} behind the antenna now`,
+    }[covering.state];
+    if (body === 'moon' && covering.state === 'hidden') state = 'warn';
   } else {
     const next = forecast.filter((f) => f.covers).sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
     const spot = spots[0];
@@ -1220,6 +1243,46 @@ function updateDay() {
 }
 
 // ---- Where the tower covers the sun or moon ------------------------------------------------
+// The moon is only worth a photograph while it can be seen. Behind the sphere it vanishes
+// unless it looks clearly bigger than the sphere, which needs distance: from 4.4 km it is 1.25
+// times the sphere's width, and the sphere stands in front of the moon as a silhouette. Closer
+// in, the shot is the moon behind the thin antenna, between the sphere's top and the tip.
+const DISC_DEG = 0.52;
+const SPHERE_TOP_AGL = 229;
+const TIP_AGL = 368;
+const BIG_MOON_M = SPHERE_RADIUS_M / Math.tan(THREE.MathUtils.degToRad(DISC_DEG / 2 / 1.25));
+/** How many times wider the disc looks than the sphere from a distance. */
+const discOverSphere = (distanceM) => DISC_DEG / THREE.MathUtils.radToDeg(2 * Math.atan(SPHERE_RADIUS_M / distanceM));
+
+/** Keep only the stretches of a moon path far enough out for the moon to show round the sphere. */
+function visibleMoon(path) {
+  if (path.body !== 'moon') return path;
+  const segments = [];
+  for (const segment of path.segments) {
+    let run = [];
+    for (const p of segment) {
+      if (p.distanceM >= BIG_MOON_M) run.push(p);
+      else if (run.length) {
+        segments.push(run);
+        run = [];
+      }
+    }
+    if (run.length) segments.push(run);
+  }
+  return { ...path, segments };
+}
+
+/** Along a line through the tower, where the disc sits behind the antenna: the sphere's top out to the tip. */
+function antennaStretch(line) {
+  const slope = Math.tan(THREE.MathUtils.degToRad(line.bodyAlt));
+  const from = (SPHERE_TOP_AGL - EYE_HEIGHT) / slope;
+  const to = Math.min(9000, (TIP_AGL - EYE_HEIGHT) / slope);
+  if (from >= to) return null;
+  const far = toScene(line.farEnd);
+  const length = Math.hypot(far.x, far.z) || 1;
+  const at = (d) => ({ x: (far.x / length) * d, z: (far.z / length) * d, y: groundAt((far.x / length) * d, (far.z / length) * d) + 1 });
+  return { from: at(from), to: at(to), fromM: from, toM: to };
+}
 let rawPaths = [];
 let viewshed = null;
 let dayPaths = [];
@@ -1239,7 +1302,8 @@ function buildPaths() {
   const from = dayStart();
   const viewed = rawPaths
     .filter((path) => path.body === 'sun' || path.illumination >= MIN_MOON_ILLUMINATION)
-    .map((path) => (viewshed ? applyView(path, (lat, lon) => sampleViewshed(viewshed, lat, lon) === VIEW_VISIBLE) : path));
+    .map((path) => (viewshed ? applyView(path, (lat, lon) => sampleViewshed(viewshed, lat, lon) === VIEW_VISIBLE) : path))
+    .map(visibleMoon);
   dayPaths = viewed.map((path) => ({
     body: path.body,
     source: path,
@@ -1254,7 +1318,7 @@ function buildPaths() {
     for (let hour = 0; hour < 24; hour++) {
       const t = from + hour * 3_600_000;
       const line = alignmentLine(path.body, t, FERNSEHTURM);
-      if (line) hourRays.push({ body: path.body, hour, label: formatHour(hour), t, base, far: toScene(line.farEnd) });
+      if (line) hourRays.push({ body: path.body, hour, label: formatHour(hour), t, base, far: toScene(line.farEnd), antenna: path.body === 'moon' ? antennaStretch(line) : null });
     }
   }
   updateTracks();
@@ -1294,11 +1358,71 @@ function renderDayList() {
           t: first.t,
           body: path.body,
           kind: 'tower',
-          title: `${BODY_NAME[path.body]} behind the TV tower`,
+          title:
+            path.body === 'moon'
+              ? `Big moon behind the TV tower, ${discOverSphere(mid.distanceM).toFixed(1)}\u00d7 the sphere`
+              : discOverSphere(mid.distanceM) > 1
+                ? 'Ring of sun round the TV tower\u2019s sphere'
+                : 'Sun behind the TV tower\u2019s sphere',
           detail: `${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
           go: () => {
             setMinute(mid.t);
             standOnPath(toScene(mid));
+          },
+        });
+      }
+    }
+  }
+  // Moonrise and moonset behind the antenna: the moon low, more than half lit, and visible
+  // round the thin mast from a few kilometres out.
+  if (layers.tower && layers.moon) {
+    const from = dayStart();
+    const lit = getMoonIllumination(new Date(from + 43_200_000)).fraction;
+    if (lit >= 0.5) {
+      let window = null;
+      const windows = [];
+      for (let t = from; t <= from + 86_400_000; t += 5 * 60_000) {
+        const p = sampleBody('moon', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+        const low = p.alt >= 1 && p.alt <= 8;
+        if (low && !window) windows.push((window = { start: t, end: t, rising: null, samples: [] }));
+        if (low) {
+          window.end = t;
+          window.samples.push({ t, ...p });
+        } else window = null;
+      }
+      for (const w of windows) {
+        if (w.samples.length < 2) continue;
+        const rising = w.samples[w.samples.length - 1].alt > w.samples[0].alt;
+        const mid = w.samples[Math.floor(w.samples.length / 2)];
+        const reach = (h, alt) => Math.min(9000, (h - EYE_HEIGHT) / Math.tan(THREE.MathUtils.degToRad(alt)));
+        const near = reach(SPHERE_TOP_AGL, Math.max(...w.samples.map((p) => p.alt)));
+        const far = reach(TIP_AGL, Math.min(...w.samples.map((p) => p.alt)));
+        const bearing = (mid.az + 180) % 360;
+        rows.push({
+          t: w.start,
+          body: 'moon',
+          kind: 'tower',
+          title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
+          detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
+          go: () => {
+            setMinute(mid.t);
+            // Along the stretch for that moment, the point nearest its middle with the tower in view.
+            const a = THREE.MathUtils.degToRad(bearing);
+            const from = reach(SPHERE_TOP_AGL, mid.alt);
+            const to = reach(TIP_AGL, mid.alt);
+            const middle = (from + to) / 2;
+            const candidates = [];
+            for (let d = from; d <= to; d += 25) candidates.push(d);
+            candidates.sort((p, q) => Math.abs(p - middle) - Math.abs(q - middle));
+            const open = (d) => {
+              const lat = FERNSEHTURM.lat + (-Math.cos(a) * -d) / 110574;
+              const lon = FERNSEHTURM.lon + (Math.sin(a) * d) / (111320 * Math.cos(THREE.MathUtils.degToRad(FERNSEHTURM.lat)));
+              return !viewshed || sampleViewshed(viewshed, lat, lon) === VIEW_VISIBLE;
+            };
+            const d = candidates.find(open) ?? middle;
+            const x = Math.sin(a) * d;
+            const z = -Math.cos(a) * d;
+            enterEye(x, z, { heading: mid.az, pitch: mid.alt, lens: fullFrame(400) });
           },
         });
       }
@@ -1386,7 +1510,7 @@ function updateSpots(t) {
   rays = [];
   for (const path of dayPaths) {
     const line = alignmentLine(path.body, t, FERNSEHTURM);
-    if (line) rays.push({ body: path.body, far: toScene(line.farEnd), near: toScene(line.bodySide), base: { x: 0, y: groundAt(0, 0) + 1, z: 0 } });
+    if (line) rays.push({ body: path.body, far: toScene(line.farEnd), near: toScene(line.bodySide), base: { x: 0, y: groundAt(0, 0) + 1, z: 0 }, antenna: path.body === 'moon' ? antennaStretch(line) : null });
   }
   for (const path of dayPaths) {
     const p = pointAtTime(path.source, t);
@@ -1731,7 +1855,8 @@ function frame(now) {
     if (sun) {
       // Full behind the sphere: the whole corona. Grazing its edge: a hint of it.
       const overlap = THREE.MathUtils.clamp((eclipseHere.radiusDeg + DISC_RADIUS_DEG - sun.sepDeg) / (2 * DISC_RADIUS_DEG), 0, 1);
-      skyUniforms.uCorona.value = overlap * overlap;
+      // A corona needs the whole disc hidden; a sphere smaller than the sun leaves a ring of daylight.
+      skyUniforms.uCorona.value = eclipseHere.radiusDeg > DISC_RADIUS_DEG ? overlap * overlap : 0;
       skyUniforms.uCoronaR.value = THREE.MathUtils.degToRad(eclipseHere.radiusDeg);
     }
   }

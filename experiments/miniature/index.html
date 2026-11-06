@@ -79,6 +79,7 @@
       #eclipse::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--sun)); }
       #eclipse[data-state='now'] { background: var(--dot, var(--sun)); color: #fff; }
       #eclipse[data-state='now']::before { background: #fff; }
+      #eclipse[data-state='warn'] { background: var(--field); color: var(--muted); }
       #facing { font-weight: 600; font-variant-numeric: tabular-nums; }
       .lens { display: flex; align-items: center; gap: 10px; }
       .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }

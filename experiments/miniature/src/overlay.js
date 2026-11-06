@@ -375,6 +375,7 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
     ctx.lineWidth = 1.2;
     ctx.stroke();
     ctx.globalAlpha = 1;
+    if (ray.antenna) drawAntenna(ray.antenna, project, night, 0.45);
     // The label sits on the edge of the view in the line's direction from the tower when the
     // line runs out of view, like a clock face; otherwise on the line's end.
     if (!project(ray.base.x, ray.base.y, ray.base.z, p)) continue;
@@ -437,6 +438,21 @@ function drawRay(ray, project, night) {
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.globalAlpha = 1;
+  if (ray.antenna) drawAntenna(ray.antenna, project, night, 1);
+}
+
+/** Where the moon sits behind the antenna and still shows: a bolder stretch with a name. */
+function drawAntenna(stretch, project, night, strength) {
+  groundLine(stretch.from, stretch.to, project);
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = night ? 'rgba(10, 12, 24, 0.7)' : 'rgba(255, 253, 248, 0.85)';
+  ctx.globalAlpha = strength;
+  ctx.lineWidth = 7;
+  ctx.stroke();
+  ctx.strokeStyle = PATH_CSS.moon;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 /** The day's path: a fine line joining where the sphere covers the body, hour by hour. */
@@ -495,7 +511,8 @@ export function drawPhotographer(x, y, context = ctx) {
 function drawEclipse({ centre, radiusDeg, items }, camera, project) {
   const near = items.filter((item) => item.sepDeg < radiusDeg + 6).sort((a, b) => a.sepDeg - b.sepDeg)[0];
   const c = {};
-  if (!near || !project(centre.x, centre.y, centre.z, c)) return;
+  // Behind the antenna the sphere is beside the point; the status line says it, a ring would mislead.
+  if (!near || near.state === 'antenna' || !project(centre.x, centre.y, centre.z, c)) return;
   const pxPerDeg = innerHeight / camera.fov;
   const radius = (radiusDeg + 0.4) * pxPerDeg + 6;
   const colour = PATH_CSS[near.body];
@@ -521,7 +538,7 @@ function drawEclipse({ centre, radiusDeg, items }, camera, project) {
   const dx = far.x - c.x;
   const dy = far.y - c.y;
   const d = Math.hypot(dx, dy) || 1;
-  const text = near.full ? 'Behind the sphere' : near.covered ? 'At the edge' : `${(near.sepDeg - radiusDeg).toFixed(1)}\u00b0`;
+  const text = near.state === 'hidden' ? (near.body === 'moon' ? 'Hidden' : 'Behind the sphere') : near.state === 'ring' ? (near.body === 'moon' ? 'Sphere in front' : 'Ring of sun') : near.state === 'antenna' ? 'Behind the antenna' : near.covered ? 'At the edge' : `${(near.sepDeg - radiusDeg).toFixed(1)}\u00b0`;
   const lx = c.x + (dx / d) * (radius + 26);
   const ly = c.y + (dy / d) * (radius + 14);
   ctx.font = '700 11.5px ui-sans-serif, system-ui, sans-serif';
