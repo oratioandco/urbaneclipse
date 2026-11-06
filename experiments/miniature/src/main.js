@@ -18,7 +18,7 @@ import { sampleBody } from '../../../src/lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../../../src/lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../../../src/lib/lightPhases.ts';
 import { decodeStreets, streetMoments } from '../../../src/lib/streets.ts';
-import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, applyView, computeDayPath, pointAtTime } from '../../../src/lib/dailyPaths.ts';
+import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, alignmentLine, applyView, computeDayPath, pointAtTime } from '../../../src/lib/dailyPaths.ts';
 import { VIEW_VISIBLE, loadViewshed, sampleViewshed } from '../../../src/lib/viewshed.ts';
 import { lightAt } from './light.js';
 import { cityUniforms, makeTerrainTexture, mirrorGround, shadeBuildings, shadeGround, shadeTower } from './shading.js';
@@ -803,8 +803,16 @@ function buildPaths() {
   updateSpots(instant().getTime());
 }
 
+let rays = [];
 function updateSpots(t) {
   spots = [];
+  // The line through the tower for this instant: anywhere along its bright part the disc sits
+  // behind some part of the tower, the sphere at the marked spot.
+  rays = [];
+  for (const path of dayPaths) {
+    const line = alignmentLine(path.body, t, FERNSEHTURM);
+    if (line) rays.push({ body: path.body, far: toScene(line.farEnd), near: toScene(line.bodySide), base: { x: 0, y: groundAt(0, 0) + 1, z: 0 } });
+  }
   for (const path of dayPaths) {
     const p = pointAtTime(path.source, t);
     if (p && p.clear !== false) spots.push({ body: path.body, t: p.t, ...toScene(p) });
@@ -1140,6 +1148,7 @@ function frame(now) {
     photographer: street > 0 || drag?.moved ? null : photographer,
     paths: dayPaths,
     spots,
+    rays,
     drop: drag?.drop ?? null,
   });
   needle.style.transform = `rotate(${camera === eyeCamera ? -look.heading : THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;

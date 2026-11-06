@@ -126,10 +126,11 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
  * @param scene.photographer { x, y, z, heading } where the photographer was put down, or null
  * @param scene.paths [{ body, faint, segments: [[{ x, y, z, t, clear, hour? }]] }] where the tower covers each body
  * @param scene.spots [{ body, x, y, z, t }] where to stand on each path at the chosen time
+ * @param scene.rays [{ body, base, far, near }] the line through the tower toward each body now
  * @param scene.drop { x, y, z } where a dragged photographer would land, or null
  * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], drop = null }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], drop = null }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -170,6 +171,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   if (eye) return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
 
   const metresPerPx = (w) => (ortho ? 2 / (p11 * innerHeight) : (2 * w) / (p11 * innerHeight));
+  for (const ray of rays) drawRay(ray, project, night);
   drawPaths(paths, project, night, taps);
   for (const spot of spots) {
     if (!project(spot.x, spot.y, spot.z, here)) continue;
@@ -348,6 +350,45 @@ function drawPaths(paths, project, night, taps) {
     ctx.textBaseline = 'middle';
     ctx.fillText(label.text, label.x, label.y + 0.5);
   }
+}
+
+/** A straight line on the ground, cut where it passes behind the camera. */
+function groundLine(a, b, project) {
+  const p = {};
+  let open = false;
+  ctx.beginPath();
+  for (let i = 0; i <= 48; i++) {
+    const t = i / 48;
+    if (!project(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, p)) {
+      open = false;
+      continue;
+    }
+    if (open) ctx.lineTo(p.x, p.y);
+    else ctx.moveTo(p.x, p.y);
+    open = true;
+  }
+}
+
+/** Away from the body: bright to where the disc reaches the tower's tip. Toward it: faint. */
+function drawRay(ray, project, night) {
+  ctx.lineCap = 'round';
+  groundLine(ray.near, ray.base, project);
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = PATH_CSS[ray.body];
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([2, 6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  groundLine(ray.base, ray.far, project);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = night ? 'rgba(10, 12, 24, 0.6)' : 'rgba(255, 253, 248, 0.75)';
+  ctx.lineWidth = 4.5;
+  ctx.stroke();
+  ctx.globalAlpha = 0.85;
+  ctx.strokeStyle = PATH_CSS[ray.body];
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 function strokeRun(run, colour, clear, faint, night) {
