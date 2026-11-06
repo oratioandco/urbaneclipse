@@ -210,7 +210,7 @@ const skyDome = makeSky();
 scene.add(skyDome);
 
 function eyePose(state) {
-  const position = new THREE.Vector3(state.x, state.y + EYE_HEIGHT, state.z);
+  const position = new THREE.Vector3(state.x, state.y + EYE_HEIGHT + (state.lift ?? 0), state.z);
   const helper = new THREE.Object3D();
   helper.position.copy(position);
   helper.lookAt(position.clone().add(lookDirection(state.heading, state.pitch)));
@@ -266,7 +266,7 @@ function openView(x, z, view) {
 
 function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   const y = groundAt(x, z);
-  Object.assign(look, { x, y, z, ...view, active: false });
+  Object.assign(look, { x, y, z, lift: 0, ...view, active: false });
   photographer = { x, y, z, heading: look.heading };
   orbitAnimation = null;
   flight = null;
@@ -335,6 +335,8 @@ function updateEyeBar() {
   lensLabel.textContent = `${Math.round(look.lens)} mm`;
   const heading = ((look.heading % 360) + 360) % 360;
   facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
+  const lift = look.lift ?? 0;
+  if (lift >= 1) facingLabel.textContent += ` \u00b7 ${Math.round(lift)} m up`;
 }
 
 attachLook(renderer.domElement, look, () => {
@@ -368,11 +370,13 @@ function stepLook(now) {
 const WALK_MPS = 14;
 const RUN_MPS = 45;
 const TURN_DPS = 70;
+const CLIMB_MPS = 12;
+const MAX_LIFT_M = 600;
 const held = new Set();
 let pad = 0;
 let lastStep = 0;
 let shadowFrom = null;
-const KEYS = { shift: 'run', w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
+const KEYS = { shift: 'run', e: 'up', q: 'down', w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
 addEventListener('keydown', (event) => {
   if (!look.active || event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
   const key = KEYS[event.key.toLowerCase()];
@@ -403,19 +407,20 @@ function nudgeKeys() {
   void keyHint.offsetWidth;
   keyHint.classList.add('hint');
 }
-for (const [id, dir] of [['walk-fwd', 1], ['walk-back', -1]]) {
+let climbPad = 0;
+for (const [id, set] of [['walk-fwd', (v) => (pad = v)], ['walk-back', (v) => (pad = -v)], ['fly-up', (v) => (climbPad = v)], ['fly-down', (v) => (climbPad = -v)]]) {
   const button = document.getElementById(id);
   button.addEventListener('pointerdown', (event) => {
     event.preventDefault();
     button.setPointerCapture(event.pointerId);
-    pad = dir;
+    set(1);
     invalidate();
   });
-  for (const end of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(end, () => (pad = 0));
+  for (const end of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(end, () => set(0));
 }
 
-/** Somewhere a person can be: on open ground, not inside a building or the tower. */
-const walkable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && !underRoof(x, z);
+/** Somewhere you can be: open ground, or anywhere above the roofs once you have risen. */
+const passable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && roofAt(x, z) < groundAt(x, z) + EYE_HEIGHT + (look.lift ?? 0) - 0.5;
 
 function stepWalk(now) {
   const dt = Math.min(0.1, (now - lastStep) / 1000);
@@ -424,15 +429,25 @@ function stepWalk(now) {
   const forward = (held.has('fwd') ? 1 : 0) - (held.has('back') ? 1 : 0) + pad;
   const sideways = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
   const turn = (held.has('turnR') ? 1 : 0) - (held.has('turnL') ? 1 : 0);
-  if (!forward && !sideways && !turn) return;
+  const climb = (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) + climbPad;
+  if (!forward && !sideways && !turn && !climb) return;
   look.heading += turn * TURN_DPS * dt;
+  if (climb) {
+    const next = THREE.MathUtils.clamp((look.lift ?? 0) + climb * CLIMB_MPS * (held.has('run') ? 4 : 1) * dt, 0, MAX_LIFT_M);
+    // Sinking stops on a roof rather than going through it.
+    const floor = Math.max(0, roofAt(look.x, look.z) - groundAt(look.x, look.z) - EYE_HEIGHT + 0.5);
+    look.lift = climb < 0 ? Math.max(next, Math.min(floor, look.lift ?? 0)) : next;
+  }
   const step = (held.has('run') ? RUN_MPS : WALK_MPS) * dt;
   const a = THREE.MathUtils.degToRad(look.heading);
   const dx = (Math.sin(a) * forward + Math.cos(a) * sideways) * step;
   const dz = (-Math.cos(a) * forward + Math.sin(a) * sideways) * step;
-  // Slide along a wall rather than stopping dead at it.
+  // Slide along a wall rather than stopping dead at it. Anywhere already blocked, as after
+  // landing in a tight spot, lets you walk out in any direction.
+  const stuck = !passable(look.x, look.z);
+  const reach = Math.max(1.2, step * 2) / Math.max(step, 1e-6);
   for (const [mx, mz] of [[dx, dz], [dx, 0], [0, dz]]) {
-    if ((mx || mz) && walkable(look.x + mx * 3, look.z + mz * 3)) {
+    if ((mx || mz) && (stuck || passable(look.x + mx * reach, look.z + mz * reach))) {
       look.x += mx;
       look.z += mz;
       break;
@@ -475,12 +490,17 @@ function groundUnder(clientX, clientY) {
   return point;
 }
 
-function underRoof(x, z) {
+/** The highest building surface over a point, or -Infinity on open ground. */
+function roofAt(x, z) {
   raycaster.set(new THREE.Vector3(x, 2000, z), new THREE.Vector3(0, -1, 0));
   const near = tiles.filter((tile) => tile.mesh && Math.abs(tile.center.x - x) < tile.radius && Math.abs(tile.center.z - z) < tile.radius).map((tile) => tile.mesh);
   near.push(tower);
   const hit = raycaster.intersectObjects(near, false)[0];
-  return Boolean(hit) && hit.point.y > groundAt(x, z) + 1.5;
+  return hit && hit.point.y > groundAt(x, z) + 1.5 ? hit.point.y : -Infinity;
+}
+
+function underRoof(x, z) {
+  return roofAt(x, z) > -Infinity;
 }
 
 /** Somewhere to stand: out in the open, with a view at least one way. */
@@ -1401,4 +1421,4 @@ resizeOverlay();
 updateSun();
 requestAnimationFrame(frame);
 start();
-window.__mini = { cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
+window.__mini = { roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };

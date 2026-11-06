@@ -72,11 +72,11 @@
       kbd.on { background: var(--accent); border-color: var(--accent); color: #fff; }
       .keys.hint kbd { animation: nudge 1.4s ease-in-out 2; }
       @keyframes nudge { 50% { background: var(--accent); border-color: var(--accent); color: #fff; } }
-      .walkpad { display: none; flex-direction: column; gap: 8px; }
+      .walkpad { display: none; grid-template-columns: repeat(2, auto); gap: 8px; }
       /* Touch screens walk with buttons; a keyboard walks with keys. */
       @media (pointer: coarse) {
         .keys { display: none; }
-        body[data-eye='true'] .walkpad { display: flex; }
+        body[data-eye='true'] .walkpad { display: grid; }
       }
 
       .panel { min-width: 0; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; border-radius: var(--radius); }
@@ -143,9 +143,10 @@
         <div class="camera-rows">
           <div class="row">
             <span id="facing"></span>
-            <span class="keys" aria-label="Walk with W, A, S and D, turn with the arrow keys, hold Shift to go faster">
+            <span class="keys" aria-label="Walk with W, A, S and D, turn with the arrow keys, rise with E and sink with Q, hold Shift to go faster">
               <kbd data-key="fwd">W</kbd><kbd data-key="left">A</kbd><kbd data-key="back">S</kbd><kbd data-key="right">D</kbd>&nbsp;walk<span class="gap"></span>
               <kbd data-key="turnL">&larr;</kbd><kbd data-key="turnR">&rarr;</kbd>&nbsp;turn<span class="gap"></span>
+              <kbd data-key="up">E</kbd><kbd data-key="down">Q</kbd>&nbsp;up/down<span class="gap"></span>
               <kbd data-key="run">&#8679;</kbd>&nbsp;faster
             </span>
           </div>
@@ -172,7 +173,9 @@
         <div class="muted credit">Map data &copy; OpenStreetMap contributors</div>
       </div>
       <div class="walkpad">
+        <button id="fly-up" class="round surface" aria-label="Rise">&#8613;</button>
         <button id="walk-fwd" class="round surface" aria-label="Walk forward">&#9650;</button>
+        <button id="fly-down" class="round surface" aria-label="Sink">&#8615;</button>
         <button id="walk-back" class="round surface" aria-label="Walk back">&#9660;</button>
       </div>
     </div>
