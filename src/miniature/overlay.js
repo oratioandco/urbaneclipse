@@ -2,8 +2,8 @@
  * Everything that stays flat to the screen: street names, pills pointing to the sun and moon,
  * and where to stand on a lit-up street. A plain canvas redrawn when the view changes.
  */
-import { litDiscPath } from '../../../src/lib/moonPhase.ts';
-import { cssRgb, moonLook, sunLook } from '../../../src/lib/mapBodyLook.ts';
+import { litDiscPath } from '../lib/moonPhase.ts';
+import { cssRgb, moonLook, sunLook } from '../lib/mapBodyLook.ts';
 
 const canvas = document.getElementById('labels');
 const ctx = canvas.getContext('2d');

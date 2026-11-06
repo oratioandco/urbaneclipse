@@ -133,3 +133,6 @@ public/berlin-full
 
 # Local 3D tiles within 9 km of the Fernsehturm, for the daily-map prototype.
 public/berlin-9km
+
+# Miniature city geometry (79 MB, built by scripts/miniature/build_city.mjs); served from a server volume
+public/city/

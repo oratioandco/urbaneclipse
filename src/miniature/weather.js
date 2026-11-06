@@ -7,8 +7,8 @@
  * launch needs their paid plan or the Deutscher Wetterdienst's open data instead. Forecasts
  * reach about 16 days ahead; recent days come from the same service's past forecasts.
  */
-import { sampleBody } from '../../../src/lib/bodyPosition.ts';
-import { FERNSEHTURM } from '../../../src/lib/landmarks.ts';
+import { sampleBody } from '../lib/bodyPosition.ts';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
 
 const FORECAST_DAYS = 16;
 const PAST_DAYS = 90;

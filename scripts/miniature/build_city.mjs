@@ -19,7 +19,7 @@ if (!SRC || !fs.existsSync(path.join(SRC, 'tileset.json'))) {
   console.error('usage: build_city.mjs <dir holding tileset.json>');
   process.exit(2);
 }
-const OUT = new URL('../public/city/', import.meta.url).pathname;
+const OUT = new URL('../../public/city/', import.meta.url).pathname;
 fs.mkdirSync(OUT, { recursive: true });
 
 // Fernsehturm base, the scene's origin. Keep in step with src/lib/landmarks.ts and elevation.ts.

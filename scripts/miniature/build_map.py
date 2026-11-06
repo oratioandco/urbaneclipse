@@ -29,7 +29,7 @@ TOWER_LAT, TOWER_LON = 52.520815, 13.409419
 HALF_M = 9400.0
 ROOT = Path(sys.argv[1])
 OSM = ROOT / "data" / "streets" / "osm"
-OUT = Path(__file__).resolve().parent.parent / "public" / "city"
+OUT = Path(__file__).resolve().parent.parent.parent / "public" / "city"
 CLASSES = {"trunk": 0, "primary": 0, "secondary": 1, "tertiary": 2, "unclassified": 3, "residential": 3, "living_street": 3, "pedestrian": 3}
 LABEL_SPACING_M = 420.0
 # Smaller patches are verges and courtyards, too small to read at the ground map's scale.

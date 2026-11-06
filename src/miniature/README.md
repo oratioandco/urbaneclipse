@@ -1,20 +1,30 @@
-# Berlin miniature (experiment)
+# The planner (Berlin miniature)
 
-A white model of Berlin from the real LoD2 buildings, with real sun shadows, in Three.js
-instead of Cesium. Top, isometric and free 3D views with pan and zoom.
+A white model of Berlin from the real LoD2 buildings, with real sun shadows, in Three.js.
+Since 2026-11-06 it is the home page (`src/pages/index.astro`). The earlier daily map is at
+`/map`, the first planner at `/classic`; both stay in the repo.
 
-- **Purpose:** find out whether this look can run smoothly in a browser, before deciding if it joins the app.
-- **Base:** `redesign-daily-map` at eff7a47. Nothing here ships with the site.
-- **Done when:** the look is approved and it has been tried on a real phone. Then either plan it into the app or retire this branch.
+## Data
+
+The city geometry (`public/city`, about 80 MB in 1,070 files) is not in git. Build it, then
+upload it to the server volume that nginx serves at `/city/`:
+
+    node scripts/miniature/build_city.mjs data/berlin-9km
+    python scripts/miniature/build_terrain.py data/viewshed/ground.npz   # needs numpy, pyproj
+    python scripts/miniature/build_map.py <checkout with data/streets/osm>
+    rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519_hetzner" public/city/ root@100.82.42.52:/data/plastervoid/city/
+
+After a rebuild, bump `CITY_VERSION` in `main.js`, since the files are cached for 30 days.
 
 ## Run
 
-    npm install
-    npm run city -- ../../../urbaneclipse/data/berlin-9km
-    python scripts/build_terrain.py ../../../urbaneclipse/data/viewshed/ground.npz   # needs numpy, pyproj
-    npm run dev
+    npm run dev        # then http://localhost:4321/?stats&date=2027-03-22&time=1020
 
-Open http://127.0.0.1:4330/?stats&date=2027-03-22&time=1020. URL options: `mode` (top, iso, free), `height` (metres in view), `shadow`, `budget`.
+URL options: `date`, `time` (minutes after midnight), `at=lat,lon`, `look=heading,pitch`,
+`lens`, `cam` (these four open eye level; the address keeps them up to date, so it can be
+shared), `nointro`, `mode` (top, iso, free), `height`, `shadow`, `budget`, `stats`.
+The rules for moon and sun shots with the tower are in `towerShots.js`, tested in
+`tests/unit/miniature.test.ts`.
 
 ## Measured, 2026-11-05, Mac at 1440x900, device scale 2, Chromium with Metal
 

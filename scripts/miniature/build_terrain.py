@@ -16,7 +16,7 @@ from pyproj import Transformer
 TOWER_LAT, TOWER_LON, TOWER_BASE = 52.520815, 13.409419, 34.6
 ORIGIN_E, ORIGIN_N, CELL = 383000.0, 5811000.0, 2.5  # scripts/build_viewshed.py
 SPACING_M, HALF_M = 40.0, 9400.0
-OUT = Path(__file__).resolve().parent.parent / "public" / "city"
+OUT = Path(__file__).resolve().parent.parent.parent / "public" / "city"
 
 ground = np.load(sys.argv[1])["ground"]
 local = Transformer.from_crs(

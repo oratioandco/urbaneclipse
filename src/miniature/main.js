@@ -14,25 +14,29 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { getMoonIllumination } from 'suncalc';
 import { MeshoptDecoder } from 'meshoptimizer';
-import { sampleBody } from '../../../src/lib/bodyPosition.ts';
-import { FERNSEHTURM } from '../../../src/lib/landmarks.ts';
-import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../../../src/lib/lightPhases.ts';
-import { decodeStreets, streetMoments } from '../../../src/lib/streets.ts';
-import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, alignmentLine, applyView, compassPoint, computeDayPath, pointAtTime } from '../../../src/lib/dailyPaths.ts';
-import { VIEW_VISIBLE, loadViewshed, sampleViewshed } from '../../../src/lib/viewshed.ts';
+import { sampleBody } from '../lib/bodyPosition.ts';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../lib/lightPhases.ts';
+import { decodeStreets, streetMoments } from '../lib/streets.ts';
+import { MIN_MOON_ILLUMINATION, SPHERE_CENTRE_AGL, alignmentLine, applyView, compassPoint, computeDayPath, pointAtTime } from '../lib/dailyPaths.ts';
+import { VIEW_VISIBLE, loadViewshed, sampleViewshed } from '../lib/viewshed.ts';
 import { lightAt } from './light.js';
 import { cityUniforms, makeTerrainTexture, mirrorGround, shadeBuildings, shadeGround, shadeTower } from './shading.js';
 import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
-import { litDiscPath } from '../../../src/lib/moonPhase.ts';
+import { litDiscPath } from '../lib/moonPhase.ts';
 import { cloudDrift, cloudsAt, cloudsFor, forecastReach, readSky } from './weather.js';
 import { formatClock, formatHour, formatMinutes, parseTime, uses12h } from './time.js';
-import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
-import { skyPalette } from '../../../src/lib/skyPalette.ts';
+import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, latLonFromScene, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
+import { skyPalette } from '../lib/skyPalette.ts';
+import { DISC_RADIUS_DEG, SPHERE_RADIUS_M, SPHERE_TOP_AGL, TIP_AGL, antennaRange, bodyAgainstTower, discOverSphere, visibleMoon } from './towerShots.js';
 
 const params = new URLSearchParams(location.search);
+/** The city's geometry, built by scripts/miniature and served from a volume. Bump the version on a rebuild. */
+const CITY = '/city/';
+const CITY_VERSION = '?v=1';
 const isPhone = Math.min(innerWidth, innerHeight) < 600;
 const SHADOW_SIZE = Number(params.get('shadow')) || (isPhone ? 2048 : 4096);
 const TRIANGLE_BUDGET = Number(params.get('budget')) || (isPhone ? 1_200_000 : 5_000_000);
@@ -651,8 +655,6 @@ function stepWalk(now) {
 }
 
 // ---- Behind the sphere: the indicator at eye level -----------------------------------------
-const SPHERE_RADIUS_M = 16;
-const DISC_RADIUS_DEG = 0.27;
 const eyePoint = () => new THREE.Vector3(look.x, look.y + EYE_HEIGHT + (look.lift ?? 0), look.z);
 const sphereCentre = () => new THREE.Vector3(0, groundAt(0, 0) + SPHERE_CENTRE_AGL, 0);
 const degreesBetween = (a, b) => THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1)));
@@ -665,30 +667,10 @@ function eclipseNow() {
   const distance = toSphere.length();
   const radiusDeg = THREE.MathUtils.radToDeg(Math.asin(Math.min(1, SPHERE_RADIUS_M / distance)));
   toSphere.normalize();
+  const base = groundAt(0, 0);
   const items = bodies.map((body) => {
-    toDirection(bodyDirection, body.az, body.alt);
-    const sepDeg = degreesBetween(bodyDirection, toSphere);
     const kind = body.moon ? 'moon' : 'sun';
-    const touching = sepDeg < radiusDeg + DISC_RADIUS_DEG;
-    // Inside the disc's outline: the sphere in front of a bigger disc, or the disc behind a bigger sphere.
-    const inside = sepDeg < Math.abs(radiusDeg - DISC_RADIUS_DEG);
-    let state = 'near';
-    // Behind the antenna: in line with the mast, between the sphere's top and the tip.
-    const flat = Math.hypot(eye.x, eye.z);
-    const towerAz = (THREE.MathUtils.radToDeg(Math.atan2(-eye.x, eye.z)) + 360) % 360;
-    const off = Math.abs(((((body.az - towerAz) % 360) + 540) % 360) - 180) * Math.cos(THREE.MathUtils.degToRad(body.alt));
-    const base = groundAt(0, 0);
-    const angleTo = (h) => THREE.MathUtils.radToDeg(Math.atan2(base + h - eye.y, flat));
-    if (off < DISC_RADIUS_DEG + 0.1) {
-      if (body.alt > angleTo(SPHERE_TOP_AGL + 8) && body.alt < angleTo(TIP_AGL) + DISC_RADIUS_DEG) state = 'antenna';
-      else if (body.alt > angleTo(0) && body.alt < angleTo(SPHERE_CENTRE_AGL - SPHERE_RADIUS_M - 4)) state = 'shaft';
-    }
-    if (inside && radiusDeg >= DISC_RADIUS_DEG) state = 'hidden';
-    else if (inside) state = 'ring';
-    else if (touching) state = 'edge';
-    // For the moon's hint: how far it sits beside the sphere, left or right, and up or down.
-    const signedOff = ((((body.az - towerAz) % 360) + 540) % 360 - 180) * Math.cos(THREE.MathUtils.degToRad(body.alt));
-    const rise = body.alt - angleTo(SPHERE_CENTRE_AGL);
+    const { sepDeg, state, signedOff, rise, flat, touching } = bodyAgainstTower(eye, base, body);
     return { body: kind, az: body.az, alt: body.alt, sepDeg, state, signedOff, rise, flat, covered: touching || state === 'antenna' || state === 'shaft', full: state === 'hidden' };
   });
   return { centre: sphereCentre(), radiusDeg, items };
@@ -1244,7 +1226,7 @@ const loading = new Set();
 let bytesLoaded = 0;
 
 async function loadLevel(tile, lod) {
-  const response = await fetch(`/city/${tile.id}-${lod.level}.bin`);
+  const response = await fetch(`${CITY}${tile.id}-${lod.level}.bin${CITY_VERSION}`);
   const data = new Uint8Array(await response.arrayBuffer());
   bytesLoaded += data.length;
   const head = new Uint32Array(data.buffer, 0, 2);
@@ -1554,45 +1536,15 @@ function updateDay() {
 }
 
 // ---- Where the tower covers the sun or moon ------------------------------------------------
-// The moon is only worth a photograph while it can be seen. Behind the sphere it vanishes
-// unless it looks clearly bigger than the sphere, which needs distance: from 4.4 km it is 1.25
-// times the sphere's width, and the sphere stands in front of the moon as a silhouette. Closer
-// in, the shot is the moon behind the thin antenna, between the sphere's top and the tip.
-const DISC_DEG = 0.52;
-const SPHERE_TOP_AGL = 229;
-const TIP_AGL = 368;
-const BIG_MOON_M = SPHERE_RADIUS_M / Math.tan(THREE.MathUtils.degToRad(DISC_DEG / 2 / 1.25));
-/** How many times wider the disc looks than the sphere from a distance. */
-const discOverSphere = (distanceM) => DISC_DEG / THREE.MathUtils.radToDeg(2 * Math.atan(SPHERE_RADIUS_M / distanceM));
-
-/** Keep only the stretches of a moon path far enough out for the moon to show round the sphere. */
-function visibleMoon(path) {
-  if (path.body !== 'moon') return path;
-  const segments = [];
-  for (const segment of path.segments) {
-    let run = [];
-    for (const p of segment) {
-      if (p.distanceM >= BIG_MOON_M) run.push(p);
-      else if (run.length) {
-        segments.push(run);
-        run = [];
-      }
-    }
-    if (run.length) segments.push(run);
-  }
-  return { ...path, segments };
-}
-
-/** Along a line through the tower, where the disc sits behind the antenna: the sphere's top out to the tip. */
+// The rules live in towerShots.js. Along a line through the tower, where the disc sits behind
+// the antenna, as scene points.
 function antennaStretch(line) {
-  const slope = Math.tan(THREE.MathUtils.degToRad(line.bodyAlt));
-  const from = (SPHERE_TOP_AGL - EYE_HEIGHT) / slope;
-  const to = Math.min(9000, (TIP_AGL - EYE_HEIGHT) / slope);
-  if (from >= to) return null;
+  const range = antennaRange(line.bodyAlt);
+  if (!range) return null;
   const far = toScene(line.farEnd);
   const length = Math.hypot(far.x, far.z) || 1;
   const at = (d) => ({ x: (far.x / length) * d, z: (far.z / length) * d, y: groundAt((far.x / length) * d, (far.z / length) * d) + 1 });
-  return { from: at(from), to: at(to), fromM: from, toM: to };
+  return { from: at(range.fromM), to: at(range.toM), ...range };
 }
 let rawPaths = [];
 let viewshed = null;
@@ -2079,7 +2031,7 @@ new ResizeObserver(() => {
 }).observe(document.querySelector('.panel'));
 // The bottom block: the sheet, and at eye level the camera row above it.
 const panel = document.querySelector('.bottom');
-const history = [];
+const frameTimes = [];
 
 /** Haze starts beyond the middle of the view, whatever the zoom; standing, it is the real air. */
 function updateHaze(street) {
@@ -2173,6 +2125,7 @@ function frame(now) {
   stepLook(now);
   stepWalk(now);
   stepLift(now);
+  syncLink(now);
   const flying = stepTransition(now);
   placeEyeCamera();
   if (flying) {
@@ -2194,8 +2147,8 @@ function frame(now) {
     return;
   }
   dirty = false;
-  history.push(now - lastFrame);
-  if (history.length > 60) history.shift();
+  frameTimes.push(now - lastFrame);
+  if (frameTimes.length > 60) frameTimes.shift();
   lastFrame = now;
   // How far into the street the camera has come: 0 high above, 1 standing.
   let street = 0;
@@ -2268,19 +2221,19 @@ function frame(now) {
   stats.calls = renderer.info.render.calls;
   stats.frames++;
   if (stats.frames % 6 === 0 && params.has('stats')) {
-    const sorted = [...history].sort((a, b) => a - b);
+    const sorted = [...frameTimes].sort((a, b) => a - b);
     statsEl.textContent = `frame ${sorted[sorted.length >> 1]?.toFixed(1)} ms   ${(stats.triangles / 1e6).toFixed(2)} M tris incl. shadow   ${stats.calls} calls\nshadow texel ${stats.texel.toFixed(2)} m   loaded ${(bytesLoaded / 1e6).toFixed(1)} MB   ${loading.size} loading`;
   }
 }
 
 async function start() {
-  const manifest = await (await fetch('/city/manifest.json')).json();
-  const mapData = await (await fetch('/city/map.json')).json();
-  const roadPoints = new Int16Array(await (await fetch('/city/roads.bin')).arrayBuffer());
+  const manifest = await (await fetch(`${CITY}manifest.json${CITY_VERSION}`)).json();
+  const mapData = await (await fetch(`${CITY}map.json${CITY_VERSION}`)).json();
+  const roadPoints = new Int16Array(await (await fetch(`${CITY}roads.bin${CITY_VERSION}`)).arrayBuffer());
   roadXZ = roadPoints;
-  const streetsDoc = await (await fetch('/city/streets.json')).json();
-  const terrainInfo = await (await fetch('/city/terrain.json')).json();
-  const terrain = new Int16Array(await (await fetch('/city/terrain.bin')).arrayBuffer());
+  const streetsDoc = await (await fetch(`${CITY}streets.json${CITY_VERSION}`)).json();
+  const terrainInfo = await (await fetch(`${CITY}terrain.json${CITY_VERSION}`)).json();
+  const terrain = new Int16Array(await (await fetch(`${CITY}terrain.bin${CITY_VERSION}`)).arrayBuffer());
   const { size, half } = terrainInfo;
   const plane = new THREE.PlaneGeometry(half * 2, half * 2, size - 1, size - 1);
   plane.rotateX(-Math.PI / 2);
@@ -2415,9 +2368,51 @@ addEventListener('resize', () => {
   invalidateShadows();
 });
 
+// ---- Links: the address holds the day, the time and, at eye level, where you stand ----------
+// Shared links open the same view: ?date=2027-03-22&time=1020&at=52.5,13.4&look=268,2&lens=200&cam=ff
+let lastLink = '';
+let lastLinkCheck = 0;
+function linkQuery() {
+  const q = new URLSearchParams();
+  q.set('date', dateInput.value);
+  q.set('time', timeInput.value);
+  if (camera === eyeCamera && look.active) {
+    const [lat, lon] = latLonFromScene(look.x, look.z, FERNSEHTURM.lat, FERNSEHTURM.lon);
+    q.set('at', `${lat.toFixed(6)},${lon.toFixed(6)}`);
+    q.set('look', `${Math.round((((look.heading % 360) + 360) % 360) * 10) / 10},${Math.round(look.pitch * 10) / 10}`);
+    q.set('lens', String(Math.round(look.lens)));
+    q.set('cam', cameraFormat.format.id);
+  }
+  // Developer options stay put.
+  for (const key of ['nointro', 'stats', 'shadow', 'budget', 'mirror', 'samples', 'blur']) if (params.has(key)) q.set(key, params.get(key));
+  return q.toString().replace(/%2C/g, ',').replace(/=(&|$)/g, '$1');
+}
+function syncLink(now) {
+  if (now - lastLinkCheck < 400 || !window.__ready) return;
+  lastLinkCheck = now;
+  const query = linkQuery();
+  if (query === lastLink) return;
+  lastLink = query;
+  history.replaceState(null, '', `${location.pathname}?${query}`);
+}
+/** Open the view a shared link names, once the city is there to stand in. */
+function openLinkedView() {
+  const at = params.get('at')?.split(',').map(Number);
+  if (!at || at.length !== 2 || at.some((v) => !Number.isFinite(v))) return;
+  const [x, z] = sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const half = cityUniforms.uHalf.value;
+  if (Math.abs(x) > half || Math.abs(z) > half) return;
+  const cam = FORMATS.find((f) => f.id === params.get('cam'));
+  if (cam) cameraFormat.format = cam;
+  const [heading, pitch] = (params.get('look') ?? '').split(',').map(Number);
+  const [lensMin, lensMax] = lensRange();
+  const lens = THREE.MathUtils.clamp(Number(params.get('lens')) || 50, lensMin, lensMax);
+  enterEye(x, z, { heading: Number.isFinite(heading) ? heading : 0, pitch: Number.isFinite(pitch) ? pitch : 0, lens });
+}
+
 resizeOverlay();
 updateSun();
 requestAnimationFrame(frame);
-start();
+start().then(openLinkedView);
 window.__sky = skyUniforms;
-window.__mini = { get lastBlock() { return lastBlock; }, get rays() { return rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
+window.__mini = { get lastBlock() { return lastBlock; }, get rays() { return rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, get camera() { return camera; }, get controls() { return controls; }, renderer };

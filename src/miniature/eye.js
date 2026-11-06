@@ -3,10 +3,10 @@
  * turn a heading and a pitch into a view. Headings are compass degrees, pitch is up from level.
  */
 import * as THREE from 'three';
-import { SENSOR_FORMATS } from '../../../src/lib/lensScale.ts';
+import { SENSOR_FORMATS } from '../lib/lensScale.ts';
 
 export { SENSOR_FORMATS };
-export const EYE_HEIGHT = 1.6;
+export { EYE_HEIGHT } from './towerShots.js';
 
 /**
  * Phones and drones: a few fixed lenses each, given as full-frame equivalents, which is how
@@ -159,4 +159,17 @@ export function sceneFromLatLon(lat, lon, lat0, lon0) {
   const east = n * (across + ((1 - Math.tan(phi) ** 2) * across ** 3) / 6);
   const north = meridian(phi) - meridian(lat0 * rad) + n * Math.tan(phi) * (across ** 2 / 2);
   return [east, -north];
+}
+
+/** Scene metres back to latitude and longitude: sceneFromLatLon run backwards by correction. */
+export function latLonFromScene(x, z, lat0, lon0) {
+  const metresPerDegLat = 111_320;
+  let lat = lat0 - z / metresPerDegLat;
+  let lon = lon0 + x / (metresPerDegLat * Math.cos((lat0 * Math.PI) / 180));
+  for (let i = 0; i < 4; i++) {
+    const [ex, ez] = sceneFromLatLon(lat, lon, lat0, lon0);
+    lat -= (z - ez) / metresPerDegLat;
+    lon += (x - ex) / (metresPerDegLat * Math.cos((lat * Math.PI) / 180));
+  }
+  return [lat, lon];
 }
