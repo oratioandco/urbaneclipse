@@ -20,6 +20,13 @@
       .eyebar .lens input { width: 140px; accent-color: #d9772b; }
       body[data-night='true'] .eyebar > * { background: rgba(20, 23, 38, 0.86); }
       body[data-eye='true'] #stats { top: 64px; }
+      .eye-only { display: none; }
+      #minimap { position: fixed; z-index: 3; inset: auto auto auto 12px; left: 12px; bottom: calc(var(--panel-h, 150px) + 28px); width: 132px; height: 132px; border-radius: 50%; box-shadow: 0 4px 16px rgba(40, 34, 24, 0.28); cursor: pointer; }
+      .walkpad { position: fixed; z-index: 3; right: 12px; bottom: calc(var(--panel-h, 150px) + 28px); gap: 8px; flex-direction: column; }
+      body[data-eye='true'] #minimap { display: block; }
+      body[data-eye='true'] .walkpad { display: flex; }
+      .walkpad .round { font-size: 15px; user-select: none; -webkit-user-select: none; }
+      body[data-night='true'] .walkpad .round { background: rgba(20, 23, 38, 0.86); color: #ece8df; }
       #ghost[hidden] { display: none; }
       #ghost { position: fixed; left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
       #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
@@ -80,6 +87,11 @@
       <label class="lens"><input id="lens" type="range" min="0" max="1000" aria-label="Lens" /><span id="lens-label"></span></label>
     </div>
     <canvas id="ghost" hidden></canvas>
+    <canvas id="minimap" class="eye-only" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
+    <div class="walkpad eye-only">
+      <button id="walk-fwd" class="round" aria-label="Walk forward (W)">&#9650;</button>
+      <button id="walk-back" class="round" aria-label="Walk back (S)">&#9660;</button>
+    </div>
     <div id="stats"></div>
     <div class="panel">
       <div class="row">

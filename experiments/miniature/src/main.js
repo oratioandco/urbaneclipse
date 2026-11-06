@@ -25,6 +25,7 @@ import { cityUniforms, makeTerrainTexture, mirrorGround, shadeBuildings, shadeGr
 import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
 import { makeSky, skyUniforms } from './sky.js';
+import { drawMinimap, setMinimapGround } from './minimap.js';
 import { EYE_HEIGHT, LENS_MAX, LENS_MIN, attachLook, compassName, fovForLens, lookDirection, sceneFromLatLon, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
 
@@ -362,6 +363,76 @@ function stepLook(now) {
   if (t >= 1) lookAnimation = null;
 }
 
+// ---- Walking at eye level ------------------------------------------------------------------
+const WALK_MPS = 14;
+const RUN_MPS = 45;
+const TURN_DPS = 70;
+const held = new Set();
+let pad = 0;
+let lastStep = 0;
+let shadowFrom = null;
+const KEYS = { w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
+addEventListener('keydown', (event) => {
+  if (!look.active || event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
+  const key = KEYS[event.key.toLowerCase()];
+  if (!key) return;
+  held.add(key);
+  if (event.shiftKey) held.add('run');
+  event.preventDefault();
+  invalidate();
+});
+addEventListener('keyup', (event) => {
+  held.delete(KEYS[event.key.toLowerCase()]);
+  if (event.key === 'Shift') held.delete('run');
+});
+addEventListener('blur', () => held.clear());
+for (const [id, dir] of [['walk-fwd', 1], ['walk-back', -1]]) {
+  const button = document.getElementById(id);
+  button.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    button.setPointerCapture(event.pointerId);
+    pad = dir;
+    invalidate();
+  });
+  for (const end of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(end, () => (pad = 0));
+}
+
+/** Somewhere a person can be: on open ground, not inside a building or the tower. */
+const walkable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && !underRoof(x, z);
+
+function stepWalk(now) {
+  const dt = Math.min(0.1, (now - lastStep) / 1000);
+  lastStep = now;
+  if (!look.active || lookAnimation) return;
+  const forward = (held.has('fwd') ? 1 : 0) - (held.has('back') ? 1 : 0) + pad;
+  const sideways = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
+  const turn = (held.has('turnR') ? 1 : 0) - (held.has('turnL') ? 1 : 0);
+  if (!forward && !sideways && !turn) return;
+  look.heading += turn * TURN_DPS * dt;
+  const step = (held.has('run') ? RUN_MPS : WALK_MPS) * dt;
+  const a = THREE.MathUtils.degToRad(look.heading);
+  const dx = (Math.sin(a) * forward + Math.cos(a) * sideways) * step;
+  const dz = (-Math.cos(a) * forward + Math.sin(a) * sideways) * step;
+  // Slide along a wall rather than stopping dead at it.
+  for (const [mx, mz] of [[dx, dz], [dx, 0], [0, dz]]) {
+    if ((mx || mz) && walkable(look.x + mx * 3, look.z + mz * 3)) {
+      look.x += mx;
+      look.z += mz;
+      break;
+    }
+  }
+  look.y = groundAt(look.x, look.z);
+  photographer.x = look.x;
+  photographer.z = look.z;
+  photographer.y = look.y;
+  if (!shadowFrom || Math.hypot(look.x - shadowFrom.x, look.z - shadowFrom.z) > 120 || turn) {
+    shadowFrom = { x: look.x, z: look.z };
+    shadowsDirty = true;
+  }
+  updateEyeBar();
+  dirty = true;
+}
+
 /** Face a body: at eye level by turning, from above by rotating the map so it lies ahead. */
 function face(body) {
   if (camera === eyeCamera) turnTo(body.az, THREE.MathUtils.clamp(body.alt * 0.8, -5, 40));
@@ -495,6 +566,7 @@ renderer.domElement.addEventListener('dblclick', (event) => {
   enterEye(spot.x, spot.z, { heading: look.heading, pitch: look.pitch, lens: look.lens });
 });
 
+document.getElementById('minimap').addEventListener('click', () => exitEye());
 const compass = document.getElementById('compass');
 const needle = compass.querySelector('svg');
 compass.addEventListener('click', () => {
@@ -996,6 +1068,8 @@ const statsEl = document.getElementById('stats');
 let base = null;
 let lastFrame = performance.now();
 const panel = document.querySelector('.panel');
+// The eye-level controls sit just above the panel, whatever its height.
+new ResizeObserver(() => document.body.style.setProperty('--panel-h', `${panel.offsetHeight}px`)).observe(panel);
 const history = [];
 
 /** Haze starts beyond the middle of the view, whatever the zoom; standing, it is the real air. */
@@ -1088,6 +1162,7 @@ function frame(now) {
   stepFlight(now);
   stepOrbit(now);
   stepLook(now);
+  stepWalk(now);
   const flying = stepTransition(now);
   placeEyeCamera();
   if (flying) {
@@ -1155,6 +1230,11 @@ function frame(now) {
     rays,
     drop: drag?.drop ?? null,
   });
+  if (street > 0.5) {
+    const aspect = innerWidth / innerHeight;
+    const hfov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(eyeCamera.fov) / 2) * aspect));
+    drawMinimap({ look, fov: hfov, paths: dayPaths, rays, spots, bodies, night });
+  }
   needle.style.transform = `rotate(${camera === eyeCamera ? -look.heading : THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
   tiltButton.textContent = controls.getPolarAngle() < 0.2 ? '3D' : '2D';
   stats.triangles = renderer.info.render.triangles;
@@ -1194,6 +1274,7 @@ async function start() {
   cityUniforms.uTerrain.value = makeTerrainTexture(terrain, size);
   cityUniforms.uMap.value = paintGroundMap(mapData, mapData.runs, roadPoints, half, isPhone ? 2048 : 4096, renderer);
   setLabels(mapData, groundAt);
+  setMinimapGround(cityUniforms.uMap.value.image, half);
   highlights = makeHighlights(scene, groundAt);
   views = decodeStreets(streetsDoc).map((view, i) => ({ ...view, a: [streetsDoc.scene[i][0], streetsDoc.scene[i][1]], b: [streetsDoc.scene[i][2], streetsDoc.scene[i][3]] }));
   updateDay();
