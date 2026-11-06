@@ -26,7 +26,7 @@ import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overlay.js';
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
-import { EYE_HEIGHT, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
+import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
 
 const params = new URLSearchParams(location.search);
@@ -331,10 +331,42 @@ function placeEyeCamera() {
 
 const lensInput = document.getElementById('lens');
 const formatSelect = document.getElementById('format');
-for (const format of SENSOR_FORMATS) formatSelect.append(new Option(format.label, format.id));
+for (const [label, group] of [['Camera', SENSOR_FORMATS], ['Phone and drone', FIXED_FORMATS]]) {
+  const optgroup = document.createElement('optgroup');
+  optgroup.label = label;
+  for (const format of group) optgroup.append(new Option(format.label, format.id));
+  formatSelect.append(optgroup);
+}
+const lensChips = document.getElementById('lens-chips');
+let chipsFor = null;
+/** A fixed-lens camera picks a lens with buttons; the others zoom with the slider. */
+function showLensControl() {
+  const format = cameraFormat.format;
+  const fixed = Boolean(format.lenses);
+  lensInput.hidden = fixed;
+  lensLabel.hidden = fixed;
+  lensChips.hidden = !fixed;
+  if (fixed && chipsFor !== format.id) {
+    chipsFor = format.id;
+    lensChips.replaceChildren(
+      ...format.lenses.map((mm, i) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.dataset.mm = String(mm);
+        chip.innerHTML = format.names ? `${format.names[i]}<small>${mm}</small>` : `${mm}<small>mm</small>`;
+        chip.addEventListener('click', () => setLens(look, mm, () => {
+          updateEyeBar();
+          invalidate();
+        }));
+        return chip;
+      }),
+    );
+  }
+  for (const chip of lensChips.children) chip.setAttribute('aria-pressed', String(Number(chip.dataset.mm) === look.lens));
+}
 try {
   const saved = localStorage.getItem('miniature.format');
-  if (SENSOR_FORMATS.some((f) => f.id === saved)) cameraFormat.format = SENSOR_FORMATS.find((f) => f.id === saved);
+  if (FORMATS.some((f) => f.id === saved)) cameraFormat.format = FORMATS.find((f) => f.id === saved);
 } catch {}
 formatSelect.value = cameraFormat.format.id;
 formatSelect.addEventListener('change', () => {
@@ -352,6 +384,7 @@ function updateEyeBar() {
   const [lensMin, lensMax] = lensRange();
   lensInput.value = String((Math.log(look.lens / lensMin) / Math.log(lensMax / lensMin)) * 1000);
   formatSelect.value = cameraFormat.format.id;
+  showLensControl();
   lensLabel.textContent = `${Math.round(look.lens)} mm`;
   const heading = ((look.heading % 360) + 360) % 360;
   facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
@@ -396,7 +429,7 @@ const held = new Set();
 let pad = 0;
 let lastStep = 0;
 let shadowFrom = null;
-const KEYS = { shift: 'run', e: 'up', q: 'down', w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
+const KEYS = { shift: 'run', e: 'up', ' ': 'up', q: 'down', c: 'down', w: 'fwd', arrowup: 'fwd', s: 'back', arrowdown: 'back', a: 'left', d: 'right', arrowleft: 'turnL', arrowright: 'turnR' };
 addEventListener('keydown', (event) => {
   if (!look.active || event.target instanceof HTMLInputElement || event.metaKey || event.ctrlKey) return;
   const key = KEYS[event.key.toLowerCase()];

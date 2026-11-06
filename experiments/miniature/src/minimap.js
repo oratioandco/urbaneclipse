@@ -1,5 +1,5 @@
 /**
- * A small round map for eye level: where you stand, which way you look, and what the day
+ * A small map for eye level: where you stand, which way you look, and what the day
  * holds nearby. North is up, so it reads like the big map. Drawn from the painted ground map,
  * so it costs one image draw a frame.
  */
@@ -65,9 +65,10 @@ export function drawMinimap({ look, fov, paths, rays, spots, bodies, night }) {
   const scale = r / RADIUS_M;
   const toMap = (x, z) => [r + (x - look.x) * scale, r + (z - look.z) * scale];
 
+  const corner = 14;
   ctx.save();
   ctx.beginPath();
-  ctx.arc(r, r, r - 1, 0, Math.PI * 2);
+  ctx.roundRect(0, 0, size, size, corner);
   ctx.clip();
   const perMetre = base.width / (2 * half);
   ctx.filter = night ? 'invert(0.88) hue-rotate(180deg) brightness(0.9)' : 'none';
@@ -119,7 +120,7 @@ export function drawMinimap({ look, fov, paths, rays, spots, bodies, night }) {
   // The tower, pinned to the rim when it is out of range so you can always find it.
   {
     let [x, y] = toMap(0, 0);
-    const d = Math.hypot(x - r, y - r);
+    const d = Math.max(Math.abs(x - r), Math.abs(y - r));
     if (d > r - 10) {
       x = r + ((x - r) / d) * (r - 10);
       y = r + ((y - r) / d) * (r - 10);
@@ -162,13 +163,17 @@ export function drawMinimap({ look, fov, paths, rays, spots, bodies, night }) {
   ctx.strokeStyle = night ? 'rgba(236, 232, 223, 0.6)' : 'rgba(255, 253, 249, 0.95)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(r, r, r - 1.5, 0, Math.PI * 2);
+  ctx.roundRect(1.5, 1.5, size - 3, size - 3, corner - 1.5);
   ctx.stroke();
   for (const body of bodies) {
+    // On the frame, in the body's direction from where you stand.
     const a = ((body.az - 90) * Math.PI) / 180;
+    const ux = Math.cos(a);
+    const uy = Math.sin(a);
+    const reach = (r - 7) / Math.max(Math.abs(ux), Math.abs(uy));
     ctx.fillStyle = body.moon ? PATH_CSS.moon : PATH_CSS.sun;
     ctx.beginPath();
-    ctx.arc(r + Math.cos(a) * (r - 6), r + Math.sin(a) * (r - 6), 4.5, 0, Math.PI * 2);
+    ctx.arc(r + ux * reach, r + uy * reach, 4.5, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.font = '700 10px ui-sans-serif, system-ui, sans-serif';

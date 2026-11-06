@@ -23,6 +23,7 @@
         --moon: #5b82ff;
         --control: 40px;
         --radius: 14px;
+        --eye-card: 112px;
       }
       body[data-night='true'] {
         --surface: rgba(20, 23, 38, 0.84);
@@ -63,10 +64,10 @@
          view stays open: the camera, then the time. Planning tools wait on the map. */
       .bottom { position: fixed; z-index: 2; left: var(--gutter); right: var(--gutter); bottom: max(var(--gutter), env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
       #minimap, .camera-rows { display: none; }
-      #minimap { position: static; width: 104px; height: 104px; flex: none; border-radius: 50%; box-shadow: var(--shadow); cursor: pointer; touch-action: manipulation; }
+      #minimap { position: static; width: var(--eye-card); height: var(--eye-card); flex: none; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; touch-action: manipulation; }
       body[data-eye='true'] .bottom { display: flex; align-items: flex-end; max-width: 720px; }
       body[data-eye='true'] #minimap { display: block; }
-      body[data-eye='true'] .panel { flex: 1; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 4px; padding: 8px 12px 6px; }
+      body[data-eye='true'] .panel { flex: 1; min-height: var(--eye-card); box-sizing: border-box; align-content: center; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 4px; padding: 8px 12px 6px; }
       body[data-eye='true'] .camera-rows { display: grid; gap: 2px; grid-column: 1 / -1; }
       body[data-eye='true'] #moment-row { display: contents; }
       body[data-eye='true'] .daynav, body[data-eye='true'] #sun, body[data-eye='true'] #tracks, body[data-eye='true'] #moments, body[data-eye='true'] #moments-empty { display: none; }
@@ -82,6 +83,11 @@
       .lens { display: flex; align-items: center; gap: 10px; }
       .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }
       #format { height: 26px; padding: 0 22px 0 8px; border: 1px solid var(--line); border-radius: 13px; background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236f6a62' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center / 9px; color: inherit; font: 600 11.5px ui-sans-serif, system-ui, sans-serif; appearance: none; -webkit-appearance: none; cursor: pointer; }
+      #lens-chips { flex: 1; display: flex; gap: 4px; }
+      #lens-chips button { flex: 1; max-width: 72px; height: 26px; padding: 0 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--field); display: inline-flex; align-items: baseline; justify-content: center; gap: 3px; font: 600 12px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+      #lens-chips button small { font-weight: 500; font-size: 10px; color: var(--muted); }
+      #lens-chips button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #fff; }
+      #lens-chips button[aria-pressed='true'] small { color: rgba(255, 255, 255, 0.8); }
       #lens-label { font-variant-numeric: tabular-nums; min-width: 52px; text-align: right; color: var(--muted); }
       .keys { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
       .keys .gap { width: 6px; }
@@ -132,7 +138,15 @@
       #stats { z-index: 2; position: fixed; top: 10px; left: 12px; font: 11px/1.4 ui-monospace, monospace; color: var(--muted); white-space: pre; pointer-events: none; }
 
       @media (max-width: 480px) {
-        #minimap { width: 76px; height: 76px; }
+        :root { --eye-card: 84px; }
+        /* Phone: a full-width strip at the bottom, the mini map and walk buttons above it at
+           the edges, so the middle of the view stays open. */
+        body[data-eye='true'] .bottom { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'map . pad' 'card card card'; align-items: end; }
+        body[data-eye='true'] #minimap { grid-area: map; }
+        body[data-eye='true'] .walkpad { grid-area: pad; }
+        body[data-eye='true'] .panel { grid-area: card; min-height: 0; }
+        #lens-chips button { padding: 0 4px; }
+        #format { max-width: 112px; }
         body[data-eye='true'] .bottom { gap: 6px; }
         .walkpad .round { width: 40px; height: 40px; }
         #lens-label { min-width: 44px; }
@@ -182,7 +196,7 @@
             </span>
           </div>
           <button id="eclipse" type="button" hidden></button>
-          <div class="lens"><select id="format" aria-label="Camera format"></select><input id="lens" type="range" min="0" max="1000" aria-label="Focal length" /><span id="lens-label"></span></div>
+          <div class="lens"><select id="format" aria-label="Camera format"></select><input id="lens" type="range" min="0" max="1000" aria-label="Focal length" /><span id="lens-label"></span><div id="lens-chips" role="group" aria-label="Lens" hidden></div></div>
         </div>
         <div class="row" id="moment-row">
           <span class="clock" id="clock">--:--</span>

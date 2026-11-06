@@ -8,6 +8,18 @@ import { SENSOR_FORMATS } from '../../../src/lib/lensScale.ts';
 export { SENSOR_FORMATS };
 export const EYE_HEIGHT = 1.6;
 
+/**
+ * Phones and drones: a few fixed lenses each, given as full-frame equivalents, which is how
+ * they are sold and compared. Generic classes rather than models, as the line-ups change yearly.
+ */
+export const FIXED_FORMATS = [
+  { id: 'phone', label: 'Phone', width: 36, lenses: [13, 24, 48, 77, 120], names: ['0.5\u00d7', '1\u00d7', '2\u00d7', '3\u00d7', '5\u00d7'] },
+  { id: 'drone-1', label: 'Drone, one camera', width: 36, lenses: [24] },
+  { id: 'drone-2', label: 'Drone, two cameras', width: 36, lenses: [24, 70] },
+  { id: 'drone-3', label: 'Drone, three cameras', width: 36, lenses: [24, 70, 166] },
+];
+export const FORMATS = [...SENSOR_FORMATS, ...FIXED_FORMATS];
+
 /** The camera being simulated. Full-frame unless the photographer picked another format. */
 export const camera = { format: SENSOR_FORMATS.find((f) => f.id === 'ff') };
 
@@ -29,11 +41,25 @@ export function lensForFov(fov, format = camera.format) {
   return format.width / (2 * Math.tan(along));
 }
 
-export const lensRange = (format = camera.format) => [format.minFocal, format.maxFocal];
+export const lensRange = (format = camera.format) => (format.lenses ? [format.lenses[0], format.lenses[format.lenses.length - 1]] : [format.minFocal, format.maxFocal]);
+
+/** The fixed lens nearest a focal length, judged by framing (a ratio), not by millimetres. */
+function nearestLens(mm, lenses) {
+  return lenses.reduce((best, lens) => (Math.abs(Math.log(lens / mm)) < Math.abs(Math.log(best / mm)) ? lens : best));
+}
+
+/** One lens along for a fixed-lens camera: +1 longer, -1 wider. */
+export function stepLens(state, direction, onChange) {
+  const lenses = camera.format.lenses;
+  if (!lenses) return;
+  const i = Math.max(0, Math.min(lenses.length - 1, lenses.indexOf(nearestLens(state.lens, lenses)) + direction));
+  state.lens = lenses[i];
+  onChange();
+}
 
 /** Switch format, keeping the framing: the focal length scales with the sensor. */
 export function setFormat(state, id, onChange) {
-  const next = SENSOR_FORMATS.find((f) => f.id === id);
+  const next = FORMATS.find((f) => f.id === id);
   if (!next) return;
   const mm = state.lens * (next.width / camera.format.width);
   camera.format = next;
@@ -53,6 +79,7 @@ export function lookDirection(heading, pitch, out = new THREE.Vector3()) {
 export function attachLook(element, state, onChange) {
   const pointers = new Map();
   let pinch = 0;
+  let wheelTravel = 0;
   const down = (event) => {
     if (!state.active) return;
     element.setPointerCapture(event.pointerId);
@@ -76,8 +103,15 @@ export function attachLook(element, state, onChange) {
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       const spread = Math.hypot(a.x - b.x, a.y - b.y);
-      if (pinch > 0) setLens(state, state.lens * (spread / pinch), onChange);
-      pinch = spread;
+      if (pinch > 0 && camera.format.lenses) {
+        if (spread / pinch > 1.35 || spread / pinch < 1 / 1.35) {
+          stepLens(state, spread > pinch ? 1 : -1, onChange);
+          pinch = spread;
+        }
+      } else {
+        if (pinch > 0) setLens(state, state.lens * (spread / pinch), onChange);
+        pinch = spread;
+      }
     }
   };
   const up = (event) => {
@@ -93,7 +127,14 @@ export function attachLook(element, state, onChange) {
     (event) => {
       if (!state.active) return;
       event.preventDefault();
-      setLens(state, state.lens * Math.exp(-event.deltaY * 0.0015), onChange);
+      if (camera.format.lenses) {
+        // A fixed-lens camera clicks from lens to lens, once per deliberate scroll.
+        wheelTravel += event.deltaY;
+        if (Math.abs(wheelTravel) > 60) {
+          stepLens(state, wheelTravel < 0 ? 1 : -1, onChange);
+          wheelTravel = 0;
+        }
+      } else setLens(state, state.lens * Math.exp(-event.deltaY * 0.0015), onChange);
     },
     { passive: false },
   );
@@ -101,7 +142,8 @@ export function attachLook(element, state, onChange) {
 
 export function setLens(state, mm, onChange) {
   const [min, max] = lensRange();
-  state.lens = THREE.MathUtils.clamp(mm, min, max);
+  const clamped = THREE.MathUtils.clamp(mm, min, max);
+  state.lens = camera.format.lenses ? nearestLens(clamped, camera.format.lenses) : clamped;
   onChange();
 }
 
