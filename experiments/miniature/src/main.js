@@ -960,25 +960,97 @@ function showViewHere(target, clientX, clientY) {
   if (!target) return;
   const what = target.kind === 'street' ? target.moment.view.name : `${BODY_NAME[target.body]} & tower`;
   viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>View from here <small>${what} \u00b7 ${formatClock(target.t)}</small>`;
+  // Centred on the pointer, so a click where it already is lands on the button.
   const width = viewHere.offsetWidth || 220;
-  viewHere.style.left = `${Math.min(innerWidth - width - 8, clientX + 14)}px`;
-  viewHere.style.top = `${Math.max(8, clientY - 52)}px`;
+  const height = viewHere.offsetHeight || 36;
+  viewHere.style.left = `${Math.min(innerWidth - width - 8, Math.max(8, clientX - width / 2))}px`;
+  viewHere.style.top = `${Math.max(8, clientY - height / 2)}px`;
+}
+viewHere.addEventListener('pointerleave', (event) => {
+  // Off the button and off any line: let it go.
+  if (!viewableAt(event.clientX, event.clientY)) showViewHere(null);
+});
+
+/** Whether nothing built stands between an eye at (x, z) and a point along a direction. */
+function clearView(x, z, direction, distance) {
+  if (underRoof(x, z)) return false;
+  const origin = new THREE.Vector3(x, groundAt(x, z) + EYE_HEIGHT, z);
+  raycaster.set(origin, direction);
+  raycaster.near = 2;
+  raycaster.far = distance;
+  const end = origin.clone().addScaledVector(direction, distance);
+  const box = new THREE.Box3().setFromPoints([origin, end]).expandByScalar(60);
+  const meshes = tiles.filter((tile) => tile.mesh && box.distanceToPoint(tile.center) < tile.radius).map((tile) => tile.mesh);
+  const hit = raycaster.intersectObjects(meshes, false)[0];
+  raycaster.near = 0;
+  raycaster.far = Infinity;
+  return !hit;
+}
+
+/**
+ * The nearest point along a line from (x, z) with a clear view, trying outward both ways:
+ * finely close by, more coarsely further out. Null when nothing within 3 km sees through.
+ */
+function clearSpotAlong(x, z, ux, uz, viewFrom, keep = () => true) {
+  const steps = [];
+  for (let d = 0; d <= 600; d += 15) steps.push(d);
+  for (let d = 650; d <= 3000; d += 50) steps.push(d);
+  for (const step of steps) {
+    for (const sign of step ? [1, -1] : [1]) {
+      const px = x + ux * step * sign;
+      const pz = z + uz * step * sign;
+      if (!keep(px, pz)) continue;
+      const view = viewFrom(px, pz);
+      if (clearView(px, pz, view.direction, view.distance)) return { x: px, z: pz };
+    }
+  }
+  return null;
+}
+
+/** Better to say so than to drop the photographer in front of a wall. */
+function noClearView(target) {
+  viewTarget = null;
+  viewHere.hidden = false;
+  viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>No clear view along here <small>try another line or time</small>`;
+  setTimeout(() => {
+    if (!viewTarget) viewHere.hidden = true;
+  }, 2500);
 }
 
 viewHere.addEventListener('click', () => {
   const target = viewTarget;
-  showViewHere(null);
   if (!target) return;
+  viewTarget = null;
+  // The search can take a moment among dense blocks; say so, and let that show before it runs.
+  viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>Finding a clear view\u2026`;
+  setTimeout(() => goViewHere(target), 30);
+});
+
+function goViewHere(target) {
+  viewHere.hidden = true;
   setMinute(target.t);
+  const p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const towards = toDirection(new THREE.Vector3(), p.az, Math.max(0, p.alt));
   if (target.kind === 'tower') {
+    // Along the tower line, somewhere the tower and the body behind it are both in view: the
+    // look toward the body must reach the tower without a building in between.
+    const length = Math.hypot(target.x, target.z) || 1;
+    // Stay on the line's useful part: out from the tower, within the model.
+    const keep = (x, z) => Math.hypot(x, z) > 150 && Math.abs(x) < 9000 && Math.abs(z) < 9000 && x * target.x + z * target.z > 0;
+    const spot = clearSpotAlong(target.x, target.z, target.x / length, target.z / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x, z) - 40) }), keep);
+    if (!spot) return noClearView(target);
     // Face the body: on a tower line it is behind some part of the tower, not always the sphere.
-    const p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
-    enterEye(target.x, target.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(200) });
+    enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(200) });
   } else if (target.kind === 'street') {
     const m = target.moment;
-    enterEye(target.x, target.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
+    const dx = m.view.b[0] - m.view.a[0];
+    const dz = m.view.b[1] - m.view.a[1];
+    const length = Math.hypot(dx, dz) || 1;
+    const spot = clearSpotAlong(target.x, target.z, dx / length, dz / length, () => ({ direction: towards, distance: 600 }));
+    if (!spot) return noClearView(target);
+    enterEye(spot.x, spot.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
   }
-});
+}
 
 let hoverFrame = 0;
 renderer.domElement.addEventListener('pointermove', (event) => {
@@ -2137,4 +2209,4 @@ resizeOverlay();
 updateSun();
 requestAnimationFrame(frame);
 start();
-window.__mini = { get rays() { return rays; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
+window.__mini = { get rays() { return rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => history, get camera() { return camera; }, get controls() { return controls; }, renderer };
