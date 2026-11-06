@@ -12,7 +12,7 @@
        */
       :root {
         --gutter: 12px;
-        --surface: rgba(255, 253, 249, 0.88);
+        --surface: rgba(255, 253, 249, 0.95);
         --field: #fff;
         --ink: #24221f;
         --muted: #6f6a62;
@@ -26,7 +26,7 @@
         --eye-card: 112px;
       }
       body[data-night='true'] {
-        --surface: rgba(20, 23, 38, 0.84);
+        --surface: rgba(20, 23, 38, 0.93);
         --field: #262a42;
         --ink: #ece8df;
         --muted: #a7a7b4;
@@ -37,7 +37,9 @@
       canvas { display: block; position: fixed; inset: 0; touch-action: none; }
       button { font: inherit; color: inherit; }
 
-      .surface { background: var(--surface); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: var(--shadow); }
+      /* Near-opaque instead of a backdrop blur: a blur is redrawn every frame over a moving
+         3D view, and cost about a third of the frame time at eye level. */
+      .surface { background: var(--surface); box-shadow: var(--shadow); }
       .round { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; font-weight: 600; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
       .chip { height: var(--control); padding: 0 14px; border: 0; border-radius: calc(var(--control) / 2); display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
 

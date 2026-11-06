@@ -64,7 +64,8 @@ export async function cloudsFor(date, dayStart) {
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude', points.map((p) => p.lat.toFixed(3)).join(','));
     url.searchParams.set('longitude', points.map((p) => p.lon.toFixed(3)).join(','));
-    url.searchParams.set('hourly', 'cloud_cover_low,cloud_cover_mid,cloud_cover_high');
+    url.searchParams.set('hourly', 'cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m');
+    url.searchParams.set('wind_speed_unit', 'ms');
     url.searchParams.set('timezone', 'Europe/Berlin');
     url.searchParams.set('start_date', date);
     url.searchParams.set('end_date', date);
@@ -79,7 +80,8 @@ export async function cloudsFor(date, dayStart) {
       const parts = HORIZON_KM.map((_, k) => series(from + k));
       return { low: parts[0].low.map((_, h) => Math.max(...parts.map((p) => p.low[h]))) };
     };
-    return { berlin: series(0), riseHorizon: horizon(1), setHorizon: horizon(1 + HORIZON_KM.length), rise, set };
+    const wind = { speed: all[0].hourly.wind_speed_10m.map((v) => v ?? 0), from: all[0].hourly.wind_direction_10m.map((v) => v ?? 270) };
+    return { berlin: series(0), wind, riseHorizon: horizon(1), setHorizon: horizon(1 + HORIZON_KM.length), rise, set };
   })().catch((error) => {
     console.error('[miniature] weather failed', error);
     cache.delete(date);
@@ -115,4 +117,24 @@ export function readSky(day, which) {
   if (canvas > 0.2 && canvas < 0.8 && over.low < 0.5) return { t: event.t, grade: 'good', text: 'clouds above to catch the colour' };
   if (over.low + canvas < 0.15) return { t: event.t, grade: 'fair', text: 'clear: clean light, plain sky' };
   return { t: event.t, grade: 'fair', text: 'mixed cloud' };
+}
+
+/**
+ * How far the clouds have drifted since midnight, in scene metres (x east, z south), hour by
+ * hour with the forecast wind. Clouds travel faster than the wind at the ground; twice it is
+ * a fair guess for low and middle cloud.
+ */
+export function cloudDrift(day, minutes) {
+  let x = 0;
+  let z = 0;
+  const hours = Math.max(0, Math.min(24, minutes / 60));
+  for (let h = 0; h < Math.ceil(hours); h++) {
+    const span = Math.min(1, hours - h) * 3600;
+    const speed = 2 * (day.wind.speed[h] ?? 0);
+    const from = ((day.wind.from[h] ?? 270) * Math.PI) / 180;
+    // Blowing from a bearing means moving toward the opposite one.
+    x += -Math.sin(from) * speed * span;
+    z += Math.cos(from) * speed * span;
+  }
+  return { x, z };
 }

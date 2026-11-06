@@ -27,7 +27,7 @@ import { drawOverlay, drawPhotographer, resizeOverlay, setLabels } from './overl
 import { makeSky, skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
 import { litDiscPath } from '../../../src/lib/moonPhase.ts';
-import { cloudsAt, cloudsFor, forecastReach, readSky } from './weather.js';
+import { cloudDrift, cloudsAt, cloudsFor, forecastReach, readSky } from './weather.js';
 import { formatClock, formatHour, formatMinutes, parseTime, uses12h } from './time.js';
 import { EYE_HEIGHT, FIXED_FORMATS, FORMATS, SENSOR_FORMATS, attachLook, camera as cameraFormat, compassName, fovForLens, lensForFov, lensRange, lookDirection, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { skyPalette } from '../../../src/lib/skyPalette.ts';
@@ -1277,10 +1277,18 @@ clock.addEventListener('change', () => {
   invalidate();
 });
 const sunLabel = document.getElementById('sun');
+// The offset only changes on the hour at most; asking Intl every frame showed in profiles.
+const offsets = new Map();
 const berlinOffsetMinutes = (date) => {
-  const local = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
-  const utc = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-  return (local - utc) / 60_000;
+  const hour = Math.floor(date.getTime() / 3_600_000);
+  let offset = offsets.get(hour);
+  if (offset === undefined) {
+    const local = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
+    const utc = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+    offset = (local - utc) / 60_000;
+    offsets.set(hour, offset);
+  }
+  return offset;
 };
 
 function instant() {
@@ -1329,12 +1337,18 @@ function updateSun() {
   cloudNow = weather && layers.weather ? cloudsAt(weather, Number(timeInput.value)) : null;
   const passes = cloudNow ? (1 - 0.85 * cloudNow.low) * (1 - 0.55 * cloudNow.mid) * (1 - 0.2 * cloudNow.high) : 1;
   cloudPasses = passes;
-  skyUniforms.uCloudLow.value = cloudNow?.low ?? 0;
-  skyUniforms.uCloudMid.value = cloudNow?.mid ?? 0;
-  skyUniforms.uCloudHigh.value = cloudNow?.high ?? 0;
+  // The clouds themselves, in the sky and as shadows on the city, drifting with the wind.
+  const drift = cloudNow ? cloudDrift(weather, Number(timeInput.value)) : { x: 0, z: 0 };
+  for (const u of [skyUniforms, cityUniforms]) {
+    u.uCloudLow.value = cloudNow?.low ?? 0;
+    u.uCloudMid.value = cloudNow?.mid ?? 0;
+    u.uCloudHigh.value = cloudNow?.high ?? 0;
+    u.uCloudShift.value.set(drift.x, drift.z);
+  }
+  cityUniforms.uCloudSun.value.copy(sunDirection);
   const cloudiness = 1 - passes;
-  sun.intensity *= passes;
-  glow.intensity *= Math.max(passes, 1 - (cloudNow?.low ?? 0));
+  // Direct light is held back per place in the shaders (cloud shadows); here only the average,
+  // for what has no place: the water's glint.
   sun.shadow.radius = 1.6 + 7 * cloudiness;
   if (cloudiness > 0) {
     const grey = new THREE.Color(0.82, 0.84, 0.88);
@@ -1350,7 +1364,7 @@ function updateSun() {
   cityUniforms.uWindows.value = rig.lights * rig.windows;
   ribbonUniforms.uDay.value = 1 - smooth(rig.lights, 0.1, 0.7);
   cityUniforms.uKeyDir.value.copy(keyDirection);
-  cityUniforms.uKeyLight.value.copy(sun.color).multiplyScalar(sun.intensity);
+  cityUniforms.uKeyLight.value.copy(sun.color).multiplyScalar(sun.intensity * cloudPasses);
   // What the water mirrors where no building stands: the sky, a little brighter than the ground.
   mirrorSky.copy(sky.color).multiply(WATER_TINT).multiplyScalar((sky.intensity / Math.PI) * 1.15);
   cityUniforms.uSkyLight.value.copy(mirrorSky);

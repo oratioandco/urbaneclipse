@@ -3,6 +3,7 @@
  * true size with a glow, and the moon lit from the sun's actual direction, so its phase is right.
  */
 import * as THREE from 'three';
+import { CLOUD_GLSL } from './shading.js';
 
 const SUN_RADIUS = 0.00465;
 const MOON_RADIUS = 0.0045;
@@ -25,6 +26,7 @@ export const skyUniforms = {
   uCloudLow: { value: 0 },
   uCloudMid: { value: 0 },
   uCloudHigh: { value: 0 },
+  uCloudShift: { value: new THREE.Vector2() },
 };
 
 export function makeSky() {
@@ -43,36 +45,13 @@ export function makeSky() {
         }`,
       fragmentShader: /* glsl */ `
         uniform vec3 uHorizon, uZenith, uSunDir, uMoonDir, uSunColour, uGlowColour;
-        uniform float uGlow, uMoonLight, uFade, uCorona, uCoronaR, uCloudLow, uCloudMid, uCloudHigh;
-        float hash(vec2 p) {
-          p = fract(p * vec2(123.34, 345.45));
-          p += dot(p, p + 34.345);
-          return fract(p.x * p.y);
-        }
-        float noise(vec2 p) {
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          f = f * f * (3.0 - 2.0 * f);
-          return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
-        }
-        float fbm(vec2 p) {
-          float v = 0.0;
-          float a = 0.5;
-          for (int i = 0; i < 5; i++) {
-            v += a * noise(p);
-            p = p * 2.03 + 17.1;
-            a *= 0.5;
-          }
-          return v;
-        }
-        // One deck of cloud at some height: noise on a plane overhead, cut to the forecast cover.
-        float deck(vec3 d, float height, float scale, vec2 stretch, float cover) {
+        uniform float uGlow, uMoonLight, uFade, uCorona, uCoronaR;
+        ${CLOUD_GLSL}
+        // A deck seen from the camera: where this direction meets the deck's height, in world metres.
+        float deck(vec3 d, float height, vec2 scale, float cover) {
           if (cover <= 0.01 || d.y <= 0.0) return 0.0;
-          vec2 uv = d.xz / (d.y + 0.06) * height * scale * stretch;
-          float n = fbm(uv);
-          // The noise sits around 0.5; this threshold leaves about the forecast share covered.
-          float threshold = 0.5 + (0.5 - cover) * 0.55;
-          return smoothstep(threshold - 0.05, threshold + 0.07, n) * smoothstep(0.0, 0.08, d.y);
+          vec2 world = cameraPosition.xz + d.xz / max(d.y, 0.03) * max(height - cameraPosition.y, 50.0);
+          return cloudMask(world, scale, cover) * smoothstep(0.0, 0.08, d.y);
         }
         varying vec3 vDir;
         void main() {
@@ -113,13 +92,13 @@ export function makeSky() {
           float skyLight = dot(mix(uZenith, uHorizon, 0.5), vec3(0.3333));
           vec3 grey = vec3(skyLight);
           vec3 warm = uGlowColour * (0.9 + skyLight);
-          float high = deck(d, 9.0, 0.6, vec2(1.0, 3.5), uCloudHigh) * 0.45;
+          float high = deck(d, HIGH_DECK_M, HIGH_SCALE, uCloudHigh) * 0.45;
           vec3 highColour = mix(grey * 1.25 + 0.05, warm * 1.3, sunLow * (0.5 + 0.5 * pow(toSun, 2.0)));
           colour = mix(colour, highColour, high);
-          float mid = deck(d, 4.0, 0.9, vec2(1.0, 1.4), uCloudMid) * 0.85;
+          float mid = deck(d, MID_DECK_M, MID_SCALE, uCloudMid) * 0.85;
           vec3 midColour = mix(grey * 1.05, warm, sunLow * (0.2 + 0.6 * pow(toSun, 3.0)));
           colour = mix(colour, midColour, mid);
-          float low = deck(d, 1.5, 1.4, vec2(1.0), uCloudLow);
+          float low = deck(d, LOW_DECK_M, LOW_SCALE, uCloudLow);
           vec3 belly = mix(grey * 0.78, warm * 0.85, sunLow * 0.6 * pow(toSun, 4.0));
           colour = mix(colour, belly, low * 0.94);
           // Below the horizon the city's ground hides the sky; keep it the haze's colour.

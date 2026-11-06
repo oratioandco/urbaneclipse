@@ -24,7 +24,55 @@ export const cityUniforms = {
   uHazeFar: { value: 4000 },
   /** Brightness of the paved ground: lowered in low sun so the buildings stand off it. */
   uGroundTone: { value: 1 },
+  uCloudLow: { value: 0 },
+  uCloudMid: { value: 0 },
+  uCloudHigh: { value: 0 },
+  uCloudShift: { value: new THREE.Vector2() },
+  /** Toward the sun, for where a cloud's shadow falls. */
+  uCloudSun: { value: new THREE.Vector3(0, 1, 0) },
 };
+
+export const CLOUD_GLSL = /* glsl */ `
+// The forecast's clouds as one field over the city, shared by the sky and the light on the
+// ground, so a cloud overhead and its shadow agree. Decks at fixed heights; noise in world
+// metres, drifting with the wind.
+uniform float uCloudLow, uCloudMid, uCloudHigh;
+uniform vec2 uCloudShift;
+float cHash(vec2 p) {
+  p = fract(p * vec2(123.34, 345.45));
+  p += dot(p, p + 34.345);
+  return fract(p.x * p.y);
+}
+float cNoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(cHash(i), cHash(i + vec2(1.0, 0.0)), f.x), mix(cHash(i + vec2(0.0, 1.0)), cHash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+float cFbm(vec2 p) {
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 5; i++) {
+    v += a * cNoise(p);
+    p = p * 2.03 + 17.1;
+    a *= 0.5;
+  }
+  return v;
+}
+/** Cloud at a point of a deck, 0 to 1. The noise sits near 0.5, so this covers about the forecast share. */
+float cloudMask(vec2 world, vec2 scale, float cover) {
+  if (cover <= 0.01) return 0.0;
+  float n = cFbm((world + uCloudShift) / scale);
+  float threshold = 0.5 + (0.5 - cover) * 0.55;
+  return smoothstep(threshold - 0.05, threshold + 0.07, n);
+}
+const float LOW_DECK_M = 1500.0;
+const float MID_DECK_M = 3500.0;
+const float HIGH_DECK_M = 8000.0;
+const vec2 LOW_SCALE = vec2(1800.0);
+const vec2 MID_SCALE = vec2(3200.0);
+const vec2 HIGH_SCALE = vec2(6000.0, 1700.0);
+`;
 
 const WARM = 'vec3(1.0, 0.62, 0.3)';
 
@@ -39,6 +87,16 @@ const sharedFragment = /* glsl */ `
   uniform float uMirrorOn, uWaterLevel;
   uniform vec3 uKeyDir, uKeyLight, uSkyLight, uHazeColour;
   uniform float uGroundTone;
+  uniform vec3 uCloudSun;
+  ${CLOUD_GLSL}
+  /** How much sunlight reaches a point through the clouds above it, toward the sun. */
+  float cloudPass(vec3 p) {
+    if (uCloudLow + uCloudMid + uCloudHigh <= 0.01) return 1.0;
+    vec2 toward = uCloudSun.xz / max(uCloudSun.y, 0.05);
+    float low = cloudMask(p.xz + toward * (LOW_DECK_M - p.y), LOW_SCALE, uCloudLow);
+    float mid = cloudMask(p.xz + toward * (MID_DECK_M - p.y), MID_SCALE, uCloudMid);
+    return (1.0 - 0.85 * low) * (1.0 - 0.55 * mid) * (1.0 - 0.2 * uCloudHigh);
+  }
   uniform vec2 uHazeFocus;
   uniform float uHazeNear, uHazeFar;
   // Air thickening away from the middle of the view, and the model's edge dissolving into it.
@@ -78,6 +136,7 @@ function inject(material, name, edit) {
 export function shadeGround(material) {
   return inject(material, 'city-ground', (shader) => {
     shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n  reflectedLight.directDiffuse *= cloudPass(vWorldP);')
       .replace(
         '#include <color_fragment>',
         /* glsl */ `#include <color_fragment>
@@ -116,7 +175,8 @@ export function shadeGround(material) {
 
 export function shadeBuildings(material) {
   return inject(material, 'city-buildings', (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace(
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n  reflectedLight.directDiffuse *= cloudPass(vWorldP);').replace(
       '#include <opaque_fragment>',
       /* glsl */ `{
         vec3 worldNormal = inverseTransformDirection(normal, viewMatrix);
