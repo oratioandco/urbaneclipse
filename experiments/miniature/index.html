@@ -186,6 +186,8 @@
       #moments button[data-body='moon']::before { background: var(--moon); }
       .credit { font-size: 11px; }
       .credit a { color: inherit; }
+      .eye-credit { display: none; }
+      body[data-eye='true'] .eye-credit { display: inline; }
       .weather-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
       .weather-line span::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #b9b2a6; vertical-align: 1px; }
       .weather-line span[data-grade='good']::before { background: #3aa65b; }
@@ -365,7 +367,7 @@
         </div>
         <div id="daylist" aria-label="Every chance today"></div>
         <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
-        <div class="muted credit">Map data &copy; OpenStreetMap contributors &middot; Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></div>
+        <div class="muted credit">Map data &copy; OpenStreetMap contributors &middot; Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a><span class="eye-credit"> &middot; Lunar surface: NASA&rsquo;s Scientific Visualization Studio</span></div>
       </div>
       <div id="stick" class="walkpad surface" role="application" aria-label="Walk: drag the knob"><div class="knob"></div></div>
     </div>

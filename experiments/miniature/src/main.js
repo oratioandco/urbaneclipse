@@ -686,7 +686,10 @@ function eclipseNow() {
     if (inside && radiusDeg >= DISC_RADIUS_DEG) state = 'hidden';
     else if (inside) state = 'ring';
     else if (touching) state = 'edge';
-    return { body: kind, az: body.az, alt: body.alt, sepDeg, state, covered: touching || state === 'antenna' || state === 'shaft', full: state === 'hidden' };
+    // For the moon's hint: how far it sits beside the sphere, left or right, and up or down.
+    const signedOff = ((((body.az - towerAz) % 360) + 540) % 360 - 180) * Math.cos(THREE.MathUtils.degToRad(body.alt));
+    const rise = body.alt - angleTo(SPHERE_CENTRE_AGL);
+    return { body: kind, az: body.az, alt: body.alt, sepDeg, state, signedOff, rise, flat, covered: touching || state === 'antenna' || state === 'shaft', full: state === 'hidden' };
   });
   return { centre: sphereCentre(), radiusDeg, items };
 }
@@ -720,6 +723,13 @@ const eclipseButton = document.getElementById('eclipse');
 const clockOf = formatClock;
 const BODY_NAME = { sun: 'Sun', moon: 'Moon' };
 let eclipseAction = null;
+/** The moon close beside the sphere, level with it: near enough to walk it onto the edge. */
+function moonBeside(here) {
+  return here.items.find(
+    (item) => item.body === 'moon' && item.state === 'near' && Math.abs(item.rise) < here.radiusDeg + DISC_RADIUS_DEG && Math.abs(item.signedOff) < 4,
+  );
+}
+
 /** One line in the camera card: covered now, how long until, or where to go instead. */
 function showEclipseStatus(now) {
   const here = eclipseNow();
@@ -740,7 +750,20 @@ function showEclipseStatus(now) {
       antenna: `${name} behind the antenna now`,
       shaft: `${name} behind the tower\u2019s shaft now`,
     }[covering.state];
-    if (body === 'moon' && covering.state === 'hidden') state = 'warn';
+    if (body === 'moon' && covering.state === 'hidden') {
+      state = 'warn';
+      // Stepping sideways moves the sphere across the moon; this far puts the moon on its edge.
+      const metres = covering.flat * Math.tan(THREE.MathUtils.degToRad(Math.max(0, here.radiusDeg - Math.abs(covering.signedOff))));
+      text = `Moon hidden behind the sphere: step ${Math.max(1, Math.round(metres))} m left or right, or move further away`;
+    }
+  } else if (moonBeside(here)) {
+    const moon = moonBeside(here);
+    body = 'moon';
+    const metres = moon.flat * Math.tan(THREE.MathUtils.degToRad(Math.abs(moon.signedOff) - here.radiusDeg));
+    // The moon is far away and stays put. With the moon right of the sphere, stepping left
+    // swings the nearby sphere to the right, onto it.
+    const side = moon.signedOff > 0 ? 'left' : 'right';
+    text = `Moon just beside the sphere: step ${Math.max(1, Math.round(metres))} m ${side} to put it on the edge`;
   } else {
     const next = forecast.filter((f) => f.covers).sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
     const spot = spots[0];
@@ -1439,7 +1462,8 @@ function updateSun() {
   skyUniforms.uSunColour.value.setRGB(...palette.discTint, THREE.SRGBColorSpace);
   skyUniforms.uGlowColour.value.setRGB(...palette.glowColor, THREE.SRGBColorSpace);
   skyUniforms.uGlow.value = palette.glowStrength * smooth(sunAt.alt, -4, 0);
-  skyUniforms.uMoonLight.value = THREE.MathUtils.lerp(1.6, 0.55, smooth(sunAt.alt, -6, 4));
+  // Exposed for the moon, as a photographer would, so its face shows rather than a glow.
+  skyUniforms.uMoonLight.value = THREE.MathUtils.lerp(1.0, 0.6, smooth(sunAt.alt, -6, 4));
   bloomLights = rig.lights;
 
   night = sunAt.alt < -3;

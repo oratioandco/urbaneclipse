@@ -27,7 +27,13 @@ export const skyUniforms = {
   uCloudMid: { value: 0 },
   uCloudHigh: { value: 0 },
   uCloudShift: { value: new THREE.Vector2() },
+  /** The moon's near side, from NASA's Scientific Visualization Studio, as the main app uses. */
+  uMoonMap: { value: null },
 };
+new THREE.TextureLoader().load('/textures/moon-nearside.jpg', (texture) => {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  skyUniforms.uMoonMap.value = texture;
+});
 
 export function makeSky() {
   const dome = new THREE.Mesh(
@@ -46,6 +52,7 @@ export function makeSky() {
       fragmentShader: /* glsl */ `
         uniform vec3 uHorizon, uZenith, uSunDir, uMoonDir, uSunColour, uGlowColour;
         uniform float uGlow, uMoonLight, uFade, uCorona, uCoronaR;
+        uniform sampler2D uMoonMap;
         ${CLOUD_GLSL}
         // A deck seen from the camera: where this direction meets the deck's height, in world metres.
         float deck(vec3 d, float height, vec2 scale, float cover) {
@@ -56,7 +63,8 @@ export function makeSky() {
         varying vec3 vDir;
         void main() {
           vec3 d = normalize(vDir);
-          vec3 colour = mix(uHorizon, uZenith, smoothstep(0.0, 0.5, d.y));
+          // The zenith's blue reaches further down, so a clear day reads blue rather than hazy.
+          vec3 colour = mix(uHorizon, uZenith, smoothstep(0.0, 0.32, d.y));
           float sunAngle = acos(clamp(dot(d, uSunDir), -1.0, 1.0));
           colour += uGlowColour * uGlow * (1.0 - uCorona) * (exp(-sunAngle * 9.0) * 0.45 + exp(-sunAngle * 70.0) * 0.9);
           if (uCorona > 0.0) {
@@ -82,8 +90,14 @@ export function makeSky() {
             vec3 across = (d - uMoonDir * moonCos) / sin(${MOON_RADIUS});
             vec3 normal = across - uMoonDir * sqrt(max(0.0, 1.0 - dot(across, across)));
             float lit = smoothstep(-0.03, 0.05, dot(normal, uSunDir));
-            float edge = 1.0 - smoothstep(${MOON_RADIUS * 0.85}, ${MOON_RADIUS}, moonAngle);
-            colour += vec3(0.95, 0.96, 1.0) * uMoonLight * lit * edge;
+            float edge = 1.0 - smoothstep(${MOON_RADIUS * 0.96}, ${MOON_RADIUS}, moonAngle);
+            // Its face, roughly north up: maria and craters rather than a white disc.
+            vec3 east = normalize(cross(vec3(0.0, 1.0, 0.0), uMoonDir));
+            vec3 north = cross(uMoonDir, east);
+            vec2 face = vec2(dot(across, east), dot(across, north)) * 0.5 + 0.5;
+            float albedo = 0.35 + 0.75 * texture2D(uMoonMap, vec2(1.0 - face.x, face.y)).r;
+            // Earthshine leaves the dark part faintly there.
+            colour = mix(colour, vec3(0.95, 0.96, 1.0) * uMoonLight * (lit * albedo + 0.03), edge);
           }
           // Forecast clouds, high to low. Toward a low sun their undersides catch its colour.
           float toSun = max(dot(d, uSunDir), 0.0);
