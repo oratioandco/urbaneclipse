@@ -23,6 +23,8 @@ After a rebuild, bump `CITY_VERSION` in `main.js`, since the files are cached fo
 URL options: `date`, `time` (minutes after midnight), `at=lat,lon`, `look=heading,pitch`,
 `lens`, `cam` (these four open eye level; the address keeps them up to date, so it can be
 shared), `nointro`, `mode` (top, iso, free), `height`, `shadow`, `budget`, `stats`.
+Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
+Shared state that several modules change lives on `app` in `state.js`.
 The rules for moon and sun shots with the tower are in `towerShots.js`, tested in
 `tests/unit/miniature.test.ts`.
 
