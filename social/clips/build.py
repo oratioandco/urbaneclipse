@@ -5,8 +5,12 @@ the shot as a photo, the same moment in the planner from beat 8, the mark and UR
 All projects share clips/assets. Re-running overwrites the HTML.
 """
 import html
+import sys
 import shutil
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from feedframe import native_lift, native_origin, native_scale  # noqa: E402
 
 HERE = Path(__file__).parent
 SUN, MOON = '#f26a12', '#7d9bff'
@@ -43,6 +47,7 @@ CSS = """
     #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
     .wrap { position: absolute; inset: 0; }
     .wrap video, .wrap img { position: absolute; left: 0; top: -OFFpx; width: 1080px; height: 1920px; object-fit: cover; }
+    .wrap .native { top: 0; height: 1350px; }
     .scrim { position: absolute; left: 0; right: 0; top: 0; height: 760px; background: linear-gradient(rgba(6,10,20,.86), rgba(6,10,20,.58) 55%, rgba(6,10,20,0)); }
     .scrim-low { position: absolute; left: 0; right: 0; bottom: 0; height: 1100px; background: linear-gradient(rgba(6,10,20,0), rgba(6,10,20,.82) 40%); opacity: 0; }
     .shade { position: absolute; inset: 0; background: rgba(9,14,26,.82); opacity: 0; }
@@ -55,8 +60,11 @@ CSS = """
 """
 
 
-def media(tag_id, src, start, end, mstart, track):
+def media(tag_id, src, start, end, mstart, track, native=False):
     d = round(end - start, 3)
+    if native:
+        # The 4:5 recording of the same take (record.mjs FEED=1), filling the frame.
+        return f'<video id="{tag_id}" class="clip native" src="assets/{src[:-4]}-feed.mp4" data-start="{start}" data-duration="{d}" data-media-start="{round(mstart + start, 3)}" data-track-index="{track}" muted playsinline></video>'
     if src.endswith('.png'):
         return f'<img id="{tag_id}" class="clip" src="assets/{src}" data-start="{start}" data-duration="{d}" data-track-index="{track}" alt="">'
     return f'<video id="{tag_id}" class="clip" src="assets/{src}" data-start="{start}" data-duration="{d}" data-media-start="{round(mstart + start, 3)}" data-track-index="{track}" muted playsinline></video>'
@@ -68,10 +76,19 @@ def project(name, c, feed):
     ox, oy = c['origin']
     ox2, oy2 = c.get('origin2', (540, 960))
     tools = name == 'tools'
+    native = feed and not tools
+    take = c['photo'][0].split('-')[0]
+    oy_at = (lambda y: round(y * H / 1920)) if native else (lambda y: y - OFF)
+    scale = c['scale']
+    lift = 0
+    if native:
+        scale = native_scale(take, (ox, oy), scale)
+        lift = native_lift(take, (ox, oy), scale)
+        ox, oy = native_origin(take, (ox, oy))
     body, js = [], []
-    body.append(f'  <div id="c-photo" class="wrap" style="transform-origin:{ox}px {oy - OFF}px">{media("c-photo-m", c["photo"][0], 0, SWAP, c["photo"][1] or 0, 0)}</div>')
-    body.append(f'  <div id="c-ui" class="wrap" style="transform-origin:{ox2 if tools else 540}px {(oy2 if tools else 960) - OFF}px">{media("c-ui-m", c["ui"][0], SWAP, DUR, c["ui"][1] or 0, 1)}</div>')
-    s0, s1 = c['scale']
+    body.append(f'  <div id="c-photo" class="wrap" style="transform-origin:{ox}px {oy if native else oy - OFF}px{f';top:{lift}px' if lift else ''}">{media("c-photo-m", c["photo"][0], 0, SWAP, c["photo"][1] or 0, 0, native)}</div>')
+    body.append(f'  <div id="c-ui" class="wrap" style="transform-origin:{ox2 if tools else 540}px {oy_at(oy2 if tools else 960)}px">{media("c-ui-m", c["ui"][0], SWAP, DUR, c["ui"][1] or 0, 1, native)}</div>')
+    s0, s1 = scale
     js.append(f'tl.fromTo("#c-photo", {{ scale: {s0} }}, {{ scale: {s1}, duration: {SWAP}, ease: "none" }}, 0);')
     s20, s21 = c.get('scale2', (1.05, 1.0))
     js.append(f'tl.fromTo("#c-ui", {{ scale: {s20} }}, {{ scale: {s21}, duration: {round(DUR - SWAP, 3)}, ease: "none" }}, {SWAP});')
@@ -106,7 +123,7 @@ def project(name, c, feed):
     js.append(f'tl.fromTo("#c-sun", {{ attr: {{ cx: 560, cy: 300 }} }}, {{ attr: {{ cx: 228, cy: 246 }}, duration: 0.42, ease: "expo.out" }}, {TAG});')
     body.append(f'  <p id="c-url" class="url clip" data-start="{TAG + 0.15}" data-duration="{round(DUR - TAG - 0.15, 3)}" data-track-index="15" style="top:{my + 320}px"><span class="w">urbaneclipse.oratio.co</span></p>')
     js.append(f'tl.fromTo("#c-url .w", {{ opacity: 0, filter: "blur(8px)" }}, {{ opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out" }}, {TAG + 0.15});')
-    if feed:
+    if feed and not native:
         body.append('  <div id="c-fade" class="fade-bottom" data-layout-ignore></div>')
     scene = (
         '<template>\n  <style>' + CSS.replace('-OFFpx', f'{-OFF}px') + '  </style>\n'

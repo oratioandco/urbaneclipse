@@ -10,6 +10,8 @@ from pathlib import Path
 
 import sys
 FEED = 'feed' in sys.argv[1:]
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from feedframe import feed_src as _feed_src, native_lift, native_origin, native_scale  # noqa: E402
 # The story is 1080×1920; the feed post is 1080×1350, the same footage cropped around its middle.
 W, H = (1080, 1350) if FEED else (1080, 1920)
 OFF = 285 if FEED else 0      # how far the 1920-high footage sits above the frame
@@ -20,6 +22,7 @@ DURATION = 28.0
 
 # Beat times measured on the track (first 0.315 s, period 0.4195 s); scene seams sit on these.
 B = {5: 2.395, 8: 3.645, 17: 7.395, 33: 14.065, 42: 17.815, 48: 20.305, 54: 22.815, 59: 24.895}
+
 
 
 def words(text, accents=None):
@@ -89,6 +92,7 @@ CSS = """
     #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
     .wrap { position: absolute; inset: 0; }
     .wrap video { position: absolute; left: 0; top: -OFFpx; width: 1080px; height: 1920px; object-fit: cover; }
+    .wrap .native { top: 0; height: 1350px; }
     .title { position: absolute; left: 84px; right: 84px; margin: 0; color: #fff; font: 800 92px/1.04 Inter, sans-serif; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
     .sub { position: absolute; left: 86px; right: 84px; margin: 0; color: rgba(255,255,255,.88); font: 600 38px/1.2 Inter, sans-serif; text-shadow: 0 1px 12px rgba(0,0,0,.55); }
     .w { display: inline-block; }
@@ -102,17 +106,24 @@ CSS = """
 def scene(shot):
     sid = shot['id']
     dur = round(shot['end'] - shot['start'], 3)
-    body, js = [], []
+    body, js, natives = [], [], []
     for i, v in enumerate(shot['videos']):
         vid = f'{sid}-v{i}'
         ox, oy = v['origin']
+        src, native, take = _feed_src(v['src'], FEED)
+        natives.append(native)
+        s0, s1 = v['scale']
+        lift = 0
+        if native:
+            ox, oy = native_origin(take, (ox, oy))
+            s0, s1 = native_scale(take, v['origin'], v['scale'])
+            lift = native_lift(take, v['origin'], (s0, s1))
         rate = f' data-playback-rate="{v["rate"]}"' if v.get('rate') else ''
         body.append(
-            f'  <div id="{vid}-wrap" class="wrap" style="transform-origin:{ox}px {oy - OFF}px">\n'
-            f'    <video id="{vid}" class="clip" src="assets/{v["src"]}" data-start="{v["start"]}" data-duration="{round(v["end"] - v["start"], 3)}" data-media-start="{v["media"]}"{rate} data-track-index="{i}" muted playsinline></video>\n'
+            f'  <div id="{vid}-wrap" class="wrap" style="transform-origin:{ox}px {oy if native else oy - OFF}px{f';top:{lift}px' if lift else ''}">\n'
+            f'    <video id="{vid}" class="clip{" native" if native else ""}" src="assets/{src}" data-start="{v["start"]}" data-duration="{round(v["end"] - v["start"], 3)}" data-media-start="{v["media"]}"{rate} data-track-index="{i}" muted playsinline></video>\n'
             f'  </div>'
         )
-        s0, s1 = v['scale']
         js.append(f'tl.fromTo("#{vid}-wrap", {{ scale: {s0} }}, {{ scale: {s1}, duration: {round(v["end"] - v["start"], 3)}, ease: "none" }}, {v["start"]});')
         if v.get('swap'):
             # Blur swap on one stage: the photo blurs out, the planner sharpens in.
@@ -149,7 +160,7 @@ def scene(shot):
         # Three frames darker before the hard cut into the night, so the cut reads as meant.
         body.append(f'  <div id="{sid}-dip" class="dip clip" data-start="{round(dur - 0.1, 3)}" data-duration="0.1" data-track-index="{z}"></div>')
         js.append(f'tl.fromTo("#{sid}-dip", {{ opacity: 0 }}, {{ opacity: 0.45, duration: 0.1, ease: "none" }}, {round(dur - 0.1, 3)});')
-    if FEED:
+    if FEED and not any(natives):
         # The feed crops the planner's panel mid-card; a fade makes the edge read as meant.
         body.append(f'  <div id="{sid}-fade" class="fade-bottom" data-layout-ignore></div>')
     return (

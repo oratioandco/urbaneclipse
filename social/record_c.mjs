@@ -22,6 +22,9 @@ const { chromium } = require('playwright');
 const BASE = process.argv[2];
 const OUT = new URL('./assets/footage/', import.meta.url).pathname;
 const FPS = 30;
+// FEED=1: the same journey in a 540×675 layout, as journey-ui-feed.mp4 and journey-clean-feed.mp4.
+const FEED = process.env.FEED === '1';
+const VARIANTS = ['ui', 'clean'];
 // Treptow, across the Spree: the moon behind the antenna on 18 February 2027, and a ring of sun on 10 June.
 const MOON = '/plan/?nointro&date=2027-02-18&time=341.4&at=52.492250,13.471850&look=307,2.7&lens=600&cam=ff';
 const SUN = { url: '/plan/?nointro&date=2027-06-10&time=1264&at=52.492250,13.471850&look=307,2.2&lens=600&cam=ff' };
@@ -31,7 +34,7 @@ const ease = (k) => (k < 0.5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2);
 const lerp = (a, b, k) => a + (b - a) * k;
 
 const browser = await chromium.launch({ headless: false, args: ['--use-angle=metal'] });
-const ctx = await browser.newContext({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const ctx = await browser.newContext({ viewport: { width: 540, height: FEED ? 675 : 960 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await ctx.addInitScript(() => {
   const realNow = performance.now.bind(performance);
   const realRaf = window.requestAnimationFrame.bind(window);
@@ -67,7 +70,7 @@ const slider = await page.evaluate(() => {
 console.log('lens slider', slider, 'sun spot', SUN);
 await page.evaluate(() => window.__clock.start());
 
-const dirs = { ui: fs.mkdtempSync(path.join(os.tmpdir(), 'journey-ui-')), clean: fs.mkdtempSync(path.join(os.tmpdir(), 'journey-clean-')) };
+const dirs = Object.fromEntries(VARIANTS.map((v) => [v, fs.mkdtempSync(path.join(os.tmpdir(), `journey-${v}-`))]));
 let n = 0;
 const setTime = (m) => page.evaluate((m) => {
   const time = document.getElementById('time');
@@ -79,7 +82,7 @@ const setTime = (m) => page.evaluate((m) => {
 async function shoot(extraFrames = 0) {
   await page.evaluate(() => window.__clock.step(1000 / 30));
   for (let i = 0; i < 2 + extraFrames; i++) await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r())));
-  for (const v of ['ui', 'clean']) {
+  for (const v of VARIANTS) {
     await page.evaluate((v) => document.body.classList.toggle('clean', v === 'clean'), v);
     await page.screenshot({ path: path.join(dirs[v], `${String(n).padStart(4, '0')}.jpg`), type: 'jpeg', quality: 94 });
   }
@@ -115,6 +118,10 @@ for (let i = 0; i < 120; i++) {
   await setTime(lerp(343, 343.5, i / 119));
   await shoot();
 }
+// The moon's street beams read as pale streaks over the night map, so the streets layer rests
+// until June, where the sun's beams are warm and belong to the shot.
+const streets = (on) => page.$eval('#layers-menu input[data-layer="streets"]', (el, on) => { if (el.checked !== on) { el.checked = on; el.dispatchEvent(new Event('change')); } }, on);
+await streets(false);
 // A4: back to the map, the planner's own 1.4 s transition, then keep pulling back. 1.6 s + 2 s.
 await page.evaluate(() => window.__mini.exitEye());
 for (let i = 0; i < 48; i++) await shoot();
@@ -129,6 +136,7 @@ for (let i = 0; i < 90; i++) {
 }
 // Into June: the same hour on 3 June, while the light is high and the change is quiet.
 await page.evaluate(() => { const d = document.getElementById('date'); d.value = '2027-06-10'; d.dispatchEvent(new Event('input')); });
+await streets(true);
 // B2: 13:00 → 20:58, drifting back over the spot and coming down. 3 s.
 const startTarget = await page.evaluate(() => [window.__mini.controls.target.x, window.__mini.controls.target.z]);
 for (let i = 0; i < 90; i++) {
@@ -144,8 +152,8 @@ for (let i = 0; i < 54; i++) { await setTime(lerp(1258, 1260.5, i / 53)); await 
 await page.evaluate(() => { const f = document.getElementById('fine'); if (f && f.getAttribute('aria-pressed') !== 'true') f.click(); });
 for (let i = 0; i < 120; i++) { await setTime(lerp(1260.6, 1265.5, i / 119)); await shoot(); }
 
-for (const v of ['ui', 'clean']) {
-  const file = path.join(OUT, `journey-${v}.mp4`);
+for (const v of VARIANTS) {
+  const file = path.join(OUT, FEED ? `journey-${v}-feed.mp4` : `journey-${v}.mp4`);
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(dirs[v], '%04d.jpg'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-an', file]);
   fs.rmSync(dirs[v], { recursive: true, force: true });
   console.log(`${path.basename(file)}: ${n} frames`);

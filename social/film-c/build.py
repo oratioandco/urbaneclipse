@@ -19,6 +19,9 @@ HERE = Path(__file__).parent
 ROOT = HERE.parent / 'film-c-feed' if FEED else HERE
 SUN = '#f26a12'
 JOURNEY = 25.9
+# The feed uses the journey recorded at 4:5 (record_c.mjs FEED=1), which fills the frame.
+FEEDTAG = '-feed' if FEED else ''
+NATIVE = ' native' if FEED else ''
 DURATION = 28.55
 
 
@@ -44,6 +47,7 @@ CSS = """
     #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
     .wrap { position: absolute; inset: 0; }
     .wrap video { position: absolute; left: 0; top: -OFFpx; width: 1080px; height: 1920px; object-fit: cover; }
+    .wrap .native { top: 0; height: 1350px; }
     .scrim { position: absolute; left: 0; right: 0; top: 0; height: 760px; background: linear-gradient(rgba(6,10,20,.72), rgba(6,10,20,.42) 55%, rgba(6,10,20,0)); }
     .title { position: absolute; left: 84px; right: 84px; margin: 0; color: #fff; font: 800 92px/1.04 Inter, sans-serif; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
     .sub { position: absolute; left: 86px; right: 84px; margin: 0; color: rgba(255,255,255,.88); font: 600 38px/1.2 Inter, sans-serif; text-shadow: 0 1px 12px rgba(0,0,0,.55); }
@@ -54,9 +58,9 @@ CSS = """
 
 def journey():
     body, js = [], []
-    body.append(f'  <div id="j-clean-wrap" class="wrap"><video id="j-clean" class="clip" src="assets/journey-clean.mp4" data-start="0" data-duration="{JOURNEY}" data-track-index="0" muted playsinline></video></div>')
+    body.append(f'  <div id="j-clean-wrap" class="wrap"><video id="j-clean" class="clip{NATIVE}" src="assets/journey-clean{FEEDTAG}.mp4" data-start="0" data-duration="{JOURNEY}" data-track-index="0" muted playsinline></video></div>')
     # The planner's own UI comes in as the lens pulls back, and leaves when the camera does.
-    body.append(f'  <div id="j-ui-wrap" class="wrap" style="opacity:0"><video id="j-ui" class="clip" src="assets/journey-ui.mp4" data-start="0" data-duration="{JOURNEY}" data-track-index="1" muted playsinline></video></div>')
+    body.append(f'  <div id="j-ui-wrap" class="wrap" style="opacity:0"><video id="j-ui" class="clip{NATIVE}" src="assets/journey-ui{FEEDTAG}.mp4" data-start="0" data-duration="{JOURNEY}" data-track-index="1" muted playsinline></video></div>')
     js.append('tl.fromTo("#j-ui-wrap", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 2.6);')
     js.append('tl.to("#j-ui-wrap", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 10.3);')
     body.append('  <div id="j-scrim" class="scrim" data-layout-ignore></div>')
@@ -69,8 +73,6 @@ def journey():
         js.append(f'tl.to("#j-t{i} .w", {{ opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in", stagger: 0.03 }}, {round(e - 0.26, 3)});')
         js.append(f'tl.fromTo("#j-s{i} .w", {{ opacity: 0, filter: "blur(8px)" }}, {{ opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power3.out" }}, {round(s + 0.3, 3)});')
         js.append(f'tl.to("#j-s{i} .w", {{ opacity: 0, filter: "blur(6px)", duration: 0.18, ease: "power2.in" }}, {round(e - 0.22, 3)});')
-    if FEED:
-        body.append('  <div id="j-fade" class="fade-bottom" data-layout-ignore></div>')
     return (
         '<template>\n  <style>' + CSS + '  </style>\n'
         f'<div id="root" data-composition-id="journey" data-width="{W}" data-height="{H}" data-duration="{JOURNEY}">\n'

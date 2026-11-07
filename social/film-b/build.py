@@ -8,6 +8,8 @@ from pathlib import Path
 
 import sys
 FEED = 'feed' in sys.argv[1:]
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from feedframe import feed_src as _feed_src, native_lift, native_origin, native_scale  # noqa: E402
 # The story is 1080×1920; the feed post is 1080×1350, the same footage cropped around its middle.
 W, H = (1080, 1350) if FEED else (1080, 1920)
 OFF = 285 if FEED else 0      # how far the 1920-high footage sits above the frame
@@ -36,6 +38,7 @@ def words(text, accents=None):
 # Each scene: (id, start, end, elements). Element times are local to the scene.
 def field(c, s, e):
     return dict(kind='field', colour=c, start=s, end=e)
+
 
 
 def big(text, s, e, ink='#fff', accents=None, size=172, y=520):
@@ -103,6 +106,7 @@ CSS = """
     .field { position: absolute; inset: 0; }
     .wrap { position: absolute; inset: 0; }
     .wrap video, .wrap img { position: absolute; left: 0; top: -OFFpx; width: 1080px; height: 1920px; object-fit: cover; }
+    .wrap .native { top: 0; height: 1350px; }
     .type { position: absolute; left: 72px; right: 60px; margin: 0; font-weight: 800; line-height: 0.94; letter-spacing: -0.04em; }
     .type.shadow { line-height: 1.04; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
     .w { display: inline-block; }
@@ -114,6 +118,7 @@ CSS = """
 def scene(sid, start, end, els):
     dur = round(end - start, 3)
     body, js = [], []
+    cropped = False
     for i, e in enumerate(els):
         eid = f'{sid}-{i}'
         d = round(e['end'] - e['start'], 3)
@@ -121,13 +126,20 @@ def scene(sid, start, end, els):
             body.append(f'  <div id="{eid}" class="field clip" data-start="{e["start"]}" data-duration="{d}" data-track-index="{i}" style="background:{e["colour"]}"></div>')
         elif e['kind'] in ('video', 'img'):
             ox, oy = e['origin']
+            src, native, take = _feed_src(e['src'], FEED)
+            s0, s1 = e['scale']
+            lift = 0
+            if native:
+                ox, oy = native_origin(take, (ox, oy))
+                s0, s1 = native_scale(take, e['origin'], e['scale'])
+                lift = native_lift(take, e['origin'], (s0, s1))
+            cropped = cropped or not native
             if e['kind'] == 'video':
                 rate = f' data-playback-rate="{e["rate"]}"' if e.get('rate') else ''
-                media = f'<video id="{eid}" class="clip" src="assets/{e["src"]}" data-start="{e["start"]}" data-duration="{d}" data-media-start="{e["media"]}"{rate} data-track-index="{i}" muted playsinline></video>'
+                media = f'<video id="{eid}" class="clip{" native" if native else ""}" src="assets/{src}" data-start="{e["start"]}" data-duration="{d}" data-media-start="{e["media"]}"{rate} data-track-index="{i}" muted playsinline></video>'
             else:
                 media = f'<img id="{eid}" class="clip" src="assets/{e["src"]}" data-start="{e["start"]}" data-duration="{d}" data-track-index="{i}" alt="">'
-            body.append(f'  <div id="{eid}-wrap" class="wrap" style="transform-origin:{ox}px {oy - OFF}px">{media}</div>')
-            s0, s1 = e['scale']
+            body.append(f'  <div id="{eid}-wrap" class="wrap" style="transform-origin:{ox}px {oy if native else oy - OFF}px{f';top:{lift}px' if lift else ''}">{media}</div>')
             js.append(f'tl.fromTo("#{eid}-wrap", {{ scale: {s0} }}, {{ scale: {s1}, duration: {d}, ease: "none" }}, {e["start"]});')
             # Footage carries white type at the top: a scrim keeps it readable, only while the shot shows.
             body.append(f'  <div id="{eid}-scrim" class="scrim clip" data-start="{e["start"]}" data-duration="{d}" data-track-index="{i}" data-layout-ignore></div>')
@@ -136,7 +148,7 @@ def scene(sid, start, end, els):
             body.append(f'  <h1 id="{eid}" class="{cls}" data-start="{e["start"]}" data-duration="{d}" data-track-index="{20 + i}" style="top:{e["y"] - DY}px;font-size:{e["size"]}px;color:{e["ink"]}">{words(e["text"], e.get("accents"))}</h1>')
             if not e['hit']:
                 js.append(f'tl.fromTo("#{eid} .w", {{ opacity: 0, filter: "blur(8px)" }}, {{ opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.067 }}, {e["start"]});')
-    if FEED:
+    if FEED and cropped:
         # The feed crops the planner's panel mid-card; a fade makes the edge read as meant.
         body.append(f'  <div id="{sid}-fade" class="fade-bottom" data-layout-ignore></div>')
     return (

@@ -7,6 +7,9 @@
  *
  *   node social/record.mjs https://urbaneclipse.oratio.co [shot ...]
  * Output: social/assets/footage/<shot>.mp4 (CRF 16, for editing)
+ * FEED=1 records the eye-level takes again in a 540×675 layout (1080×1350) as <shot>-ui-feed.mp4 and
+ * <shot>-clean-feed.mp4, so the 4:5 posts show the planner as it lays itself out at that size
+ * instead of a cropped phone.
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -21,6 +24,7 @@ const ONLY = process.argv.slice(3);
 const OUT = new URL('./assets/footage/', import.meta.url).pathname;
 const STILLS = new URL('./assets/stills/', import.meta.url).pathname;
 const FPS = 30;
+const FEED = process.env.FEED === '1';
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(STILLS, { recursive: true });
 
@@ -34,7 +38,7 @@ const SHOTS = {
   // Noon, the same turn, for the "planned to the second" beat.
   'city-noon': { url: '/plan/?nointro&date=2027-06-03&time=740&height=1900&tilt=58', from: 740, to: 760, seconds: 8, orbit: 35, clean: 'only' },
   // Golden hour, low and close, long shadows across Mitte.
-  'city-golden': { url: '/plan/?nointro&date=2027-06-03&time=1215&height=1300&tilt=66', from: 1215, to: 1232, seconds: 9, orbit: 40, clean: 'only' },
+  'city-golden': { url: '/plan/?nointro&date=2027-03-22&time=1060&height=1300&tilt=66&heading=200', from: 1060, to: 1080, seconds: 9, orbit: 40, clean: 'only' },
   // Treptow, across the Spree: a ring of sun round the sphere, 10 June 2027 at 21:04.
   eclipse: { url: '/plan/?nointro&date=2027-06-10&time=1264&at=52.492250,13.471850&look=307,2.2&lens=600&cam=ff', from: 1261.5, to: 1266.5, seconds: 10 },
   // Treptow at night: the moon behind the antenna, 18 February 2027 at 05:42.
@@ -52,7 +56,7 @@ const SHOTS = {
 };
 
 const browser = await chromium.launch({ headless: false, args: ['--use-angle=metal'] });
-const ctx = await browser.newContext({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const ctx = await browser.newContext({ viewport: { width: 540, height: FEED ? 675 : 960 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
 async function setTime(page, m) {
   await page.evaluate((m) => {
@@ -66,6 +70,7 @@ const frames2 = (page) => page.evaluate(() => new Promise((r) => requestAnimatio
 
 for (const [name, shot] of Object.entries(SHOTS)) {
   if (ONLY.length && !ONLY.includes(name)) continue;
+  if (FEED && shot.clean === 'only') continue;
   const page = await ctx.newPage();
   await page.goto(BASE + shot.url);
   await page.waitForFunction(() => window.__ready, null, { timeout: 120000 });
@@ -109,7 +114,7 @@ for (const [name, shot] of Object.entries(SHOTS)) {
     }
   }
   for (const v of variants) {
-    const file = path.join(OUT, variants.length > 1 ? `${name}-${v}.mp4` : `${name}.mp4`);
+    const file = path.join(OUT, FEED ? `${name}-${v}-feed.mp4` : shot.clean === 'only' ? `${name}.mp4` : `${name}-${v}.mp4`);
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(dirs[v], '%04d.jpg'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-an', file]);
     fs.rmSync(dirs[v], { recursive: true, force: true });
     console.log(`${path.basename(file)}: ${n} frames, ${(fs.statSync(file).size / 1e6).toFixed(1)} MB`);
@@ -118,7 +123,7 @@ for (const [name, shot] of Object.entries(SHOTS)) {
 }
 
 // Stills of the planner's own panels: the dates list and the share menu, at the eclipse spot.
-if (!ONLY.length || ONLY.includes('panels')) {
+if (!FEED && (!ONLY.length || ONLY.includes('panels'))) {
   const page = await ctx.newPage();
   await page.goto(BASE + SHOTS.henge.url);
   await page.waitForFunction(() => window.__mini?.look?.active, null, { timeout: 120000 });
