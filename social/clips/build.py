@@ -54,7 +54,8 @@ CSS = """
     .title { position: absolute; left: 84px; right: 84px; margin: 0; color: #fff; font: 800 100px/1.02 Inter, sans-serif; letter-spacing: -0.025em; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
     .sub { position: absolute; left: 86px; right: 84px; margin: 0; color: rgba(255,255,255,.9); font: 600 40px/1.2 Inter, sans-serif; text-shadow: 0 1px 12px rgba(0,0,0,.55); }
     .w { display: inline-block; }
-    .mark { position: absolute; left: 440px; width: 200px; height: 280px; }
+    .mark { position: absolute; left: 390px; width: 300px; height: 300px; }
+    .mark img { display: block; width: 100%; height: 100%; }
     .url { position: absolute; left: 0; right: 0; margin: 0; text-align: center; color: #fff; font: 800 64px/1 Inter, sans-serif; letter-spacing: -0.02em; }
     .fade-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; background: linear-gradient(rgba(13,20,36,0), rgba(13,20,36,.92)); }
 """
@@ -116,11 +117,10 @@ def project(name, c, feed):
     js.append(f'tl.fromTo("#c-shade", {{ opacity: 0 }}, {{ opacity: 1, duration: 0.25, ease: "power2.out" }}, {TAG - 0.05});')
     my = (H - 280 - 64 - 60) // 2
     body.append(
-        f'  <svg id="c-mark" class="mark clip" data-start="{TAG}" data-duration="{round(DUR - TAG, 3)}" data-track-index="14" style="top:{my}px" viewBox="0 0 400 560">'
-        f'<circle id="c-sun" cx="230" cy="250" r="118" fill="{SUN}"/><rect x="196" y="40" width="8" height="120" rx="3" fill="#2a3550"/>'
-        f'<circle cx="200" cy="250" r="96" fill="#2a3550"/><path d="M182 340 h36 l14 220 h-64 z" fill="#2a3550"/></svg>'
+        f'  <div id="c-mark" class="mark clip" data-start="{TAG}" data-duration="{round(DUR - TAG, 3)}" data-track-index="14" style="top:{my - 20}px">'
+        f'<img id="c-logo" src="assets/logo-night.png" alt="Urban Eclipse: the TV tower as a clay miniature, the sun ringed round its sphere"></div>'
     )
-    js.append(f'tl.fromTo("#c-sun", {{ attr: {{ cx: 560, cy: 300 }} }}, {{ attr: {{ cx: 228, cy: 246 }}, duration: 0.42, ease: "expo.out" }}, {TAG});')
+    js.append(f'tl.fromTo("#c-logo", {{ opacity: 0, scale: 0.92, y: 16 }}, {{ opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power3.out" }}, {TAG});')
     body.append(f'  <p id="c-url" class="url clip" data-start="{TAG + 0.15}" data-duration="{round(DUR - TAG - 0.15, 3)}" data-track-index="15" style="top:{my + 320}px"><span class="w">urbaneclipse.oratio.co</span></p>')
     js.append(f'tl.fromTo("#c-url .w", {{ opacity: 0, filter: "blur(8px)" }}, {{ opacity: 1, filter: "blur(0px)", duration: 0.16, ease: "power4.out" }}, {TAG + 0.15});')
     if feed and not native:

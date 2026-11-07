@@ -3,7 +3,8 @@
     #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
     #end-bg { position: absolute; left: 0; top: 0px; width: 1080px; height: 1920px; object-fit: cover; }
     #end-shade { position: absolute; inset: 0; background: rgba(9,14,26,.8); }
-    #end-mark { position: absolute; left: 340px; top: 420px; width: 400px; height: 560px; }
+    #end-mark { position: absolute; left: 250px; top: 440px; width: 580px; height: 580px; }
+    #end-logo { display: block; width: 100%; height: 100%; }
     #end-line { position: absolute; left: 0; right: 0; top: 1060px; margin: 0; text-align: center; color: #fff; font: 800 112px/1 Inter, sans-serif; letter-spacing: -0.03em; }
     #end-url { position: absolute; left: 0; right: 0; top: 1210px; margin: 0; text-align: center; color: rgba(255,255,255,.82); font: 600 46px/1 Inter, sans-serif; }
     .w { display: inline-block; }
@@ -11,18 +12,13 @@
 <div id="root" data-composition-id="end" data-width="1080" data-height="1920" data-duration="3.215">
   <video id="end-bg" class="clip" src="assets/city-night.mp4" data-start="0" data-duration="3.215" data-media-start="4.5" data-track-index="5" muted playsinline></video>
   <div id="end-shade"></div>
-  <svg id="end-mark" class="clip" data-start="0" data-duration="3.215" data-track-index="0" viewBox="0 0 400 560">
-    <circle id="end-sun" cx="230" cy="250" r="118" fill="#f26a12"/>
-    <rect x="196" y="40" width="8" height="120" rx="3" fill="#2a3550"/>
-    <circle cx="200" cy="250" r="96" fill="#2a3550"/>
-    <path d="M182 340 h36 l14 220 h-64 z" fill="#2a3550"/>
-  </svg>
+  <div id="end-mark" class="clip" data-start="0" data-duration="3.215" data-track-index="0"><img id="end-logo" src="assets/logo-night.png" alt="Urban Eclipse: the TV tower as a clay miniature, the sun ringed round its sphere"></div>
   <h1 id="end-line" class="clip" data-start="0.5" data-duration="2.715" data-track-index="1"><span class="w">Find</span> <span class="w">your</span> <span class="w">shot.</span></h1>
   <p id="end-url" class="clip" data-start="1.0" data-duration="2.215" data-track-index="2"><span class="w">urbaneclipse.oratio.co</span></p>
 </div>
 <script>
 const tl = gsap.timeline({ paused: true });
-tl.fromTo("#end-sun", { attr: { cx: 560, cy: 300 } }, { attr: { cx: 228, cy: 246 }, duration: 0.45, ease: "expo.out" }, 0);
+tl.fromTo("#end-logo", { opacity: 0, scale: 0.94, y: 24 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0);
 tl.fromTo("#end-line .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.09 }, 0.5);
 tl.fromTo("#end-url .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 1.0);
 window.__timelines["end"] = tl;

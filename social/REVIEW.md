@@ -44,4 +44,4 @@ Scouted with `scout.mjs` through the planner's own "Dates" list. Each is real an
 
 ## Still open
 
-- The end cards use the old stubby tower mark. They get the new logo once it is chosen.
+- None. The end cards carry the clay logo (`assets/stills/logo-night.png`, rendered by `brand/logo_scene.py`).
