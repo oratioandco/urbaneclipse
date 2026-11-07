@@ -110,8 +110,13 @@ export function bodyAgainstTower(eye, base, body) {
   return { radiusDeg, sepDeg, state, signedOff, rise, flat, touching };
 }
 
-/** What is worth a photograph, per body: never the moon hidden behind the sphere or the shaft. */
-const WANTED = { sun: ['hidden', 'ring', 'edge', 'antenna'], moon: ['ring', 'edge', 'antenna'] };
+/**
+ * What is worth a photograph, per body: never the moon hidden behind the sphere or the shaft, and
+ * never the sun behind the antenna. Its disc is about ten times the mast's width, so that is a thin
+ * line across a glare that needs a solar filter; the sphere is the shot. The moon on the antenna
+ * is a classic.
+ */
+const WANTED = { sun: ['hidden', 'ring', 'edge'], moon: ['ring', 'edge', 'antenna'] };
 /** Which minute of a pass to show: fullest cover first. */
 const RANK = { hidden: 4, ring: 4, edge: 3, antenna: 2 };
 const MINUTE = 60_000;
@@ -119,8 +124,8 @@ const COARSE = 10 * MINUTE;
 
 /**
  * Every pass of the sun and moon behind the tower from one spot over a stretch of time, soonest
- * first, by the same rules as the eye-level line: the sun behind or round the sphere, at its
- * edge or behind the antenna; the moon at the sphere's edge, behind the antenna, or round the
+ * first, by the same rules as the eye-level line: the sun behind or round the sphere, or at its
+ * edge; the moon at the sphere's edge, behind the antenna, or round the
  * sphere only from far enough out for a big moon. Scans every 10 minutes and looks closer,
  * minute by minute, only when the body is near the tower.
  *

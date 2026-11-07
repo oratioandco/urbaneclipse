@@ -93,6 +93,11 @@ export function showEclipseStatus(now) {
       antenna: `${name} behind the antenna now`,
       shaft: `${name} behind the tower\u2019s shaft now`,
     }[covering.state];
+    // The sun on the mast is a thin line across the glare, not the shot: say so without the alarm.
+    if (body === 'sun' && covering.state === 'antenna') {
+      state = 'soon';
+      text = 'Sun behind the antenna, not the sphere';
+    }
     if (body === 'moon' && covering.state === 'hidden') {
       state = 'warn';
       // Stepping sideways moves the sphere across the moon; this far puts the moon on its edge.
