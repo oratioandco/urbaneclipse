@@ -2,7 +2,9 @@
 import { formatDay, formatMinutes, parseTime, uses12h } from './time.js';
 import { params } from './config.js';
 import { updateSun } from './lighting.js';
-import { updateDay } from './plan.js';
+import { PHASE_COLOURS, updateDay } from './plan.js';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { lightBands, lightGradientStops } from '../lib/lightPhases.ts';
 import { invalidate } from './state.js';
 
 export const dateInput = document.getElementById('date');
@@ -14,14 +16,16 @@ clock.addEventListener('focus', () => clock.select());
 clock.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') clock.blur();
   if (event.key === 'Escape') {
-    clock.value = formatMinutes(Number(timeInput.value));
+    clock.value = formatMinutes(Number(timeInput.value), fine.on);
     clock.blur();
   }
 });
 clock.addEventListener('change', () => {
   const minutes = parseTime(clock.value);
-  if (minutes !== null) timeInput.value = String(minutes);
-  clock.value = formatMinutes(Number(timeInput.value));
+  // In fine timing the window moves to the typed time first, or the slider would clamp it.
+  if (minutes !== null && fine.on) setFine(true, minutes);
+  else if (minutes !== null) timeInput.value = String(minutes);
+  clock.value = formatMinutes(Number(timeInput.value), fine.on);
   updateSun();
   invalidate();
 });
@@ -53,9 +57,47 @@ export function dayStart() {
   return guess.getTime() - berlinOffsetMinutes(guess) * 60_000;
 }
 
+/** Set the time to an instant on the chosen day, to 5 seconds. */
 export function setMinute(t) {
-  timeInput.value = String(Math.round((t - dayStart()) / 60_000));
+  const minutes = Math.round((t - dayStart()) / 5000) / 12;
+  if (fine.on) setFine(true, minutes);
+  else timeInput.value = String(minutes);
   updateSun();
+}
+
+/**
+ * Fine timing: the slider covers half an hour either side of the moment, in 5-second steps,
+ * and the clock shows seconds. The sun takes a minute or two to cross the sphere.
+ */
+export const fine = { on: false };
+const FINE_MINUTES = 30;
+const fineButton = document.getElementById('fine');
+export function setFine(on, value = Number(timeInput.value)) {
+  fine.on = on;
+  fineButton.setAttribute('aria-pressed', String(on));
+  document.body.dataset.fine = String(on);
+  const middle = Math.min(1439 - FINE_MINUTES, Math.max(FINE_MINUTES, value));
+  timeInput.min = String(on ? middle - FINE_MINUTES : 0);
+  timeInput.max = String(on ? middle + FINE_MINUTES : 1439);
+  timeInput.value = String(value);
+  showPhases();
+  if (document.activeElement !== clock) clock.value = formatMinutes(value, on);
+}
+fineButton.addEventListener('click', () => {
+  setFine(!fine.on);
+  invalidate();
+});
+// Back on the map the slider is the whole day again.
+new MutationObserver(() => {
+  if (document.body.dataset.eye !== 'true' && fine.on) setFine(false);
+}).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });
+
+/** The slider's colours: the light through the stretch of time it covers. */
+export function showPhases() {
+  const from = dayStart() + Number(timeInput.min) * 60_000;
+  const to = dayStart() + Number(timeInput.max) * 60_000;
+  const stops = lightGradientStops(lightBands(from, to, FERNSEHTURM.lat, FERNSEHTURM.lon, fine.on ? 30_000 : 300_000), from, to);
+  timeInput.style.setProperty('--phases', stops.map((s) => `${PHASE_COLOURS[s.phase]} ${(s.at * 100).toFixed(1)}%`).join(','));
 }
 
 const startAt = params.get('date') ?? new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });

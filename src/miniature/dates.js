@@ -12,7 +12,7 @@ import { EYE_HEIGHT, latLonFromScene } from './eye.js';
 import { formatClock, formatDay } from './time.js';
 import { discOverSphere } from './towerShots.js';
 import { cloudsAt, cloudsFor, forecastReach } from './weather.js';
-import { setDay, setMinute } from './clock.js';
+import { setDay, setFine, setMinute } from './clock.js';
 import { bodyIcon } from './daylist.js';
 import { look, turnTo } from './eyeLevel.js';
 import { clearView, fineAlong } from './sightlines.js';
@@ -175,6 +175,7 @@ async function refresh() {
               go: () => {
                 setDay(dayOf(p.peak));
                 setMinute(p.peak);
+                setFine(true);
                 turnTo(street.bearingDeg, THREE.MathUtils.clamp(p.bodyAlt * 0.9, 0, 12));
               },
             }),
@@ -207,6 +208,7 @@ async function refresh() {
             go: () => {
               setDay(dayOf(s.peak));
               setMinute(s.peak);
+              setFine(true);
               turnTo(s.az, Math.max(0, s.alt));
             },
           }),

@@ -8,10 +8,9 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { drawPhotographer } from './overlay.js';
 import { formatClock } from './time.js';
 import { towerItems } from './chrome.js';
-import { dayStart, instant, setMinute, timeInput } from './clock.js';
+import { instant, setFine, setMinute } from './clock.js';
 import { BODY_NAME, face } from './eclipse.js';
 import { enterEye, fullFrame, look } from './eyeLevel.js';
-import { updateSun } from './lighting.js';
 import { controls, eyeCamera, overview, renderer } from './render.js';
 import { confirmedSpotAlong, groundUnder, standable } from './sightlines.js';
 import { app, invalidate, toDirection } from './state.js';
@@ -167,6 +166,7 @@ export async function goViewHere(target) {
     if (!spot) return noClearView(target);
     // Face the body: on a tower line it is behind some part of the tower, not always the sphere.
     enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
+    setFine(true);
   } else if (target.kind === 'street') {
     const m = target.moment;
     const dx = m.view.b[0] - m.view.a[0];
@@ -175,6 +175,7 @@ export async function goViewHere(target) {
     const spot = await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, () => ({ direction: towards, distance: 600 }));
     if (!spot) return noClearView(target);
     enterEye(spot.x, spot.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
+    setFine(true);
   }
 }
 
@@ -208,8 +209,7 @@ renderer.domElement.addEventListener('pointerup', (event) => {
     goViewHere({ kind: 'tower', body: spot.body, t: spot.t, x: spot.x, z: spot.z });
   }
   if (hit?.kind === 'path') {
-    timeInput.value = String(Math.round((hit.t - dayStart()) / 60_000));
-    updateSun();
+    setMinute(hit.t);
     invalidate();
   }
   if (hit?.kind === 'pill') face(hit.body);

@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { cityUniforms } from './shading.js';
 import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromLatLon } from './eye.js';
-import { dateInput, timeInput } from './clock.js';
+import { dateInput, setFine, timeInput } from './clock.js';
 import { params } from './config.js';
 import { enterEye, look } from './eyeLevel.js';
 import { eyeCamera } from './render.js';
@@ -18,7 +18,7 @@ let lastLinkCheck = 0;
 function linkQuery() {
   const q = new URLSearchParams();
   q.set('date', dateInput.value);
-  q.set('time', timeInput.value);
+  q.set('time', String(Math.round(Number(timeInput.value) * 12) / 12).replace(/(\.\d{3})\d+$/, '$1'));
   if (app.camera === eyeCamera && look.active) {
     const [lat, lon] = latLonFromScene(look.x, look.z, FERNSEHTURM.lat, FERNSEHTURM.lon);
     q.set('at', `${lat.toFixed(6)},${lon.toFixed(6)}`);
@@ -51,4 +51,6 @@ export function openLinkedView() {
   const [lensMin, lensMax] = lensRange();
   const lens = THREE.MathUtils.clamp(Number(params.get('lens')) || 50, lensMin, lensMax);
   enterEye(x, z, { heading: Number.isFinite(heading) ? heading : 0, pitch: Number.isFinite(pitch) ? pitch : 0, lens });
+  // A time to the second came from fine timing; open it that way.
+  if (!Number.isInteger(Number(params.get('time')))) setFine(true);
 }

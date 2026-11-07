@@ -10,9 +10,8 @@ import { formatClock } from './time.js';
 import { compassName, EYE_HEIGHT } from './eye.js';
 import { bodyAgainstTower, DISC_RADIUS_DEG, SPHERE_RADIUS_M } from './towerShots.js';
 import { orbitTo } from './camera.js';
-import { dayStart, instant, timeInput } from './clock.js';
+import { instant, setFine, setMinute } from './clock.js';
 import { look, turnTo } from './eyeLevel.js';
-import { updateSun } from './lighting.js';
 import { goViewHere } from './pointer.js';
 import { eyeCamera } from './render.js';
 import { app, invalidate, toDirection } from './state.js';
@@ -116,8 +115,8 @@ export function showEclipseStatus(now) {
       const minutes = Math.round((next.t - t) / 60_000);
       text = minutes > 0 ? `${BODY_NAME[body]} behind the sphere in ${minutes} min (${clockOf(next.t)})` : `${BODY_NAME[body]} was behind the sphere ${-minutes} min ago`;
       eclipseAction = () => {
-        timeInput.value = String(Math.round((next.t - dayStart()) / 60_000));
-        updateSun();
+        setMinute(next.t);
+        setFine(true);
       };
     } else if (spot) {
       body = spot.body;

@@ -17,7 +17,7 @@ import { lookDirection } from './eye.js';
 import { skyPalette } from '../lib/skyPalette.ts';
 import { worldHeightNow } from './camera.js';
 import { layers } from './chrome.js';
-import { clock, instant, timeInput } from './clock.js';
+import { clock, fine, instant, timeInput } from './clock.js';
 import { LIGHT_DISTANCE, MIRROR_SCALE, REFLECTION_REACH_M, SHADOW_SIZE, VIEW_RADIUS, params } from './config.js';
 import { look } from './eyeLevel.js';
 import { updateHighlights, updateSpots } from './plan.js';
@@ -113,7 +113,7 @@ export function updateSun() {
   document.getElementById('face-sun').hidden = !app.bodies.some((b) => !b.moon);
   document.getElementById('face-moon').hidden = !app.bodies.some((b) => b.moon);
 
-  if (document.activeElement !== clock) clock.value = formatMinutes(Number(timeInput.value));
+  if (document.activeElement !== clock) clock.value = formatMinutes(Number(timeInput.value), fine.on);
   const phase = LIGHT_PHASE_NAMES[lightPhaseAt(sunAt.alt)];
   sunLabel.textContent = `${phase} \u00b7 ${sunAt.alt > -0.5 ? `sun ${sunAt.alt.toFixed(0)}\u00b0` : moonAt.alt > 0 ? `moon ${Math.round(illumination.fraction * 100)}% lit` : 'moon down'}`;
   updateHighlights(when.getTime());

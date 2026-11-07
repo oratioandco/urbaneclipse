@@ -131,7 +131,7 @@ import '../miniature/miniature.css';
         </div>
         <div id="weather" class="weather-line" aria-live="polite"></div>
         <div id="tracks" aria-hidden="true"></div>
-        <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="1" aria-label="Time of day" /></div>
+        <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="any" aria-label="Time of day" /><button id="fine" type="button" aria-pressed="false" title="Fine timing: half an hour either side, to 5 seconds">&plusmn;30 min</button></div>
         <div id="moments" aria-label="Streets lined up today"></div>
         <div id="dayfilter" role="group" aria-label="Show">
           <button type="button" data-layer="sun"><i style="background: var(--sun)"></i>Sun</button>

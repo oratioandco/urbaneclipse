@@ -21,9 +21,11 @@ describe('parseTime', () => {
     expect(parseTime('12 am')).toBe(0);
     expect(parseTime('12pm')).toBe(12 * 60);
     expect(parseTime(' 9 ')).toBe(9 * 60);
+    expect(parseTime('17:50:30')).toBe(17 * 60 + 50.5);
+    expect(parseTime('5:50:15 pm')).toBe(17 * 60 + 50.25);
   });
   it('refuses what is not a time', () => {
-    for (const text of ['', 'noon', '24:00', '13pm', '7:60', '0 am']) expect(parseTime(text)).toBeNull();
+    for (const text of ['', 'noon', '24:00', '13pm', '7:60', '0 am', '17:50:61']) expect(parseTime(text)).toBeNull();
   });
 });
 

@@ -5,7 +5,6 @@
 import * as THREE from 'three';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
-import { lightBands, lightGradientStops } from '../lib/lightPhases.ts';
 import { streetMoments } from '../lib/streets.ts';
 import { alignmentLine, applyView, computeDayPath, MIN_MOON_ILLUMINATION, pointAtTime } from '../lib/dailyPaths.ts';
 import { loadViewshed, sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
@@ -14,7 +13,7 @@ import { sceneFromLatLon } from './eye.js';
 import { antennaRange, visibleMoon } from './towerShots.js';
 import { flyTo } from './camera.js';
 import { layers, shownBody } from './chrome.js';
-import { dayStart, instant, timeInput } from './clock.js';
+import { dayStart, instant, showPhases, timeInput } from './clock.js';
 import { renderDayList } from './daylist.js';
 import { enterEye, fullFrame } from './eyeLevel.js';
 import { loadWeather } from './forecast.js';
@@ -47,8 +46,7 @@ export function updateHighlights(t) {
 export function updateDay() {
   const from = dayStart();
   const to = from + 86_400_000;
-  const stops = lightGradientStops(lightBands(from, to, FERNSEHTURM.lat, FERNSEHTURM.lon, 300_000), from, to);
-  timeInput.style.setProperty('--phases', stops.map((s) => `${PHASE_COLOURS[s.phase]} ${(s.at * 100).toFixed(1)}%`).join(','));
+  showPhases();
   app.moments = [
     ...streetMoments(app.views, 'sun', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
     ...streetMoments(app.views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
@@ -215,7 +213,7 @@ function cloudTrack() {
   return canvas;
 }
 
-const PHASE_COLOURS = { night: '#1b2140', twilight: '#2f3a6e', blue: '#3f62b5', golden: '#f0a03c', day: '#f3e6c4' };
+export const PHASE_COLOURS = { night: '#1b2140', twilight: '#2f3a6e', blue: '#3f62b5', golden: '#f0a03c', day: '#f3e6c4' };
 
 // Safari drops a request now and then while the first load is busy; try again a few times.
 function loadVisibility(attempt = 0) {
