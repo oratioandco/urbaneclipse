@@ -637,6 +637,8 @@ function drawViewfinder(frame, thirds, caption) {
 /** At eye level the real discs are in the sky; a pill only points to one that is out of frame. */
 function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
   const area = safeArea(bottomInset);
+  // Above the line of shot data in the viewfinder's lower edge.
+  area.bottom -= 30;
   const fov = camera.fov;
   const aspect = innerWidth / innerHeight;
   for (const body of bodies) {
