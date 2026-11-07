@@ -96,8 +96,9 @@ export function makeSky() {
             vec3 north = cross(uMoonDir, east);
             vec2 face = vec2(dot(across, east), dot(across, north)) * 0.5 + 0.5;
             float albedo = 0.35 + 0.75 * texture2D(uMoonMap, vec2(1.0 - face.x, face.y)).r;
-            // Earthshine leaves the dark part faintly there.
-            colour = mix(colour, vec3(0.95, 0.96, 1.0) * uMoonLight * (lit * albedo + 0.03), edge);
+            // The sky's light lies between us and the moon, so moonlight adds to it: by day the
+            // dark part is just sky, at night earthshine leaves it faintly there.
+            colour += edge * vec3(0.95, 0.96, 1.0) * uMoonLight * (lit * albedo + 0.03);
           }
           // Forecast clouds, high to low. Toward a low sun their undersides catch its colour.
           float toSun = max(dot(d, uSunDir), 0.0);
