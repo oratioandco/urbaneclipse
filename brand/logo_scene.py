@@ -17,8 +17,9 @@ scene.cycles.samples = SAMPLES
 scene.cycles.use_denoising = True
 scene.render.resolution_x = scene.render.resolution_y = 1024
 scene.render.film_transparent = True
-scene.view_settings.view_transform = 'AgX'
-scene.view_settings.look = 'AgX - Medium High Contrast'
+# Standard keeps the sun's orange true to the brand (#f26a12); AgX washes it towards salmon.
+scene.view_settings.view_transform = 'Standard'
+scene.view_settings.look = 'None'
 
 
 def mat(name, rgb, rough=0.85, emit=None, strength=0):
@@ -44,7 +45,7 @@ PARK = mat('park', srgb('#7fa45a'))
 WATER = mat('water', srgb('#5a8cba'), rough=0.25)
 TOWER = mat('tower', srgb('#f4efe7'), rough=0.7)
 WINDOW = mat('window', srgb('#5d6270'), rough=0.3)
-SUN = mat('sun', (0, 0, 0), emit=srgb('#ff6c0a'), strength=1.9)
+SUN = mat('sun', (0, 0, 0), emit=srgb('#f26a12'), strength=1.0)
 
 
 def add(obj, m):
@@ -189,8 +190,8 @@ out = nt.nodes.new('ShaderNodeOutputMaterial')
 mix = nt.nodes.new('ShaderNodeMixShader')
 tr = nt.nodes.new('ShaderNodeBsdfTransparent')
 em = nt.nodes.new('ShaderNodeEmission')
-em.inputs['Color'].default_value = (*srgb('#ff9a40'), 1)
-em.inputs['Strength'].default_value = 3
+em.inputs['Color'].default_value = (*srgb('#f47a2a'), 1)
+em.inputs['Strength'].default_value = 1.1
 tc = nt.nodes.new('ShaderNodeTexCoord')
 grad = nt.nodes.new('ShaderNodeTexGradient')
 grad.gradient_type = 'SPHERICAL'
@@ -219,9 +220,9 @@ halo.visible_shadow = False
 
 # Light: warm low sun from behind and to the side (rim), soft sky fill.
 sun_data = bpy.data.lights.new('sunlight', 'SUN')
-sun_data.energy = 5.5
+sun_data.energy = 3.4
 sun_data.angle = math.radians(4)
-sun_data.color = srgb('#ffcf9a')
+sun_data.color = srgb('#ffe4c8')
 sun = bpy.data.objects.new('sunlight', sun_data)
 scene.collection.objects.link(sun)
 sun.rotation_euler = (math.radians(66), 0, math.radians(-25))
@@ -239,7 +240,7 @@ if VARIANT == 'night':
     WINDOW.node_tree.nodes['Principled BSDF'].inputs['Emission Strength'].default_value = 3
 else:
     bg.inputs['Color'].default_value = (*srgb('#f6ebdd'), 1)
-    bg.inputs['Strength'].default_value = 0.55
+    bg.inputs['Strength'].default_value = 0.45
 
 # Glow round the sun in the compositor (Blender 5: a compositing node group).
 try:
@@ -252,7 +253,7 @@ try:
     for k, v in (('Type', 'Fog Glow'), ('Quality', 'High')):
         if k in glare.inputs:
             glare.inputs[k].default_value = v
-    for k, v in (('Size', 0.75), ('Strength', 1.2), ('Threshold', 1.0)):
+    for k, v in (('Size', 0.75), ('Strength', 0.5), ('Threshold', 1.0)):
         if k in glare.inputs:
             glare.inputs[k].default_value = v
     tree.links.new(rl.outputs['Image'], glare.inputs['Image'])
