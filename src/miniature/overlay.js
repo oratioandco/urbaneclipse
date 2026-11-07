@@ -157,7 +157,7 @@ function pillAt(text, ux, uy, area) {
  * @param scene.drop { x, y, z } where a dragged photographer would land, or null
  * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null, names: showNames = true, frame = null, thirds = false }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null, names: showNames = true, frame = null, thirds = false, caption = '' }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -197,7 +197,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
 
   if (eye) {
     if (eclipse) drawEclipse(eclipse, camera, project);
-    if (frame) drawViewfinder(frame, thirds);
+    if (frame) drawViewfinder(frame, thirds, caption);
     return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
   }
 
@@ -584,7 +584,7 @@ function drawEclipse({ centre, radiusDeg, items }, camera, project) {
  * The viewfinder: what lies outside the photo is dimmed, the frame has a fine line and corner
  * marks, and on request lines at thirds.
  */
-function drawViewfinder(frame, thirds) {
+function drawViewfinder(frame, thirds, caption) {
   const { x, y, w, h } = frame;
   ctx.fillStyle = 'rgba(8, 9, 14, 0.42)';
   ctx.beginPath();
@@ -604,6 +604,22 @@ function drawViewfinder(frame, thirds) {
     ctx.lineTo(cx + sx * 1, cy + sy * c);
   }
   ctx.stroke();
+  if (caption) {
+    // Like the data line in a camera's viewfinder, inside the frame's lower left corner.
+    ctx.font = '600 11.5px ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    // Narrow frames drop the words first, then the last figures.
+    let text = caption;
+    if (ctx.measureText(text).width > w - 24) text = text.replace(' height in frame:', '');
+    while (text.length > 12 && ctx.measureText(text).width > w - 24) text = text.slice(0, text.lastIndexOf(',') > 0 ? text.lastIndexOf(',') : -2);
+    ctx.fillText(text, x + 12, y + h - 10);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+  }
   if (thirds) {
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
     ctx.lineWidth = 1;

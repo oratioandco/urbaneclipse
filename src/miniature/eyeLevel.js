@@ -1,12 +1,13 @@
 /** Standing in the street: arriving, which way to face, the lens and camera controls. */
 import * as THREE from 'three';
-import { attachLook, camera as cameraFormat, compassName, EYE_HEIGHT, FIXED_FORMATS, FORMATS, fovForLens, lensRange, lookDirection, SENSOR_FORMATS, setFormat, setLens } from './eye.js';
+import { attachLook, camera as cameraFormat, compassName, EYE_HEIGHT, FIXED_FORMATS, FORMATS, fovForLens, frameSize, lensRange, lookDirection, SENSOR_FORMATS, setFormat, setLens } from './eye.js';
 import { instant } from './clock.js';
 import { showViewHere } from './pointer.js';
 import { FOV, controls, eyeCamera, overview, renderer } from './render.js';
 import { sightline } from './sightlines.js';
 import { app, invalidate, invalidateShadows, smooth } from './state.js';
 import { nudgeKeys, showFlight } from './walk.js';
+import { DISC_DEG, SPHERE_CENTRE_AGL, SPHERE_RADIUS_M } from './towerShots.js';
 
 /** A full-frame focal length on the current format, for the same framing. */
 export const fullFrame = (mm) => (mm * cameraFormat.format.width) / 36;
@@ -213,4 +214,24 @@ export function stepLook(now) {
   app.shadowsDirty = true;
   app.dirty = true;
   if (t >= 1) app.lookAnimation = null;
+}
+
+/**
+ * What a photographer plans the lens by, for the viewfinder's corner: how far the tower is, and
+ * how tall the sphere and the sun or moon stand in the frame.
+ */
+export function shotCaption() {
+  const eye = { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z };
+  const toSphere = Math.hypot(eye.x, app.groundAt(0, 0) + SPHERE_CENTRE_AGL - eye.y, eye.z);
+  const { long, short } = frameSize();
+  const frameDeg = (2 * Math.atan((innerHeight > innerWidth ? long : short) / (2 * look.lens)) * 180) / Math.PI;
+  const share = (deg) => {
+    const pct = (100 * deg) / frameDeg;
+    return pct >= 10 ? `${Math.round(pct)}%` : `${pct.toFixed(1)}%`;
+  };
+  const sphereDeg = (2 * Math.asin(Math.min(1, SPHERE_RADIUS_M / toSphere)) * 180) / Math.PI;
+  const flat = Math.hypot(eye.x, eye.z);
+  const heights = [`sphere ${share(sphereDeg)}`];
+  for (const body of app.bodies) if (body.alt > -0.5) heights.push(`${body.moon ? 'moon' : 'sun'} ${share(DISC_DEG)}`);
+  return `Tower ${flat < 1000 ? `${Math.round(flat / 10) * 10} m` : `${(flat / 1000).toFixed(1)} km`} \u00b7 height in frame: ${heights.join(', ')}`;
 }

@@ -26,7 +26,7 @@ import { orbitTo, stepFlight, stepOrbit } from './camera.js';
 import { layers, needle, tiltButton, towerItems } from './chrome.js';
 import { CITY, CITY_VERSION, REFLECTION_REACH_M, isPhone, params } from './config.js';
 import { face, showEclipseStatus, updateForecast } from './eclipse.js';
-import { enterEye, exitEye, look, placeEyeCamera, stepLook, stepTransition } from './eyeLevel.js';
+import { enterEye, exitEye, look, placeEyeCamera, shotCaption, stepLook, stepTransition } from './eyeLevel.js';
 import { fitShadow, renderMirror, updateHaze, updateSun } from './lighting.js';
 import { openLinkedView, syncLink } from './link.js';
 import './dates.js';
@@ -173,6 +173,7 @@ function frame(now) {
     bottomInset: panel.offsetHeight + 16,
     eye: street > 0.5 ? look : null,
     frame: street > 0.5 ? frameRect() : null,
+    caption: street > 0.5 ? shotCaption() : '',
     thirds,
     eclipse: street > 0.5 ? eclipseHere : null,
     photographer: street > 0 || app.drag?.moved ? null : app.photographer,
