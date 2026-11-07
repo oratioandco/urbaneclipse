@@ -1,0 +1,18 @@
+# Footage, music, renders and HyperFrames working files are large and rebuilt by the scripts here.
+assets/footage/
+assets/stills/
+assets/scout/
+renders/
+*/assets/
+*-feed/
+clips/*/
+!clips/build.py
+.hyperframes/
+*/.hyperframes/
+node_modules/
+.thumbnails/
+.waveform-cache/
+*/.thumbnails/
+*/.waveform-cache/
+*/AGENTS.md
+*/CLAUDE.md

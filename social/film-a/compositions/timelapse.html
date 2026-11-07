@@ -1,0 +1,35 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
+    .wrap { position: absolute; inset: 0; }
+    .wrap video { position: absolute; left: 0; top: 0px; width: 1080px; height: 1920px; object-fit: cover; }
+    .title { position: absolute; left: 84px; right: 84px; margin: 0; color: #fff; font: 800 92px/1.04 Inter, sans-serif; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
+    .sub { position: absolute; left: 86px; right: 84px; margin: 0; color: rgba(255,255,255,.88); font: 600 38px/1.2 Inter, sans-serif; text-shadow: 0 1px 12px rgba(0,0,0,.55); }
+    .w { display: inline-block; }
+    .fade-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; background: linear-gradient(rgba(13,20,36,0), rgba(13,20,36,.92)); }
+    .clock { position: absolute; left: 80px; margin: 0; color: #fff; font: 800 168px/1 Inter, sans-serif; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; text-shadow: 0 2px 22px rgba(0,0,0,.5); }
+    .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+    .scrim { position: absolute; left: 0; right: 0; top: 0; height: 760px; background: linear-gradient(rgba(6,10,20,.78), rgba(6,10,20,.5) 55%, rgba(6,10,20,0)); pointer-events: none; }
+  </style>
+<div id="root" data-composition-id="timelapse" data-width="1080" data-height="1920" data-duration="6.67">
+  <div id="timelapse-v0-wrap" class="wrap" style="transform-origin:540px 960px">
+    <video id="timelapse-v0" class="clip" src="assets/city-daynight.mp4" data-start="0" data-duration="6.67" data-media-start="0" data-playback-rate="2" data-track-index="0" muted playsinline></video>
+  </div>
+  <div id="timelapse-scrim" class="scrim" data-layout-ignore></div>
+  <p id="timelapse-sub0" class="sub clip" data-start="0.3" data-duration="6.27" data-track-index="10" style="top:420px"><span class="w">22 March 2027 · afternoon into night</span></p>
+  <p id="timelapse-clock" class="clock clip" data-start="0" data-duration="6.67" data-track-index="11" style="top:236px"><span class="w" id="timelapse-clock-t">15:00</span></p>
+  <div id="timelapse-dip" class="dip clip" data-start="6.57" data-duration="0.1" data-track-index="12"></div>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#timelapse-v0-wrap", { scale: 1.0 }, { scale: 1.05, duration: 6.67, ease: "none" }, 0);
+tl.fromTo("#timelapse-sub0 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0.3);
+tl.to("#timelapse-sub0 .w", { opacity: 0, filter: "blur(6px)", duration: 0.12, ease: "power3.in" }, 6.43);
+const timelapseClock = { m: 900 };
+tl.fromTo(timelapseClock, { m: 900 }, { m: 1346.05625, duration: 6.67, ease: "none",
+  onUpdate: () => { const m = Math.floor(timelapseClock.m); document.getElementById("timelapse-clock-t").textContent = String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); } }, 0);
+tl.fromTo("#timelapse-clock .w", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" }, 0.05);
+tl.fromTo("#timelapse-dip", { opacity: 0 }, { opacity: 0.45, duration: 0.1, ease: "none" }, 6.57);
+window.__timelines["timelapse"] = tl;
+</script>
+</template>

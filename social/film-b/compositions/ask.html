@@ -1,0 +1,26 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
+    .field { position: absolute; inset: 0; }
+    .wrap { position: absolute; inset: 0; }
+    .wrap video, .wrap img { position: absolute; left: 0; top: 0px; width: 1080px; height: 1920px; object-fit: cover; }
+    .type { position: absolute; left: 72px; right: 60px; margin: 0; font-weight: 800; line-height: 0.94; letter-spacing: -0.04em; }
+    .type.shadow { line-height: 1.04; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
+    .w { display: inline-block; }
+    .fade-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; background: linear-gradient(rgba(13,20,36,0), rgba(13,20,36,.92)); }
+    .scrim { position: absolute; left: 0; right: 0; top: 0; height: 700px; background: linear-gradient(rgba(6,10,20,.6), rgba(6,10,20,.3) 55%, rgba(6,10,20,0)); }
+  </style>
+<div id="root" data-composition-id="ask" data-width="1080" data-height="1920" data-duration="3.0">
+  <div id="ask-0" class="field clip" data-start="0" data-duration="1.0" data-track-index="0" style="background:#0d1424"></div>
+  <h1 id="ask-1" class="type clip" data-start="0" data-duration="1.0" data-track-index="21" style="top:520px;font-size:172px;color:#fff"><span class="w">When?</span></h1>
+  <div id="ask-2" class="field clip" data-start="1.0" data-duration="1.0" data-track-index="2" style="background:#f26a12"></div>
+  <h1 id="ask-3" class="type clip" data-start="1.0" data-duration="1.0" data-track-index="23" style="top:520px;font-size:172px;color:#0d1424"><span class="w">Where?</span></h1>
+  <div id="ask-4" class="field clip" data-start="2.0" data-duration="1.0" data-track-index="4" style="background:#f4f1ea"></div>
+  <h1 id="ask-5" class="type clip" data-start="2.0" data-duration="1.0" data-track-index="25" style="top:520px;font-size:172px;color:#0d1424"><span class="w">Which</span><br><span class="w">lens?</span></h1>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+
+window.__timelines["ask"] = tl;
+</script>
+</template>

@@ -1,0 +1,39 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
+    .wrap { position: absolute; inset: 0; }
+    .wrap video { position: absolute; left: 0; top: 0px; width: 1080px; height: 1920px; object-fit: cover; }
+    .title { position: absolute; left: 84px; right: 84px; margin: 0; color: #fff; font: 800 92px/1.04 Inter, sans-serif; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
+    .sub { position: absolute; left: 86px; right: 84px; margin: 0; color: rgba(255,255,255,.88); font: 600 38px/1.2 Inter, sans-serif; text-shadow: 0 1px 12px rgba(0,0,0,.55); }
+    .w { display: inline-block; }
+    .fade-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; background: linear-gradient(rgba(13,20,36,0), rgba(13,20,36,.92)); }
+    .clock { position: absolute; left: 80px; margin: 0; color: #fff; font: 800 168px/1 Inter, sans-serif; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; text-shadow: 0 2px 22px rgba(0,0,0,.5); }
+    .dip { position: absolute; inset: 0; background: #000; opacity: 0; }
+    .scrim { position: absolute; left: 0; right: 0; top: 0; height: 760px; background: linear-gradient(rgba(6,10,20,.78), rgba(6,10,20,.5) 55%, rgba(6,10,20,0)); pointer-events: none; }
+  </style>
+<div id="root" data-composition-id="eclipse" data-width="1080" data-height="1920" data-duration="3.645">
+  <div id="eclipse-v0-wrap" class="wrap" style="transform-origin:465px 720px">
+    <video id="eclipse-v0" class="clip" src="assets/eclipse-clean.mp4" data-start="0" data-duration="2.395" data-media-start="5.2" data-track-index="0" muted playsinline></video>
+  </div>
+  <div id="eclipse-v1-wrap" class="wrap" style="transform-origin:540px 960px">
+    <video id="eclipse-v1" class="clip" src="assets/eclipse-ui.mp4" data-start="2.395" data-duration="1.25" data-media-start="7.595000000000001" data-track-index="1" muted playsinline></video>
+  </div>
+  <div id="eclipse-scrim" class="scrim" data-layout-ignore></div>
+  <h1 id="eclipse-title" class="title clip" data-start="0" data-duration="3.595" data-track-index="10" style="top:236px"><span class="w">The</span> <span class="w" style="color:#f26a12">sun</span> <span class="w">behind</span> <span class="w">the</span> <span class="w">TV</span> <span class="w">tower</span></h1>
+  <p id="eclipse-sub0" class="sub clip" data-start="0.35" data-duration="2.025" data-track-index="11" style="top:470px"><span class="w">Treptow · 10 June 2027 · 21:04</span></p>
+  <p id="eclipse-sub1" class="sub clip" data-start="2.415" data-duration="1.18" data-track-index="12" style="top:470px"><span class="w">Planned in urbaneclipse</span></p>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#eclipse-v0-wrap", { scale: 1.32 }, { scale: 1.22, duration: 2.395, ease: "none" }, 0);
+tl.fromTo("#eclipse-v1-wrap", { scale: 1.06 }, { scale: 1.0, duration: 1.25, ease: "none" }, 2.395);
+tl.fromTo("#eclipse-v0-wrap", { filter: "blur(0px)" }, { filter: "blur(10px)", duration: 0.14, ease: "power3.in" }, 2.255);
+tl.fromTo("#eclipse-v1-wrap", { filter: "blur(10px)" }, { filter: "blur(0px)", duration: 0.16, ease: "power3.out" }, 2.395);
+tl.to("#eclipse-title .w", { opacity: 0, filter: "blur(8px)", duration: 0.12, ease: "power3.in", stagger: 0.02 }, 3.435);
+tl.fromTo("#eclipse-sub0 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0.35);
+tl.to("#eclipse-sub0 .w", { opacity: 0, filter: "blur(6px)", duration: 0.12, ease: "power3.in" }, 2.235);
+tl.fromTo("#eclipse-sub1 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 2.415);
+tl.to("#eclipse-sub1 .w", { opacity: 0, filter: "blur(6px)", duration: 0.12, ease: "power3.in" }, 3.455);
+window.__timelines["eclipse"] = tl;
+</script>
+</template>

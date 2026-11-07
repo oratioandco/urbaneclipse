@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0d1424; }
+      #root { position: relative; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="28.0" data-width="1080" data-height="1920">
+      <div id="eclipse" data-composition-id="eclipse" data-composition-src="compositions/eclipse.html" data-start="0" data-duration="3.645" data-track-index="0" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="golden" data-composition-id="golden" data-composition-src="compositions/golden.html" data-start="3.645" data-duration="3.75" data-track-index="1" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="timelapse" data-composition-id="timelapse" data-composition-src="compositions/timelapse.html" data-start="7.395" data-duration="6.67" data-track-index="2" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="henge" data-composition-id="henge" data-composition-src="compositions/henge.html" data-start="14.065" data-duration="3.75" data-track-index="3" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="night" data-composition-id="night" data-composition-src="compositions/night.html" data-start="17.815" data-duration="2.49" data-track-index="4" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="moon" data-composition-id="moon" data-composition-src="compositions/moon.html" data-start="20.305" data-duration="2.51" data-track-index="5" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="drone" data-composition-id="drone" data-composition-src="compositions/drone.html" data-start="22.815" data-duration="2.08" data-track-index="6" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <div id="end" data-composition-id="end" data-composition-src="compositions/end.html" data-start="24.895" data-duration="3.105" data-track-index="7" data-track-kind="graphics" data-width="1080" data-height="1920"></div>
+      <audio id="music" class="clip" src="assets/urbaneclipse-A.mp3" data-start="0" data-duration="28.0" data-track-index="20" data-volume="1" data-fade-out="1.2"></audio>
+    </div>
+    <script>
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

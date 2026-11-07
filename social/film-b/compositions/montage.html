@@ -1,0 +1,46 @@
+<template>
+  <style>
+    #root { position: absolute; inset: 0; overflow: hidden; background: #0d1424; font-family: Inter, sans-serif; }
+    .field { position: absolute; inset: 0; }
+    .wrap { position: absolute; inset: 0; }
+    .wrap video, .wrap img { position: absolute; left: 0; top: 0px; width: 1080px; height: 1920px; object-fit: cover; }
+    .type { position: absolute; left: 72px; right: 60px; margin: 0; font-weight: 800; line-height: 0.94; letter-spacing: -0.04em; }
+    .type.shadow { line-height: 1.04; letter-spacing: -0.02em; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
+    .w { display: inline-block; }
+    .fade-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; background: linear-gradient(rgba(13,20,36,0), rgba(13,20,36,.92)); }
+    .scrim { position: absolute; left: 0; right: 0; top: 0; height: 700px; background: linear-gradient(rgba(6,10,20,.6), rgba(6,10,20,.3) 55%, rgba(6,10,20,0)); }
+  </style>
+<div id="root" data-composition-id="montage" data-width="1080" data-height="1920" data-duration="4.0">
+  <div id="montage-0" class="field clip" data-start="0" data-duration="1.5" data-track-index="0" style="background:#f26a12"></div>
+  <h1 id="montage-1" class="type clip" data-start="0" data-duration="1.5" data-track-index="21" style="top:520px;font-size:140px;color:#0d1424"><span class="w">Every</span> <span class="w">day</span><br><span class="w">of</span> <span class="w">the</span> <span class="w">year.</span></h1>
+  <div id="montage-2-wrap" class="wrap" style="transform-origin:540px 1300px"><img id="montage-2" class="clip" src="assets/dates.png" data-start="1.5" data-duration="0.5" data-track-index="2" alt=""></div>
+  <div id="montage-2-scrim" class="scrim clip" data-start="1.5" data-duration="0.5" data-track-index="2" data-layout-ignore></div>
+  <h1 id="montage-3" class="type clip shadow" data-start="1.5" data-duration="0.5" data-track-index="23" style="top:236px;font-size:96px;color:#fff"><span class="w">Next</span> <span class="w">dates</span></h1>
+  <div id="montage-4-wrap" class="wrap" style="transform-origin:30px 300px"><img id="montage-4" class="clip" src="assets/share.png" data-start="2.0" data-duration="0.5" data-track-index="4" alt=""></div>
+  <div id="montage-4-scrim" class="scrim clip" data-start="2.0" data-duration="0.5" data-track-index="4" data-layout-ignore></div>
+  <h1 id="montage-5" class="type clip shadow" data-start="2.0" data-duration="0.5" data-track-index="25" style="top:1180px;font-size:96px;color:#fff"><span class="w">Go</span> <span class="w">there</span></h1>
+  <div id="montage-6-wrap" class="wrap" style="transform-origin:540px 960px"><video id="montage-6" class="clip" src="assets/city-golden.mp4" data-start="2.5" data-duration="0.5" data-media-start="5.0" data-track-index="6" muted playsinline></video></div>
+  <div id="montage-6-scrim" class="scrim clip" data-start="2.5" data-duration="0.5" data-track-index="6" data-layout-ignore></div>
+  <h1 id="montage-7" class="type clip shadow" data-start="2.5" data-duration="0.5" data-track-index="27" style="top:236px;font-size:96px;color:#fff"><span class="w">Every</span> <span class="w">shadow</span></h1>
+  <div id="montage-8-wrap" class="wrap" style="transform-origin:540px 960px"><video id="montage-8" class="clip" src="assets/city-daynight.mp4" data-start="3.0" data-duration="0.5" data-media-start="7.0" data-playback-rate="4" data-track-index="8" muted playsinline></video></div>
+  <div id="montage-8-scrim" class="scrim clip" data-start="3.0" data-duration="0.5" data-track-index="8" data-layout-ignore></div>
+  <h1 id="montage-9" class="type clip shadow" data-start="3.0" data-duration="0.5" data-track-index="29" style="top:236px;font-size:96px;color:#fff"><span class="w">Every</span> <span class="w">hour</span></h1>
+  <div id="montage-10-wrap" class="wrap" style="transform-origin:520px 700px"><video id="montage-10" class="clip" src="assets/klamott-clean.mp4" data-start="3.5" data-duration="0.5" data-media-start="5.6" data-track-index="10" muted playsinline></video></div>
+  <div id="montage-10-scrim" class="scrim clip" data-start="3.5" data-duration="0.5" data-track-index="10" data-layout-ignore></div>
+  <h1 id="montage-11" class="type clip shadow" data-start="3.5" data-duration="0.5" data-track-index="31" style="top:236px;font-size:96px;color:#fff"><span class="w">Every</span> <span class="w">view</span></h1>
+</div>
+<script>
+const tl = gsap.timeline({ paused: true });
+tl.fromTo("#montage-2-wrap", { scale: 1.32 }, { scale: 1.4, duration: 0.5, ease: "none" }, 1.5);
+tl.fromTo("#montage-3 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.067 }, 1.5);
+tl.fromTo("#montage-4-wrap", { scale: 1.5 }, { scale: 1.6, duration: 0.5, ease: "none" }, 2.0);
+tl.fromTo("#montage-5 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.067 }, 2.0);
+tl.fromTo("#montage-6-wrap", { scale: 1.0 }, { scale: 1.05, duration: 0.5, ease: "none" }, 2.5);
+tl.fromTo("#montage-7 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.067 }, 2.5);
+tl.fromTo("#montage-8-wrap", { scale: 1.0 }, { scale: 1.05, duration: 0.5, ease: "none" }, 3.0);
+tl.fromTo("#montage-9 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.067 }, 3.0);
+tl.fromTo("#montage-10-wrap", { scale: 1.1 }, { scale: 1.16, duration: 0.5, ease: "none" }, 3.5);
+tl.fromTo("#montage-11 .w", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, ease: "power4.out", stagger: 0.067 }, 3.5);
+window.__timelines["montage"] = tl;
+</script>
+</template>
