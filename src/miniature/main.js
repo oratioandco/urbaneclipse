@@ -29,6 +29,7 @@ import { face, showEclipseStatus, updateForecast } from './eclipse.js';
 import { enterEye, exitEye, look, placeEyeCamera, stepLook, stepTransition } from './eyeLevel.js';
 import { fitShadow, renderMirror, updateHaze, updateSun } from './lighting.js';
 import { openLinkedView, syncLink } from './link.js';
+import './dates.js';
 import { updateDay } from './plan.js';
 import { TOWER_BOUND, beaconLit, beacons, bloom, composer, controls, eyeCamera, groundMaterial, overview, renderPass, renderer, scene, sizeBlur, sizeMirror, sky, skyDome, sun } from './render.js';
 import { clearView, roofAt } from './sightlines.js';
@@ -45,7 +46,8 @@ let mapSize = 0;
 new ResizeObserver(() => {
   requestAnimationFrame(() => {
     const height = document.querySelector('.panel').offsetHeight;
-    if (document.body.dataset.eye !== 'true' || height === mapSize) return;
+    // With the dates list open the card grows tall; the map keeps its size.
+    if (document.body.dataset.eye !== 'true' || document.body.dataset.dates === 'open' || height === mapSize) return;
     mapSize = height;
     document.body.style.setProperty('--map-size', `${height}px`);
   });

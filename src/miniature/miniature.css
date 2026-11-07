@@ -61,6 +61,8 @@
       .body-pill:has(input:not(:checked)) svg { opacity: 0.4; }
       .body-pill:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
       .legend { padding: 6px 8px 4px; margin-top: 4px; border-top: 1px solid var(--line); }
+      .flatmap { display: block; padding: 8px 8px 4px; border-top: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted); text-decoration: none; }
+      .flatmap:hover { color: var(--ink); }
       .legend summary { cursor: pointer; padding: 4px 0; font-size: 12px; font-weight: 600; color: var(--muted); list-style: none; }
       .legend summary::-webkit-details-marker { display: none; }
       .legend summary::after { content: '\203A'; display: inline-block; margin-left: 6px; transition: transform 0.15s; }
@@ -136,6 +138,18 @@
       body[data-eye='true'][data-drone='true'] .heightbar { display: flex; }
       #height { writing-mode: vertical-lr; direction: rtl; width: 28px; height: 160px; min-width: 0; min-height: 0; margin: 0; flex: none; accent-color: var(--accent); }
       .status-row { display: flex; flex-wrap: wrap; gap: 6px; }
+      #dates-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; min-height: 22px; padding: 0 9px; border: 0; border-radius: 11px; background: var(--field); color: var(--ink); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+      #dates-toggle svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+      #dates-toggle b { font-weight: 500; color: var(--muted); }
+      body[data-dates='open'] #dates-toggle { background: var(--ink); color: var(--field); }
+      body[data-dates='open'] #dates-toggle b { color: inherit; opacity: 0.75; }
+      #dates { display: none; max-height: 34vh; overflow-y: auto; margin: 2px -6px 4px; }
+      body[data-eye='true'][data-dates='open'] #dates { display: block; }
+      body[data-eye='true'][data-dates='open'] #minimap { align-self: flex-end; }
+      #dates h3 { margin: 8px 6px 2px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+      #dates p { margin: 4px 6px 8px; font-size: 12px; }
+      #dates .dayrow[aria-current='true'] { background: var(--field); }
+      .dates-again { display: block; margin: 6px 6px 2px; padding: 5px 10px; border: 0; border-radius: 11px; background: var(--accent); color: #fff; font: 600 11.5px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
       #airspace { display: inline-flex; align-items: center; min-height: 22px; padding: 0 9px; border-radius: 11px; background: var(--field); color: var(--muted); font: 600 11.5px ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
       #airspace[data-inside='true'] { background: #fde8e4; color: #b4321f; }
       body[data-night='true'] #airspace[data-inside='true'] { background: #4a2228; color: #ffb3a6; }

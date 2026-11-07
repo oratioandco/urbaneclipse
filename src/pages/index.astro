@@ -65,6 +65,7 @@ import '../miniature/miniature.css';
         <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" fill="none"/></svg><span>The day’s path of sphere spots; dashed where a building is in the way.</span></div>
         <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f2b33d" stroke-width="7" stroke-linecap="round" opacity="0.6" fill="none"/></svg><span>A street henge: sunlight or moonlight runs down the street now.</span></div>
       </details>
+      <a id="flatmap" class="flatmap" href="/map/">Flat map, the earlier version &rsaquo;</a>
     </div>
     <dialog id="intro" class="intro surface" aria-labelledby="intro-title">
       <h2 id="intro-title">Line up the sun and moon with Berlin</h2>
@@ -109,7 +110,9 @@ import '../miniature/miniature.css';
           <div class="status-row">
             <button id="eclipse" type="button" hidden></button>
             <a id="airspace" class="status-pill" href="https://maptool-dipul.dfs.de/" target="_blank" rel="noopener" hidden><span></span>&nbsp;&nearr;</a>
+            <button id="dates-toggle" type="button" aria-expanded="false" aria-controls="dates" title="More dates from where you stand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></svg><span id="dates-day"></span><b>&middot; Dates</b></button>
           </div>
+          <div id="dates" aria-label="More dates from where you stand"></div>
           <div class="lens"><select id="format" aria-label="Camera format"></select><input id="lens" type="range" min="0" max="1000" aria-label="Focal length" /><span id="lens-label"></span><div id="lens-chips" role="group" aria-label="Lens" hidden></div></div>
         </div>
         <div class="row" id="moment-row">

@@ -89,7 +89,7 @@ export function standable(point) {
 }
 
 /** Load full detail, for checks only, for the tiles along a sightline that do not have it on screen. */
-async function fineAlong(x, z, direction, distance) {
+export async function fineAlong(x, z, direction, distance) {
   const origin = new THREE.Vector3(x, app.groundAt(x, z) + EYE_HEIGHT, z);
   const end = origin.clone().addScaledVector(direction, Math.min(distance, 1500));
   const box = new THREE.Box3().setFromPoints([origin, end]).expandByScalar(60);
@@ -129,9 +129,10 @@ export async function confirmedSpotAlong(x, z, ux, uz, viewFrom, keep = () => tr
 /** For checking by hand: what the last sightline check ran into. */
 app.lastBlock = null;
 /** Whether nothing built stands between an eye at (x, z) and a point along a direction. */
-export function clearView(x, z, direction, distance) {
-  if (underRoof(x, z)) return false;
-  const origin = new THREE.Vector3(x, app.groundAt(x, z) + EYE_HEIGHT, z);
+export function clearView(x, z, direction, distance, lift = 0) {
+  // Up in the air, being over a roof is no obstacle.
+  if (lift < 1 && underRoof(x, z)) return false;
+  const origin = new THREE.Vector3(x, app.groundAt(x, z) + EYE_HEIGHT + lift, z);
   raycaster.set(origin, direction);
   raycaster.near = 2;
   raycaster.far = distance;

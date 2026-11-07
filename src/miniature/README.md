@@ -25,6 +25,9 @@ URL options: `date`, `time` (minutes after midnight), `at=lat,lon`, `look=headin
 shared), `nointro`, `mode` (top, iso, free), `height`, `shadow`, `budget`, `stats`.
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
+More dates from where you stand (the Dates button at eye level) search a year in
+`dates.worker.js`: a street's henges, and passes behind the tower by the `towerShots.js` rules.
+A browser walk-through of the main features: `node scripts/miniature/walkthrough.mjs <url> <shots dir>`.
 The rules for moon and sun shots with the tower are in `towerShots.js`, tested in
 `tests/unit/miniature.test.ts`.
 

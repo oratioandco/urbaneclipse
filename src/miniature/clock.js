@@ -1,5 +1,5 @@
 /** The moment: the day and time inputs, and turning them into instants in Berlin time. */
-import { formatMinutes, parseTime, uses12h } from './time.js';
+import { formatDay, formatMinutes, parseTime, uses12h } from './time.js';
 import { params } from './config.js';
 import { updateSun } from './lighting.js';
 import { updateDay } from './plan.js';
@@ -67,9 +67,11 @@ function showDay() {
   const isToday = dateInput.value === todayInBerlin();
   const label = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: y === new Date().getFullYear() ? undefined : 'numeric' });
   document.getElementById('day-label').textContent = isToday ? `Today, ${label}` : label;
+  // At eye level the date sits on the button for more dates.
+  document.getElementById('dates-day').textContent = isToday ? 'Today' : formatDay(dateInput.value);
   document.getElementById('today').hidden = isToday;
 }
-function setDay(value) {
+export function setDay(value) {
   if (!value) return;
   dateInput.value = value;
   showDay();

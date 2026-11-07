@@ -109,3 +109,72 @@ export function bodyAgainstTower(eye, base, body) {
   const rise = body.alt - angleTo(SPHERE_CENTRE_AGL);
   return { radiusDeg, sepDeg, state, signedOff, rise, flat, touching };
 }
+
+/** What is worth a photograph, per body: never the moon hidden behind the sphere or the shaft. */
+const WANTED = { sun: ['hidden', 'ring', 'edge', 'antenna'], moon: ['ring', 'edge', 'antenna'] };
+/** Which minute of a pass to show: fullest cover first. */
+const RANK = { hidden: 4, ring: 4, edge: 3, antenna: 2 };
+const MINUTE = 60_000;
+const COARSE = 10 * MINUTE;
+
+/**
+ * Every pass of the sun and moon behind the tower from one spot over a stretch of time, soonest
+ * first, by the same rules as the eye-level line: the sun behind or round the sphere, at its
+ * edge or behind the antenna; the moon at the sphere's edge, behind the antenna, or round the
+ * sphere only from far enough out for a big moon. Scans every 10 minutes and looks closer,
+ * minute by minute, only when the body is near the tower.
+ *
+ * @param bodyAt (body, t) => { az, alt } seen from the spot
+ * @param moonLit t => lit fraction; moon passes below `minMoonLit` are left out
+ * @returns [{ body, start, end, peak, state, az, alt }]
+ */
+export function findTowerShots({ eye, base, start, end, bodyAt, moonLit, minMoonLit = 0.25 }) {
+  const flat = Math.hypot(eye.x, eye.z);
+  const towerAz = (deg(Math.atan2(-eye.x, eye.z)) + 360) % 360;
+  const angleTo = (h) => deg(Math.atan2(base + h - eye.y, flat));
+  const low = Math.max(0, angleTo(0)) - 3;
+  const high = angleTo(TIP_AGL) + 3;
+  const shots = [];
+  for (const body of ['sun', 'moon']) {
+    const wanted = WANTED[body];
+    let current = null;
+    let refinedTo = -Infinity;
+    const close = () => {
+      if (current) shots.push(current);
+      current = null;
+    };
+    for (let t = start; t < end; t += COARSE) {
+      const p = bodyAt(body, t);
+      const off = Math.abs(((((p.az - towerAz) % 360) + 540) % 360) - 180) * Math.cos(rad(p.alt));
+      if (off > 4 || p.alt < low || p.alt > high) continue;
+      for (let u = Math.max(t - COARSE, refinedTo + MINUTE, start); u <= Math.min(t + COARSE, end); u += MINUTE) {
+        refinedTo = u;
+        const q = bodyAt(body, u);
+        if (q.alt <= 0 || (body === 'moon' && moonLit(u) < minMoonLit)) continue;
+        const r = bodyAgainstTower(eye, base, q);
+        // A ring of moon round the sphere only reads as a big moon from 4.4 km out.
+        if (!wanted.includes(r.state) || (body === 'moon' && r.state === 'ring' && flat < BIG_MOON_M)) continue;
+        const score = RANK[r.state] - (r.state === 'antenna' ? Math.abs(r.signedOff) : r.sepDeg) / 10;
+        if (current && u - current.end <= 2 * MINUTE) {
+          current.end = u;
+          if (score > current.score) Object.assign(current, { peak: u, state: r.state, az: q.az, alt: q.alt, score });
+        } else {
+          close();
+          current = { body, start: u, end: u, peak: u, state: r.state, az: q.az, alt: q.alt, score };
+        }
+      }
+      if (current && refinedTo - current.end > 2 * MINUTE) close();
+    }
+    close();
+  }
+  // The moon touches the sphere's edge going in and again coming out: one shot, not two.
+  const merged = [];
+  for (const shot of shots.sort((a, b) => a.start - b.start)) {
+    const last = merged.findLast((m) => m.body === shot.body);
+    if (last && shot.start - last.end <= 15 * MINUTE) {
+      last.end = shot.end;
+      if (shot.score > last.score) Object.assign(last, { peak: shot.peak, state: shot.state, az: shot.az, alt: shot.alt, score: shot.score });
+    } else merged.push(shot);
+  }
+  return merged.map(({ score, ...shot }) => shot).sort((a, b) => a.peak - b.peak);
+}

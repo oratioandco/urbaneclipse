@@ -4,7 +4,7 @@ import { parseTime } from '../../src/miniature/time.js';
 // @ts-expect-error plain JS module
 import { cloudDrift, cloudsAt, readSky } from '../../src/miniature/weather.js';
 // @ts-expect-error plain JS module
-import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, antennaRange, bodyAgainstTower, discOverSphere, visibleMoon } from '../../src/miniature/towerShots.js';
+import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, antennaRange, bodyAgainstTower, discOverSphere, findTowerShots, visibleMoon } from '../../src/miniature/towerShots.js';
 // @ts-expect-error plain JS module
 import { latLonFromScene, sceneFromLatLon } from '../../src/miniature/eye.js';
 
@@ -112,6 +112,51 @@ describe('the moon with the tower', () => {
     expect(right.state).toBe('near');
     expect(right.signedOff).toBeGreaterThan(0);
     expect(bodyAgainstTower(eye, base, { az: 358, alt: altOf(eye, SPHERE_CENTRE_AGL) }).signedOff).toBeLessThan(0);
+  });
+});
+
+describe('passes behind the tower from a spot', () => {
+  const base = 34;
+  const at = (distance: number) => ({ x: 0, y: base + 1.6, z: distance });
+  const altOf = (eye: { y: number; z: number }, height: number) => (Math.atan2(base + height - eye.y, eye.z) * 180) / Math.PI;
+  const t0 = Date.UTC(2027, 2, 22, 12);
+  // A body sweeping left to right behind the tower at a fixed height, a quarter degree a minute,
+  // due north at t0 + 40 min.
+  const sweep = (alt: number) => (_body: string, t: number) => ({ az: (((t - t0) / 60_000) * 0.25 - 10 + 360) % 360, alt });
+  const run = (eye: { x: number; y: number; z: number }, alt: number, lit = 1) =>
+    findTowerShots({ eye, base, start: t0, end: t0 + 90 * 60_000, bodyAt: sweep(alt), moonLit: () => lit });
+
+  it('finds the sun behind the sphere, at the right minute', () => {
+    const eye = at(1500);
+    const sun = run(eye, altOf(eye, SPHERE_CENTRE_AGL)).filter((s: { body: string }) => s.body === 'sun');
+    expect(sun).toHaveLength(1);
+    expect(sun[0].state).toBe('hidden');
+    expect(Math.abs(sun[0].peak - (t0 + 40 * 60_000))).toBeLessThanOrEqual(60_000);
+  });
+
+  it('never lists the moon hidden behind the sphere, only at its edge', () => {
+    const eye = at(1500);
+    const moon = run(eye, altOf(eye, SPHERE_CENTRE_AGL)).filter((s: { body: string }) => s.body === 'moon');
+    // In at one edge and out at the other: one shot.
+    expect(moon).toHaveLength(1);
+    expect(moon[0].state).toBe('edge');
+  });
+
+  it('lists a big moon round the sphere from far out', () => {
+    const eye = at(6000);
+    const moon = run(eye, altOf(eye, SPHERE_CENTRE_AGL)).filter((s: { body: string }) => s.body === 'moon');
+    expect(moon.map((m: { state: string }) => m.state)).toContain('ring');
+  });
+
+  it('finds the moon behind the antenna', () => {
+    const eye = at(1500);
+    const moon = run(eye, altOf(eye, 300)).filter((s: { body: string }) => s.body === 'moon');
+    expect(moon.map((m: { state: string }) => m.state)).toEqual(['antenna']);
+  });
+
+  it('leaves out a moon too thin to see', () => {
+    const eye = at(1500);
+    expect(run(eye, altOf(eye, SPHERE_CENTRE_AGL), 0.1).filter((s: { body: string }) => s.body === 'moon')).toEqual([]);
   });
 });
 

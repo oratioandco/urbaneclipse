@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { getMoonIllumination } from 'suncalc';
 import { litDiscPath } from '../lib/moonPhase.ts';
 import { orbitTo } from './camera.js';
-import { dayStart } from './clock.js';
+import { dateInput, dayStart } from './clock.js';
 import { params } from './config.js';
 import { exitEye, look, turnTo } from './eyeLevel.js';
 import { updateSun } from './lighting.js';
@@ -53,6 +53,9 @@ function showLayersMoon() {
   document.getElementById('layers-moon').innerHTML = `<circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/>`;
 }
 layersButton.addEventListener('click', showLayersMoon);
+// The earlier flat map, on the same day.
+const flatMap = document.getElementById('flatmap');
+layersButton.addEventListener('click', () => (flatMap.href = `/map/#/day=${dateInput.value}`));
 for (const input of layersMenu.querySelectorAll('input[data-layer]')) {
   input.checked = layers[input.dataset.layer];
   input.addEventListener('change', () => setLayer(input.dataset.layer, input.checked));

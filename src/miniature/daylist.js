@@ -141,7 +141,7 @@ export function renderDayList() {
 }
 
 /** A small sun, or the moon in its phase at that time, for the list. */
-function bodyIcon(body, t) {
+export function bodyIcon(body, t) {
   if (body === 'sun') return '<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#f8a03a"/><circle r="0.62" fill="#ffd27a"/></svg>';
   const moon = getMoonIllumination(new Date(t));
   return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/><circle r="0.92" fill="none" stroke="#5b82ff" stroke-width="0.12"/></svg>`;

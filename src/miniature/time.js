@@ -12,6 +12,13 @@ const hourOnly = new Intl.DateTimeFormat(undefined, { hour: uses12h ? 'numeric' 
 export const formatClock = (t) => clock.format(new Date(t));
 /** Minutes after local midnight. */
 export const formatMinutes = (minutes) => dayClock.format(new Date(Date.UTC(2000, 0, 1, 0, minutes)));
+/** A day, short: "Mon, 22 Mar", with the year when it is not this one. Takes an instant or 2027-03-22. */
+export function formatDay(day) {
+  const date = typeof day === 'string' ? new Date(`${day}T12:00:00Z`) : new Date(day);
+  const part = (options) => date.toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', ...options });
+  const year = part({ year: 'numeric' });
+  return `${part({ weekday: 'short' })}, ${part({ day: 'numeric' })} ${part({ month: 'short' })}${Number(year) === new Date().getFullYear() ? '' : ` ${year}`}`;
+}
 /** A whole hour, short: 07 or 7 AM. */
 export const formatHour = (hour) => hourOnly.format(new Date(Date.UTC(2000, 0, 1, hour))).replace(/\s?Uhr$/, '');
 
