@@ -16,9 +16,12 @@ import { makeSky } from './sky.js';
 import { fovForLens } from './eye.js';
 import { MIRROR_SCALE, SHADOW_SIZE, isPhone, params } from './config.js';
 import { app, invalidate } from './state.js';
+import { quality } from './quality.js';
 
-export const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// No multisampling on the canvas itself: every frame is drawn into the composer's target, which
+// multisamples where it helps, and the canvas only receives the finished picture.
+export const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(quality.ratio);
 renderer.setSize(innerWidth, innerHeight);
 // Neutral keeps a colour's hue as it nears white, so low sun on a pale wall reads gold, not white.
 renderer.toneMapping = THREE.NeutralToneMapping;
@@ -81,7 +84,7 @@ export const TOWER_BOUND = new THREE.Sphere(new THREE.Vector3(0, 190, 0), 190);
 
 // Rendered in linear light, so the city's lights can exceed white and bloom. Multisampling this
 // format cost about half the frame on a dense screen, whose pixels are small enough to go without.
-const composerTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Number(params.get('samples') ?? (renderer.getPixelRatio() >= 2 ? 0 : 4)) });
+const composerTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Number(params.get('samples') ?? (devicePixelRatio >= 2 ? 0 : 4)) });
 export const composer = new EffectComposer(renderer, composerTarget);
 composer.setPixelRatio(renderer.getPixelRatio());
 export const mirrorTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType });

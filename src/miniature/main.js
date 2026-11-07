@@ -37,6 +37,7 @@ import { TOWER_BOUND, beaconLit, beacons, bloom, composer, controls, eyeCamera, 
 import { clearView, roofAt } from './sightlines.js';
 import { app, invalidate, invalidateShadows, smooth, stats } from './state.js';
 import { loadLevel, loading, showLevel, tiles, updateLevels, viewFrustum, viewMatrix } from './tiles.js';
+import { clampToScreen, quality, sampleFrame } from './quality.js';
 import { stepLift, stepWalk } from './walk.js';
 
 const statsEl = document.getElementById('stats');
@@ -122,6 +123,11 @@ function frame(now) {
   app.dirty = false;
   frameTimes.push(now - lastFrame);
   if (frameTimes.length > 60) frameTimes.shift();
+  const ratio = sampleFrame(now - lastFrame, now);
+  if (ratio) {
+    renderer.setPixelRatio(ratio);
+    resize({ shadows: false });
+  }
   lastFrame = now;
   // How far into the street the camera has come: 0 high above, 1 standing.
   let street = 0;
@@ -198,7 +204,7 @@ function frame(now) {
   stats.frames++;
   if (stats.frames % 6 === 0 && params.has('stats')) {
     const sorted = [...frameTimes].sort((a, b) => a - b);
-    statsEl.textContent = `frame ${sorted[sorted.length >> 1]?.toFixed(1)} ms   ${(stats.triangles / 1e6).toFixed(2)} M tris incl. shadow   ${stats.calls} calls\nshadow texel ${stats.texel.toFixed(2)} m   loaded ${(app.bytesLoaded / 1e6).toFixed(1)} MB   ${loading.size} loading`;
+    statsEl.textContent = `frame ${sorted[sorted.length >> 1]?.toFixed(1)} ms   ${(stats.triangles / 1e6).toFixed(2)} M tris incl. shadow   ${stats.calls} calls\nshadow texel ${stats.texel.toFixed(2)} m   loaded ${(app.bytesLoaded / 1e6).toFixed(1)} MB   ${loading.size} loading   pixel ratio ${quality.ratio.toFixed(2)}`;
   }
 }
 
@@ -285,8 +291,10 @@ async function start() {
   invalidate();
 }
 
-addEventListener('resize', () => {
+/** Sizes everything that follows the window or the drawing buffer's pixel ratio. */
+function resize({ shadows = true } = {}) {
   renderer.setSize(innerWidth, innerHeight);
+  composer.setPixelRatio(renderer.getPixelRatio());
   composer.setSize(innerWidth, innerHeight);
   resizeOverlay();
   ribbonUniforms.uViewportH.value = renderer.getDrawingBufferSize(new THREE.Vector2()).y;
@@ -296,12 +304,30 @@ addEventListener('resize', () => {
     c.aspect = innerWidth / innerHeight;
     c.updateProjectionMatrix();
   }
-  invalidateShadows();
+  if (shadows) invalidateShadows();
+  else invalidate();
+}
+addEventListener('resize', () => {
+  clampToScreen();
+  renderer.setPixelRatio(quality.ratio);
+  resize();
 });
+
+// Until the city has arrived once, say so: on a slow line the first view takes a while.
+const loadingEl = document.getElementById('loading');
+const loadingTimer = setInterval(() => {
+  if (window.__ready && loading.size === 0) {
+    loadingEl.dataset.done = 'true';
+    clearInterval(loadingTimer);
+    return;
+  }
+  const mb = (app.bytesLoaded ?? 0) / 1e6;
+  loadingEl.querySelector('span').textContent = mb >= 1 ? `Building Berlin \u00b7 ${mb.toFixed(0)} MB` : 'Building Berlin';
+}, 250);
 
 resizeOverlay();
 updateSun();
 requestAnimationFrame(frame);
 start().then(openLinkedView);
 window.__sky = skyUniforms;
-window.__mini = { frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, get camera() { return app.camera; }, get controls() { return controls; }, renderer };
+window.__mini = { frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, get camera() { return app.camera; }, get controls() { return controls; }, renderer };

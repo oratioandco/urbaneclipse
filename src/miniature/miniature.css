@@ -261,6 +261,12 @@
       #ghost[hidden] { display: none; }
       #ghost { left: 0; top: 0; width: 48px; height: 48px; z-index: 5; pointer-events: none; }
       #labels { pointer-events: none; z-index: 1; width: 100%; height: 100%; }
+      /* First load: a quiet pill in the middle until the city has arrived once. */
+      .loading { position: fixed; z-index: 3; left: 50%; top: 42%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 22px; font: 600 14px ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; pointer-events: none; transition: opacity 0.5s; }
+      .loading i { width: 9px; height: 9px; border-radius: 50%; background: var(--sun); animation: loading-pulse 1.1s ease-in-out infinite; }
+      .loading[data-done='true'] { opacity: 0; }
+      @keyframes loading-pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
+      @media (prefers-reduced-motion: reduce) { .loading i { animation: none; } }
       #stats { z-index: 2; position: fixed; top: 10px; left: 12px; font: 11px/1.4 ui-monospace, monospace; color: var(--muted); white-space: pre; pointer-events: none; }
 
       @media (max-width: 600px) {

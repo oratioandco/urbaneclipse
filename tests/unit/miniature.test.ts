@@ -156,6 +156,11 @@ describe('passes behind the tower from a spot', () => {
     expect(moon.map((m: { state: string }) => m.state)).toEqual(['antenna']);
   });
 
+  it('leaves out the sun behind the antenna: the sphere is the shot', () => {
+    const eye = at(1500);
+    expect(run(eye, altOf(eye, 300)).filter((s: { body: string }) => s.body === 'sun')).toEqual([]);
+  });
+
   it('leaves out a moon too thin to see', () => {
     const eye = at(1500);
     expect(run(eye, altOf(eye, SPHERE_CENTRE_AGL), 0.1).filter((s: { body: string }) => s.body === 'moon')).toEqual([]);
@@ -170,5 +175,27 @@ describe('scene coordinates', () => {
       expect(lat2).toBeCloseTo(lat, 6);
       expect(lon2).toBeCloseTo(lon, 6);
     }
+  });
+});
+
+describe('dynamic resolution', () => {
+  it('steps down on slow frames, holds, then climbs back on fast ones', async () => {
+    Object.assign(globalThis, { devicePixelRatio: 2, innerWidth: 1440, innerHeight: 900, location: { search: '' } });
+    const { quality, sampleFrame } = await import('../../src/miniature/quality.js');
+    const start = quality.ratio;
+    expect(start).toBeLessThan(2); // 1440×900 at 2× is over the starting pixel budget
+    let changed = null;
+    for (let i = 0; i < 30; i++) changed = sampleFrame(33, 1000 + i * 33) ?? changed;
+    expect(changed).not.toBeNull();
+    expect(quality.ratio).toBeLessThan(start);
+    const low = quality.ratio;
+    // Fast frames right after a step down do not undo it.
+    for (let i = 0; i < 30; i++) sampleFrame(10, 2000 + i * 10);
+    expect(quality.ratio).toBe(low);
+    // Later they do, but never past the screen's density.
+    for (let k = 0; k < 20; k++) for (let i = 0; i < 30; i++) sampleFrame(10, 20_000 + k * 1000 + i);
+    expect(quality.ratio).toBe(2);
+    // Gaps while the renderer idles are not frame times.
+    for (let i = 0; i < 30; i++) expect(sampleFrame(500, 40_000 + i)).toBeNull();
   });
 });
