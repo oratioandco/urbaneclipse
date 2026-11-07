@@ -36,8 +36,12 @@ Scouted with `scout.mjs` through the planner's own "Dates" list. Each is real an
 - **Contrast warning on film A's hook:** the orange word "sun" sits on the bright sun sky, at about 2.5:1 on 92 px heavy type.
 - **`nested_media_start_basis_ambiguous` warnings:** these are local scene times, which is intended.
 
-## Weakest parts, and what I would change with more time
+## Fixed on 2026-11-07, second pass
 
-- **Film A's "Every street in Berlin" overview:** it is daylight-flat.
-- **Feed versions of UI shots:** they crop the planner panel. A bottom fade hides the cut edge.
-- **Film C's night overview:** it shows the planner's alignment lines as pale beams.
+- **Film A's "Every street in Berlin":** now low sun on 22 March at 17:40, with lit façades and long shadows, instead of flat June light.
+- **Feed versions:** use takes recorded at 4:5 (`FEED=1 node record.mjs …`, `FEED=1 node record_c.mjs …`). The planner panel is whole, and photo push-ins aim at the subject measured in `feedframe.py`, below the title scrim. The tools clip and film B's dates and share stills are still crops.
+- **Film C's night overview:** the streets layer rests until June, so the night shows no pale moon beams.
+
+## Still open
+
+- The end cards use the old stubby tower mark. They get the new logo once it is chosen.
