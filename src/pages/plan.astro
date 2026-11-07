@@ -72,22 +72,22 @@ import '../miniature/miniature.css';
       <h2 id="intro-title" tabindex="-1" autofocus>Line up the sun and moon with Berlin</h2>
       <p class="muted">A planner for photographers: where to stand, and when, for the shots below. Each one shows a real moment; tap it to stand right there.</p>
       <div class="intro-shots">
-        <a class="intro-shot" href="/plan/?date=2027-06-03&time=1237.25&at=52.508930,13.441231&look=301.5,4.8&lens=200&cam=ff">
+        <a class="intro-shot" href="/plan/?date=2027-06-10&time=1264&at=52.492250,13.471850&look=307,2.6&lens=400&cam=ff">
           <img src="/media/sun-sphere.jpg" alt="" width="1198" height="798" />
           <b><i class="sun"></i>The sun behind the TV tower</b>
-          <span>A small solar eclipse: the sphere covers the sun for a minute or two.</span>
+          <span>A small solar eclipse: the sphere covers the sun, or a ring of light flares round it.</span>
         </a>
-        <a class="intro-shot" href="/plan/?date=2027-03-22&time=310&at=52.527508,13.470412&look=259.8,4.4&lens=400&cam=ff">
+        <a class="intro-shot" href="/plan/?date=2027-02-18&time=342.083&at=52.492250,13.471850&look=307,3.2&lens=400&cam=ff">
           <img src="/media/moon-antenna.jpg" alt="" width="1198" height="798" />
           <b><i class="moon"></i>The moon by the tower</b>
           <span>On the antenna, or a big moon behind the sphere from 4.4 km out.</span>
         </a>
-        <a class="intro-shot" href="/plan/?date=2027-03-08&time=1065&at=52.489820,13.353401&look=260.8,1.4&lens=85&cam=ff">
+        <a class="intro-shot" href="/plan/?date=2027-04-12&time=1171.25&at=52.515750,13.453950&look=280.1,3&lens=200&cam=ff">
           <img src="/media/street-henge.jpg" alt="" width="1198" height="798" />
           <b><i class="sun"></i>Street henges</b>
           <span>Sunset or moonrise straight down a long street, a few days a year.</span>
         </a>
-        <a class="intro-shot" href="/plan/?date=2027-06-03&time=1225&at=52.512500,13.432000&look=301,1&lens=24&cam=drone-3&fly=110">
+        <a class="intro-shot" href="/plan/?date=2027-06-10&time=1250&at=52.492250,13.471850&look=307,1.5&lens=70&cam=drone-3&fly=110">
           <img src="/media/drone.jpg" alt="" width="900" height="675" />
           <b><i class="drone"></i>Eye level and drone</b>
           <span>Stand anywhere with your camera and lens, walk, or rise to 120 m.</span>
@@ -114,6 +114,7 @@ import '../miniature/miniature.css';
       <button id="copylink" type="button" class="shareitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span><b id="copylink-label">Copy link</b><small>Opens this exact view</small></span></button>
     </div>
     <div id="toast" class="toast surface" role="status" aria-live="polite" hidden></div>
+    <div id="loading" class="loading surface" role="status" aria-live="polite"><i aria-hidden="true"></i><span>Building Berlin</span></div>
     <div class="heightbar surface">
       <small>120</small>
       <input id="height" type="range" min="0" max="120" step="1" aria-label="Height above the ground, metres" />

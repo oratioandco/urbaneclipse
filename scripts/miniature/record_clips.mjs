@@ -28,12 +28,12 @@ const PHOTO = '.bottom, .tools, .topleft, #stick, #viewhere, #toast, #labels { v
 const CLIPS = {
   // Berlin from morning to night: shadows, golden hour, the city's lights, the hour lines.
   'berlin-day': { url: '/plan/?nointro&date=2027-06-21&time=300&height=4200', from: 300, to: 1380, seconds: 12, css: CLEAN, poster: 0.86 },
-  // The sun setting behind the sphere from 2.5 km, as found by the day list.
-  'sun-sphere': { photo: true, url: '/plan/?nointro&date=2027-06-03&time=720', pick: '2.5 km', span: [-4, 4], seconds: 9, poster: 0.5 },
-  // The full moon setting behind the antenna at dawn.
-  'moon-antenna': { photo: true, url: '/plan/?nointro&date=2027-03-22&time=310&at=52.527508,13.470412&look=259.8,4.4&lens=400&cam=ff', from: 305, to: 316, seconds: 9, poster: 0.47 },
-  // Grunewaldstraße, a street henge: the sun sinking straight down the street.
-  'street-henge': { photo: true, url: '/plan/?nointro&date=2027-03-08&time=1065&at=52.489820,13.353401&look=260.8,1.4&lens=85&cam=ff', from: 1056, to: 1069, seconds: 9, poster: 0.62 },
+  // Treptow, across the Spree: a ring of sun round the sphere, 10 June 2027.
+  'sun-sphere': { photo: true, url: '/plan/?nointro&date=2027-06-10&time=1264&at=52.492250,13.471850&look=307,2.6&lens=400&cam=ff', from: 1261.5, to: 1266.5, seconds: 9, poster: 0.5 },
+  // Treptow at night: the moon setting behind the antenna, 18 February 2027.
+  'moon-antenna': { photo: true, url: '/plan/?nointro&date=2027-02-18&time=342.083&at=52.492250,13.471850&look=307,3.2&lens=400&cam=ff', from: 339, to: 345, seconds: 9, poster: 0.55 },
+  // Karl-Marx-Allee from Frankfurter Tor: the sun going down the avenue behind the sphere, 12 April 2027.
+  'street-henge': { photo: true, url: '/plan/?nointro&date=2027-04-12&time=1171.25&at=52.515750,13.453950&look=280.1,3&lens=200&cam=ff', from: 1166, to: 1173, seconds: 9, poster: 0.78 },
 };
 
 const browser = await chromium.launch({ headless: false, args: ['--use-angle=metal'] });
