@@ -23,22 +23,57 @@ export const FORMATS = [...SENSOR_FORMATS, ...FIXED_FORMATS];
 /** The camera being simulated. Full-frame unless the photographer picked another format. */
 export const camera = { format: SENSOR_FORMATS.find((f) => f.id === 'ff') };
 
+/** Each format's frame, long side over short: 3:2 for full-frame and APS-C, 4:3 for the rest. */
+const ASPECT = { mf: 4 / 3, ff: 3 / 2, apsc: 3 / 2, m43: 4 / 3 };
+const FULL_FRAME_DIAGONAL = Math.hypot(36, 24);
+
 /**
- * Vertical field of view on screen, degrees. The sensor's long side runs across a landscape
- * screen and up a portrait one, as a photographer would hold the camera.
+ * The frame in millimetres. Phones and drones quote full-frame equivalents, which match the
+ * diagonal, so their 4:3 frame is sized to full-frame's diagonal.
  */
-export function fovForLens(mm, format = camera.format) {
-  const aspect = innerWidth / innerHeight;
-  const along = Math.atan(format.width / (2 * mm));
-  const vertical = aspect >= 1 ? Math.atan(Math.tan(along) / aspect) : along;
-  return (2 * vertical * 180) / Math.PI;
+export function frameSize(format = camera.format) {
+  const aspect = ASPECT[format.id] ?? 4 / 3;
+  const long = format.lenses ? (FULL_FRAME_DIAGONAL * aspect) / Math.hypot(aspect, 1) : format.width;
+  return { long, short: long / aspect, aspect };
 }
 
-/** The focal length that gives a vertical field of view on screen, radians. */
+/** Where on screen the photo may sit: clear of the panel below and the buttons above. */
+let viewArea = null;
+export function setViewArea(area) {
+  const changed = !viewArea || ['left', 'top', 'right', 'bottom'].some((k) => Math.abs(viewArea[k] - area[k]) > 0.5);
+  viewArea = area;
+  return changed;
+}
+
+/**
+ * The viewfinder: the photo's frame on screen, as large as fits the view area, landscape on a
+ * landscape screen and portrait on a portrait one, as a photographer would hold the camera.
+ */
+export function frameRect(format = camera.format) {
+  const { aspect } = frameSize(format);
+  const area = viewArea ?? { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+  const margin = 14;
+  const portrait = innerHeight > innerWidth;
+  const ratio = portrait ? 1 / aspect : aspect;
+  const room = { w: area.right - area.left - 2 * margin, h: area.bottom - area.top - 2 * margin };
+  const w = Math.max(40, Math.min(room.w, room.h * ratio));
+  const h = w / ratio;
+  return { x: area.left + (area.right - area.left - w) / 2, y: area.top + (area.bottom - area.top - h) / 2, w, h, portrait, aspect };
+}
+
+/** Vertical field of view of the whole screen, degrees, so the frame shows what the lens sees. */
+export function fovForLens(mm, format = camera.format) {
+  const { long, short } = frameSize(format);
+  const frame = frameRect(format);
+  const half = Math.atan((frame.portrait ? long : short) / (2 * mm));
+  return (2 * Math.atan((Math.tan(half) * innerHeight) / frame.h) * 180) / Math.PI;
+}
+
+/** The focal length for a vertical field of view of the whole screen, radians. */
 export function lensForFov(fov, format = camera.format) {
-  const aspect = innerWidth / innerHeight;
-  const along = aspect >= 1 ? Math.atan(Math.tan(fov / 2) * aspect) : fov / 2;
-  return format.width / (2 * Math.tan(along));
+  const { long, short } = frameSize(format);
+  const frame = frameRect(format);
+  return (frame.portrait ? long : short) / (2 * ((Math.tan(fov / 2) * frame.h) / innerHeight));
 }
 
 export const lensRange = (format = camera.format) => (format.lenses ? [format.lenses[0], format.lenses[format.lenses.length - 1]] : [format.minFocal, format.maxFocal]);

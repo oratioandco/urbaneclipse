@@ -120,6 +120,32 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
 }
 
 /**
+ * The part of the screen a pill may use: clear of the tool buttons on the right, the buttons
+ * top left, and the panel below. Read from the page, so it follows the layout on any screen.
+ */
+function safeArea(bottomInset) {
+  const area = { left: 12, top: 12, right: innerWidth - 12, bottom: innerHeight - bottomInset };
+  const tools = document.querySelector('.tools')?.getBoundingClientRect();
+  if (tools?.width) area.right = Math.min(area.right, tools.left - 8);
+  const topLeft = document.querySelector('.topleft');
+  const box = topLeft && getComputedStyle(topLeft).display !== 'none' ? topLeft.getBoundingClientRect() : null;
+  if (box?.height) area.top = Math.max(area.top, box.bottom + 8);
+  return area;
+}
+
+/** Where a pill goes: on the safe area's rim, along a direction from its centre. */
+function pillAt(text, ux, uy, area) {
+  ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
+  // Half the pill, plus room for its arrow.
+  const halfW = (40 + ctx.measureText(text).width + 12) / 2 + 12;
+  const halfH = PILL_H / 2 + 12;
+  const cx = (area.left + area.right) / 2;
+  const cy = (area.top + area.bottom) / 2;
+  const reach = Math.max(0, Math.min(Math.abs(ux) > 1e-3 ? ((area.right - area.left) / 2 - halfW) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? ((area.bottom - area.top) / 2 - halfH) / Math.abs(uy) : Infinity));
+  return { x: cx + ux * reach, y: cy + uy * reach };
+}
+
+/**
  * @param scene.bodies [{ az, alt, sunAlt, moon? }] above the horizon
  * @param scene.stands [{ x, y, z, name, colour }] lit-up streets
  * @param scene.eye { heading, pitch } when standing in the street, else null
@@ -131,7 +157,7 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
  * @param scene.drop { x, y, z } where a dragged photographer would land, or null
  * @returns what can be tapped: [{ kind, x, y, w, h, body?, t? }]
  */
-export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null, names: showNames = true }) {
+export function drawOverlay({ camera, target, night, bodies, stands, bottomInset, eye, photographer, paths = [], spots = [], rays = [], hourRays = [], drop = null, eclipse = null, names: showNames = true, frame = null, thirds = false }) {
   const taps = [];
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -171,6 +197,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
 
   if (eye) {
     if (eclipse) drawEclipse(eclipse, camera, project);
+    if (frame) drawViewfinder(frame, thirds);
     return drawEyePills({ camera, night, bodies, bottomInset, eye, taps });
   }
 
@@ -254,6 +281,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
 
   // Each pill sits on the view's edge, on the line from its centre toward the body.
   const pills = [];
+  const area = safeArea(bottomInset);
   for (const body of bodies) {
     const az = (body.az * Math.PI) / 180;
     if (!project(target.x, target.y, target.z, a)) continue;
@@ -263,10 +291,9 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     const length = Math.hypot(dx, dy) || 1;
     const ux = dx / length;
     const uy = dy / length;
-    const cy = (innerHeight - bottomInset) / 2;
-    const reach = Math.min(Math.abs(ux) > 1e-3 ? (w2 - 76) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? (cy - 34) / Math.abs(uy) : Infinity);
     const look = body.moon ? moonLook(body.alt, body.sunAlt, body.moon.fraction) : sunLook(body.alt);
-    pills.push({ text: `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up`, look, moon: body.moon, x: w2 + ux * reach, y: cy + uy * reach, ux, uy, night, body });
+    const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up`;
+    pills.push({ text, look, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body });
   }
   // Two bodies in nearly the same direction would otherwise stack.
   if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < 130 && Math.abs(pills[0].y - pills[1].y) < PILL_H + 6) pills[1].y += pills[1].y >= pills[0].y ? PILL_H + 6 : -(PILL_H + 6);
@@ -553,12 +580,47 @@ function drawEclipse({ centre, radiusDeg, items }, camera, project) {
   ctx.fillText(text, lx, ly + 0.5);
 }
 
+/**
+ * The viewfinder: what lies outside the photo is dimmed, the frame has a fine line and corner
+ * marks, and on request lines at thirds.
+ */
+function drawViewfinder(frame, thirds) {
+  const { x, y, w, h } = frame;
+  ctx.fillStyle = 'rgba(8, 9, 14, 0.42)';
+  ctx.beginPath();
+  ctx.rect(0, 0, innerWidth, innerHeight);
+  ctx.rect(x, y, w, h);
+  ctx.fill('evenodd');
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.lineWidth = 2;
+  const c = Math.min(18, w / 8, h / 8);
+  ctx.beginPath();
+  for (const [cx, cy, sx, sy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) {
+    ctx.moveTo(cx + sx * c, cy + sy * 1);
+    ctx.lineTo(cx + sx * 1, cy + sy * 1);
+    ctx.lineTo(cx + sx * 1, cy + sy * c);
+  }
+  ctx.stroke();
+  if (thirds) {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const f of [1 / 3, 2 / 3]) {
+      ctx.moveTo(Math.round(x + w * f) + 0.5, y);
+      ctx.lineTo(Math.round(x + w * f) + 0.5, y + h);
+      ctx.moveTo(x, Math.round(y + h * f) + 0.5);
+      ctx.lineTo(x + w, Math.round(y + h * f) + 0.5);
+    }
+    ctx.stroke();
+  }
+}
+
 /** At eye level the real discs are in the sky; a pill only points to one that is out of frame. */
 function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
-  const top = 70;
-  const bottom = innerHeight - bottomInset;
-  const cx = innerWidth / 2;
-  const cy = (top + bottom) / 2;
+  const area = safeArea(bottomInset);
   const fov = camera.fov;
   const aspect = innerWidth / innerHeight;
   for (const body of bodies) {
@@ -569,10 +631,10 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
     const length = Math.hypot(yaw, rise) || 1;
     const ux = yaw / length;
     const uy = -rise / length;
-    const reach = Math.min(Math.abs(ux) > 1e-3 ? (cx - 76) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? ((bottom - top) / 2 - 24) / Math.abs(uy) : Infinity);
     const look = body.moon ? moonLook(body.alt, body.sunAlt, body.moon.fraction) : sunLook(body.alt);
     const side = Math.abs(yaw) < 2 ? '' : ` \u00b7 ${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
-    taps.push(drawPill({ text: `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${side}`, look, moon: body.moon, x: cx + ux * reach, y: cy + uy * reach, ux, uy, night, body }));
+    const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${side}`;
+    taps.push(drawPill({ text, look, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body }));
   }
   return taps;
 }

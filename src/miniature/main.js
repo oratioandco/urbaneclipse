@@ -20,7 +20,7 @@ import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
 import { drawOverlay, resizeOverlay, setLabels } from './overlay.js';
 import { skyUniforms } from './sky.js';
 import { drawMinimap, setMinimapGround } from './minimap.js';
-import { sceneFromLatLon } from './eye.js';
+import { frameRect, sceneFromLatLon, setViewArea } from './eye.js';
 import { DISC_RADIUS_DEG } from './towerShots.js';
 import { orbitTo, stepFlight, stepOrbit } from './camera.js';
 import { layers, needle, tiltButton, towerItems } from './chrome.js';
@@ -54,6 +54,38 @@ new ResizeObserver(() => {
 }).observe(document.querySelector('.panel'));
 // The bottom block: the sheet, and at eye level the camera row above it.
 const panel = document.querySelector('.bottom');
+/** Thirds in the viewfinder, on request. */
+let thirds = false;
+try {
+  thirds = localStorage.getItem('miniature.thirds') === 'on';
+} catch {}
+const thirdsButton = document.getElementById('thirds');
+thirdsButton.setAttribute('aria-pressed', String(thirds));
+thirdsButton.addEventListener('click', () => {
+  thirds = !thirds;
+  thirdsButton.setAttribute('aria-pressed', String(thirds));
+  try {
+    localStorage.setItem('miniature.thirds', thirds ? 'on' : 'off');
+  } catch {}
+  invalidate();
+});
+let panelTop = innerHeight;
+/**
+ * The viewfinder sits in the view between the buttons above and the card below, and the lens's
+ * axis goes through its middle. The card's height while the dates list is open does not count.
+ */
+function updateViewArea() {
+  if (document.body.dataset.dates !== 'open') panelTop = panel.getBoundingClientRect().top;
+  const top = document.querySelector('.topleft').getBoundingClientRect().bottom;
+  if (setViewArea({ left: 0, top: top + 4, right: innerWidth, bottom: panelTop - 4 })) invalidateShadows();
+  const frame = frameRect();
+  const dx = innerWidth / 2 - (frame.x + frame.w / 2);
+  const dy = innerHeight / 2 - (frame.y + frame.h / 2);
+  const view = eyeCamera.view;
+  if (!view || Math.abs(view.offsetX - dx) > 0.5 || Math.abs(view.offsetY - dy) > 0.5 || view.fullWidth !== innerWidth || view.fullHeight !== innerHeight) {
+    eyeCamera.setViewOffset(innerWidth, innerHeight, dx, dy, innerWidth, innerHeight);
+  }
+}
 const frameTimes = [];
 
 function frame(now) {
@@ -65,6 +97,7 @@ function frame(now) {
   stepLift(now);
   syncLink(now);
   const flying = stepTransition(now);
+  if (app.camera === eyeCamera) updateViewArea();
   placeEyeCamera();
   if (flying) {
     app.shadowsDirty = true;
@@ -139,6 +172,8 @@ function frame(now) {
     stands: street > 0 ? [] : app.stands,
     bottomInset: panel.offsetHeight + 16,
     eye: street > 0.5 ? look : null,
+    frame: street > 0.5 ? frameRect() : null,
+    thirds,
     eclipse: street > 0.5 ? eclipseHere : null,
     photographer: street > 0 || app.drag?.moved ? null : app.photographer,
     paths: towerItems(app.dayPaths),

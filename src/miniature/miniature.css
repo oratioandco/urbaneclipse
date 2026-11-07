@@ -117,6 +117,9 @@
       .lens input { flex: 1; min-width: 0; min-height: 24px; accent-color: var(--accent); }
       #format { height: 26px; padding: 0 22px 0 8px; border: 1px solid var(--line); border-radius: 13px; background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236f6a62' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center / 9px; color: inherit; font: 600 11.5px ui-sans-serif, system-ui, sans-serif; appearance: none; -webkit-appearance: none; cursor: pointer; }
       #lens-chips { flex: 1; display: flex; gap: 4px; }
+      #thirds { flex: none; width: 30px; height: 26px; display: inline-grid; place-items: center; border: 1px solid var(--line); border-radius: 13px; background: var(--field); color: var(--muted); cursor: pointer; }
+      #thirds svg { width: 15px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.3; }
+      #thirds[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--field); }
       #lens-chips button { flex: 1; max-width: 72px; height: 26px; padding: 0 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--field); display: inline-flex; align-items: center; justify-content: center; gap: 3px; line-height: 1; font: 600 12px ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
       #lens-chips button small { font-weight: 500; font-size: 10px; color: var(--muted); }
       #lens-chips button[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: #fff; }
