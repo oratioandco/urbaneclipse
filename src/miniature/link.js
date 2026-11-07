@@ -11,6 +11,7 @@ import { params } from './config.js';
 import { enterEye, look } from './eyeLevel.js';
 import { eyeCamera } from './render.js';
 import { app } from './state.js';
+import { showFlight } from './walk.js';
 
 // Shared links open the same view: ?date=2027-03-22&time=1020&at=52.5,13.4&look=268,2&lens=200&cam=ff
 let lastLink = '';
@@ -25,6 +26,7 @@ function linkQuery() {
     q.set('look', `${Math.round((((look.heading % 360) + 360) % 360) * 10) / 10},${Math.round(look.pitch * 10) / 10}`);
     q.set('lens', String(Math.round(look.lens)));
     q.set('cam', cameraFormat.format.id);
+    if (look.mode === 'drone') q.set('fly', String(Math.round(look.lift ?? 0)));
   }
   // Developer options stay put.
   for (const key of ['nointro', 'stats', 'shadow', 'budget', 'mirror', 'samples', 'blur']) if (params.has(key)) q.set(key, params.get(key));
@@ -50,7 +52,10 @@ export function openLinkedView() {
   const [heading, pitch] = (params.get('look') ?? '').split(',').map(Number);
   const [lensMin, lensMax] = lensRange();
   const lens = THREE.MathUtils.clamp(Number(params.get('lens')) || 50, lensMin, lensMax);
-  enterEye(x, z, { heading: Number.isFinite(heading) ? heading : 0, pitch: Number.isFinite(pitch) ? pitch : 0, lens });
+  // A drone link opens in the air, at its height (the EU open category's 120 m at most).
+  const fly = Math.min(120, Math.max(0, Number(params.get('fly')) || 0));
+  enterEye(x, z, { heading: Number.isFinite(heading) ? heading : 0, pitch: Number.isFinite(pitch) ? pitch : 0, lens, ...(params.has('fly') ? { mode: 'drone', lift: fly } : {}) });
+  if (params.has('fly')) showFlight();
   // A time to the second came from fine timing; open it that way.
   if (!Number.isInteger(Number(params.get('time')))) setFine(true);
 }

@@ -26,6 +26,14 @@ const openIntro = () => {
 };
 document.getElementById('help').addEventListener('click', openIntro);
 document.getElementById('intro-start').addEventListener('click', () => intro.close());
+// Opening an example from it counts as having seen it.
+for (const shot of intro.querySelectorAll('.intro-shot')) {
+  shot.addEventListener('click', () => {
+    try {
+      localStorage.setItem('miniature.intro', 'seen');
+    } catch {}
+  });
+}
 intro.addEventListener('close', () => {
   try {
     localStorage.setItem('miniature.intro', 'seen');

@@ -69,16 +69,38 @@ import '../miniature/miniature.css';
       <a id="flatmap" class="flatmap" href="/map/">Flat map, the earlier version &rsaquo;</a>
     </div>
     <dialog id="intro" class="intro surface" aria-labelledby="intro-title">
-      <h2 id="intro-title">Line up the sun and moon with Berlin</h2>
-      <p class="muted">Find where to stand so the sun or moon sits behind the TV tower, or shines straight down a street.</p>
+      <h2 id="intro-title" tabindex="-1" autofocus>Line up the sun and moon with Berlin</h2>
+      <p class="muted">A planner for photographers: where to stand, and when, for the shots below. Each one shows a real moment; tap it to stand right there.</p>
+      <div class="intro-shots">
+        <a class="intro-shot" href="/plan/?date=2027-06-03&time=1237.25&at=52.508930,13.441231&look=301.5,4.8&lens=200&cam=ff">
+          <img src="/media/sun-sphere.jpg" alt="" width="1198" height="798" />
+          <b><i class="sun"></i>The sun behind the TV tower</b>
+          <span>A small solar eclipse: the sphere covers the sun for a minute or two.</span>
+        </a>
+        <a class="intro-shot" href="/plan/?date=2027-03-22&time=310&at=52.527508,13.470412&look=259.8,4.4&lens=400&cam=ff">
+          <img src="/media/moon-antenna.jpg" alt="" width="1198" height="798" />
+          <b><i class="moon"></i>The moon by the tower</b>
+          <span>On the antenna, or a big moon behind the sphere from 4.4 km out.</span>
+        </a>
+        <a class="intro-shot" href="/plan/?date=2027-03-08&time=1065&at=52.489820,13.353401&look=260.8,1.4&lens=85&cam=ff">
+          <img src="/media/street-henge.jpg" alt="" width="1198" height="798" />
+          <b><i class="sun"></i>Street henges</b>
+          <span>Sunset or moonrise straight down a long street, a few days a year.</span>
+        </a>
+        <a class="intro-shot" href="/plan/?date=2027-06-03&time=1225&at=52.512500,13.432000&look=301,1&lens=24&cam=drone-3&fly=110">
+          <img src="/media/drone.jpg" alt="" width="900" height="675" />
+          <b><i class="drone"></i>Eye level and drone</b>
+          <span>Stand anywhere with your camera and lens, walk, or rise to 120 m.</span>
+        </a>
+      </div>
       <ol>
-        <li><b>Pick a day and a time.</b> <span>The coloured bars above the slider show when something lines up. Open the panel for the day’s list.</span></li>
-        <li><b>Read the map.</b> <span><em class="sun">Tower alignments</em>: stand on a line and the sun or moon is behind the tower at that hour. <em class="street">Street henges</em>: glowing streets line up with the sun or moon, like Manhattanhenge.</span></li>
-        <li><b>See the shot.</b> <span>Drag the photographer onto the map, or hover a line and choose “View from here”. Walk, change lenses, or take off as a drone.</span></li>
+        <li><b>Pick a day.</b> <span>Bars above the time slider show when something lines up; the panel lists the day.</span></li>
+        <li><b>Read the map.</b> <span><em class="sun">Tower lines</em>: stand on one and the sun or moon is behind the tower at that hour. <em class="street">Glowing streets</em> are lined up now.</span></li>
+        <li><b>Stand there.</b> <span>Drag the photographer onto the map, or choose “View from here” on a line. Then see dates, timing and directions.</span></li>
       </ol>
       <div class="intro-actions">
-        <button id="intro-start" class="chip" type="button">Start</button>
-        <span class="muted">Open this again with <b>?</b> &middot; <a href="/">About Urban Eclipse</a></span>
+        <button id="intro-start" class="chip" type="button">Start planning</button>
+        <span class="muted">Open this again with <b>?</b> &middot; <a href="/">About</a></span>
       </div>
     </dialog>
     <div class="topleft">
