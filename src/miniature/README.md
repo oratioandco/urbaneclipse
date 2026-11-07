@@ -1,8 +1,12 @@
 # The planner (Berlin miniature)
 
 A white model of Berlin from the real LoD2 buildings, with real sun shadows, in Three.js.
-Since 2026-11-06 it is the home page (`src/pages/index.astro`). The earlier daily map is at
-`/map`, the first planner at `/classic`; both stay in the repo.
+It lives at `/plan/` (`src/pages/plan.astro`); `/` is the landing page (`src/pages/index.astro`),
+which forwards old planner links (`/?date=…`) to `/plan/`. The earlier daily map is at `/map`,
+the first planner at `/classic`; both stay in the repo.
+
+The landing page's clips and stills (`public/media`) come from the planner itself:
+`node scripts/miniature/record_clips.mjs <url>` records them frame by frame against a build.
 
 ## Data
 
@@ -18,7 +22,7 @@ After a rebuild, bump `CITY_VERSION` in `main.js`, since the files are cached fo
 
 ## Run
 
-    npm run dev        # then http://localhost:4321/?stats&date=2027-03-22&time=1020
+    npm run dev        # then http://localhost:4321/plan/?stats&date=2027-03-22&time=1020
 
 URL options: `date`, `time` (minutes after midnight), `at=lat,lon`, `look=heading,pitch`,
 `lens`, `cam` (these four open eye level; the address keeps them up to date, so it can be

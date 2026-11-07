@@ -12,7 +12,7 @@ p.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errs.pus
 const ok = (name, cond, extra = '') => console.log(`${cond ? 'ok  ' : 'FAIL'} ${name} ${extra}`);
 const shot = (n) => p.screenshot({ path: `${out}/r-${n}.png` });
 
-await p.goto(base + '/?nointro&date=2027-03-22&time=1020');
+await p.goto(base + '/plan/?nointro&date=2027-03-22&time=1020');
 await p.waitForFunction(() => window.__ready, null, { timeout: 90000 });
 await p.waitForTimeout(1500);
 ok('city loaded', (await p.evaluate(() => window.__mini.tiles.length)) === 355);

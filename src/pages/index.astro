@@ -1,8 +1,51 @@
 ---
-// The planner: a model of Berlin in Three.js. It runs entirely in the browser; the page is
-// a static shell and the script below builds the scene. The earlier daily map is at /map,
-// the first planner at /classic.
-import '../miniature/miniature.css';
+// The landing page: what the planner is for, the shots it finds, and how to use it. The
+// planner itself is at /plan/. Clips and stills in public/media come from the planner
+// (scripts/miniature/record_clips.mjs), not from photographs.
+const SHOTS = [
+  {
+    id: 'sun-sphere',
+    body: 'sun',
+    title: 'The sun behind the sphere',
+    text: 'From the right spot the TV tower’s sphere covers the sun for a minute or two, and a ring of light flares round it. Further out the sun grows past the sphere’s edge.',
+    when: 'Thu, 3 Jun 2027 · 8:37 pm',
+    where: '2.5 km ESE of the tower, 200 mm',
+    href: '/plan/?date=2027-06-03&time=1237.25&at=52.508930,13.441231&look=301.5,4.8&lens=200&cam=ff',
+  },
+  {
+    id: 'moon-antenna',
+    body: 'moon',
+    title: 'The moon on the antenna',
+    text: 'A full moon rising or setting behind the thin mast, or a big moon behind the sphere from 4.4 km out. Never hidden behind the sphere, where it simply disappears.',
+    when: 'Mon, 22 Mar 2027 · 5:10 am',
+    where: '4.2 km E of the tower, 400 mm',
+    href: '/plan/?date=2027-03-22&time=310&at=52.527508,13.470412&look=259.8,4.4&lens=400&cam=ff',
+  },
+  {
+    id: 'street-henge',
+    body: 'sun',
+    title: 'Street henges',
+    text: 'Berlin’s own Manhattanhenge: a few evenings a year the sun sets exactly at the end of a long, straight street. Each street has its own dates.',
+    when: 'Mon, 8 Mar 2027 · 5:45 pm',
+    where: 'Grunewaldstraße, Schöneberg, 85 mm',
+    href: '/plan/?date=2027-03-08&time=1065&at=52.489820,13.353401&look=260.8,1.4&lens=85&cam=ff',
+  },
+];
+
+const STEPS = [
+  { img: 'step-day', title: 'Pick a day', text: 'Bars above the time slider show when something lines up. Open the panel for the whole day: tower alignments and street henges, each with Go.' },
+  { img: 'step-map', title: 'Read the map', text: 'A line runs through the tower for every hour: stand anywhere on it and the sun or moon is behind the tower then. Glowing streets are lined up right now. Hover a line for “View from here”.' },
+  { img: 'step-eye', title: 'Stand there', text: 'See the shot through your own camera’s frame, slide the time to the second, and get a year of dates for the spot you are on.' },
+];
+
+const FEATURES = [
+  ['Your camera’s frame', 'Full-frame, APS-C, MFT, medium format, phone or drone, with the lens you would use. What is in the frame is what you get.'],
+  ['To the second', 'The sun crosses the sphere in a minute or two. Fine timing slides through half an hour in 5-second steps.'],
+  ['A year of dates', 'From any spot: every pass behind the tower and down your street for twelve months, checked against the buildings.'],
+  ['Clouds included', 'The 16-day forecast drifts over the city, holds back the light and says whether a sunset will catch colour.'],
+  ['Go there', 'Directions on foot, the moment in your calendar with an alarm, a link that opens this exact view, and “Where am I?” on site.'],
+  ['Drone view', 'Rise to 120 m with the drone’s own lenses, with a warning over the government quarter’s no-fly zone.'],
+];
 ---
 
 <!doctype html>
@@ -11,151 +54,228 @@ import '../miniature/miniature.css';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#111013" />
-    <title>Urban Eclipse</title>
+    <title>Urban Eclipse: line up the sun and moon with Berlin</title>
+    <meta name="description" content="A planner for photographers: where to stand in Berlin so the sun or moon sits behind the TV tower or shines straight down a street, to the minute, with real buildings, light and clouds." />
+    <meta property="og:title" content="Urban Eclipse" />
+    <meta property="og:description" content="Line up the sun and moon with Berlin’s TV tower and streets." />
+    <meta property="og:image" content="/media/berlin-day.jpg" />
     <script is:inline>
-      // Links from the daily map used the hash (#/day=…); send them to where it lives now.
-      if (location.hash.startsWith('#/')) location.replace('/map/' + location.hash);
+      // Shared links from before the planner moved here open the planner, as they always did.
+      if (/[?&](date|time|at)=/.test(location.search)) location.replace('/plan/' + location.search + location.hash);
+      else if (location.hash.startsWith('#/')) location.replace('/map/' + location.hash);
     </script>
   </head>
   <body>
-    <canvas id="labels"></canvas>
-    <div class="tools">
-      <button id="compass" class="round surface" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
-      <button id="face-tower" class="round surface eye-only" aria-label="Turn to the TV tower" title="TV tower"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="11.2" y="1.5" width="1.6" height="7"/><circle cx="12" cy="11" r="3.6"/><path d="M10.6 14.2h2.8l.9 8.3h-4.6z"/></svg></button>
-      <button id="face-sun" class="round surface eye-only" aria-label="Turn to the sun" title="Sun" hidden><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="6" fill="#f26a12"/></svg></button>
-      <button id="face-moon" class="round surface eye-only" aria-label="Turn to the moon" title="Moon" hidden><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 4.2a8 8 0 1 0 4.3 12.6A7 7 0 0 1 15.5 4.2z" fill="#5b82ff"/></svg></button>
-      <button id="locate" class="round surface" aria-label="Stand where you are" title="Where am I?"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M20 4 4 11l7 2 2 7z"/></svg></button>
-      <button id="help" class="round surface" aria-label="How this works" title="How this works">?</button>
-      <button id="layers" class="round surface" aria-label="What the map shows" aria-expanded="false" aria-controls="layers-menu" title="Layers"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5 21 8.5 12 13.5 3 8.5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity="0.5"/></svg></button>
-      <button id="tilt" class="round surface overview-only" aria-label="Switch between flat and angled view">2D</button>
-      <button id="photographer" class="round surface overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="3"/><path d="M8 10h8l1 6h-3v6h-4v-6H7z"/><rect x="13.5" y="9" width="6" height="4.2" rx="1"/></svg>
-      </button>
-    </div>
-    <div id="layers-menu" class="layers surface" hidden>
-      <div class="layers-head">Map layers</div>
-      <label class="layer-row">
-        <span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 20.5 21 13" stroke="#f26a12" stroke-width="2" stroke-linecap="round"/><rect x="11.3" y="2" width="1.4" height="5" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="currentColor"/><path d="M11 11.4h2l.6 6.6h-3.2z" fill="currentColor"/></svg></span>
-        <span class="text"><b>Tower alignments</b><small>The sun or moon behind the TV tower</small></span>
-        <input type="checkbox" class="switch" data-layer="tower" />
-      </label>
-      <label class="layer-row">
-        <span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M7 21 10.5 3M17 21 13.5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/><path d="M12 21V4" stroke="#f2b33d" stroke-width="4" stroke-linecap="round" opacity="0.85"/></svg></span>
-        <span class="text"><b>Street henges</b><small>Streets lined up with the sun or moon</small></span>
-        <input type="checkbox" class="switch" data-layer="streets" />
-      </label>
-      <label class="layer-row">
-        <span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M7.5 18.5h9.3a3.7 3.7 0 0 0 .4-7.4 5 5 0 0 0-9.6-1A4.2 4.2 0 0 0 7.5 18.5z" fill="currentColor" opacity="0.8"/></svg></span>
-        <span class="text"><b>Weather</b><small>Forecast clouds in the light and sky</small></span>
-        <input type="checkbox" class="switch" data-layer="weather" />
-      </label>
-      <label class="layer-row">
-        <span class="tile" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><text x="12" y="16.5" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-weight="700" font-size="12" fill="currentColor">Aa</text></svg></span>
-        <span class="text"><b>Street names</b></span>
-        <input type="checkbox" class="switch" data-layer="names" />
-      </label>
-      <div class="layer-bodies" role="group" aria-label="Sun and moon">
-        <label class="body-pill"><input type="checkbox" data-layer="sun" /><svg viewBox="-1 -1 2 2" width="14" height="14" aria-hidden="true"><circle r="0.92" fill="#f8a03a"/><circle r="0.6" fill="#ffd27a"/></svg>Sun</label>
-        <label class="body-pill"><input type="checkbox" data-layer="moon" /><svg id="layers-moon" viewBox="-1 -1 2 2" width="14" height="14" aria-hidden="true"><circle r="0.92" fill="#2a3150"/></svg>Moon</label>
-      </div>
-      <details class="legend">
-        <summary>What the marks mean</summary>
-        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="2.5" stroke-linecap="round"  fill="none"/><circle cx="30" cy="6" r="4" fill="#fff" stroke="#f26a12" stroke-width="2.2"/></svg><span>The line for the chosen time: stand anywhere on it and the sun is behind part of the tower. The ring is where it is behind the sphere.</span></div>
-        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="1.2" stroke-linecap="round" opacity="0.5" fill="none"/><rect x="24" y="1" width="14" height="10" rx="5" fill="#fff" stroke="#f26a12"/></svg><span>The same line at each hour, with its time at the end or the edge of the view.</span></div>
-        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#5b82ff" stroke-width="4" stroke-linecap="round"  fill="none"/></svg><span>The moon behind the antenna: it still shows round the thin mast.</span></div>
-        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f26a12" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" fill="none"/></svg><span>The day’s path of sphere spots; dashed where a building is in the way.</span></div>
-        <div><svg viewBox="0 0 40 12" width="40" height="12" aria-hidden="true"><path d="M2 6h36" stroke="#f2b33d" stroke-width="7" stroke-linecap="round" opacity="0.6" fill="none"/></svg><span>A street henge: sunlight or moonlight runs down the street now.</span></div>
-      </details>
-      <a id="flatmap" class="flatmap" href="/map/">Flat map, the earlier version &rsaquo;</a>
-    </div>
-    <dialog id="intro" class="intro surface" aria-labelledby="intro-title">
-      <h2 id="intro-title">Line up the sun and moon with Berlin</h2>
-      <p class="muted">Find where to stand so the sun or moon sits behind the TV tower, or shines straight down a street.</p>
-      <ol>
-        <li><b>Pick a day and a time.</b> <span>The coloured bars above the slider show when something lines up. Open the panel for the day’s list.</span></li>
-        <li><b>Read the map.</b> <span><em class="sun">Tower alignments</em>: stand on a line and the sun or moon is behind the tower at that hour. <em class="street">Street henges</em>: glowing streets line up with the sun or moon, like Manhattanhenge.</span></li>
-        <li><b>See the shot.</b> <span>Drag the photographer onto the map, or hover a line and choose “View from here”. Walk, change lenses, or take off as a drone.</span></li>
-      </ol>
-      <div class="intro-actions">
-        <button id="intro-start" class="chip" type="button">Start</button>
-        <span class="muted">Open this again with <b>?</b></span>
-      </div>
-    </dialog>
-    <div class="topleft">
-      <button id="back" class="chip surface">&larr; Map</button>
-      <button id="takeoff" class="chip surface">&uarr; Take off</button>
-      <button id="share" class="chip surface" aria-expanded="false" aria-controls="share-menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>Go there</button>
-    </div>
-    <div id="share-menu" class="sharemenu surface" hidden>
-      <a id="directions" class="shareitem" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg><span><b>Directions</b><small id="directions-app"></small></span></a>
-      <button id="calendar" type="button" class="shareitem"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4"/></svg><span><b>Add to calendar</b><small id="calendar-what"></small></span></button>
-      <button id="copylink" type="button" class="shareitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg><span><b id="copylink-label">Copy link</b><small>Opens this exact view</small></span></button>
-    </div>
-    <div id="toast" class="toast surface" role="status" aria-live="polite" hidden></div>
-    <div class="heightbar surface">
-      <small>120</small>
-      <input id="height" type="range" min="0" max="120" step="1" aria-label="Height above the ground, metres" />
-      <small>0</small>
-      <span id="height-label" hidden></span>
-    </div>
-    <canvas id="ghost" hidden></canvas>
-    <button id="viewhere" class="chip surface" hidden></button>
-    <div id="stats"></div>
-    <div class="bottom">
-      <canvas id="minimap" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
-      <div class="panel surface">
-        <button id="sheet-toggle" type="button" aria-expanded="false" aria-controls="daylist"><i></i><span>Today</span><b aria-hidden="true">&#8963;</b></button>
-        <div class="camera-rows">
-          <div class="row">
-            <span id="facing"></span>
-            <span class="keys" aria-label="Walk with W, A, S and D, turn with the arrow keys, rise with E and sink with Q, hold Shift to go faster">
-              <kbd data-key="fwd">W</kbd><kbd data-key="left">A</kbd><kbd data-key="back">S</kbd><kbd data-key="right">D</kbd>&nbsp;walk<span class="gap"></span>
-              <kbd data-key="turnL">&larr;</kbd><kbd data-key="turnR">&rarr;</kbd>&nbsp;turn<span class="gap"></span>
-              <span class="drone-only"><kbd data-key="up">E</kbd><kbd data-key="down">Q</kbd>&nbsp;up/down<span class="gap"></span></span>
-              <kbd data-key="run">&#8679;</kbd>&nbsp;faster
-            </span>
-          </div>
-          <div class="status-row">
-            <button id="eclipse" type="button" hidden></button>
-            <a id="airspace" class="status-pill" href="https://maptool-dipul.dfs.de/" target="_blank" rel="noopener" hidden><span></span>&nbsp;&nearr;</a>
-            <button id="dates-toggle" type="button" aria-expanded="false" aria-controls="dates" title="More dates from where you stand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></svg><span id="dates-day"></span><b>&middot; Dates</b></button>
-          </div>
-          <div id="dates" aria-label="More dates from where you stand"></div>
-          <div class="lens"><select id="format" aria-label="Camera format"></select><input id="lens" type="range" min="0" max="1000" aria-label="Focal length" /><span id="lens-label"></span><div id="lens-chips" role="group" aria-label="Lens" hidden></div><button id="thirds" type="button" aria-pressed="false" aria-label="Lines at thirds" title="Lines at thirds"><svg viewBox="0 0 16 12" aria-hidden="true"><rect x="0.75" y="0.75" width="14.5" height="10.5" rx="1.5" /><path d="M5.6 1v10M10.4 1v10M1 4.3h14M1 7.7h14" /></svg></button></div>
+    <header class="bar">
+      <a class="brand" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="11.2" y="1.5" width="1.6" height="7" /><circle cx="12" cy="11" r="3.6" /><path d="M10.6 14.2h2.8l.9 8.3h-4.6z" /></svg>Urban Eclipse</a>
+      <a class="button small" href="/plan/">Open the planner</a>
+    </header>
+
+    <section class="hero">
+      <video class="hero-video" src="/media/berlin-day.mp4" poster="/media/berlin-day.jpg" autoplay muted loop playsinline aria-hidden="true"></video>
+      <div class="hero-text">
+        <p class="eyebrow">For photographers in Berlin</p>
+        <h1>Line up the sun and moon with&nbsp;Berlin</h1>
+        <p class="lead">Find where to stand so the sun or moon sits behind the TV tower, or shines straight down a street. To the minute, with the city’s real buildings, light and clouds.</p>
+        <div class="actions">
+          <a class="button" href="/plan/">Open the planner</a>
+          <a class="button ghost" href="#shots">See the shots</a>
         </div>
-        <div class="row" id="moment-row">
-          <input class="clock" id="clock" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Time: type one, such as 17:50 or 5:50 pm" />
-          <div class="daynav">
-            <button id="prev-day" type="button" aria-label="Previous day">&lsaquo;</button>
-            <label class="daypick">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4" /></svg>
-              <span id="day-label"></span>
-              <input id="date" type="date" aria-label="Choose a date" />
-            </label>
-            <button id="today" type="button" hidden>Today</button>
-            <button id="next-day" type="button" aria-label="Next day">&rsaquo;</button>
-          </div>
-          <span class="muted" id="sun"></span>
-        </div>
-        <div id="weather" class="weather-line" aria-live="polite"></div>
-        <div id="tracks" aria-hidden="true"></div>
-        <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="any" aria-label="Time of day" /><button id="fine" type="button" aria-pressed="false" title="Fine timing: half an hour either side, to 5 seconds">&plusmn;30 min</button></div>
-        <div id="moments" aria-label="Streets lined up today"></div>
-        <div id="dayfilter" role="group" aria-label="Show">
-          <button type="button" data-layer="sun"><i style="background: var(--sun)"></i>Sun</button>
-          <button type="button" data-layer="moon"><i style="background: var(--moon)"></i>Moon</button>
-          <span class="sep"></span>
-          <button type="button" data-layer="tower">Tower</button>
-          <button type="button" data-layer="streets">Streets</button>
-        </div>
-        <div id="daylist" aria-label="Every chance today"></div>
-        <div class="muted" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
-        <div class="muted credit">Map data &copy; OpenStreetMap contributors &middot; Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a><span class="eye-credit"> &middot; Lunar surface: NASA&rsquo;s Scientific Visualization Studio</span></div>
       </div>
-      <div id="stick" class="walkpad surface" role="application" aria-label="Walk: drag the knob"><div class="knob"></div></div>
-    </div>
+    </section>
+
+    <main>
+      <section id="shots" class="section">
+        <h2>Three shots the planner finds</h2>
+        <p class="intro">Each clip is the planner’s viewfinder on a real date: what the photo would show. Open it and you stand on the spot, with the time and lens set.</p>
+        <div class="shots">
+          {SHOTS.map((shot) => (
+            <article class="shot">
+              <a class="shot-media" href={shot.href} aria-label={`Open this shot: ${shot.title}`}>
+                <video data-src={`/media/${shot.id}.mp4`} poster={`/media/${shot.id}.jpg`} muted loop playsinline preload="none" />
+              </a>
+              <div class="shot-body">
+                <h3><i class:list={['dot', shot.body]} />{shot.title}</h3>
+                <p>{shot.text}</p>
+                <p class="example"><b>{shot.when}</b><br />{shot.where}</p>
+                <a class="more" href={shot.href}>Open this shot ›</a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>How it works</h2>
+        <ol class="steps">
+          {STEPS.map((step, i) => (
+            <li class="step">
+              <img src={`/media/${step.img}.jpg`} alt="" loading="lazy" width="1280" height="800" />
+              <div>
+                <span class="num">{i + 1}</span>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="section">
+        <h2>Made for the field</h2>
+        <div class="features">
+          {FEATURES.map(([title, text]) => (
+            <div class="feature">
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="section honest">
+        <h2>What it knows, and what it doesn’t</h2>
+        <ul>
+          <li><b>Buildings and ground</b> come from Berlin’s 3D city model (LoD2) and terrain (DGM1), 9 km round the tower. Every view the planner offers is checked against them.</li>
+          <li><b>Trees are not in the model.</b> In summer a clear sightline on screen can be leaves on site, so check a park spot before you rely on it.</li>
+          <li><b>The sun and moon</b> are computed for the exact time and place; the tower is modelled from its drawings, antenna included.</li>
+          <li><b>Clouds</b> come from the Open-Meteo forecast, which reaches 16 days ahead. Beyond that the sky is clear.</li>
+        </ul>
+      </section>
+
+      <section class="cta">
+        <h2>Find your shot</h2>
+        <a class="button" href="/plan/">Open the planner</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Buildings and terrain: Geoportal Berlin · Map data © OpenStreetMap contributors · Weather: <a href="https://open-meteo.com/">Open-Meteo</a> · Lunar surface: NASA’s Scientific Visualization Studio</p>
+      <p><a href="/map/">The earlier flat map</a></p>
+    </footer>
+
     <script>
-      import '../miniature/main.js';
+      // Clips play while they are on screen, and only load once they come near it.
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const video = entry.target as HTMLVideoElement;
+            if (entry.isIntersecting) {
+              if (!video.getAttribute('src')) video.src = video.dataset.src ?? '';
+              video.play().catch(() => {});
+            } else video.pause();
+          }
+        },
+        { threshold: 0.35 },
+      );
+      for (const video of document.querySelectorAll('video[data-src]')) observer.observe(video);
+      // Respect a wish for less motion: keep the hero still on its poster.
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) (document.querySelector('.hero-video') as HTMLVideoElement).pause();
     </script>
+
+    <style is:global>
+      :root {
+        --bg: #f6f3ee;
+        --surface: #fffdf9;
+        --ink: #24221f;
+        --muted: #6f6a62;
+        --line: #e2ddd4;
+        --accent: #d9772b;
+        --sun: #f26a12;
+        --moon: #5b82ff;
+        --radius: 14px;
+        --gutter: max(16px, env(safe-area-inset-left));
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg: #111013;
+          --surface: #1b1a1f;
+          --ink: #ece8df;
+          --muted: #a7a3b0;
+          --line: #2e2c34;
+          color-scheme: dark;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #111013;
+        --surface: #1b1a1f;
+        --ink: #ece8df;
+        --muted: #a7a3b0;
+        --line: #2e2c34;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+      a { color: inherit; }
+      h1, h2, h3 { line-height: 1.15; letter-spacing: -0.015em; margin: 0; }
+
+      .bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: max(12px, env(safe-area-inset-top)) var(--gutter) 12px; color: #fff; background: linear-gradient(rgba(10, 10, 14, 0.55), rgba(10, 10, 14, 0)); }
+      .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+      .brand svg { width: 20px; height: 20px; fill: currentColor; }
+
+      .button { display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 22px; border-radius: 23px; background: var(--accent); color: #fff; font-weight: 650; text-decoration: none; white-space: nowrap; transition: transform 0.15s, filter 0.15s; }
+      .button:hover { filter: brightness(1.06); transform: translateY(-1px); }
+      .button.small { height: 36px; padding: 0 16px; font-size: 14px; }
+      .button.ghost { background: rgba(255, 255, 255, 0.14); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45); backdrop-filter: blur(6px); }
+
+      .hero { position: relative; min-height: min(92vh, 820px); display: grid; align-items: end; overflow: hidden; color: #fff; background: #111013; }
+      .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10, 10, 14, 0.72) 0%, rgba(10, 10, 14, 0.38) 45%, rgba(10, 10, 14, 0) 75%), linear-gradient(180deg, rgba(10, 10, 14, 0) 40%, rgba(10, 10, 14, 0.7) 100%); }
+      @media (max-width: 860px) { .hero::after { background: linear-gradient(180deg, rgba(10, 10, 14, 0.15) 0%, rgba(10, 10, 14, 0.55) 45%, rgba(10, 10, 14, 0.85) 100%); } }
+      .hero-text { position: relative; z-index: 1; max-width: 760px; padding: 0 var(--gutter) clamp(40px, 8vh, 88px); margin-left: max(0px, calc((100vw - 1120px) / 2)); }
+      .eyebrow { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+      h1 { font-size: clamp(36px, 6.4vw, 68px); font-weight: 750; letter-spacing: -0.03em; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35); }
+      .lead { max-width: 600px; margin: 18px 0 26px; font-size: clamp(17px, 2vw, 20px); opacity: 0.92; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+      main { max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+      .section { padding: clamp(56px, 9vw, 104px) 0 0; }
+      .section h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 720; }
+      .intro { max-width: 620px; margin: 12px 0 0; color: var(--muted); font-size: 17px; }
+
+      .shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 32px; }
+      .shot { display: grid; grid-template-rows: auto 1fr; overflow: hidden; border-radius: var(--radius); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 30px rgba(40, 34, 24, 0.08); }
+      .shot-media { display: block; aspect-ratio: 3 / 2; background: #1b1a1f; }
+      .shot-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .shot-body { display: grid; align-content: start; gap: 10px; padding: 18px 20px 20px; }
+      .shot h3 { display: flex; align-items: center; gap: 9px; font-size: 19px; }
+      .shot p { margin: 0; color: var(--muted); font-size: 15px; }
+      .shot .example { padding: 10px 12px; border-radius: 10px; background: var(--bg); color: var(--ink); font-size: 14px; }
+      .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+      .dot.sun { background: var(--sun); }
+      .dot.moon { background: var(--moon); }
+      .more { justify-self: start; color: var(--accent); font-weight: 650; text-decoration: none; }
+      .more:hover { text-decoration: underline; }
+
+      .steps { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 28px; }
+      .step { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 48px); align-items: center; }
+      .step:nth-child(even) img { order: 2; }
+      .step img { width: 100%; height: auto; border-radius: var(--radius); box-shadow: 0 8px 30px rgba(40, 34, 24, 0.12); background: #1b1a1f; }
+      .num { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-bottom: 12px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 15px; }
+      .step h3 { font-size: 24px; }
+      .step p { margin: 10px 0 0; color: var(--muted); font-size: 16.5px; }
+
+      .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-top: 32px; overflow: hidden; border-radius: var(--radius); background: var(--line); border: 1px solid var(--line); }
+      .feature { padding: 22px; background: var(--surface); }
+      .feature h3 { font-size: 17px; }
+      .feature p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+
+      .honest ul { max-width: 760px; margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+      .honest li { padding-left: 18px; border-left: 3px solid var(--line); color: var(--muted); }
+      .honest li b { color: var(--ink); }
+
+      .cta { display: grid; justify-items: center; gap: 20px; margin: clamp(56px, 9vw, 104px) 0 0; padding: clamp(40px, 6vw, 64px) 20px; border-radius: var(--radius); background: linear-gradient(rgba(10, 10, 14, 0.15), rgba(10, 10, 14, 0.45)), #16151a url('/media/moon-antenna.jpg') center 42% / cover; color: #fff; text-align: center; }
+      .cta h2 { font-size: clamp(28px, 4vw, 40px); text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5); }
+
+      .footer { max-width: 1120px; margin: 0 auto; padding: 40px var(--gutter) max(40px, env(safe-area-inset-bottom)); color: var(--muted); font-size: 13px; }
+      .footer p { margin: 6px 0; }
+
+      @media (max-width: 860px) {
+        .shots, .features { grid-template-columns: minmax(0, 1fr); }
+        .step { grid-template-columns: minmax(0, 1fr); }
+        .step:nth-child(even) img { order: 0; }
+      }
+    </style>
   </body>
 </html>
