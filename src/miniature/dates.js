@@ -15,6 +15,7 @@ import { cloudsAt, cloudsFor, forecastReach } from './weather.js';
 import { setDay, setFine, setMinute } from './clock.js';
 import { bodyIcon } from './daylist.js';
 import { look, turnTo } from './eyeLevel.js';
+import { TARGETS } from './targets.js';
 import { clearView, fineAlong } from './sightlines.js';
 import { app, invalidate, toDirection } from './state.js';
 
@@ -87,11 +88,6 @@ async function addClouds(small, t) {
   small.textContent += ` \u00b7 forecast: ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`;
 }
 
-const TOWER_STATE = {
-  sun: { hidden: 'Sun behind the sphere', ring: 'Ring of sun round the sphere', edge: 'Sun at the sphere’s edge', antenna: 'Sun behind the antenna' },
-  moon: { edge: 'Moon at the sphere’s edge', antenna: 'Moon behind the antenna' },
-};
-
 function row({ body, t, title, detail, go }) {
   const item = document.createElement('button');
   item.type = 'button';
@@ -139,23 +135,31 @@ async function refresh() {
   const [lat, lon] = latLonFromScene(spot.x, spot.z, FERNSEHTURM.lat, FERNSEHTURM.lon);
   const now = Date.now();
   const street = streetHere();
-  const towerBox = section('Behind the tower from here', 'Searching the next 12 months…');
   const streetBox = street ? section(`Down ${street.name}`, 'Searching the next 12 months…') : null;
-  list.replaceChildren(...[streetBox, towerBox].filter(Boolean));
+  const pending = TARGETS.map((target) => {
+    const box = section(target.heading, 'Searching the next 12 months…');
+    box.dataset.target = target.id;
+    return box;
+  });
+  list.replaceChildren(...[streetBox, ...pending].filter(Boolean));
+  const targetBox = (id) => list.querySelector(`section[data-target="${id}"]`);
 
   const base = app.groundAt(0, 0);
   const eye = { x: spot.x, y: app.groundAt(spot.x, spot.z) + EYE_HEIGHT + spot.lift, z: spot.z };
-  const flat = Math.hypot(spot.x, spot.z);
   const towerJob = search({ kind: 'tower', eye, base, lat, lon, start: now, end: now + YEAR_MS });
   const streetJob = street
     ? search({ kind: 'street', view: { bearingDeg: street.bearingDeg, skylineDeg: street.skylineDeg, toleranceDeg: street.toleranceDeg, from: { lat, lon } }, start: now, end: now + YEAR_MS })
     : null;
 
-  // Full detail for the checks: toward the tower, and down the street.
-  const towardTower = new THREE.Vector3(-spot.x, 0, -spot.z).normalize();
-  await fineAlong(spot.x, spot.z, towardTower, flat);
-  if (street) await fineAlong(spot.x, spot.z, toDirection(new THREE.Vector3(), street.bearingDeg, 0), 1500);
+  // Full detail for the checks: toward each landmark, and down the street.
   const direction = new THREE.Vector3();
+  for (const target of TARGETS) {
+    const dx = target.x - spot.x;
+    const dz = target.z - spot.z;
+    const flat = Math.hypot(dx, dz);
+    await fineAlong(spot.x, spot.z, toDirection(direction, 0, 0).set(dx, 0, dz).normalize(), Math.max(20, flat - 40));
+  }
+  if (street) await fineAlong(spot.x, spot.z, toDirection(new THREE.Vector3(), street.bearingDeg, 0), 1500);
 
   if (streetJob) {
     streetJob.then(
@@ -192,33 +196,42 @@ async function refresh() {
   towerJob.then(
     (shots) => {
       if (searched !== spot) return;
-      // Stop the check short of the tower, which would otherwise count as in the way.
-      const open = shots.filter((s) => clearView(spot.x, spot.z, toDirection(direction, s.az, s.alt), Math.max(20, flat - 40) / Math.cos(THREE.MathUtils.degToRad(s.alt)), spot.lift));
-      const box = section('Behind the tower from here');
-      if (!shots.length) box.append(paragraph('Neither the sun nor the moon passes behind the tower from this spot in the next 12 months. Tower lines on the map show where they do.'));
-      else if (!open.length) box.append(paragraph('Buildings hide the tower from here. Try a few steps along, or take off.'));
-      for (const s of open.slice(0, MAX_ROWS)) {
-        const what = s.body === 'moon' && s.state === 'ring' ? `Big moon behind the TV tower, ${discOverSphere(flat).toFixed(1)}× the sphere` : TOWER_STATE[s.body][s.state];
-        box.append(
-          row({
-            body: s.body,
-            t: s.peak,
-            title: `${dateLabel(s.peak)} · ${formatClock(s.peak)}`,
-            detail: `${what} · ${Math.round(s.alt)}° up · ${describeLight(s.body, s.peak, lat, lon)}`,
-            go: () => {
-              setDay(dayOf(s.peak));
-              setMinute(s.peak);
-              setFine(true);
-              turnTo(s.az, Math.max(0, s.alt));
-            },
-          }),
-        );
+      for (const target of TARGETS) {
+        const mine = shots.filter((s) => s.target === target.id);
+        const dx = target.x - spot.x;
+        const dz = target.z - spot.z;
+        const flat = Math.hypot(dx, dz);
+        // Stop the check short of the landmark, which would otherwise count as in the way.
+        const open = mine.filter((s) => clearView(spot.x, spot.z, toDirection(direction, s.az, s.alt), Math.max(20, flat - 40) / Math.cos(THREE.MathUtils.degToRad(s.alt)), spot.lift));
+        const box = section(target.heading);
+        if (!mine.length) box.append(paragraph(target.none));
+        else if (!open.length) box.append(paragraph(`Buildings hide it from here. Try a few steps along, or take off.`));
+        for (const s of open.slice(0, MAX_ROWS)) {
+          const what = s.body === 'moon' && s.state === 'ring' && target.id === 'fernsehturm' ? `Big moon behind the TV tower, ${discOverSphere(flat).toFixed(1)}× the sphere` : target.stateText[s.body][s.state];
+          box.append(
+            row({
+              body: s.body,
+              t: s.peak,
+              title: `${dateLabel(s.peak)} · ${formatClock(s.peak)}`,
+              detail: `${what} · ${Math.round(s.alt)}° up · ${describeLight(s.body, s.peak, lat, lon)}`,
+              go: () => {
+                setDay(dayOf(s.peak));
+                setMinute(s.peak);
+                setFine(true);
+                turnTo(s.az, Math.max(0, s.alt));
+              },
+            }),
+          );
+        }
+        if (open.length > MAX_ROWS) box.append(paragraph(`The next ${MAX_ROWS} of ${open.length} dates.`));
+        if (open.length && open.length < mine.length) box.append(paragraph(`${mine.length - open.length} more hidden by buildings from this spot.`));
+        targetBox(target.id).replaceWith(box);
       }
-      if (open.length > MAX_ROWS) box.append(paragraph(`The next ${MAX_ROWS} of ${open.length} dates.`));
-      if (open.length && open.length < shots.length) box.append(paragraph(`${shots.length - open.length} more hidden by buildings from this spot.`));
-      towerBox.replaceWith(box);
     },
-    (error) => towerBox.replaceWith(section('Behind the tower from here', `Could not search: ${error.message}`)),
+    (error) => {
+      if (searched !== spot) return;
+      for (const target of TARGETS) targetBox(target.id).replaceWith(section(target.heading, `Could not search: ${error.message}`));
+    },
   );
 }
 

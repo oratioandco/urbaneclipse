@@ -4,7 +4,10 @@ import { parseTime } from '../../src/miniature/time.js';
 // @ts-expect-error plain JS module
 import { cloudDrift, cloudsAt, readSky } from '../../src/miniature/weather.js';
 // @ts-expect-error plain JS module
-import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, antennaRange, bodyAgainstTower, discOverSphere, findTowerShots, visibleMoon } from '../../src/miniature/towerShots.js';
+import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, antennaRange, bodyAgainstProfile, bodyAgainstTower, discOverSphere, findShots, findTowerShots, visibleMoon } from '../../src/miniature/towerShots.js';
+// @ts-expect-error plain JS module
+import { TARGETS } from '../../src/miniature/targets.js';
+import { BRANDENBURGER_TOR, SIEGESSAEULE, landmarkHeight, profileRadius } from '../../src/lib/landmarks.ts';
 // @ts-expect-error plain JS module
 import { latLonFromScene, sceneFromLatLon } from '../../src/miniature/eye.js';
 
@@ -164,6 +167,65 @@ describe('passes behind the tower from a spot', () => {
   it('leaves out a moon too thin to see', () => {
     const eye = at(1500);
     expect(run(eye, altOf(eye, SPHERE_CENTRE_AGL), 0.1).filter((s: { body: string }) => s.body === 'moon')).toEqual([]);
+  });
+});
+
+describe('passes behind the other landmarks', () => {
+  const base = 34;
+  const t0 = Date.UTC(2027, 2, 22, 12);
+  // A much slower sweep than the real sky's, crossing due north (the eyes stand south of each
+  // landmark): the column hides the disc for seconds at true speed, and the minute grid would
+  // only ever see the edges.
+  const sweep = (alt: number) => (_body: string, t: number) => ({ az: (((t - t0) / 60_000) * 0.02 - 0.9 + 360) % 360, alt });
+
+  it('keeps the registry in step with the landmark axes', () => {
+    for (const target of TARGETS) {
+      const landmark = target.id === 'siegessaeule' ? SIEGESSAEULE : target.id === 'brandenburger-tor' ? BRANDENBURGER_TOR : null;
+      if (!landmark) {
+        expect(target.id).toBe('fernsehturm');
+        expect(target.x).toBe(0);
+        expect(target.z).toBe(0);
+        continue;
+      }
+      const [x, z] = sceneFromLatLon(landmark.lat, landmark.lon, TOWER.lat, TOWER.lon);
+      expect(target.x).toBeCloseTo(x, 0);
+      expect(target.z).toBeCloseTo(z, 0);
+      expect(target.topAGL).toBeCloseTo(landmarkHeight(landmark), 3);
+    }
+  });
+
+  it('sizes the new landmarks by their profiles', () => {
+    expect(landmarkHeight(SIEGESSAEULE)).toBeGreaterThan(66);
+    expect(landmarkHeight(SIEGESSAEULE)).toBeLessThan(68);
+    // The hall is wider than the column above it.
+    expect(profileRadius(SIEGESSAEULE.profile, 5)).toBeGreaterThan(profileRadius(SIEGESSAEULE.profile, 30));
+    expect(landmarkHeight(BRANDENBURGER_TOR)).toBe(26);
+    expect(profileRadius(BRANDENBURGER_TOR.profile, 26)).toBe(0); // nothing above the quadriga
+  });
+
+  it('hides the sun behind the column up close, and crosses it at its edge from far out', () => {
+    const target = TARGETS.find((t: { id: string }) => t.id === 'siegessaeule');
+    const eyeNear = { x: target.x, y: base + 1.6, z: target.z + 500 };
+    const eyeFar = { x: target.x, y: base + 1.6, z: target.z + 2000 };
+    const altOf = (eye: { y: number; z: number }, height: number) => (Math.atan2(base + height - eye.y, eye.z - target.z) * 180) / Math.PI;
+    const run = (eye: { x: number; y: number; z: number }, alt: number) =>
+      findShots({ eye, base, start: t0, end: t0 + 90 * 60_000, targets: [target], bodyAt: sweep(alt), moonLit: () => 1 });
+    const near = run(eyeNear, altOf(eyeNear, 30)).filter((s: { body: string }) => s.body === 'sun');
+    expect(near.map((s: { state: string }) => s.state)).toEqual(['hidden']);
+    // The column is a tall band on the sky, so the disc never rings it: it crosses at the edge.
+    const far = run(eyeFar, altOf(eyeFar, 30)).filter((s: { body: string }) => s.body === 'sun');
+    expect(far.map((s: { state: string }) => s.state)).toEqual(['edge']);
+  });
+
+  it('never fakes a ring of moon round the gate from far away', () => {
+    const target = TARGETS.find((t: { id: string }) => t.id === 'brandenburger-tor');
+    // From 3 km the disc is tiny against the 35 m gate: no ring, only an edge or nothing.
+    const eye = { x: target.x, y: base + 1.6, z: target.z + 3000 };
+    const alt = (Math.atan2(base + 23 - eye.y, 3000) * 180) / Math.PI; // against the quadriga band
+    const moon = findShots({ eye, base, start: t0, end: t0 + 90 * 60_000, targets: [target], bodyAt: sweep(alt), moonLit: () => 1 }).filter(
+      (s: { body: string }) => s.body === 'moon',
+    );
+    expect(moon.map((s: { state: string }) => s.state)).not.toContain('ring');
   });
 });
 
