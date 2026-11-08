@@ -76,7 +76,17 @@ function berlinMidnight(day) {
   return guess.getTime() - (local - utc);
 }
 
-/** Within the forecast's reach, say what the clouds will do: a clear date can still be grey. */
+/**
+ * Whether direct sunlight is likely at that moment, from the forecast's clouds. Low and middle
+ * cloud block the disc; high cirrus only dims it. The forecast is honest for about three days,
+ * decent to a week, and a tendency beyond \u2014 so states only appear where the forecast reaches.
+ */
+function sunState(c) {
+  const effective = Math.max(c.low, c.mid * 0.85, c.high * 0.4);
+  return effective < 0.25 ? ['likely', '#2e7d32'] : effective < 0.5 ? ['maybe', '#b07d10'] : ['unlikely', '#8a8a8a'];
+}
+
+/** Within the forecast's reach, say what the clouds will do, and whether the sun will be direct. */
 async function addClouds(small, t) {
   const day = dayOf(t);
   if (t < Date.now() || !forecastReach(day).ok) return;
@@ -85,7 +95,11 @@ async function addClouds(small, t) {
   if (!clouds) return;
   const c = cloudsAt(clouds, (t - start) / 60_000);
   const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
-  small.textContent += ` \u00b7 forecast: ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`;
+  const [state, colour] = sunState(c);
+  const dot = document.createElement('i');
+  dot.className = 'sun-state';
+  dot.style.cssText = `display:inline-block;width:0.55em;height:0.55em;border-radius:50%;background:${colour};margin:0 0.15em 0 0.35em;vertical-align:baseline`;
+  small.append(dot, `sun ${state} \u00b7 forecast: ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`);
 }
 
 function row({ body, t, title, detail, go }) {

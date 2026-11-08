@@ -1,13 +1,17 @@
 /**
  * Landmarks the LoD2 model gets wrong, modelled by hand in the same white clay, the way map apps
- * model their landmarks: the Oberbaumbrücke, which LoD2 leaves out entirely, and the domes of the
- * Frankfurter Tor, which LoD2 reduces to a pyramid on each tower.
+ * model their landmarks: the Oberbaumbrücke, which LoD2 leaves out entirely, the domes of the
+ * Frankfurter Tor, which LoD2 reduces to a pyramid on each tower, the Brandenburger Tor, whose
+ * colonnade LoD2 fills in as a solid block, the Siegessäule, which LoD2 flattens to a 25 m stub,
+ * and the Reichstag's glass cupola, which LoD2 leaves out entirely.
  *
  * Positions and sizes are in scene metres, measured on 2026-11-08 from OpenStreetMap (ways
  * 288514442, 373626457/59/62, 1547500040, 1013505135/36 and 373626454-61 for the bridge;
- * 288230369, 316933471 and 288230373-76 for the towers) and from the LoD2 tiles: the towers'
- * cornice is at 44 m scene height, which is where the LoD2 pyramid starts. Heights the data does
- * not give (arch rise, arcade, drum and dome) are read from photographs and are approximate.
+ * 288230369, 316933471 and 288230373-76 for the towers; 518071791 for the gate; 718035022 for
+ * the column) and from the LoD2 tiles: the towers' cornice is at 44 m scene height, which is
+ * where the LoD2 pyramid starts; the gate's ground sits at −2.4 m scene, the column's at +0.3 m
+ * (scripts/miniature/check_landmark_lod.mjs). Heights the data does not give (arch rise, arcade,
+ * drum and dome, the quadriga's pose) are read from photographs and are approximate.
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -16,6 +20,11 @@ import { cityUniforms, shadeBuildings } from './shading.js';
 import { app } from './state.js';
 
 const material = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: false });
+/** The gilded figures: the quadriga and the Siegessäule's Viktoria, shiny where the sun catches them. */
+const gold = shadeBuildings(
+  new THREE.MeshPhongMaterial({ color: 0xd9a544, specular: 0xfff2cc, shininess: 70, flatShading: true, side: THREE.DoubleSide }),
+  { windows: false, name: 'city-landmarks-gold' },
+);
 
 /** Drops the attributes flat shading does not need, so every part merges with every other. */
 function clean(geometry) {
@@ -59,6 +68,23 @@ function wall(outline, holes, z0, z1) {
   const shape = new THREE.Shape(outline.map(([x, y]) => new THREE.Vector2(x, y)));
   shape.holes.push(...holes);
   return new THREE.ExtrudeGeometry(shape, { depth: z1 - z0, bevelEnabled: false, curveSegments: 1 }).translate(0, 0, z0);
+}
+
+/**
+ * A winged victory, reading as a woman from a distance: a robe, a torso, a head, two wings
+ * swept back and the wreath on its staff held high, which is the figure's topmost point.
+ * Built standing on y0 at (x, z), a little under h tall, facing the frame's +z unless turned.
+ */
+function victory(parts, { x, z, y0, h, turn = 0 }) {
+  const put = (g) => parts.push(turn ? g.rotateY(turn).translate(x, 0, z) : g.translate(x, 0, z));
+  put(prism(8, 0.11 * h, y0, y0 + 0.42 * h, 0.04 * h)); // robe
+  put(prism(6, 0.05 * h, y0 + 0.42 * h, y0 + 0.68 * h, 0.035 * h)); // torso
+  put(new THREE.SphereGeometry(0.055 * h, 8, 6).translate(0, y0 + 0.75 * h, 0)); // head
+  for (const side of [-1, 1]) {
+    put(new THREE.BoxGeometry(0.3 * h, 0.03 * h, 0.16 * h).rotateZ(-side * 0.55).rotateY(side * 0.5).translate(side * 0.1 * h, y0 + 0.6 * h, -0.05 * h));
+  }
+  put(prism(6, 0.015 * h, y0 + 0.5 * h, y0 + 0.97 * h).translate(0.09 * h, 0, 0.04 * h)); // the staff
+  put(prism(16, 0.08 * h, y0 + 0.9 * h, y0 + 0.97 * h, 0.08 * h).translate(0.09 * h, 0, 0.04 * h)); // the wreath
 }
 
 // --- Oberbaumbrücke -------------------------------------------------------------------------
@@ -215,7 +241,134 @@ function frankfurterTor() {
   });
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor()];
+// --- Brandenburger Tor ----------------------------------------------------------------------
+// Frame: x along the gate's face (34.8 m, OSM way 518071791), y up from its ground (−2.4 m
+// scene), z through the five passages toward Pariser Platz. The face's half-width 17.4 and the
+// half-depth 8.3; the passages run 6.54 m in the middle, 4.44 m either side of it, with 1.75 m
+// piers between, and the chariot looks east. LoD2 has the whole thing as a solid block: cut it
+// away above its plinth inside a square turned with the gate.
+const GATE = {
+  centre: [-2153.0, 505.0],
+  ground: -2.4,
+  along: [0.108, 0.994],
+  across: [0.994, -0.108],
+  half: 17.6,
+};
+
+/** Where the six piers and their columns stand along the face, from the passage widths. */
+function gatePiers() {
+  const piers = [];
+  let x = -17.4;
+  for (const passage of [4.44, 4.44, 6.54, 4.44, 4.44]) {
+    piers.push([x, x + 1.75]);
+    x += 1.75 + passage;
+  }
+  piers.push([x, x + 1.75]);
+  return piers;
+}
+
+function brandenburgerTor() {
+  const parts = [];
+  // The piers between the passages, full depth, and the free columns in front of and behind them.
+  for (const [a, b] of gatePiers()) {
+    parts.push(box(a, b, 0, 14.6, -6.6, 6.6));
+    for (const z of [-7.35, 7.35]) {
+      parts.push(prism(20, 0.95, 0, 13.7).translate((a + b) / 2, 0, z));
+      parts.push(prism(20, 1.1, 13.7, 14.6, 1.25).translate((a + b) / 2, 0, z));
+    }
+  }
+  // Architrave and frieze, a wider cornice, the attic.
+  parts.push(box(-17.4, 17.4, 14.6, 16.3, -8.3, 8.3));
+  parts.push(box(-17.9, 17.9, 16.3, 17.5, -8.9, 8.9));
+  parts.push(box(-16.6, 16.6, 17.5, 20.5, -6.9, 6.9));
+  // The quadriga, gilded, so it reads as one up close: four horses abreast with necks,
+  // heads and tails, the chariot on two wheels, and the victory standing in it.
+  const gilded = [];
+  gilded.push(box(-3.6, 3.6, 20.5, 21.2, -2.3, 2.3));
+  for (const cx of [-2.7, -0.9, 0.9, 2.7]) {
+    gilded.push(box(cx - 0.35, cx + 0.35, 21.2, 21.65, 0.5, 1.9)); // legs
+    gilded.push(box(cx - 0.45, cx + 0.45, 21.55, 22.3, 0.1, 2.35)); // body
+    gilded.push(box(cx - 0.12, cx + 0.12, 21.75, 22.4, -0.4, 0.05)); // tail
+    gilded.push(new THREE.BoxGeometry(0.36, 0.4, 0.95).rotateX(-0.75).translate(cx, 22.55, 2.5)); // neck and head
+  }
+  gilded.push(box(-2.75, 2.75, 21.2, 22.15, -2.2, -0.1)); // chariot
+  for (const wx of [-2.6, 2.6]) gilded.push(new THREE.CylinderGeometry(0.85, 0.85, 0.18, 16).rotateZ(Math.PI / 2).translate(wx, 22.05, -1.15));
+  victory(gilded, { x: 0, z: -1.15, y0: 22.15, h: 3.8 });
+  const { centre, ground, along, across, half } = GATE;
+  const matrix = [along[0], 0, -across[0], centre[0], 0, 1, 0, ground, along[1], 0, -across[1], centre[1], 0, 0, 0, 1];
+  const place = (parts, mat) => {
+    const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), mat);
+    mesh.matrix.set(...matrix);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrixWorldNeedsUpdate = true;
+    return mesh;
+  };
+  // Cut the LoD2 block above its plinth, inside a square turned with the gate.
+  cityUniforms.uCuts.value[2].set(centre[0], centre[1], half, ground + 0.5);
+  cityUniforms.uCutTurns.value[2].set(along[0], along[1]);
+  return [place(parts, material), place(gilded, gold)];
+}
+
+// --- Siegessäule ----------------------------------------------------------------------------
+// A solid of revolution on its ground at +0.3 m scene: the round terrace (OSM way 718035022,
+// about 60 m across), the square colonnaded hall, the tapering column, the viewing platform's
+// ring and the gilded Viktoria to 67 m. LoD2 has a 25 m stub here: cut it at ground level.
+const COLUMN = { centre: [-4027.1, 699.6], ground: 0.3, half: 31 };
+
+function siegessaeule() {
+  const parts = [
+    prism(48, 30, -0.2, 1.1), // the terrace
+    prism(48, 29.6, 1.1, 1.9), // its ring wall
+    prism(4, 10.2, 1.1, 12.8), // the hall, square, flats to the axes
+    prism(4, 10.9, 12.8, 13.5), // the hall's cornice
+    prism(32, 3.0, 13.5, 48.9, 2.45), // the column, tapering
+    prism(32, 3.7, 48.9, 50.7), // the platform's ring
+    prism(32, 3.55, 50.7, 51.9, 3.55), // its railing band
+    prism(32, 2.35, 51.9, 58.7, 2.25), // the shaft above the platform
+  ];
+  const { centre, ground, half } = COLUMN;
+  // The Viktoria, gilded, facing the city: robe, wings and the wreath held high.
+  const gilded = [];
+  victory(gilded, { x: 0, z: 0, y0: 58.7, h: 8.4, turn: Math.PI / 2 });
+  const place = (parts, mat) => {
+    const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), mat);
+    mesh.position.set(centre[0], ground, centre[1]);
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+    return mesh;
+  };
+  cityUniforms.uCuts.value[3].set(centre[0], centre[1], half, ground + 0.5);
+  return [place(parts, material), place(gilded, gold)];
+}
+
+// --- Reichstag -------------------------------------------------------------------------------
+// The glass cupola LoD2 leaves out entirely: the building's flat roof tops out at 35.2 m scene
+// (terrain −1.4), where the real roof over the chamber rises to about 47 m and the cupola to
+// about 70 m (centre of OSM relation 2201742; the dome is roughly 38 m across and 23.5 m high,
+// over the plenary chamber). Cut the flat roof inside a square over the chamber and add the
+// raised hall, the drum, the meridian ribs, and the skewed mirror funnel inside.
+const REICHSTAG = { centre: [-2262.0, 245.5], terrain: -1.4, roof: 35.2, half: 26 };
+
+function reichstag() {
+  const parts = [];
+  const { centre, terrain, roof, half } = REICHSTAG;
+  const hall = 42.0; // the roof the cupola stands on, above the scene's zero
+  parts.push(box(-21, 21, roof - 0.4, hall, -18, 18)); // the raised hall over the chamber
+  parts.push(prism(32, 19.6, hall, hall + 2.0)); // the drum
+  parts.push(new THREE.SphereGeometry(19.6, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 23.5 / 19.6, 1).translate(0, hall + 2.0, 0)); // the shell
+  for (let i = 0; i < 12; i++) {
+    parts.push(new THREE.TorusGeometry(19.4, 0.35, 6, 24, Math.PI).scale(1, 23.5 / 19.6, 1).rotateY((i / 12) * Math.PI).translate(0, hall + 2.0, 0)); // ribs
+  }
+  parts.push(new THREE.CylinderGeometry(1.0, 2.8, 22, 16, 1, true).rotateZ(0.1).translate(1.2, hall + 12, 0)); // the funnel
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), material);
+  mesh.position.set(centre[0], terrain, centre[1]);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  cityUniforms.uCuts.value[4].set(centre[0], centre[1], half, roof + 0.2);
+  return mesh;
+}
+
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;

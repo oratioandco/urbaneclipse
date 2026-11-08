@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 
-export const CUTS = 2;
+export const CUTS = 5;
 
 export const cityUniforms = {
   uMap: { value: null },
@@ -194,10 +194,11 @@ export function shadeGround(material) {
 
 /**
  * The buildings' light at night. With windows false, for modelled landmarks: no window grid,
- * and no cuts, since those only remove the LoD2 roofs a landmark replaces.
+ * and no cuts, since those only remove the LoD2 roofs a landmark replaces. A landmark may pass
+ * its own program name, so a second material (the gilded figures) can share the same lighting.
  */
-export function shadeBuildings(material, { windows = true } = {}) {
-  return inject(material, windows ? 'city-buildings' : 'city-landmarks', (shader) => {
+export function shadeBuildings(material, { windows = true, name } = {}) {
+  return inject(material, name ?? (windows ? 'city-buildings' : 'city-landmarks'), (shader) => {
     if (windows) {
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <clipping_planes_fragment>',
@@ -259,7 +260,12 @@ export function shadeFoliage(material) {
   });
 }
 
-/** At night only the row of windows in the sphere is lit; the red lights are separate points. */
+/**
+ * The tower's light. At night only the row of windows in the sphere is lit; the red lights are
+ * separate points. Up close the sphere reads as what it is — steel panels with bands of glass:
+ * panel seams fade in with zoom, and before they could shimmer they are gone; the glass darkens
+ * towards the sky it faces and catches the sun as a glint.
+ */
 export function shadeTower(material) {
   return inject(material, 'city-tower', (shader) => {
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -268,7 +274,27 @@ export function shadeTower(material) {
         float y = vWorldP.y;
         float row = smoothstep(202.6, 203.2, y) * (1.0 - smoothstep(208.0, 208.6, y));
         float pane = smoothstep(0.1, 0.2, abs(fract(atan(vWorldP.x, vWorldP.z) * 15.28) - 0.5));
-        outgoingLight = hazed(outgoingLight + uLights * vec3(1.0, 0.8, 0.5) * row * (0.5 + 1.5 * pane), vWorldP);
+        vec3 worldNormal = inverseTransformDirection(normal, viewMatrix);
+        vec3 toEye = normalize(cameraPosition - vWorldP);
+        // Panel seams on the sphere only: meridians and rings, dropping out as they get thin.
+        float onSphere = 1.0 - smoothstep(16.5, 17.6, length(vWorldP - vec3(0.0, 213.0, 0.0)));
+        vec2 fine = vec2(atan(vWorldP.x, vWorldP.z) * 5.73, y / 4.5);
+        vec2 fw = fwidth(fine);
+        float fade = 1.0 - smoothstep(0.3, 0.7, max(fw.x, fw.y));
+        vec2 f = abs(fract(fine) - 0.5);
+        float seam = max(smoothstep(0.5 - fw.x * 1.4, 0.5, f.x), smoothstep(0.5 - fw.y * 1.4, 0.5, f.y)) * fade * onSphere;
+        // The sphere's glass bands, in metres: the lower gallery and the observation deck.
+        float glass = smoothstep(197.2, 198.0, y) * (1.0 - smoothstep(201.2, 202.0, y));
+        glass = max(glass, smoothstep(212.4, 213.2, y) * (1.0 - smoothstep(217.6, 218.4, y)));
+        glass = max(glass, row);
+        // What the glass faces: the sky, and the sun as a glint on the surface.
+        vec3 dir = reflect(-toEye, normalize(worldNormal));
+        vec3 reflection = uSkyLight * (0.55 + 0.45 * dir.y) + uKeyLight * pow(max(dot(dir, normalize(uKeyDir)), 0.0), 90.0) * 2.5;
+        float shine = clamp(glass * 0.6 + onSphere * 0.1, 0.0, 0.85);
+        outgoingLight = mix(outgoingLight, reflection, shine);
+        outgoingLight -= outgoingLight * seam * 0.14;
+        outgoingLight += uLights * vec3(1.0, 0.8, 0.5) * row * (0.5 + 1.5 * pane);
+        outgoingLight = hazed(outgoingLight, vWorldP);
       }
       #include <opaque_fragment>`,
     );
