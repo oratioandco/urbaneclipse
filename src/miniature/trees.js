@@ -1,15 +1,19 @@
 /**
  * Berlin's street and park trees, from the city's tree register (scripts/miniature/build_trees.mjs):
  * about 540,000, each at its real place with its listed height and crown. Low-poly clay shapes,
- * drawn as three instanced meshes (broadleaf, conifer, columnar) holding only the 500 m cells near
- * enough for a crown to cover a few pixels, within an instance budget.
+ * drawn as six instanced meshes (broadleaf, conifer, columnar, and three cherry kinds) holding only
+ * the 500 m cells near enough for a crown to cover a few pixels, within an instance budget.
  *
- * Broadleaf trees are bare from December to March: their crowns thin a little and turn twig-grey, ramping
- * through April and November. Dense woods inside parks are not in the register.
+ * Broadleaf trees turn gold through October and are bare from December to March: their crowns
+ * shrink to a twiggy remnant and go dark, ramping through April and November. Conifers stay green.
+ * The cherries (Prunus) pink up at blossom season — early kinds first, the famous ornamental ones
+ * mid-April, late ones into May; blossomForecast.js shifts the peaks to the year's weather when it
+ * can. Dense woods inside parks are not in the register.
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CITY, CITY_VERSION, isPhone, params } from './config.js';
+import { autumnOn, blossomAmount, CHERRY_EARLY, CHERRY_ORNAMENTAL, CHERRY_LATE } from './blossom.js';
 import { scene } from './render.js';
 import { shadeFoliage } from './shading.js';
 import { app, invalidateShadows } from './state.js';
@@ -20,8 +24,13 @@ const MIN_CROWN_PX = 3;
 const BUDGET = Number(params.get('trees')) || (isPhone ? 30_000 : 90_000);
 
 const SUMMER = new THREE.Color(0xa9bb92);
-const WINTER = new THREE.Color(0x8e877d);
+// Winter is not grey: the crown shrinks to a remnant and the whole tree reads as dark twigs.
+const WINTER = new THREE.Color(0x5d5348);
 const CONIFER = new THREE.Color(0x8fa486);
+const BLOSSOM = new THREE.Color(0xf5b8ce);
+// Autumn gold, per instance: the seed picks where a tree sits between gold, amber and rust.
+const AUTUMN = [new THREE.Color(0xd9a441), new THREE.Color(0xc8873a), new THREE.Color(0x9c5f30)];
+const KINDS = [0, 1, 2, CHERRY_EARLY, CHERRY_ORNAMENTAL, CHERRY_LATE];
 
 /**
  * Unit trees, one unit tall and one crown wide, for each instance to scale to its own height and
@@ -44,9 +53,10 @@ function unitTree(kind) {
   return mergeGeometries([trunk.toNonIndexed(), crown.toNonIndexed()]);
 }
 
-const kinds = [0, 1, 2].map((kind) => {
+const broadleaf = unitTree(0);
+const kinds = KINDS.map((kind) => {
   const material = shadeFoliage(new THREE.MeshLambertMaterial({ color: kind === 1 ? CONIFER : SUMMER, flatShading: true }));
-  const mesh = new THREE.InstancedMesh(unitTree(kind), material, BUDGET);
+  const mesh = new THREE.InstancedMesh(kind >= 3 ? broadleaf : unitTree(kind), material, BUDGET);
   mesh.count = 0;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -60,6 +70,8 @@ const kinds = [0, 1, 2].map((kind) => {
 let data = null;
 let shownKey = '';
 let leaf = 1;
+let autumn = 0;
+let bloomKey = '';
 let visible = true;
 const cellSphere = new THREE.Sphere();
 const cellPoint = new THREE.Vector3();
@@ -96,15 +108,55 @@ export async function loadTrees() {
   };
 }
 
+/** Each kind's blossom on the date, from climatology or — in season — the GDD prediction. */
+function blossomOn(date) {
+  const peaks = app.blossomPeaks;
+  return {
+    [CHERRY_EARLY]: blossomAmount(date, CHERRY_EARLY, peaks),
+    [CHERRY_ORNAMENTAL]: blossomAmount(date, CHERRY_ORNAMENTAL, peaks),
+    [CHERRY_LATE]: blossomAmount(date, CHERRY_LATE, peaks),
+  };
+}
+
+/** The layers menu names the season, so the pink (and the bare crowns) are explained. */
+function treeNote(date, bloom) {
+  const note = document.getElementById('trees-note');
+  if (!note) return;
+  const blooming = Object.values(bloom).some((amount) => amount > 0.5);
+  if (blooming) {
+    note.textContent = 'From the city’s tree register — the cherry trees are in bloom';
+  } else if (app.blossomPeaks) {
+    const LABEL = { [CHERRY_EARLY]: 'early', [CHERRY_ORNAMENTAL]: 'ornamental', [CHERRY_LATE]: 'late' };
+    const expected = KINDS.filter((kind) => app.blossomPeaks[kind])
+      .map((kind) => `~${new Date(app.blossomPeaks[kind]).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} (${LABEL[kind]})`)
+      .join(', ');
+    note.textContent = `Cherry blossom expected ${expected}`;
+  } else if (leaf < 0.5) {
+    note.textContent = 'From the city’s tree register, bare in winter';
+  } else {
+    note.textContent = 'From the city’s tree register';
+  }
+}
+
 /** Sets the season and whether the layer is on; the next update rebuilds if either changed. */
 export function setTrees({ date, on }) {
-  const next = leafOn(date);
-  if (Math.abs(next - leaf) > 0.01 || on !== visible) {
-    leaf = next;
+  const nextLeaf = leafOn(date);
+  const nextAutumn = autumnOn(date);
+  const nextBloom = blossomOn(date);
+  const nextKey = `${Object.values(nextBloom).map((v) => v.toFixed(2)).join(',')}/${nextAutumn.toFixed(2)}`;
+  if (Math.abs(nextLeaf - leaf) > 0.01 || nextKey !== bloomKey || on !== visible) {
+    leaf = nextLeaf;
+    autumn = nextAutumn;
+    bloomKey = nextKey;
     visible = on;
     shownKey = '';
     kinds[0].material.color.lerpColors(WINTER, SUMMER, leaf);
     kinds[2].material.color.lerpColors(WINTER, SUMMER, leaf);
+    // The cherries follow the broadleaf season, but bloom washes them pink at blossom time.
+    for (const kind of [CHERRY_EARLY, CHERRY_ORNAMENTAL, CHERRY_LATE]) {
+      kinds[kind].material.color.lerpColors(WINTER, SUMMER, leaf).lerp(BLOSSOM, nextBloom[kind]);
+    }
+    treeNote(date, nextBloom);
   }
 }
 
@@ -114,6 +166,10 @@ const scale = new THREE.Vector3();
 const turn = new THREE.Quaternion();
 const up = new THREE.Vector3(0, 1, 0);
 const tint = new THREE.Color();
+// How much of the summer green each autumn palette colour replaces, as a shader multiplier on
+// the material colour — precomputed once, since instance colours multiply the material's.
+const AUTUMN_MIX = AUTUMN.map((gold) => new THREE.Color(gold.r / SUMMER.r, gold.g / SUMMER.g, gold.b / SUMMER.b));
+const WHITE = new THREE.Color(1, 1, 1);
 
 /** Called each drawn frame, after the view frustum is set: refills the meshes when the cells change. */
 export function updateTrees() {
@@ -142,7 +198,7 @@ export function updateTrees() {
   const key = shown.map((c) => c.first).join(',');
   if (key === shownKey) return;
   shownKey = key;
-  const counts = [0, 0, 0];
+  const counts = [0, 0, 0, 0, 0, 0];
   for (const cell of shown) {
     if (!cell.ground) {
       cell.ground = new Float32Array(cell.count);
@@ -153,7 +209,8 @@ export function updateTrees() {
       const kind = data.kind[t];
       const height = data.h[t] / 5;
       let crown = data.c[t] / 5;
-      if (kind !== 1) crown *= 0.82 + 0.18 * leaf;
+      // Bare in winter: the crown shrinks to a twiggy remnant the trunk still carries.
+      if (kind !== 1) crown *= 0.18 + 0.82 * leaf;
       // A steady turn and tint per tree, from its position, so the rows do not look stamped.
       const seed = Math.abs(Math.sin(data.x[t] * 12.9898 + data.z[t] * 78.233) * 43758.5453) % 1;
       position.set(data.x[t] / 2, cell.ground[i] - 0.2, data.z[t] / 2);
@@ -162,7 +219,14 @@ export function updateTrees() {
       matrix.compose(position, turn, scale);
       const mesh = kinds[kind];
       mesh.setMatrixAt(counts[kind], matrix);
-      mesh.setColorAt(counts[kind], tint.setScalar(0.92 + 0.16 * seed));
+      // Autumn gilds the broadleaves (conifers keep their green), each tree its own gold.
+      if (kind !== 1 && autumn > 0) {
+        tint.copy(WHITE).lerp(AUTUMN_MIX[seed * 3 | 0], autumn);
+      } else {
+        tint.setScalar(1);
+      }
+      tint.multiplyScalar(0.92 + 0.16 * seed);
+      mesh.setColorAt(counts[kind], tint);
       counts[kind]++;
     }
   }

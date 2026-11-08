@@ -11,6 +11,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { cherryKind } from '../../src/miniature/blossom.js';
 
 const WFS = 'https://gdi.berlin.de/services/wfs/baumbestand';
 const LAYERS = ['strassenbaeume', 'anlagenbaeume'];
@@ -67,16 +68,18 @@ async function page(layer, start) {
 }
 
 const COLUMNAR = /fastigiata|columnar|pyramidal|säulen|pyramiden|'?stricta/i;
-const KIND = { broadleaf: 0, conifer: 1, columnar: 2 };
+const KIND = { broadleaf: 0, conifer: 1, columnar: 2, cherryEarly: 3, cherryOrnamental: 4, cherryLate: 5 };
 
 /** Height and crown in metres, filling the gaps the register leaves: many park trees list neither. */
 function shape(height, crown, girth, group, botanical, german) {
   const name = `${botanical ?? ''} ${german ?? ''}`;
-  const kind = COLUMNAR.test(name) ? KIND.columnar : group === 'Nadelbäume' ? KIND.conifer : KIND.broadleaf;
+  const cherry = cherryKind(botanical, german);
+  const kind = cherry ?? (COLUMNAR.test(name) ? KIND.columnar : group === 'Nadelbäume' ? KIND.conifer : KIND.broadleaf);
   let h = Number(height) || 0;
   if (h < 2 || h > 45) h = girth > 0 ? Math.min(30, 4 + girth * 0.08) : 12;
   let c = Number(crown) || 0;
-  if (c < 1 || c > 30) c = kind === KIND.columnar ? h * 0.3 : kind === KIND.conifer ? h * 0.42 : Math.min(16, Math.max(2.5, h * 0.6));
+  // Cherries are compact, round-crowned trees.
+  if (c < 1 || c > 30) c = kind === KIND.columnar ? h * 0.3 : kind === KIND.conifer ? h * 0.42 : cherry ? Math.min(14, Math.max(2.5, h * 0.55)) : Math.min(16, Math.max(2.5, h * 0.6));
   return { h, c, kind };
 }
 

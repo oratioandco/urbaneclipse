@@ -42,6 +42,7 @@ import { loadLevel, loading, showLevel, tiles, updateLevels, viewFrustum, viewMa
 import { clampToScreen, quality, sampleFrame } from './quality.js';
 import { stepLift, stepWalk } from './walk.js';
 import { loadTrees, setTrees, updateTrees } from './trees.js';
+import { loadBlossom } from './blossomForecast.js';
 import { liftOntoLandmarks } from './landmarks.js';
 import { updateClouds } from './clouds.js';
 import { dayStart } from './clock.js';
@@ -301,6 +302,8 @@ async function start() {
   invalidate();
   // Trees after the buildings: the city reads without them, and they are 4 MB.
   await loadTrees();
+  // The cherry-blossom forecast, once the trees exist to wear it (it declines to fetch off-season).
+  loadBlossom();
   invalidate();
 }
 
