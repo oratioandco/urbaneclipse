@@ -6,7 +6,8 @@ data/streets/osm/areas.json). Coordinates use the scene's axes: x east, z south 
 
 Output in public/city:
   roads.bin    int16 half-metres, one (x, z) per point
-  map.json     road run lengths and classes, label anchors, water and park rings
+  map.json     road run lengths and classes, label anchors, water and park rings,
+               plus railway runs
   streets.json the street-alignment views, each with its ends in scene coordinates
 
 Derived from OpenStreetMap, ODbL 1.0.
@@ -31,6 +32,13 @@ ROOT = Path(sys.argv[1])
 OSM = ROOT / "data" / "streets" / "osm"
 OUT = Path(__file__).resolve().parent.parent.parent / "public" / "city"
 CLASSES = {"trunk": 0, "primary": 0, "secondary": 1, "tertiary": 2, "unclassified": 3, "residential": 3, "living_street": 3, "pedestrian": 3}
+# Railways ride in the road runs at the dimmest class (level 3, the residential tier). The ground
+# shader reads only .r of the map texture, as night-time street light (pow(r, 2.6)), so a separate
+# grey would need a shader change; level 3 is the cheapest reading that still works: the corridors
+# (Gleisdreieck, Stadtbahn, ring) show as faint lines of light, dimmer than any road, and their
+# many parallel tracks sum up through the texture's additive painting, so the big corridors glow
+# a little more than a single street.
+RAIL_LEVEL = 3
 LABEL_SPACING_M = 420.0
 # Smaller patches are verges and courtyards, too small to read at the ground map's scale.
 MIN_AREA_M2 = 1500.0
@@ -49,20 +57,8 @@ def line(points):
     return np.column_stack([xs, zs])
 
 
-def fetch_areas():
-    path = OSM / "areas.json"
-    if path.exists():
-        return json.loads(path.read_text())
-    dlat = (HALF_M + 300) / 111_320
-    dlon = dlat / math.cos(math.radians(TOWER_LAT))
-    box = f"{TOWER_LAT - dlat},{TOWER_LON - dlon},{TOWER_LAT + dlat},{TOWER_LON + dlon}"
-    query = (
-        f'[out:json][timeout:170][bbox:{box}];('
-        'way["natural"="water"];relation["natural"="water"];way["waterway"="riverbank"];'
-        'way["leisure"="park"];relation["leisure"="park"];way["landuse"="forest"];relation["landuse"="forest"];'
-        'way["natural"="wood"];way["landuse"="cemetery"];way["landuse"="grass"];'
-        ');out geom;'
-    )
+def overpass(query, path, label):
+    """Run an Overpass query, caching the raw answer at path and retrying across servers."""
     for attempt in range(9):
         url = OVERPASS[attempt % len(OVERPASS)]
         try:
@@ -70,12 +66,43 @@ def fetch_areas():
             body = urllib.request.urlopen(request, timeout=180).read()
             data = json.loads(body)
             path.write_bytes(body)
-            print("fetched areas", len(data["elements"]), flush=True)
+            print("fetched", label, len(data["elements"]), flush=True)
             return data
         except Exception as err:  # any failure means try the next server
             print(url, "failed:", err, flush=True)
             time.sleep(6)
-    raise SystemExit("could not download water and parks")
+    raise SystemExit(f"could not download {label}")
+
+
+def box():
+    dlat = (HALF_M + 300) / 111_320
+    dlon = dlat / math.cos(math.radians(TOWER_LAT))
+    return f"{TOWER_LAT - dlat},{TOWER_LON - dlon},{TOWER_LAT + dlat},{TOWER_LON + dlon}"
+
+
+def fetch_areas():
+    path = OSM / "areas.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    query = (
+        f'[out:json][timeout:170][bbox:{box()}];('
+        'way["natural"="water"];relation["natural"="water"];way["waterway"="riverbank"];'
+        'way["leisure"="park"];relation["leisure"="park"];way["landuse"="forest"];relation["landuse"="forest"];'
+        'way["natural"="wood"];way["landuse"="cemetery"];way["landuse"="grass"];'
+        ');out geom;'
+    )
+    return overpass(query, path, "areas")
+
+
+def fetch_railways():
+    """Mainline and S-Bahn tracks: railway=rail without a service tag, so yards and sidings
+    stay out and only the corridors remain. Tunnels stay in on purpose — the miniature has no
+    underground, and the covered Nord-Süd-Fernbahn should still read on the ground."""
+    path = OSM / "railways.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    query = f'[out:json][timeout:170][bbox:{box()}];(way["railway"="rail"]["service"!~"."];);out geom;'
+    return overpass(query, path, "railways")
 
 
 def rings_of(element):
@@ -201,6 +228,20 @@ def anchors_of(chain):
     return result
 
 
+def rail_lines():
+    """Railway tracks as scene polylines, kept within the model like the roads."""
+    out = []
+    for way in fetch_railways()["elements"]:
+        geometry = way.get("geometry") or []
+        if len(geometry) < 2:
+            continue
+        xz = line(geometry)
+        if np.abs(xz).max() > HALF_M + 200:
+            continue
+        out.append(xz)
+    return out
+
+
 def main():
     points, runs = [], []
     names, anchors = [], []
@@ -223,6 +264,10 @@ def main():
         for chain in chains([xz for xz, _ in items]):
             for x, z, angle, run in anchors_of(chain):
                 anchors.append([index, x, z, angle, run, level])
+    rails = rail_lines()
+    for xz in rails:
+        runs.append([len(xz), RAIL_LEVEL])
+        points.append(xz)
     joined = np.vstack(points)
     OUT.mkdir(parents=True, exist_ok=True)
     np.round(joined * 2).astype("<i2").tofile(OUT / "roads.bin")
@@ -238,7 +283,7 @@ def main():
         bx, bz = scene(view[3], view[4])
         doc["scene"].append([round(ax, 1), round(az, 1), round(bx, 1), round(bz, 1)])
     (OUT / "streets.json").write_text(json.dumps(doc, separators=(",", ":")))
-    print(f"{len(runs)} runs, {len(joined)} points, {len(names)} names, {len(anchors)} anchors, {len(water)} water, {len(green)} green")
+    print(f"{len(runs)} runs ({len(rails)} rail), {len(joined)} points, {len(names)} names, {len(anchors)} anchors, {len(water)} water, {len(green)} green")
 
 
 main()
