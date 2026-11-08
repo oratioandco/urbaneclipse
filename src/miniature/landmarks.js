@@ -3,7 +3,8 @@
  * model their landmarks: the Oberbaumbrücke, which LoD2 leaves out entirely, the domes of the
  * Frankfurter Tor, which LoD2 reduces to a pyramid on each tower, the Brandenburger Tor, whose
  * colonnade LoD2 fills in as a solid block, the Siegessäule, which LoD2 flattens to a 25 m stub,
- * and the Reichstag's glass cupola, which LoD2 leaves out entirely.
+ * and the Reichstag's glass cupola, which LoD2 leaves out entirely, plus two whole towers the
+ * tiles never had: the Estrel Tower and the EDGE East Side Tower.
  *
  * Positions and sizes are in scene metres, measured on 2026-11-08 from OpenStreetMap (ways
  * 288514442, 373626457/59/62, 1547500040, 1013505135/36 and 373626454-61 for the bridge;
@@ -20,6 +21,8 @@ import { cityUniforms, shadeBuildings } from './shading.js';
 import { app } from './state.js';
 
 const material = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: false });
+/** The towers get the city's own clay, so their windows light at night like the streets' houses. */
+const towerMaterial = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: true });
 /** The gilded figures: the quadriga and the Siegessäule's Viktoria, shiny where the sun catches them. */
 const gold = shadeBuildings(
   new THREE.MeshPhongMaterial({ color: 0xd9a544, specular: 0xfff2cc, shininess: 70, flatShading: true, side: THREE.DoubleSide }),
@@ -368,7 +371,51 @@ function reichstag() {
   return mesh;
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag()];
+// --- Estrel Tower ----------------------------------------------------------------------------
+// Berlin's tallest building (176 m, opened 2026), which the tiles never had at all: the probe
+// found flat ground here. A slender slab with an elliptical plan on the Spree bank, out of a low
+// podium (Wikidata Q109285710 puts the shaft at this point; its OSM site, way 32664053, is still
+// landuse=construction). The ground sits at −4.4 m scene (check_landmark_lod.mjs).
+export const ESTREL_TOWER = { centre: [3328.9, 5442.7], terrain: -4.4, top: 176 };
+
+function estrelTower() {
+  const parts = [
+    box(-30, 30, 0, 6.5, -20, 20), // the podium
+    new THREE.CylinderGeometry(1, 1.03, 166, 24, 1).scale(21, 1, 11.5).translate(0, 6.5 + 83, 0), // the shaft
+    new THREE.CylinderGeometry(1, 1, 3.5, 24, 1).scale(21.8, 1, 12.3).translate(0, 174.25, 0), // the crown's parapet
+  ];
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), towerMaterial);
+  mesh.position.set(ESTREL_TOWER.centre[0], ESTREL_TOWER.terrain, ESTREL_TOWER.centre[1]);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  return mesh;
+}
+
+// --- EDGE East Side Tower --------------------------------------------------------------------
+// The "Amazon Tower" — AWS is the headline tenant, and OSM way 1364133390 carries the alt_name —
+// 142 m on the bend where the Spree turns at Warschauer Straße, also absent from the tiles. A
+// rectangular slab that steps in twice as it rises, turned 10° to the map grid (its footprint's
+// long axis, 64.8 × 43.1 m from the way). Ground −5.7 m scene; the upper volumes lean toward
+// the river, a few metres north-west as they climb.
+export const EDGE_EAST_SIDE = { centre: [2657.6, 1646.1], terrain: -5.7, top: 142 };
+
+function edgeEastSide() {
+  const parts = [
+    box(-32.4, 32.4, 0, 22, -21.6, 21.6),
+    box(-29, 29, 22, 92, -19.5, 19.5).translate(-1, 0, -1.5),
+    box(-25, 25, 92, 120, -17, 17).translate(-2.5, 0, -3),
+    box(-21, 21, 120, 140.5, -14.5, 14.5).translate(-4, 0, -4.5),
+  ];
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), towerMaterial);
+  mesh.position.set(EDGE_EAST_SIDE.centre[0], EDGE_EAST_SIDE.terrain, EDGE_EAST_SIDE.centre[1]);
+  // Ten degrees turns x toward plus z: the footprint's long axis runs east-south-east.
+  mesh.rotation.y = -THREE.MathUtils.degToRad(10);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  return mesh;
+}
+
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
