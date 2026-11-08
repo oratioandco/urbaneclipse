@@ -5,8 +5,8 @@
  * camera, so each is drawn lower, at a map height, and sampled where the sun's ray through the
  * drawn point meets the real deck: the shadow then falls straight under the drawn cloud's ray.
  *
- * They fade as the camera comes down toward them, and are gone at street level, where the sky
- * dome shows the clouds instead.
+ * They show from a little below their drawn height up — so every map zoom sees them, not just
+ * the highest — and are gone at street level, where the sky dome shows the clouds instead.
  */
 import * as THREE from 'three';
 import { scene } from './render.js';
@@ -76,14 +76,15 @@ const meshes = DECKS.map((d, i) => {
 });
 
 /**
- * Each drawn frame: shows the decks with cloud in them, faded by how far the camera is above
- * each and by how far into the street it has come.
+ * Each drawn frame: shows the decks with cloud in them, faded in from just below each deck —
+ * a window that only opened well above it used to hide them at every map zoom — and faded out
+ * again by how far into the street the camera has come.
  */
 export function updateClouds({ on, camera, street }) {
   const half = cityUniforms.uHalf.value;
   DECKS.forEach((d, i) => {
     const mesh = meshes[i];
-    const fade = on ? THREE.MathUtils.smoothstep(camera.position.y, d.height + 150, d.height + 900) * (1 - street) : 0;
+    const fade = on ? THREE.MathUtils.smoothstep(camera.position.y, d.height - 250, d.height + 450) * (1 - street) : 0;
     mesh.visible = fade > 0.01 && cityUniforms[d.cover].value > 0.01;
     mesh.material.uniforms.uFade.value = fade;
     mesh.scale.set(half, 1, half);
