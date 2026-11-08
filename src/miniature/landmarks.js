@@ -23,10 +23,17 @@ import { app } from './state.js';
 const material = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: false });
 /** The towers get the city's own clay, so their windows light at night like the streets' houses. */
 const towerMaterial = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: true });
+/** The Berlinian rises inside its own tile cut, so its clay must not carry the cut and clip itself. */
+const towerUncut = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: true, cuts: false, name: 'city-landmarks-tower-uncut' });
 /** The gilded figures: the quadriga and the Siegessäule's Viktoria, shiny where the sun catches them. */
 const gold = shadeBuildings(
   new THREE.MeshPhongMaterial({ color: 0xd9a544, specular: 0xfff2cc, shininess: 70, flatShading: true, side: THREE.DoubleSide }),
   { windows: false, name: 'city-landmarks-gold' },
+);
+/** The Dom's dome is bare copper: the same clay white, but sheening softly where the sun catches it. */
+const copper = shadeBuildings(
+  new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0x8c8574, shininess: 24, flatShading: true, side: THREE.DoubleSide }),
+  { windows: false, name: 'city-landmarks-copper' },
 );
 
 /** Drops the attributes flat shading does not need, so every part merges with every other. */
@@ -415,7 +422,171 @@ function edgeEastSide() {
   return mesh;
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide()];
+// --- The Berlinian ---------------------------------------------------------------------------
+// The topped-out (opening 2027) 146 m tower at Alexanderplatz, 350 m from the Fernsehturm
+// (OSM way 1335157930, height 146): the tiles have the same building 41 m too low. A square of
+// about 35 m across, turned 46 degrees to the map grid. Ground +0.6 m scene.
+export const THE_BERLINIAN = { centre: [90.75, -193.65], terrain: 0.6, top: 146.6 };
+
+function berlinian() {
+  const parts = [
+    box(-17.3, 17.3, 0, 58, -17.3, 17.3),
+    box(-16.2, 16.2, 58, 108, -16.2, 16.2).translate(-1.2, 0, 1.2),
+    box(-14.2, 14.2, 108, 142.5, -14.2, 14.2).translate(-2.4, 0, 2.4),
+    box(-15, 15, 142.5, 146, -15, 15).translate(-2.4, 0, 2.4), // the crown's parapet
+  ];
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), towerUncut);
+  mesh.position.set(THE_BERLINIAN.centre[0], THE_BERLINIAN.terrain, THE_BERLINIAN.centre[1]);
+  mesh.rotation.y = THREE.MathUtils.degToRad(46.1);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  // The stale LoD2 tower is the same footprint at 104.5 m: discard it above 45 m, inside a
+  // square turned with the tower (nothing nearby stands taller than 45 m).
+  cityUniforms.uCuts.value[5].set(THE_BERLINIAN.centre[0], THE_BERLINIAN.centre[1], 28, THE_BERLINIAN.terrain + 45);
+  const turn = THREE.MathUtils.degToRad(46.1);
+  cityUniforms.uCutTurns.value[5].set(Math.cos(turn), Math.sin(turn));
+  return mesh;
+}
+
+// --- Atrium Tower ----------------------------------------------------------------------------
+// The 106 m debis tower completing Potsdamer Platz's trio (Bahntower and Kollhoff are in the
+// tiles): the probe found nothing over 42 m here, so a plain slab with a setback crown,
+// axis-aligned with its neighbours. Ground −4.2 m scene.
+export const ATRIUM_TOWER = { centre: [-2467.4, 1471.0], terrain: -4.2, top: 106 };
+
+function atriumTower() {
+  const parts = [
+    box(-17, 17, 0, 94, -13, 13),
+    box(-12.5, 12.5, 94, 102, -9.5, 9.5), // the setback crown
+    box(-13.2, 13.2, 102, 106, -10.2, 10.2), // its parapet
+  ];
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), towerMaterial);
+  mesh.position.set(ATRIUM_TOWER.centre[0], ATRIUM_TOWER.terrain, ATRIUM_TOWER.centre[1]);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  return mesh;
+}
+
+// --- Berliner Dom ----------------------------------------------------------------------------
+// The dome LoD2 leaves off (OSM way 313670734; the tiles top the nave at 43.4 m above terrain,
+// ground −2.4 m scene): the drum, the dome shell and the lantern to the real 114 m. The probe
+// found the drum's ring of statues about 44 m across, centred a little east of the building's
+// middle at min_height 50 — the drum rises from there.
+export const BERLINER_DOM = { centre: [-561.5, 186.8], terrain: -2.4, top: 111 };
+
+function berlinerDom() {
+  // The drum belongs to the clay body; the shell, the lantern and the cross are bare copper in
+  // truth, and sheen where the sun catches them, the way the real dome throws its glint.
+  const body = [
+    prism(16, 20.5, 46, 58), // the drum, above the crossing roof the tiles stop at
+    prism(16, 21.8, 58, 59.5), // its cornice ring
+  ];
+  const dome = [
+    new THREE.SphereGeometry(20.5, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 34 / 20.5, 1).translate(0, 59.5, 0), // the shell
+    prism(8, 4.2, 85, 107), // the lantern, through the dome's crown
+    prism(8, 5.2, 107, 108.5, 2.5),
+    prism(4, 0.5, 108.5, 111.5, 0.25), // the cross's mast
+    box(-1.6, 1.6, 110.4, 111.2, -0.3, 0.3), // its arm
+  ];
+  const place = (parts, withMaterial) => {
+    const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), withMaterial);
+    mesh.position.set(BERLINER_DOM.centre[0], BERLINER_DOM.terrain, BERLINER_DOM.centre[1]);
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+    return mesh;
+  };
+  // Cut the tiles' roof over the whole building above its LoD2 top; nothing nearby stands taller.
+  cityUniforms.uCuts.value[6].set(-569.6, 192.35, 55, BERLINER_DOM.terrain + 43.6);
+  return [place(body, material), place(dome, copper)];
+}
+
+// --- Molecule Man ----------------------------------------------------------------------------
+// Jonathan Borofsky's 30 m aluminium figure standing in the Spree by the Treptowers, which the
+// tiles never had. The real sculpture is a flat-ish silhouette full of long triangular openings,
+// so its front profile becomes an extruded shape with the holes cut through — the gap between the
+// legs, a triangle in each thigh, one in the chest and one in the belly — not a stack of boxes.
+export const MOLECULE_MAN = { centre: [3363.9, 2651.1], terrain: 0, top: 30 };
+
+/** The sculpture's aluminium, through the city's lighting, with a soft metal sheen and no windows. */
+const steel = shadeBuildings(new THREE.MeshPhongMaterial({ color: 0xc2c6cd, specular: 0x555555, shininess: 16, flatShading: true, side: THREE.DoubleSide }), { windows: false, name: 'city-landmarks-steel' });
+
+function moleculeMan() {
+  // The right half of the front profile, bottom to top, mirrored around the centreline.
+  const half = [
+    [1.05, 0], // the right foot's inner edge
+    [2.6, 0], // its outer edge
+    [2.9, 6.2], // the outer leg
+    [3.3, 15.4], // the hip
+    [2.5, 18.6], // the waist
+    [2.6, 21.5], // the chest's side
+    [3.1, 23.2], // the armpit
+    [3.6, 19.5], // down the inner arm, the sliver of light between arm and body
+    [3.3, 15.0],
+    [3.2, 12.2], // the hand's inner edge
+    [4.3, 12.0], // the hand's tip
+    [4.8, 15.5], // up the arm's outer edge
+    [5.3, 21.5],
+    [5.0, 24.6], // the shoulder
+    [2.9, 26.4], // the trapezius
+    [1.2, 27.0], // the neck
+    [1.5, 27.8], // the cheek
+    [1.35, 28.8],
+    [0.75, 29.7],
+    [0, 30], // the crown of the head
+  ];
+  const profile = new THREE.Shape();
+  profile.moveTo(-2.6, 0); // the left foot's outer edge
+  profile.lineTo(-1.05, 0);
+  profile.lineTo(...half[0]); // up the left leg's inner edge to the crotch
+  for (let i = 1; i < half.length; i++) profile.lineTo(...half[i]);
+  for (let i = half.length - 1; i >= 0; i--) {
+    const [x, y] = half[i];
+    profile.lineTo(-x, y); // down the left half, mirrored
+  }
+  profile.closePath();
+  // The openings, given counterclockwise against the profile's clockwise run.
+  const hole = (a, b, c) => {
+    const path = new THREE.Path();
+    path.moveTo(...a);
+    path.lineTo(...c);
+    path.lineTo(...b);
+    path.closePath();
+    profile.holes.push(path);
+  };
+  hole([-1.9, 2.6], [-0.9, 9.2], [-2.45, 8.8]); // the left thigh's triangle
+  hole([1.9, 2.6], [0.9, 9.2], [2.45, 8.8]); // the right thigh's
+  hole([-1.5, 24.3], [1.5, 24.3], [0, 20.9]); // the chest's
+  hole([-1.25, 19.3], [1.25, 19.3], [0, 16.4]); // the belly's
+  const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(profile, { depth: 2.6, bevelEnabled: false }).translate(0, 0, -1.3), steel);
+  mesh.position.set(MOLECULE_MAN.centre[0], MOLECULE_MAN.terrain, MOLECULE_MAN.centre[1]);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  return mesh;
+}
+
+// --- 030BLN ----------------------------------------------------------------------------------
+// The ALX Tower ("030BLN"), topped out at 133 m next to the Berlinian at Alexanderplatz
+// (OSM way 1362022530, height 130; completion 2027 per entwicklungsstadt.de): the structure
+// already stands over the tiles' 14 m building-site stub, so the shell goes in — a square of
+// about 37 m across turned 37 degrees. Ground +2.2 m scene. No cut: the stub hides inside.
+export const ALX_TOWER = { centre: [332.2, -195.9], terrain: 2.2, top: 135.2 };
+
+function alxTower() {
+  const parts = [
+    box(-18, 18, 0, 70, -18, 18),
+    box(-16.5, 16.5, 70, 105, -16.5, 16.5).translate(1.5, 0, -1.5),
+    box(-14, 14, 105, 129, -14, 14).translate(3, 0, -3),
+    box(-14.8, 14.8, 129, 133, -14.8, 14.8).translate(3, 0, -3), // the crown's parapet
+  ];
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), towerMaterial);
+  mesh.position.set(ALX_TOWER.centre[0], ALX_TOWER.terrain, ALX_TOWER.centre[1]);
+  mesh.rotation.y = -THREE.MathUtils.degToRad(37.3);
+  mesh.matrixAutoUpdate = false;
+  mesh.updateMatrix();
+  return mesh;
+}
+
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), moleculeMan(), alxTower()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;

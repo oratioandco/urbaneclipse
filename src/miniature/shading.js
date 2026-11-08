@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 
-export const CUTS = 5;
+export const CUTS = 7;
 
 export const cityUniforms = {
   uMap: { value: null },
@@ -197,9 +197,9 @@ export function shadeGround(material) {
  * and no cuts, since those only remove the LoD2 roofs a landmark replaces. A landmark may pass
  * its own program name, so a second material (the gilded figures) can share the same lighting.
  */
-export function shadeBuildings(material, { windows = true, name } = {}) {
+export function shadeBuildings(material, { windows = true, cuts = true, name } = {}) {
   return inject(material, name ?? (windows ? 'city-buildings' : 'city-landmarks'), (shader) => {
-    if (windows) {
+    if (windows && cuts) {
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <clipping_planes_fragment>',
         /* glsl */ `#include <clipping_planes_fragment>
