@@ -5,6 +5,7 @@
  * - config, state, render: settings, shared state, and the renderer, scene and cameras
  * - tiles, sightlines: the buildings, and what they hide
  * - trees, landmarks: the tree register, and the landmarks LoD2 gets wrong, modelled by hand
+ * - clouds: the forecast's clouds over the map
  * - clock, lighting: the moment, and the light, sky and shadows it makes
  * - plan, forecast, daylist: the day's paths, streets, clouds and the list of chances
  * - camera, eyeLevel, walk, eclipse: moving round, standing in the street, flying, the tower
@@ -42,6 +43,7 @@ import { clampToScreen, quality, sampleFrame } from './quality.js';
 import { stepLift, stepWalk } from './walk.js';
 import { loadTrees, setTrees, updateTrees } from './trees.js';
 import { liftOntoLandmarks } from './landmarks.js';
+import { updateClouds } from './clouds.js';
 import { dayStart } from './clock.js';
 
 const statsEl = document.getElementById('stats');
@@ -142,6 +144,7 @@ function frame(now) {
     eyeCamera.updateProjectionMatrix();
   }
   skyDome.visible = street > 0.001;
+  updateClouds({ on: layers.clouds, camera: app.camera, street });
   skyDome.position.copy(app.camera.position);
   skyUniforms.uFade.value = street;
   // At street level the real sun or moon is down the street; the beams are a map device.

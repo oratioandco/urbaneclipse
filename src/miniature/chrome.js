@@ -11,7 +11,7 @@ import { updateDay } from './plan.js';
 import { controls, eyeCamera } from './render.js';
 import { app, invalidate } from './state.js';
 
-export const layers = { tower: true, streets: true, trees: true, names: true, sun: true, moon: true, weather: true };
+export const layers = { tower: true, streets: true, trees: true, clouds: true, names: true, sun: true, moon: true, weather: true };
 try {
   Object.assign(layers, JSON.parse(localStorage.getItem('miniature.layers') ?? '{}'));
 } catch {}
