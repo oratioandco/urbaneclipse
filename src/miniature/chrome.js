@@ -45,6 +45,19 @@ try {
 
 const layersButton = document.getElementById('layers');
 const layersMenu = document.getElementById('layers-menu');
+// When the forecast's clouds nearly hide the map, mark the layers button, so the white on
+// screen has an address — and an obvious switch.
+let cloudHeavy = false;
+function refreshCloudHint() {
+  const covered = cloudHeavy && layers.clouds;
+  layersButton.classList.toggle('clouds-heavy', covered);
+  layersButton.title = covered ? 'The forecast’s clouds cover the map — switch off “Clouds on the map” in the layers' : '';
+}
+/** Called by the weather code when the day's peak cloud cover crosses in or out of the heavy band. */
+export function setCloudHint(heavy) {
+  cloudHeavy = heavy;
+  refreshCloudHint();
+}
 layersButton.addEventListener('click', () => {
   layersMenu.hidden = !layersMenu.hidden;
   layersButton.setAttribute('aria-expanded', String(!layersMenu.hidden));
@@ -85,6 +98,7 @@ function setLayer(name, on) {
   } catch {}
   for (const input of document.querySelectorAll(`input[data-layer="${name}"]`)) input.checked = on;
   for (const chip of document.querySelectorAll(`#dayfilter [data-layer="${name}"]`)) chip.setAttribute('aria-pressed', String(on));
+  if (name === 'clouds') refreshCloudHint();
   app.shownKey = null;
   updateDay();
   updateSun();

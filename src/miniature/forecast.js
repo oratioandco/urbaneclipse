@@ -1,7 +1,7 @@
 /** The day's cloud forecast in the panel: loading it and reading sunrise and sunset for colour. */
 import { cloudsAt, cloudsFor, forecastReach, readSky } from './weather.js';
 import { formatClock } from './time.js';
-import { layers } from './chrome.js';
+import { layers, setCloudHint } from './chrome.js';
 import { dateInput, dayStart } from './clock.js';
 import { renderDayList } from './daylist.js';
 import { updateSun } from './lighting.js';
@@ -12,6 +12,7 @@ const weatherLine = document.getElementById('weather');
 export function loadWeather() {
   const date = dateInput.value;
   app.weather = null;
+  setCloudHint(false);
   const reach = forecastReach(date);
   if (!reach.ok) {
     weatherLine.textContent = reach.reason;
@@ -23,6 +24,9 @@ export function loadWeather() {
   cloudsFor(date, dayStart()).then((day) => {
     if (dateInput.value !== date) return;
     app.weather = day;
+    // The low and middle decks are what can hide the map: when their peak for the day is heavy,
+    // the layers button says so.
+    setCloudHint(Math.max(...day.berlin.low.map((low, h) => Math.max(low, day.berlin.mid[h]))) > 0.55);
     showWeather();
     updateTracks();
     renderDayList();

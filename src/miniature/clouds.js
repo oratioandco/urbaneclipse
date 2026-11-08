@@ -14,9 +14,9 @@ import { CLOUD_GLSL, cityUniforms } from './shading.js';
 
 /** Drawn height, the real deck it shows, its strength, and its sharpest opacity. */
 const DECKS = [
-  { height: 420, deck: 'LOW_DECK_M', scale: 'LOW_SCALE', cover: 'uCloudLow', opacity: 1 },
-  { height: 600, deck: 'MID_DECK_M', scale: 'MID_SCALE', cover: 'uCloudMid', opacity: 0.8 },
-  { height: 820, deck: 'HIGH_DECK_M', scale: 'HIGH_SCALE', cover: 'uCloudHigh', opacity: 0.45 },
+  { height: 420, deck: 'LOW_DECK_M', scale: 'LOW_SCALE', cover: 'uCloudLow', opacity: 0.9 },
+  { height: 600, deck: 'MID_DECK_M', scale: 'MID_SCALE', cover: 'uCloudMid', opacity: 0.6 },
+  { height: 820, deck: 'HIGH_DECK_M', scale: 'HIGH_SCALE', cover: 'uCloudHigh', opacity: 0.35 },
 ];
 
 const meshes = DECKS.map((d, i) => {
@@ -61,6 +61,9 @@ const meshes = DECKS.map((d, i) => {
         float shade = clamp(0.8 + 4.0 * slope + 0.2 * thick, 0.6, 1.1);
         vec3 colour = top * shade + vec3(1.0, 0.62, 0.3) * uLights * ${i === 0 ? '0.08' : '0.03'};
         float cloud = body * mix(0.5, 0.94, thick);
+        // Scattered clouds stay dense and punchy, but a solid overcast thins to a veil: accurate
+        // still, yet the city keeps showing through instead of the whole screen going white.
+        cloud *= mix(1.0, 0.55, smoothstep(0.55, 0.95, cover));
         float edge = 1.0 - smoothstep(uHalf - 2500.0, uHalf - 200.0, max(abs(vWorldP.x), abs(vWorldP.z)));
         colour = mix(colour, uHazeColour, 0.08);
         gl_FragColor = vec4(colour, cloud * ${d.opacity.toFixed(2)} * uFade * edge);

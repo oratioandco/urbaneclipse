@@ -34,6 +34,10 @@
          3D view, and cost about a third of the frame time at eye level. */
       .surface { background: var(--surface); box-shadow: var(--shadow); }
       .round { width: 44px; height: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; font-weight: 600; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+      /* The layers button grows a small cloud dot on heavy-cover days, so the white on the map
+         has an address: it is the clouds, and the layers menu holds the switch. */
+      #layers { position: relative; }
+      #layers.clouds-heavy::after { content: ''; position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: #e8ecff; box-shadow: 0 0 0 2px var(--surface), 0 0 6px rgba(232, 236, 255, 0.9); }
       .chip { height: var(--control); padding: 0 14px; border: 0; border-radius: calc(var(--control) / 2); display: inline-flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
 
       /* Top: map tools on the right; at eye level, the way back on the left. */
