@@ -5,6 +5,8 @@
  */
 import * as THREE from 'three';
 
+export const CUTS = 2;
+
 export const cityUniforms = {
   uMap: { value: null },
   uTerrain: { value: null },
@@ -30,6 +32,12 @@ export const cityUniforms = {
   uCloudShift: { value: new THREE.Vector2() },
   /** Toward the sun, for where a cloud's shadow falls. */
   uCloudSun: { value: new THREE.Vector3(0, 1, 0) },
+  /**
+   * Where a modelled landmark replaces the LoD2 roof: x, z, half size and the height above which
+   * the buildings are cut, then the square's rotation as cos and sin. See landmarks.js.
+   */
+  uCuts: { value: Array.from({ length: CUTS }, () => new THREE.Vector4(0, 0, 0, 1e9)) },
+  uCutTurns: { value: Array.from({ length: CUTS }, () => new THREE.Vector2(1, 0)) },
 };
 
 export const CLOUD_GLSL = /* glsl */ `
@@ -88,6 +96,8 @@ const sharedFragment = /* glsl */ `
   uniform vec3 uKeyDir, uKeyLight, uSkyLight, uHazeColour;
   uniform float uGroundTone;
   uniform vec3 uCloudSun;
+  uniform vec4 uCuts[${CUTS}];
+  uniform vec2 uCutTurns[${CUTS}];
   ${CLOUD_GLSL}
   /** How much sunlight reaches a point through the clouds above it, toward the sun. */
   float cloudPass(vec3 p) {
@@ -126,7 +136,16 @@ function inject(material, name, edit) {
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWorldP;\nvarying vec3 vRel;')
       // Relative to the camera as well: small numbers, so their screen derivatives stay precise.
-      .replace('#include <project_vertex>', '#include <project_vertex>\nvWorldP = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvRel = vWorldP - cameraPosition;');
+      .replace(
+        '#include <project_vertex>',
+        `#include <project_vertex>
+        vec4 placed = vec4(transformed, 1.0);
+        #ifdef USE_INSTANCING
+        placed = instanceMatrix * placed;
+        #endif
+        vWorldP = (modelMatrix * placed).xyz;
+        vRel = vWorldP - cameraPosition;`,
+      );
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${sharedFragment}`);
     edit(shader);
   };
@@ -173,8 +192,23 @@ export function shadeGround(material) {
   });
 }
 
-export function shadeBuildings(material) {
-  return inject(material, 'city-buildings', (shader) => {
+/**
+ * The buildings' light at night. With windows false, for modelled landmarks: no window grid,
+ * and no cuts, since those only remove the LoD2 roofs a landmark replaces.
+ */
+export function shadeBuildings(material, { windows = true } = {}) {
+  return inject(material, windows ? 'city-buildings' : 'city-landmarks', (shader) => {
+    if (windows) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <clipping_planes_fragment>',
+        /* glsl */ `#include <clipping_planes_fragment>
+        for (int i = 0; i < ${CUTS}; i++) {
+          vec2 d = vWorldP.xz - uCuts[i].xy;
+          d = vec2(d.x * uCutTurns[i].x + d.y * uCutTurns[i].y, d.y * uCutTurns[i].x - d.x * uCutTurns[i].y);
+          if (vWorldP.y > uCuts[i].w && max(abs(d.x), abs(d.y)) < uCuts[i].z) discard;
+        }`,
+      );
+    }
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n  reflectedLight.directDiffuse *= cloudPass(vWorldP);').replace(
       '#include <opaque_fragment>',
@@ -186,7 +220,7 @@ export function shadeBuildings(material) {
         float wall = 1.0 - smoothstep(0.3, 0.55, abs(worldNormal.y));
         // Light from the street reaches up the facades, and a little of it onto the roofs.
         vec3 cityLight = ${WARM} * uLights * mix(0.012 + 0.08 * street, street * (0.02 + 0.5 * exp(-height / 11.0)), wall);
-        if (wall > 0.0 && uWindows > 0.001) {
+        if (${windows ? 'true' : 'false'} && wall > 0.0 && uWindows > 0.001) {
           // The wall's direction, steady across the whole wall: from camera-relative positions,
           // whose derivatives are precise, and snapped to whole degrees. Taken from the large
           // world coordinates, it jittered per pixel and the window grid with it.
@@ -213,6 +247,15 @@ export function shadeBuildings(material) {
       }
       #include <opaque_fragment>`,
     );
+  });
+}
+
+/** Trees: clouds and haze like the buildings, and no windows. */
+export function shadeFoliage(material) {
+  return inject(material, 'city-foliage', (shader) => {
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n  reflectedLight.directDiffuse *= cloudPass(vWorldP);')
+      .replace('#include <opaque_fragment>', 'outgoingLight = hazed(outgoingLight, vWorldP);\n#include <opaque_fragment>');
   });
 }
 

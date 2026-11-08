@@ -16,6 +16,7 @@ upload it to the server volume that nginx serves at `/city/`:
     node scripts/miniature/build_city.mjs data/berlin-9km
     python scripts/miniature/build_terrain.py data/viewshed/ground.npz   # needs numpy, pyproj
     python scripts/miniature/build_map.py <checkout with data/streets/osm>
+    node scripts/miniature/build_trees.mjs          # the tree register, cached in data/trees
     rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519_hetzner" public/city/ root@100.82.42.52:/data/plastervoid/city/
 
 After a rebuild, bump `CITY_VERSION` in `main.js`, since the files are cached for 30 days.
@@ -86,3 +87,17 @@ URL options added: `blur=0`, `mirror=0` (or a scale), `samples=N`. Phones and Sa
   street's gap, as in the Cesium preview. Median frame while the sun moves: 17 ms (Mac).
 - **Limits:** the ground map is about 4.6 m a pixel, so park edges and water banks blur up close.
   The ground follows a 40 m terrain grid, there are no trees, and phones and Safari are untested.
+
+## Trees and landmarks (fourth pass, 2026-11-08)
+
+- **Trees:** 541,524 street and park trees from Berlin's tree register (WFS `baumbestand`,
+  Datenlizenz Deutschland Zero 2.0), each at its place with its listed height and crown; gaps
+  are filled from girth or kind. 3.8 MB in `trees.bin`, sorted into 500 m cells. `trees.js` draws
+  the cells whose crowns would cover 3 px or more, nearest first, up to 90,000 trees (30,000 on
+  a phone, `trees=N` to change), as three instanced meshes. Broadleaf trees go twig-grey and thin
+  from December to March. Dense woods inside parks are not in the register, and trees do not
+  block sightlines yet. Layer switch: Trees.
+- **Landmarks:** `landmarks.js` models the Oberbaumbrücke (not in LoD2 at all: arches, arcade,
+  towers, ramps) and the Frankfurter Tor's drums and domes (LoD2 has a pyramid there, cut away in
+  the building shader above the cornice). Sizes from OSM building parts and the LoD2 cornice;
+  arch rise, arcade and dome heights from photographs. Standing on the bridge puts you on its deck.

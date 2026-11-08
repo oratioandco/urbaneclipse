@@ -45,7 +45,7 @@ export function showLevel(tile, level, geometry) {
   invalidateShadows();
 }
 
-function metresPerPixelAt(point) {
+export function metresPerPixelAt(point) {
   return (2 * app.camera.position.distanceTo(point) * Math.tan((app.camera.fov * Math.PI) / 360)) / innerHeight;
 }
 

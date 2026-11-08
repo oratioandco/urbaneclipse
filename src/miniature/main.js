@@ -4,6 +4,7 @@
  *
  * - config, state, render: settings, shared state, and the renderer, scene and cameras
  * - tiles, sightlines: the buildings, and what they hide
+ * - trees, landmarks: the tree register, and the landmarks LoD2 gets wrong, modelled by hand
  * - clock, lighting: the moment, and the light, sky and shadows it makes
  * - plan, forecast, daylist: the day's paths, streets, clouds and the list of chances
  * - camera, eyeLevel, walk, eclipse: moving round, standing in the street, flying, the tower
@@ -39,6 +40,9 @@ import { app, invalidate, invalidateShadows, smooth, stats } from './state.js';
 import { loadLevel, loading, showLevel, tiles, updateLevels, viewFrustum, viewMatrix } from './tiles.js';
 import { clampToScreen, quality, sampleFrame } from './quality.js';
 import { stepLift, stepWalk } from './walk.js';
+import { loadTrees, setTrees, updateTrees } from './trees.js';
+import { liftOntoLandmarks } from './landmarks.js';
+import { dayStart } from './clock.js';
 
 const statsEl = document.getElementById('stats');
 app.base = null;
@@ -148,6 +152,8 @@ function frame(now) {
   bloom.threshold = street > 0.5 ? 1.2 : 0.95;
   app.camera.updateMatrixWorld();
   updateLevels();
+  setTrees({ date: new Date(dayStart() + 43_200_000), on: layers.trees });
+  updateTrees();
   // Without a key light the existing shadow map goes unread, so it can wait.
   if (app.shadowsDirty && sun.intensity > 0) {
     fitShadow();
@@ -232,6 +238,7 @@ async function start() {
     const at = (a, b) => terrain[b * size + a] / 10;
     return (at(i, j) * (1 - fu) + at(i + 1, j) * fu) * (1 - fv) + (at(i, j + 1) * (1 - fu) + at(i + 1, j + 1) * fu) * fv;
   };
+  liftOntoLandmarks();
   cityUniforms.uHalf.value = half;
   cityUniforms.uTerrain.value = makeTerrainTexture(terrain, size);
   cityUniforms.uMap.value = paintGroundMap(mapData, mapData.runs, roadPoints, half, isPhone ? 2048 : 4096, renderer);
@@ -288,6 +295,9 @@ async function start() {
     }),
   );
   window.__ready = true;
+  invalidate();
+  // Trees after the buildings: the city reads without them, and they are 4 MB.
+  await loadTrees();
   invalidate();
 }
 
