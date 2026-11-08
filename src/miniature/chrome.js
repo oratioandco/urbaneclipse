@@ -6,6 +6,7 @@ import { orbitTo } from './camera.js';
 import { dateInput, dayStart } from './clock.js';
 import { params } from './config.js';
 import { exitEye, look, turnTo } from './eyeLevel.js';
+import { introLogo } from './introLogo.js';
 import { updateSun } from './lighting.js';
 import { updateDay } from './plan.js';
 import { controls, eyeCamera } from './render.js';
@@ -23,6 +24,7 @@ document.getElementById('minimap').addEventListener('click', () => exitEye());
 const intro = document.getElementById('intro');
 const openIntro = () => {
   if (!intro.open) intro.showModal();
+  introLogo.start();
 };
 document.getElementById('help').addEventListener('click', openIntro);
 document.getElementById('intro-start').addEventListener('click', () => intro.close());
@@ -35,6 +37,7 @@ for (const shot of intro.querySelectorAll('.intro-shot')) {
   });
 }
 intro.addEventListener('close', () => {
+  introLogo.stop();
   try {
     localStorage.setItem('miniature.intro', 'seen');
   } catch {}
