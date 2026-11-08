@@ -1,0 +1,134 @@
+[
+  {
+    "name": "Brandenburger Tor",
+    "scenePos": "x=-2153.2, y~terrain, z=501.9",
+    "inArea": true,
+    "footprint": "way r7288267-14 (d=2 m, 391 m2)",
+    "lod2MaxHeight": 23,
+    "expectedHeight": 26,
+    "notes": [
+      "LoD2 max in landmark footprint: 23 m above terrain (terrain y=-2.4, 55 verts); tallest nearby LoD2: 27.3 m @67m, 27.3 m @77m, 27.3 m @82m; OSM way height tag: none; real: gate ~20 m body, 26 m to quadriga top; columns and quadriga missing from LoD2"
+    ]
+  },
+  {
+    "name": "Siegessäule",
+    "scenePos": "x=-4027.0, y~terrain, z=701.1",
+    "inArea": true,
+    "footprint": "way 718035022 (d=1 m, 2762 m2)",
+    "lod2MaxHeight": 25,
+    "expectedHeight": 67,
+    "notes": [
+      "LoD2 max in landmark footprint: 25 m above terrain (terrain y=0.3, 499 verts); tallest nearby LoD2: 25 m @1m, 25 m @1m, 25 m @1m; OSM way height tag: none; real: 67 m column on a base, Golden Victoria on top"
+    ]
+  },
+  {
+    "name": "Funkturm",
+    "scenePos": "x=-8914.2, y~terrain, z=1748.4",
+    "inArea": true,
+    "footprint": "way 30926247 (d=0 m, 441 m2, osm height 147 m)",
+    "lod2MaxHeight": 134.4,
+    "expectedHeight": 150,
+    "notes": [
+      "LoD2 max in landmark footprint: 134.4 m above terrain (terrain y=7.5, 46 verts); tallest nearby LoD2: 134.4 m @0m, 134.4 m @1m, 134.4 m @1m; OSM way height tag: 147; real: 150 m lattice radio tower"
+    ]
+  },
+  {
+    "name": "Reichstag",
+    "scenePos": "x=-2255.0, y~terrain, z=246.0",
+    "inArea": true,
+    "footprint": "way r2201742-0 (d=6 m, 12218 m2, osm height 48 m)",
+    "lod2MaxHeight": 35.2,
+    "expectedHeight": 47,
+    "notes": [
+      "LoD2 max in landmark footprint: 35.2 m above terrain (terrain y=-1.4, 354 verts); tallest nearby LoD2: 35.2 m @6m, 35.2 m @6m, 4.1 m @102m; OSM way height tag: 48; real: building ~47 m, glass cupola on top to ~75 m"
+    ]
+  },
+  {
+    "name": "Berliner Dom",
+    "scenePos": "x=-565.4, y~terrain, z=193.0",
+    "inArea": true,
+    "footprint": "way 313670734 (d=8 m, 5120 m2, osm height 98 m)",
+    "lod2MaxHeight": 43.4,
+    "expectedHeight": 114,
+    "notes": [
+      "LoD2 max in landmark footprint: 43.4 m above terrain (terrain y=-2.4, 166 verts); tallest nearby LoD2: 43.4 m @8m, 43.4 m @9m, 43.4 m @29m; OSM way height tag: 98; real: 114 m dome"
+    ]
+  },
+  {
+    "name": "Molecule Man",
+    "scenePos": "x=3363.9, y~terrain, z=2651.1",
+    "inArea": true,
+    "footprint": "ring 30 m around the point (nearest footprint way 293499659 is 106 m away)",
+    "lod2MaxHeight": null,
+    "expectedHeight": 30,
+    "notes": [
+      "no OSM footprint within 60 m; max LoD2 height within 30 m of the point: none m above terrain (terrain y=0.0); real: 30 m steel sculpture in the Spree"
+    ]
+  },
+  {
+    "name": "Rotes Rathaus",
+    "scenePos": "x=-107.9, y~terrain, z=283.2",
+    "inArea": true,
+    "footprint": "way r4211905-0 (d=45 m, 8401 m2)",
+    "lod2MaxHeight": 83.7,
+    "expectedHeight": 74,
+    "notes": [
+      "LoD2 max in landmark footprint: 83.7 m above terrain (terrain y=-1.1, 348 verts); tallest nearby LoD2: 83.7 m @38m, 83.7 m @45m, 83.7 m @53m; OSM way height tag: none; real: building ~33 m, central tower 74 m"
+    ]
+  },
+  {
+    "name": "Marienkirche",
+    "scenePos": "x=-152.0, y~terrain, z=29.5",
+    "inArea": true,
+    "footprint": "way 474111581 (d=12 m, 2003 m2)",
+    "lod2MaxHeight": 78.5,
+    "expectedHeight": 92,
+    "notes": [
+      "LoD2 max in landmark footprint: 78.5 m above terrain (terrain y=0.0, 161 verts); tallest nearby LoD2: 78.5 m @2m, 78.5 m @12m, 78.5 m @31m; OSM way height tag: none; real: gothic hall church, ~92 m tower"
+    ]
+  },
+  {
+    "name": "Kaiser-Wilhelm-Gedächtniskirche",
+    "scenePos": "x=-5046.5, y~terrain, z=1779.5",
+    "inArea": true,
+    "footprint": "way 15218373 (d=5 m, 547 m2, osm height 71 m)",
+    "lod2MaxHeight": 61.6,
+    "expectedHeight": 71,
+    "notes": [
+      "LoD2 max in landmark footprint: 61.6 m above terrain (terrain y=-2.0, 143 verts); tallest nearby LoD2: 77.9 m @103m, 61.6 m @3m, 61.6 m @5m; OSM way height tag: 71; real: ruined 71 m old tower beside modern church"
+    ]
+  },
+  {
+    "name": "Park Inn / Alexa",
+    "scenePos": "x=236.3, y~terrain, z=-232.0",
+    "inArea": true,
+    "footprint": "way 23723125 (d=3 m, 7210 m2)",
+    "lod2MaxHeight": 126.4,
+    "expectedHeight": 125,
+    "notes": [
+      "LoD2 max in landmark footprint: 126.4 m above terrain (terrain y=-0.8, 165 verts); tallest nearby LoD2: 126.4 m @3m, 126.4 m @16m, 126.4 m @28m; OSM way height tag: none; real: Park Inn hotel 125 m"
+    ]
+  },
+  {
+    "name": "Treptowers",
+    "scenePos": "x=3552.1, y~terrain, z=2834.6",
+    "inArea": true,
+    "footprint": "way 23971473 (d=9 m, 1118 m2, osm height 125 m)",
+    "lod2MaxHeight": 128.1,
+    "expectedHeight": 125,
+    "notes": [
+      "LoD2 max in landmark footprint: 128.1 m above terrain (terrain y=-2.9, 4 verts); tallest nearby LoD2: 128.1 m @9m, 47.6 m @60m, 47.6 m @82m; OSM way height tag: 125; real: 125 m office tower"
+    ]
+  },
+  {
+    "name": "Gasometer Schöneberg",
+    "scenePos": "x=-3543.6, y~terrain, z=4384.7",
+    "inArea": true,
+    "footprint": "way r13132134-1 (d=1 m, 2880 m2, osm height 78 m)",
+    "lod2MaxHeight": 65.6,
+    "expectedHeight": 78,
+    "notes": [
+      "LoD2 max in landmark footprint: 65.6 m above terrain (terrain y=4.4, 32 verts); tallest nearby LoD2: 65.6 m @1m, 65.6 m @1m, 32.3 m @83m; OSM way height tag: 78; real: 78 m cylindrical gas holder"
+    ]
+  }
+]
