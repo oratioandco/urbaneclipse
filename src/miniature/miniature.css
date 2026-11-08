@@ -216,6 +216,12 @@
       .track--sun span { background: var(--sun); }
       .track--moon span { background: var(--moon); }
       .track--streets span { background: #d9a441; opacity: 0.8; }
+      .track span[data-tip-title] { cursor: help; }
+      .track span[data-tip-title]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      /* The bars say what they mean: one shared bubble above whichever bar is hovered or focused. */
+      .track-tip { position: fixed; z-index: 7; max-width: min(320px, calc(100vw - 2 * var(--gutter))); padding: 7px 11px 8px; border-radius: 10px; display: grid; gap: 1px; font-size: 12px; pointer-events: none; }
+      .track-tip b { font-weight: 600; }
+      .track-tip small { color: var(--muted); font-size: 11.5px; }
       #moments { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
       #moments button { font-size: 12px; white-space: nowrap; padding: 6px 10px; min-height: 30px; border: 0; border-radius: 15px; background: var(--field); cursor: pointer; }
       #moments button::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
