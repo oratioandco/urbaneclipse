@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain JS module
 import { parseTime } from '../../src/miniature/time.js';
 // @ts-expect-error plain JS module
-import { cloudDrift, cloudsAt, readSky } from '../../src/miniature/weather.js';
+import { cloudDrift, cloudsAt, readSky, visibilityAt } from '../../src/miniature/weather.js';
 // @ts-expect-error plain JS module
 import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, antennaRange, bodyAgainstProfile, bodyAgainstTower, discOverSphere, findShots, findTowerShots, visibleMoon } from '../../src/miniature/towerShots.js';
 // @ts-expect-error plain JS module
@@ -40,6 +40,7 @@ describe('weather', () => {
     rise: { az: 100, t: Date.UTC(2027, 2, 22, 5, 0) },
     set: { az: 260, t: Date.UTC(2027, 2, 22, 17, 0) },
     wind: { speed: flat24(5), from: flat24(270) },
+    vis: flat24(24_000),
   });
 
   it('interpolates between hours', () => {
@@ -47,6 +48,14 @@ describe('weather', () => {
     d.berlin.low[10] = 0;
     d.berlin.low[11] = 1;
     expect(cloudsAt(d, 10 * 60 + 30).low).toBeCloseTo(0.5);
+  });
+
+  it('reads how far you can see between hours', () => {
+    const d = day(0, 0, 0);
+    d.vis[10] = 24_000;
+    d.vis[11] = 4_000;
+    expect(visibilityAt(d, 10 * 60 + 30)).toBeCloseTo(14_000);
+    expect(visibilityAt(d, 9 * 60)).toBe(24_000);
   });
 
   it('reads a sunset the way a photographer would', () => {

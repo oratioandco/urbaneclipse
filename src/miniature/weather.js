@@ -64,7 +64,7 @@ export async function cloudsFor(date, dayStart) {
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude', points.map((p) => p.lat.toFixed(3)).join(','));
     url.searchParams.set('longitude', points.map((p) => p.lon.toFixed(3)).join(','));
-    url.searchParams.set('hourly', 'cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m');
+    url.searchParams.set('hourly', 'cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m,visibility');
     url.searchParams.set('wind_speed_unit', 'ms');
     url.searchParams.set('timezone', 'Europe/Berlin');
     url.searchParams.set('start_date', date);
@@ -76,12 +76,15 @@ export async function cloudsFor(date, dayStart) {
       const h = all[i].hourly;
       return { low: h.cloud_cover_low.map((v) => (v ?? 0) / 100), mid: h.cloud_cover_mid.map((v) => (v ?? 0) / 100), high: h.cloud_cover_high.map((v) => (v ?? 0) / 100) };
     };
+    // How far you can see, metres. The forecast tops out at 24 km; a missing value is as clear.
+    const berlin = all[0].hourly;
     const horizon = (from) => {
       const parts = HORIZON_KM.map((_, k) => series(from + k));
       return { low: parts[0].low.map((_, h) => Math.max(...parts.map((p) => p.low[h]))) };
     };
-    const wind = { speed: all[0].hourly.wind_speed_10m.map((v) => v ?? 0), from: all[0].hourly.wind_direction_10m.map((v) => v ?? 270) };
-    return { berlin: series(0), wind, riseHorizon: horizon(1), setHorizon: horizon(1 + HORIZON_KM.length), rise, set };
+    const wind = { speed: berlin.wind_speed_10m.map((v) => v ?? 0), from: berlin.wind_direction_10m.map((v) => v ?? 270) };
+    const vis = berlin.visibility.map((v) => v ?? 24_000);
+    return { berlin: series(0), wind, vis, riseHorizon: horizon(1), setHorizon: horizon(1 + HORIZON_KM.length), rise, set };
   })().catch((error) => {
     console.error('[miniature] weather failed', error);
     cache.delete(date);
@@ -98,6 +101,14 @@ export function cloudsAt(day, minutes) {
   const f = h - i;
   const at = (a) => a[i] * (1 - f) + a[i + 1] * f;
   return { low: at(day.berlin.low), mid: at(day.berlin.mid), high: at(day.berlin.high) };
+}
+
+/** How far you can see at a moment, in metres, interpolated between the hours. */
+export function visibilityAt(day, minutes) {
+  const h = Math.min(22.999, Math.max(0, minutes / 60));
+  const i = Math.floor(h);
+  const f = h - i;
+  return day.vis[i] * (1 - f) + day.vis[i + 1] * f;
 }
 
 /**

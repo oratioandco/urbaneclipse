@@ -11,7 +11,7 @@ import { lightAt } from './light.js';
 import { cityUniforms, mirrorGround } from './shading.js';
 import { ribbonUniforms } from './map.js';
 import { skyUniforms } from './sky.js';
-import { cloudDrift, cloudsAt } from './weather.js';
+import { cloudDrift, cloudsAt, visibilityAt } from './weather.js';
 import { formatMinutes } from './time.js';
 import { lookDirection } from './eye.js';
 import { skyPalette } from '../lib/skyPalette.ts';
@@ -224,6 +224,14 @@ export function updateHaze(street) {
   const focus = app.camera === eyeCamera ? eyeCamera.position : controls.target;
   near = THREE.MathUtils.lerp(near, 1200, street);
   far = THREE.MathUtils.lerp(far, 14_000, street);
+  // The forecast's visibility closes the air in: how far you can really look sets where the
+  // haze swallows the city. Clear (24 km, the ceiling) leaves the view as it is.
+  if (app.weather && layers.weather) {
+    const vis = visibilityAt(app.weather, Number(timeInput.value));
+    const reach = THREE.MathUtils.clamp(vis / 24_000, 0.07, 1);
+    near *= reach;
+    far *= reach;
+  }
   u.uHazeFocus.value.set(focus.x, focus.z);
   u.uHazeNear.value = near;
   u.uHazeFar.value = far;

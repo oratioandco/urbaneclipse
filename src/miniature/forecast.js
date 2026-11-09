@@ -1,5 +1,5 @@
 /** The day's cloud forecast in the panel: loading it and reading sunrise and sunset for colour. */
-import { cloudsAt, cloudsFor, forecastReach, readSky } from './weather.js';
+import { cloudsAt, cloudsFor, forecastReach, readSky, visibilityAt } from './weather.js';
 import { formatClock } from './time.js';
 import { layers, setCloudHint } from './chrome.js';
 import { dateInput, dayStart } from './clock.js';
@@ -55,10 +55,13 @@ function showWeather() {
   );
 }
 
-/** Cloud at an instant, as a short note for the list. */
+/** Cloud and sight at an instant, as a short note for the list. */
 export function cloudNote(t) {
   if (!app.weather || !layers.weather) return '';
-  const c = cloudsAt(app.weather, (t - dayStart()) / 60_000);
+  const minutes = (t - dayStart()) / 60_000;
+  const c = cloudsAt(app.weather, minutes);
   const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
-  return ` \u00b7 ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`;
+  const vis = visibilityAt(app.weather, minutes);
+  const view = vis < 20_000 ? ` \u00b7 ${vis >= 950 ? `${(Math.round(vis / 100) / 10).toFixed(1).replace(/\.0$/, '')} km` : `${Math.round(vis / 50) * 50} m`} view` : '';
+  return ` \u00b7 ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}${view}`;
 }
