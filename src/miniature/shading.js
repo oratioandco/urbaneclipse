@@ -277,7 +277,7 @@ export function shadeTower(material) {
         vec3 worldNormal = inverseTransformDirection(normal, viewMatrix);
         vec3 toEye = normalize(cameraPosition - vWorldP);
         // Panel seams on the sphere only: meridians and rings, dropping out as they get thin.
-        float onSphere = 1.0 - smoothstep(16.5, 17.6, length(vWorldP - vec3(0.0, 213.0, 0.0)));
+        float onSphere = 1.0 - smoothstep(16.5, 17.6, length(vWorldP - vec3(0.0, 213.78, 0.0)));
         vec2 fine = vec2(atan(vWorldP.x, vWorldP.z) * 5.73, y / 4.5);
         vec2 fw = fwidth(fine);
         float fade = 1.0 - smoothstep(0.3, 0.7, max(fw.x, fw.y));
@@ -287,12 +287,19 @@ export function shadeTower(material) {
         float glass = smoothstep(197.2, 198.0, y) * (1.0 - smoothstep(201.2, 202.0, y));
         glass = max(glass, smoothstep(212.4, 213.2, y) * (1.0 - smoothstep(217.6, 218.4, y)));
         glass = max(glass, row);
+        // The antenna's red-white aviation banding over its drum, and the darker Richtfunk
+        // skeleton above the sphere.
+        float banded = smoothstep(251.0, 252.5, y) * (1.0 - smoothstep(330.0, 333.0, y));
+        float stripe = step(0.5, fract(y / 6.5));
+        float drum = smoothstep(230.6, 231.8, y) * (1.0 - smoothstep(247.0, 248.3, y));
         // What the glass faces: the sky, and the sun as a glint on the surface.
         vec3 dir = reflect(-toEye, normalize(worldNormal));
         vec3 reflection = uSkyLight * (0.55 + 0.45 * dir.y) + uKeyLight * pow(max(dot(dir, normalize(uKeyDir)), 0.0), 90.0) * 2.5;
         float shine = clamp(glass * 0.6 + onSphere * 0.1, 0.0, 0.85);
         outgoingLight = mix(outgoingLight, reflection, shine);
         outgoingLight -= outgoingLight * seam * 0.14;
+        outgoingLight *= mix(vec3(1.0), mix(vec3(0.93), vec3(0.86, 0.26, 0.10), stripe), banded);
+        outgoingLight *= 1.0 - 0.22 * drum;
         outgoingLight += uLights * vec3(1.0, 0.8, 0.5) * row * (0.5 + 1.5 * pane);
         outgoingLight = hazed(outgoingLight, vWorldP);
       }

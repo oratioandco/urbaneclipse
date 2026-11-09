@@ -70,12 +70,12 @@ function sphereSamples(
 function fernsehturmShaftRadius(h: number): number {
   if (h <= 0) return 16;
   if (h < 20) return 16 + ((8 - 16) * h) / 20; // flared foot
-  if (h < 248.78) return 8 + ((4.5 - 8) * (h - 20)) / (248.78 - 20);
-  if (h <= 368.03) return 3.0 + ((0.9 - 3.0) * (h - 248.78)) / (368.03 - 248.78); // antenna
+  if (h < 249.8) return 8 + ((4.5 - 8) * (h - 20)) / (248.78 - 20); // concrete shaft to 248.78 m
+  if (h <= 368.03) return 2.0 + ((0.9 - 2.0) * (h - 249.8)) / (368.03 - 249.8); // antenna, 4 m dia at the base
   return 0;
 }
 
-const SPHERE_CENTRE_AGL = 213;
+const SPHERE_CENTRE_AGL = 213.78;
 const SPHERE_RADIUS = 16; // 32 m diameter
 
 /**
@@ -100,24 +100,34 @@ export const FERNSEHTURM: RevolutionLandmark = {
   lon: 13.409419,
   baseOrthometric: 34.6,
   profile: [
-    [0, 16.0], // flared foot, 32 m diameter
+    [0, 16.0], // foot, 32 m diameter, 20 m hyperbolic cone stump
     [10, 12.0],
     [20, 8.0], // shaft taper begins, 16 m diameter
     [100, 6.77],
+    // Evakuierungsbühnen: two open rescue platforms, 1.6 m out around the shaft (188 / 191 m).
+    [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7, 5.5],
+    [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7, 5.43],
     [196, 5.3], // just below the sphere
     ...sphereSamples(SPHERE_CENTRE_AGL, SPHERE_RADIUS, fernsehturmShaftRadius),
-    [230, 4.8], // above the sphere, back to shaft
-    [248.78, 4.5], // top of the concrete shaft, 9 m diameter
-    [248.79, 3.0], // antenna base (LOW CONFIDENCE: ~5-6 m dia estimated)
-    [368.03, 0.9], // antenna tip, 1.8 m diameter
+    [230.4, 4.62], // the sphere rests on a console at 229 m; shaft resumes
+    [231.2, 5.7], // Richtfunk section: the microwave skeleton reads as a slightly wider drum
+    [247.6, 5.7],
+    [248.7, 6.4], // 'Eisteller', the ice-catching plate at 248.7 m
+    [249.4, 5.4],
+    [249.8, 2.0], // antenna base, 4 m diameter
+    [327, 1.45], // the 1997 antenna tip starts at 327 m
+    [368.03, 0.9], // antenna tip, just under 2 m diameter
   ]
     .slice()
     .sort((a, b) => a[0] - b[0]) as ReadonlyArray<readonly [number, number]>,
   notes:
-    'Parametric solid of revolution. LoD2 geometry measured unusable: no sphere ' +
-    '(prism extruded from ground), no shaft taper, antenna absent (114.5 m short). ' +
-    'Total height 368.03 m and sphere diameter 32 m are high-confidence published ' +
-    'values; antenna base diameter is estimated and is the largest uncertainty.',
+    'Parametric solid of revolution, from the published dimensions (de.wikipedia, ' +
+    'Berliner Fernsehturm): foot 32 m dia over 20 m; shaft 16 -> 9 m dia to 248.78 m; ' +
+    'sphere 32 m dia centred 213.78 m; rescue platforms at 188/191 m; Eisteller at ' +
+    '248.7 m; antenna 4 m dia at the base to under 2 m at 368.03 m. LoD2 geometry ' +
+    'measured unusable: no sphere (prism extruded from ground), no shaft taper, ' +
+    'antenna absent (114.5 m short). The Richtfunk skeleton and the red-white antenna ' +
+    'banding are painted in the tower shader, not modelled.',
 };
 
 /**
