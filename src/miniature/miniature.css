@@ -27,6 +27,10 @@
         --shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
       }
       html, body { margin: 0; height: 100%; overflow: hidden; background: #efece6; font: 13px/1.35 ui-sans-serif, system-ui, sans-serif; color: var(--ink); }
+      /* A drag on the map must not turn into a text selection, and a double tap must not zoom
+         the chrome: the interface is a view, not a document. Form fields stay selectable. */
+      html { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+      input, textarea { user-select: text; -webkit-user-select: text; }
       canvas { display: block; position: fixed; inset: 0; touch-action: none; }
       button { font: inherit; color: inherit; }
 
