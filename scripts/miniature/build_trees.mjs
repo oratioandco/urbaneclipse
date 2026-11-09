@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { cherryKind } from '../../src/miniature/blossom.js';
+import { mauerwegCherries } from './mauerweg_cherries.mjs';
 
 const WFS = 'https://gdi.berlin.de/services/wfs/baumbestand';
 const LAYERS = ['strassenbaeume', 'anlagenbaeume'];
@@ -98,6 +99,25 @@ for (const layer of LAYERS) {
     console.log(`${layer}: ${Math.min(start + PAGE, total)} of ${total}`);
   }
 }
+
+// The Mauerweg cherries stand outside every register: rows planted along the former death
+// strip at Friedhof Baumschulenweg and between the East Side Gallery and the Spree.
+const cherries = mauerwegCherries(scene).map((t) => ({ ...t, c: Math.min(14, Math.max(2.5, t.h * 0.55)) }));
+// … none of them in the river: the painted map's water rings are the scene's own truth.
+const map = JSON.parse(fs.readFileSync(path.join(OUT, 'map.json'), 'utf8'));
+const inWater = (x, z) => {
+  for (const [ring] of map.water) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 2; i < ring.length; j = i, i += 2) {
+      if ((ring[i + 1] > z) !== (ring[j + 1] > z) && x < ((ring[j] - ring[i]) * (z - ring[i + 1])) / (ring[j + 1] - ring[i + 1]) + ring[i]) inside = !inside;
+    }
+    if (inside) return true;
+  }
+  return false;
+};
+const dry = cherries.filter((t) => !inWater(t.x, t.z));
+trees.push(...dry);
+console.log(`mauerweg cherries: ${dry.length} (${cherries.length - dry.length} in water dropped)`);
 
 // The same tree can be in both registers; drop anything within half a metre of one already kept.
 const seen = new Set();
