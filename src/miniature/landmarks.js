@@ -501,67 +501,113 @@ function berlinerDom() {
 }
 
 // --- Molecule Man ----------------------------------------------------------------------------
-// Jonathan Borofsky's 30 m aluminium figure standing in the Spree by the Treptowers, which the
-// tiles never had. The real sculpture is a flat-ish silhouette full of long triangular openings,
-// so its front profile becomes an extruded shape with the holes cut through — the gap between the
-// legs, a triangle in each thigh, one in the chest and one in the belly — not a stack of boxes.
+// Jonathan Borofsky's 30 m sculpture standing in the Spree by the Treptowers, which the tiles
+// never had: three identical walking figures facing each other across a meeting point, every
+// one of them a thin aluminium silhouette shot through with small round holes — the molecule
+// motif. Each figure is an extruded profile with the holes cut through; the sampler that
+// places them is seeded, so the sculpture is the same on every visit.
 export const MOLECULE_MAN = { centre: [3363.9, 2651.1], terrain: 0, top: 30 };
 
 /** The sculpture's aluminium, through the city's lighting, with a soft metal sheen and no windows. */
 const steel = shadeBuildings(new THREE.MeshPhongMaterial({ color: 0xc2c6cd, specular: 0x555555, shininess: 16, flatShading: true, side: THREE.DoubleSide }), { windows: false, name: 'city-landmarks-steel' });
 
 function moleculeMan() {
-  // The right half of the front profile, bottom to top, mirrored around the centreline.
+  // A seeded generator, so the holes are the same constellation every time.
+  const rand = ((seed) => () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  })(1912);
+
+  // The right half of the front profile, bottom to top; the left mirrors it.
   const half = [
     [1.05, 0], // the right foot's inner edge
     [2.6, 0], // its outer edge
-    [2.9, 6.2], // the outer leg
-    [3.3, 15.4], // the hip
-    [2.5, 18.6], // the waist
+    [2.95, 6.5], // the outer leg
+    [3.25, 15.2], // the hip
+    [2.45, 18.6], // the waist
     [2.6, 21.5], // the chest's side
-    [3.1, 23.2], // the armpit
-    [3.6, 19.5], // down the inner arm, the sliver of light between arm and body
-    [3.3, 15.0],
-    [3.2, 12.2], // the hand's inner edge
-    [4.3, 12.0], // the hand's tip
-    [4.8, 15.5], // up the arm's outer edge
-    [5.3, 21.5],
-    [5.0, 24.6], // the shoulder
-    [2.9, 26.4], // the trapezius
-    [1.2, 27.0], // the neck
-    [1.5, 27.8], // the cheek
-    [1.35, 28.8],
-    [0.75, 29.7],
+    [3.05, 23.1], // the armpit
+    [3.55, 19.6], // down the inner arm, the sliver of light between arm and body
+    [3.25, 15.2],
+    [3.15, 12.4], // the hand's inner edge
+    [4.25, 12.1], // the hand's tip
+    [4.75, 15.6], // up the arm's outer edge
+    [5.25, 21.4],
+    [4.95, 24.5], // the shoulder
+    [2.85, 26.3], // the trapezius
+    [1.15, 27.0], // the neck
+    [1.45, 27.9], // the cheek
+    [1.3, 28.9],
+    [0.7, 29.75],
     [0, 30], // the crown of the head
   ];
+  const outline = [
+    [-2.6, 0], // the left foot's outer edge
+    [-1.05, 0], // its inner edge
+    [-0.6, 11.8], // up the left leg's inner edge
+    [0, 13.2], // the crotch
+    [0.6, 11.8], // down the right leg's inner edge
+    ...half, // and around the right half to the crown
+  ];
+  for (let i = half.length - 1; i >= 1; i--) outline.push([-half[i][0], half[i][1]]); // down the left half
   const profile = new THREE.Shape();
-  profile.moveTo(-2.6, 0); // the left foot's outer edge
-  profile.lineTo(-1.05, 0);
-  profile.lineTo(...half[0]); // up the left leg's inner edge to the crotch
-  for (let i = 1; i < half.length; i++) profile.lineTo(...half[i]);
-  for (let i = half.length - 1; i >= 0; i--) {
-    const [x, y] = half[i];
-    profile.lineTo(-x, y); // down the left half, mirrored
-  }
+  profile.moveTo(...outline[0]);
+  for (let i = 1; i < outline.length; i++) profile.lineTo(...outline[i]);
   profile.closePath();
-  // The openings, given counterclockwise against the profile's clockwise run.
-  const hole = (a, b, c) => {
-    const path = new THREE.Path();
-    path.moveTo(...a);
-    path.lineTo(...c);
-    path.lineTo(...b);
-    path.closePath();
-    profile.holes.push(path);
+
+  // The molecule holes: small round openings scattered over the body, each kept clear of the
+  // outline and of its neighbours. Rejection sampling over the profile's bounding box.
+  const inside = (poly, x, y) => {
+    let inPoly = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inPoly = !inPoly;
+    }
+    return inPoly;
   };
-  hole([-1.9, 2.6], [-0.9, 9.2], [-2.45, 8.8]); // the left thigh's triangle
-  hole([1.9, 2.6], [0.9, 9.2], [2.45, 8.8]); // the right thigh's
-  hole([-1.5, 24.3], [1.5, 24.3], [0, 20.9]); // the chest's
-  hole([-1.25, 19.3], [1.25, 19.3], [0, 16.4]); // the belly's
-  const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(profile, { depth: 2.6, bevelEnabled: false }).translate(0, 0, -1.3), steel);
-  mesh.position.set(MOLECULE_MAN.centre[0], MOLECULE_MAN.terrain, MOLECULE_MAN.centre[1]);
-  mesh.matrixAutoUpdate = false;
-  mesh.updateMatrix();
-  return mesh;
+  const edgeDist = (poly, x, y) => {
+    let best = Infinity;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      const dx = xj - xi, dy = yj - yi;
+      const t = Math.min(1, Math.max(0, ((x - xi) * dx + (y - yi) * dy) / (dx * dx + dy * dy)));
+      best = Math.min(best, Math.hypot(x - (xi + t * dx), y - (yi + t * dy)));
+    }
+    return best;
+  };
+  const holes = [];
+  for (let tries = 0; holes.length < 30 && tries < 800; tries++) {
+    const band = rand();
+    const y = band < 0.5 ? 13.5 + rand() * 11 : band < 0.78 ? 1 + rand() * 11.5 : band < 0.92 ? 26.8 + rand() * 2.6 : 12 + rand() * 9; // torso, legs, head, arms
+    const x = (rand() * 2 - 1) * 4.6;
+    const r = 0.14 + rand() * rand() * 0.36;
+    if (!inside(outline, x, y) || edgeDist(outline, x, y) < r + 0.28) continue;
+    if (holes.some((h) => Math.hypot(h.x - x, h.y - y) < h.r + r + 0.22)) continue;
+    holes.push({ x, y, r });
+  }
+  for (const { x, y, r } of holes) {
+    const p = new THREE.Path();
+    p.absarc(x, y, r, 0, Math.PI * 2, true); // against the profile's run
+    profile.holes.push(p);
+  }
+
+  // Three figures facing each other across a meeting point: each stands ~2.7 m out from it,
+  // turned to face it, so the hands of neighbours meet a whisker short of the halfway angles
+  // (hand reach 5.0 m from the point, ±57.6 degrees against 60) — fused, like the real one,
+  // with the three heads clearly apart and each figure on its own base in the water.
+  const geo = new THREE.ExtrudeGeometry(profile, { depth: 0.8, bevelEnabled: false }).translate(0, 0, -0.4);
+  return [0, 1, 2].map((i) => {
+    const a = (i * 2 * Math.PI) / 3;
+    const mesh = new THREE.Mesh(geo, steel);
+    mesh.position.set(MOLECULE_MAN.centre[0] + Math.sin(a) * 2.7, MOLECULE_MAN.terrain, MOLECULE_MAN.centre[1] + Math.cos(a) * 2.7);
+    mesh.rotation.y = a + Math.PI; // local +z, the face, towards the meeting point
+    mesh.matrixAutoUpdate = false;
+    mesh.updateMatrix();
+    return mesh;
+  });
 }
 
 // --- 030BLN ----------------------------------------------------------------------------------
@@ -586,7 +632,7 @@ function alxTower() {
   return mesh;
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), moleculeMan(), alxTower()];
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
