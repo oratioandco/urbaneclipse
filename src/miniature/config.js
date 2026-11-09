@@ -3,7 +3,7 @@
 export const params = new URLSearchParams(location.search);
 /** The city's geometry, built by scripts/miniature and served from a volume. Bump the version on a rebuild. */
 export const CITY = '/city/';
-export const CITY_VERSION = '?v=1';
+export const CITY_VERSION = '?v=2';
 export const isPhone = Math.min(innerWidth, innerHeight) < 600;
 export const SHADOW_SIZE = Number(params.get('shadow')) || (isPhone ? 2048 : 4096);
 export const TRIANGLE_BUDGET = Number(params.get('budget')) || (isPhone ? 1_200_000 : 5_000_000);
