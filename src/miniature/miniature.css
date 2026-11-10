@@ -255,7 +255,7 @@
       body[data-sheet='open'] #sheet-toggle b { transform: rotate(180deg); }
       /* At eye level the handle goes (as before) but the mode pill stays, on its own row, so
          a card in plan mode is never the only way back to the tools. */
-      body[data-eye='true'] #sheet-toggle, body[data-eye='true'] #daylist, body[data-eye='true'] #sparkstrip { display: none; }
+      body[data-eye='true'] #sheet-toggle, body[data-eye='true'] #daylist { display: none; }
       body[data-eye='true'] .panel-head, body[data-eye='true'] #plan-head, body[data-eye='true'] #plancards { grid-column: 1 / -1; }
       #dayfilter { display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
       body[data-sheet='open']:not([data-eye='true']) #dayfilter { display: flex; }
@@ -298,6 +298,8 @@
       body[data-mode='plan'][data-sheet='open'] #plan-head { display: flex; }
       body[data-mode='plan'][data-sheet='open'] #sparkstrip { display: block; }
       body[data-mode='plan'][data-sheet='open'] #plancards { display: block; }
+      /* Eye level must also beat the plan+sheet show rule above, which carries two attributes. */
+      body[data-eye='true'][data-mode='plan'] #sparkstrip { display: none; }
       body[data-mode='plan'] .camera-rows, body[data-mode='plan'] #moment-row, body[data-mode='plan'] #tracks, body[data-mode='plan'] #time-row, body[data-mode='plan'] #moments, body[data-mode='plan'] #moments-empty { display: none; }
       body[data-mode='plan'] #dayfilter, body[data-mode='plan'] #daylist { display: none; }
       body[data-eye='true'] #plancards { max-height: 30vh; }
@@ -312,6 +314,8 @@
       .spark-day:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
       .spark-band { position: relative; flex: 1; min-width: 0; height: 34px; }
       .spark-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      /* The band is HTML, not an SVG rect: a stretched viewBox turns rounded corners into ellipses. */
+      .spark-phases { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; border-radius: 5px; }
       .spark-cross { position: absolute; top: 1px; bottom: 9px; width: 1px; background: var(--ink); opacity: 0.35; pointer-events: none; }
       .spark-cross[hidden] { display: none; }
       .spark-now { position: absolute; top: 1px; bottom: 9px; width: 1px; background: var(--accent); pointer-events: none; }

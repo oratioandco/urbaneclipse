@@ -57,6 +57,12 @@ for (const chip of planHead.querySelectorAll('[data-filter]')) {
 // three days of alignment math.
 setTimeout(() => setPanelMode(params.get('at') || params.get('look') ? 'shoot' : 'plan'), 0);
 
+// The afternoon moves under an open panel: today's now-marker drifts and shots pass, so
+// re-grade on a slow beat while the plan is showing. renderPlanCards guards the mode.
+setInterval(() => {
+  if (document.body.dataset.mode === 'plan') renderPlanCards();
+}, 5 * 60_000);
+
 /** The day's clouds and sight at an instant, as a grade for the card's dot. */
 function gradeAt(day, from, t) {
   if (!day) return null;

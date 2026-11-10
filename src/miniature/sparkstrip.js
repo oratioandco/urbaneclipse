@@ -13,8 +13,7 @@ import { PHASE_COLOURS } from './plan.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const W = 240; // The strip's drawing width; stretched to the row, strokes stay 2px.
 const H = 34; // Cloud line lives in the top 20, the phase band in the bottom 10.
-
-let seq = 0; // Gradient ids must be unique in the document.
+const MIN_GAP = 6; // Smallest space between tick heads, in axis %, so clusters stay tappable.
 
 const el = (name, attrs = {}) => {
   const node = document.createElementNS(SVG_NS, name);
@@ -38,27 +37,24 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   const band = document.createElement('div');
   band.className = 'spark-band';
 
-  // The day's light, as one gradient — the slider's own visual language.
-  const svg = el('svg', { class: 'spark-svg', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
-  const gid = `spark-phases-${seq++}`;
-  const defs = el('defs');
-  const grad = el('linearGradient', { id: gid, x1: 0, y1: 0, x2: 1, y2: 0 });
-  for (const { phase, at } of lightGradientStops(lightBands(from, from + 86_400_000, FERNSEHTURM.lat, FERNSEHTURM.lon, 10 * 60_000), from, from + 86_400_000)) {
-    grad.append(el('stop', { offset: `${(at * 100).toFixed(2)}%`, 'stop-color': PHASE_COLOURS[phase] }));
-  }
-  defs.append(grad);
-  svg.append(defs, el('rect', { x: 0, y: H - 10, width: W, height: 10, rx: 5, fill: `url(#${gid})` }));
+  // The day's light, as one gradient — the slider's own visual language. HTML, not an SVG
+  // rect: the stretched viewBox would pull the pill's round ends into ellipses.
+  const phases = document.createElement('div');
+  phases.className = 'spark-phases';
+  phases.style.background = `linear-gradient(90deg, ${lightGradientStops(lightBands(from, from + 86_400_000, FERNSEHTURM.lat, FERNSEHTURM.lon, 10 * 60_000), from, from + 86_400_000).map(({ phase, at }) => `${PHASE_COLOURS[phase]} ${(at * 100).toFixed(2)}%`).join(', ')})`;
+  band.append(phases);
 
-  // The cloud forecast, once the day's fetch is in: cover runs 0..1 across the top.
+  // The cloud forecast, once the day's fetch is in: cover runs 0..1 across the top. Each
+  // hourly sample sits at its hour's centre, so the line shares the ticks' time axis.
+  const svg = el('svg', { class: 'spark-svg', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
   if (day) {
     const cover = day.berlin.low.map((low, h) => Math.max(low, day.berlin.mid[h], day.berlin.high[h]));
-    const pt = (h) => `${((h / (cover.length - 1)) * W).toFixed(1)},${(20 - cover[h] * 15).toFixed(1)}`;
+    const pt = (h) => `${(((h + 0.5) / cover.length) * W).toFixed(1)},${(20 - cover[h] * 15).toFixed(1)}`;
     svg.append(
       el('path', { d: `M0,20 L${cover.map((_, h) => pt(h)).join(' L')} L${W},20 Z`, fill: 'var(--muted)', opacity: '0.1' }),
       el('polyline', { points: cover.map((_, h) => pt(h)).join(' '), fill: 'none', stroke: 'var(--muted)', 'stroke-width': '2', 'vector-effect': 'non-scaling-stroke', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
     );
   }
-
   band.append(svg);
 
   // Where the day has got to, on today's strip.
@@ -70,13 +66,19 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   }
 
   // The shots: a tick per pick, its head at the minute it happens, its height the spectacle.
-  for (const pick of picks) {
+  // In the day's time order — both for Tab, which should walk the axis the strip draws, and
+  // so clusters can be nudged apart from the left without colliding again. A nudge moves a
+  // head off its exact minute to keep every tick its own target; the tooltip keeps the time.
+  let prevLeft = -Infinity;
+  for (const pick of [...picks].sort((a, b) => a.t - b.t)) {
     const tick = document.createElement('button');
     tick.type = 'button';
     tick.className = `spark-tick spark-${pick.body}`;
     tick.style.setProperty('--score', pick.score.toFixed(2));
-    const at = Math.min(97, Math.max(3, ((pick.t - from) / 86_400_000) * 100));
-    tick.style.left = `${at.toFixed(2)}%`;
+    const trueLeft = ((pick.t - from) / 86_400_000) * 100;
+    const left = Math.min(97, Math.max(3, trueLeft, prevLeft + MIN_GAP));
+    prevLeft = left;
+    tick.style.left = `${left.toFixed(2)}%`;
     const when = formatClock(pick.t);
     tick.title = `${when} — ${pick.title}`;
     tick.setAttribute('aria-label', `${when}, ${pick.title}. ${pick.detail}. Tap to fly there.`);
@@ -97,7 +99,8 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
     const at = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
     cross.style.left = `${(at * 100).toFixed(2)}%`;
     cross.hidden = false;
-    const hour = Math.round(at * 23);
+    // The same hour centres the cloud line is drawn at.
+    const hour = Math.min(23, Math.floor(at * 24));
     // Short stamps: the readout shares the label column, so "10 AM · 98%", not a full clock.
     let text = formatClock(from + hour * 3_600_000).replace(':00 ', ' ');
     if (day) {
@@ -116,8 +119,15 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   mount.append(row);
 }
 
-/** The whole strip; an empty day list (no shots anywhere) leaves it empty. */
+/** The whole strip; an empty day list (no shots anywhere) leaves it empty. A re-render (a
+ * forecast landing, the afternoon moving on) rebuilds every row — so a keyboard user's
+ * place is carried across by the buttons' labels, which are unique per button. */
 export function renderSparkstrip(mount, blocks, handlers = {}) {
+  const focused = mount.contains(document.activeElement) ? document.activeElement.getAttribute('aria-label') : null;
   mount.replaceChildren();
   for (const block of blocks) sparkRow(mount, block, handlers);
+  if (focused) {
+    const again = [...mount.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === focused);
+    again?.focus({ preventScroll: true });
+  }
 }
