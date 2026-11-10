@@ -13,9 +13,11 @@ import { layers } from './chrome.js';
 import { dateDayStart, dateInput, dayStart, setDay } from './clock.js';
 import { bodyIcon, collectRows, renderDayList, setSheet } from './daylist.js';
 import { computeDayPaths, getViewshed } from './plan.js';
+import { renderSparkstrip } from './sparkstrip.js';
 import { app, invalidate } from './state.js';
 
 const panel = document.getElementById('plancards');
+const strip = document.getElementById('sparkstrip');
 const planHead = document.getElementById('plan-head');
 const modeToggle = document.getElementById('mode-toggle');
 const sheetToggle = document.getElementById('sheet-toggle');
@@ -149,21 +151,38 @@ export function renderPlanCards() {
       .sort((a, b) => GRADE_WEIGHT[b.grade ?? 'fair'] * b.score - GRADE_WEIGHT[a.grade ?? 'fair'] * a.score)
       .slice(0, PER_DAY);
     total += picks.length;
-    blocks.push({ from, i, picks, day });
+    blocks.push({ from, i, picks, day, name: dayName(from, i), now: i === 0 ? now : null });
   }
   sheetToggle.querySelector('span').textContent = total
     ? `${total} shot${total === 1 ? '' : 's'} in the next ${DAYS === 3 ? 'three days' : `${DAYS} days`}`
     : 'No shots in the next three days';
   if (!blocks.length) {
     const why = filter === 'all' ? 'Nothing lines up' : `No ${filter === 'sun' ? 'sun' : 'moon'} shots line up`;
+    strip.replaceChildren();
     panel.replaceChildren(
       Object.assign(document.createElement('p'), { className: 'muted', textContent: `${why} in the next three days. Try another day.` }),
     );
     return;
   }
+  renderSparkstrip(strip, blocks, {
+    // A tick flies to its shot, exactly as the card it mirrors does: bring the day along
+    // first, or setMinute clamps a Tomorrow shot into tonight.
+    onTick: (row, from) => {
+      if (svDate(from) !== dateInput.value) setDay(svDate(from));
+      setPanelMode('shoot');
+      row.go();
+      modeToggle.focus({ preventScroll: true });
+      invalidate();
+    },
+    onDay: (from) =>
+      panel.querySelector(`.plan-day[data-date="${svDate(from)}"]`)?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }),
+  });
   panel.replaceChildren(
-    ...blocks.flatMap(({ from, i, picks, day }) => [
-      Object.assign(document.createElement('div'), { className: 'plan-day', textContent: dayName(from, i) }),
+    ...blocks.flatMap(({ from, i, picks, day, name }) => {
+      const heading = Object.assign(document.createElement('div'), { className: 'plan-day', textContent: name });
+      heading.dataset.date = svDate(from);
+      return [
+        heading,
       ...picks.map((row) => {
         const item = document.createElement('button');
         item.type = 'button';
@@ -183,6 +202,7 @@ export function renderPlanCards() {
         });
         return item;
       }),
-    ]),
+      ];
+    }),
   );
 }
