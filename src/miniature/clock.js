@@ -51,10 +51,15 @@ export function instant() {
   return new Date(guess.getTime() - berlinOffsetMinutes(guess) * 60_000);
 }
 
-export function dayStart() {
-  const [y, m, d] = dateInput.value.split('-').map(Number);
+/** Midnight Berlin time for a yyyy-mm-dd, as an instant. */
+export function dateDayStart(value) {
+  const [y, m, d] = value.split('-').map(Number);
   const guess = new Date(Date.UTC(y, m - 1, d));
   return guess.getTime() - berlinOffsetMinutes(guess) * 60_000;
+}
+
+export function dayStart() {
+  return dateDayStart(dateInput.value);
 }
 
 /** Set the time to an instant on the chosen day, to 5 seconds. */

@@ -35,6 +35,7 @@ import './dates.js';
 import './share.js';
 import './locate.js';
 import { updateDay } from './plan.js';
+import './planmode.js';
 import { TOWER_BOUND, beaconLit, beacons, bloom, composer, controls, eyeCamera, groundMaterial, overview, renderPass, renderer, scene, sizeBlur, sizeMirror, sky, skyDome, sun } from './render.js';
 import { clearView, roofAt } from './sightlines.js';
 import { app, invalidate, invalidateShadows, smooth, stats } from './state.js';

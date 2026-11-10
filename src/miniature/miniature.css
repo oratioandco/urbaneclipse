@@ -251,7 +251,10 @@
       #sheet-toggle i { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin-right: 4px; }
       #sheet-toggle b { margin-left: auto; font-size: 14px; transition: transform 0.2s; }
       body[data-sheet='open'] #sheet-toggle b { transform: rotate(180deg); }
+      /* At eye level the handle goes (as before) but the mode pill stays, on its own row, so
+         a card in plan mode is never the only way back to the tools. */
       body[data-eye='true'] #sheet-toggle, body[data-eye='true'] #daylist { display: none; }
+      body[data-eye='true'] .panel-head, body[data-eye='true'] #plan-head, body[data-eye='true'] #plancards { grid-column: 1 / -1; }
       #dayfilter { display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
       body[data-sheet='open']:not([data-eye='true']) #dayfilter { display: flex; }
       #dayfilter button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--line); border-radius: 14px; background: none; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
@@ -261,6 +264,9 @@
       #daylist { display: none; max-height: 46vh; overflow-y: auto; margin: 0 -6px; }
       body[data-sheet='open'] #daylist { display: grid; }
       body[data-sheet='open'] #moments { display: none; }
+      /* Plan mode keeps the sheet's shoot-mode rows off even with the sheet open (these two
+         must out-rank the :not() rules above, so they name the sheet state too). */
+      body[data-sheet='open'][data-mode='plan'] #dayfilter, body[data-sheet='open'][data-mode='plan'] #daylist { display: none; }
       .dayrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 6px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
       .dayrow:first-child { border-top: 0; }
       .dayrow:hover { background: var(--field); }
@@ -269,6 +275,29 @@
       .dayrow b { font-weight: 600; }
       .dayrow small { color: var(--muted); font-size: 11.5px; }
       .dayrow em { font-style: normal; font-weight: 600; color: var(--accent); white-space: nowrap; }
+      /* The panel's two modes: plan (the coming shots as cards) and shoot (the tools). The
+         body attribute decides; plan hides the tool rows, shoot hides the plan rows. */
+      .panel-head { display: flex; align-items: center; gap: 8px; margin: -4px -4px 0; }
+      .panel-head #sheet-toggle { flex: 1; min-width: 0; margin: 0; }
+      #mode-toggle { flex: none; padding: 3px 11px; border: 1px solid var(--line); border-radius: 14px; background: none; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; }
+      #mode-toggle:hover { background: var(--field); }
+      #plan-head { display: none; align-items: center; }
+      .plan-filter { display: flex; gap: 6px; }
+      .plan-filter button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--line); border-radius: 14px; background: none; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
+      .plan-filter button i { width: 8px; height: 8px; border-radius: 50%; }
+      .plan-filter button[aria-pressed='true'] { background: var(--field); color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+      #plancards { display: none; max-height: 46vh; overflow-y: auto; margin: 0 -6px; }
+      .plan-day { margin: 10px 6px 2px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+      .plan-day:first-child { margin-top: 2px; }
+      .planrow .grade { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+      .planrow .grade[data-grade='good'] { background: #3aa65b; }
+      .planrow .grade[data-grade='fair'] { background: #e2a53f; }
+      .planrow .grade[data-grade='poor'] { background: #c7503d; }
+      body[data-mode='plan'][data-sheet='open'] #plan-head { display: flex; }
+      body[data-mode='plan'][data-sheet='open'] #plancards { display: block; }
+      body[data-mode='plan'] .camera-rows, body[data-mode='plan'] #moment-row, body[data-mode='plan'] #tracks, body[data-mode='plan'] #time-row, body[data-mode='plan'] #moments, body[data-mode='plan'] #moments-empty { display: none; }
+      body[data-mode='plan'] #dayfilter, body[data-mode='plan'] #daylist { display: none; }
+      body[data-eye='true'] #plancards { max-height: 30vh; }
 
       #viewhere { position: fixed; z-index: 4; height: 36px; padding: 0 12px; font-size: 12.5px; white-space: nowrap; }
       #viewhere i { width: 9px; height: 9px; border-radius: 50%; }
@@ -298,7 +327,7 @@
         #lens-chips button { padding: 0 4px; }
         #format { max-width: 112px; }
         /* Below the map tools, so they never cover the list. */
-        #daylist { max-height: 30vh; }
+        #daylist, #plancards { max-height: 30vh; }
         body[data-eye='true'] .bottom { gap: 6px; }
         #lens-label { min-width: 0; }
         .clock { font-size: 20px; min-width: 0; }

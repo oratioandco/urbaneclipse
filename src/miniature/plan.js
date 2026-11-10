@@ -15,6 +15,7 @@ import { flyTo } from './camera.js';
 import { layers, shownBody } from './chrome.js';
 import { dayStart, instant, showPhases, timeInput } from './clock.js';
 import { renderDayList } from './daylist.js';
+import { renderPlanCards } from './planmode.js';
 import { enterEye, fullFrame } from './eyeLevel.js';
 import { loadWeather } from './forecast.js';
 import { updateSun } from './lighting.js';
@@ -53,7 +54,7 @@ export function updateDay() {
   ].sort((a, b) => a.peak - b.peak);
   app.shownKey = null;
   loadWeather();
-  computePaths(from, to);
+  computePaths();
   const list = document.getElementById('moments');
   list.replaceChildren();
   const seen = new Set();
@@ -94,7 +95,7 @@ function antennaStretch(line) {
   const at = (d) => ({ x: (far.x / length) * d, z: (far.z / length) * d, y: app.groundAt((far.x / length) * d, (far.z / length) * d) + 1 });
   return { from: at(range.fromM), to: at(range.toM), ...range };
 }
-let rawPaths = [];
+let dayPlanned = false;
 let viewshed = null;
 app.dayPaths = [];
 app.spots = [];
@@ -102,25 +103,35 @@ export const toScene = (p) => {
   const [x, z] = sceneFromLatLon(p.lat, p.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
   return { x, z, y: app.groundAt(x, z) + 1 };
 };
+export const getViewshed = () => viewshed;
 
-function computePaths(from, to) {
-  rawPaths = ['sun', 'moon'].map((body) => computeDayPath({ body, start: new Date(from), end: new Date(to), landmark: FERNSEHTURM }));
+/** The day's paths for any date, in scene coordinates, checked against the buildings once the
+ * viewshed is in — the same pipeline the selected day runs, kept pure so the plan's three
+ * days can share it. */
+export function computeDayPaths(from, shed = viewshed) {
+  const to = from + 86_400_000;
+  return ['sun', 'moon']
+    .map((body) => computeDayPath({ body, start: new Date(from), end: new Date(to), landmark: FERNSEHTURM }))
+    .filter((path) => path.body === 'sun' || path.illumination >= MIN_MOON_ILLUMINATION)
+    .map((path) => (shed ? applyView(path, (lat, lon) => sampleViewshed(shed, lat, lon) === VIEW_VISIBLE) : path))
+    .map(visibleMoon)
+    .map((path) => ({
+      body: path.body,
+      source: path,
+      faint: path.body === 'moon' && path.illumination < 0.5,
+      segments: path.segments.map((segment) => segment.map((p) => ({ ...toScene(p), t: p.t, clear: p.clear }))),
+    }));
+}
+
+function computePaths() {
+  dayPlanned = true;
   buildPaths();
 }
 
 /** The paths in scene coordinates, checked against the buildings once that data is in. */
 function buildPaths() {
   const from = dayStart();
-  const viewed = rawPaths
-    .filter((path) => path.body === 'sun' || path.illumination >= MIN_MOON_ILLUMINATION)
-    .map((path) => (viewshed ? applyView(path, (lat, lon) => sampleViewshed(viewshed, lat, lon) === VIEW_VISIBLE) : path))
-    .map(visibleMoon);
-  app.dayPaths = viewed.map((path) => ({
-    body: path.body,
-    source: path,
-    faint: path.body === 'moon' && path.illumination < 0.5,
-    segments: path.segments.map((segment) => segment.map((p) => ({ ...toScene(p), t: p.t, clear: p.clear }))),
-  }));
+  app.dayPaths = computeDayPaths(from);
   // One line through the tower per hour, like the hours on a clock face: along each, the disc
   // sits behind some part of the tower at that hour.
   app.hourRays = [];
@@ -135,6 +146,7 @@ function buildPaths() {
   updateTracks();
   updateSpots(instant().getTime());
   renderDayList();
+  renderPlanCards();
 }
 
 app.rays = [];
@@ -315,7 +327,7 @@ function loadVisibility(attempt = 0) {
   loadViewshed().then(
     (loaded) => {
       viewshed = loaded;
-      if (rawPaths.length) buildPaths();
+      if (dayPlanned) buildPaths();
       invalidate();
     },
     (error) => {

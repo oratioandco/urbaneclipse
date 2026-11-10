@@ -20,11 +20,18 @@ const dayList = document.getElementById('daylist');
 const sheetToggle = document.getElementById('sheet-toggle');
 const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
-/** Every chance of the day, in time order: tower alignments and street henges. */
-export function renderDayList() {
+/**
+ * Every chance of a day, in time order: tower alignments, moonrise and moonset behind the
+ * antenna, and street henges \u2014 the rows both the day list and the plan cards draw from.
+ * `from` is the day's start; `flags` carry the layer switches and, when given, a instant
+ * before which the day's chances have already passed. Each row also carries a spectacle
+ * score, so the plan can rank the big moon over a short henge.
+ */
+export function collectRows(dayPaths, moments, from, flags = {}) {
+  const { tower = true, streets = true, moon = true } = flags;
   const rows = [];
-  if (layers.tower) {
-    for (const path of app.dayPaths.filter(shownBody)) {
+  if (tower) {
+    for (const path of dayPaths.filter(shownBody)) {
       // Stretches with a clear view of the tower, joined across short gaps (a building in
       // the way for a few minutes), and kept only when long enough to get to.
       const windows = [];
@@ -47,6 +54,8 @@ export function renderDayList() {
           t: first.t,
           body: path.body,
           kind: 'tower',
+          // The closer the tower, the larger the body behind it: the spectacle, scored.
+          score: path.body === 'moon' ? Math.min(2.4, 1.5 * discOverSphere(mid.distanceM)) : discOverSphere(mid.distanceM) > 1 ? 1.8 : 1.2,
           title:
             path.body === 'moon'
               ? `Big moon behind the TV tower, ${discOverSphere(mid.distanceM).toFixed(1)}\u00d7 the sphere`
@@ -61,8 +70,7 @@ export function renderDayList() {
   }
   // Moonrise and moonset behind the antenna: the moon low, more than half lit, and visible
   // round the thin mast from a few kilometres out.
-  if (layers.tower && layers.moon) {
-    const from = dayStart();
+  if (tower && moon) {
     const lit = getMoonIllumination(new Date(from + 43_200_000)).fraction;
     if (lit >= 0.5) {
       let window = null;
@@ -88,6 +96,7 @@ export function renderDayList() {
           t: w.start,
           body: 'moon',
           kind: 'tower',
+          score: 2,
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
           detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
           go: () => {
@@ -100,10 +109,10 @@ export function renderDayList() {
       }
     }
   }
-  if (layers.streets) {
+  if (streets) {
     const seen = new Set();
     // The longest views are the ones worth a trip; the rest still show on the map and slider.
-    for (const m of [...app.moments].filter(shownBody).sort((a, b) => b.view.lengthM - a.view.lengthM)) {
+    for (const m of [...moments].filter(shownBody).sort((a, b) => b.view.lengthM - a.view.lengthM)) {
       const key = `${m.view.name}${m.body}`;
       if (seen.has(key) || seen.size >= 12) continue;
       seen.add(key);
@@ -111,6 +120,7 @@ export function renderDayList() {
         t: m.peak,
         body: m.body,
         kind: 'street',
+        score: Math.min(1.6, m.view.lengthM / 800),
         title: `${m.view.name}`,
         detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
         go: () => goViewHere({ kind: 'street', body: m.body, t: m.peak, x: m.view.a[0], z: m.view.a[1], moment: m }),
@@ -118,6 +128,12 @@ export function renderDayList() {
     }
   }
   rows.sort((a, b) => a.t - b.t);
+  return rows;
+}
+
+/** The day as a list in the expanded sheet: the same rows, in time order, each with Go. */
+export function renderDayList() {
+  const rows = collectRows(app.dayPaths, app.moments, dayStart(), { tower: layers.tower, streets: layers.streets, moon: layers.moon });
   dayList.replaceChildren(
     ...rows.map((row) => {
       const item = document.createElement('button');
@@ -147,7 +163,7 @@ export function bodyIcon(body, t) {
   return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/><circle r="0.92" fill="none" stroke="#5b82ff" stroke-width="0.12"/></svg>`;
 }
 
-function setSheet(open) {
+export function setSheet(open) {
   document.body.dataset.sheet = open ? 'open' : 'closed';
   sheetToggle.setAttribute('aria-expanded', String(open));
 }

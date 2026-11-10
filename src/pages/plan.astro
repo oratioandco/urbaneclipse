@@ -20,7 +20,7 @@ import '../miniature/miniature.css';
       if (location.hash.startsWith('#/')) location.replace('/map/' + location.hash);
     </script>
   </head>
-  <body>
+  <body data-mode="shoot">
     <canvas id="labels"></canvas>
     <div class="tools">
       <button id="compass" class="round surface" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
@@ -141,7 +141,18 @@ import '../miniature/miniature.css';
     <div class="bottom">
       <canvas id="minimap" aria-label="Map of where you stand. Tap to go back to the map." role="button"></canvas>
       <div class="panel surface">
-        <button id="sheet-toggle" type="button" aria-expanded="false" aria-controls="daylist"><i></i><span>Today</span><b aria-hidden="true">&#8963;</b></button>
+        <div class="panel-head">
+          <button id="sheet-toggle" type="button" aria-expanded="false" aria-controls="plancards"><i></i><span>Shots</span><b aria-hidden="true">&#8963;</b></button>
+          <button id="mode-toggle" type="button">Advanced &rsaquo;</button>
+        </div>
+        <div id="plan-head">
+          <div class="plan-filter" role="group" aria-label="Which body">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="sun" aria-pressed="false"><i style="background: var(--sun)"></i>Sun</button>
+            <button type="button" data-filter="moon" aria-pressed="false"><i style="background: var(--moon)"></i>Moon</button>
+          </div>
+        </div>
+        <div id="plancards" role="region" aria-label="The coming days' shots"></div>
         <div class="camera-rows">
           <div class="row">
             <span id="facing"></span>

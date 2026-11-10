@@ -4,6 +4,7 @@ import { formatClock } from './time.js';
 import { layers, setCloudHint } from './chrome.js';
 import { dateInput, dayStart } from './clock.js';
 import { renderDayList } from './daylist.js';
+import { renderPlanCards } from './planmode.js';
 import { updateSun } from './lighting.js';
 import { updateTracks } from './plan.js';
 import { app, invalidate } from './state.js';
@@ -30,6 +31,7 @@ export function loadWeather() {
     showWeather();
     updateTracks();
     renderDayList();
+    renderPlanCards();
     updateSun();
     invalidate();
   });
