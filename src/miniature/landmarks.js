@@ -906,6 +906,88 @@ function hauptbahnhof() {
   return [place(ew, towerUncut, ewMatrix), place(boards, gold, ewMatrix), place(ns, towerUncut, nsMatrix)];
 }
 
+// --- The Cube --------------------------------------------------------------------------------
+// The Cube Berlin at Washingtonplatz (OSM way 624737072: 11 levels, 43.8 m), which LoD2 has as
+// a plain box: the office cube's whole character is its skin. A 38 m square turned about 34
+// degrees off the grid (read off the z18 satellite), its double-skin facade a weave of glass
+// panes that each tilt their own way — the sky comes back as a checker of slightly different
+// tones, and the sun sweeps glints across it. The shader below adds that weave on top of the
+// shared city lighting: a diamond lattice snapped to each wall's direction, a per-pane tilt
+// perturbing the reflection vector, seams faded by fwidth. Eleven storey bands stand slightly
+// proud, the roof is a terrace with a balustraded courtyard and a pavilion, and a cut square
+// at 6 removes the tile's plain box (nothing else stands within 150 m).
+export const THE_CUBE = { centre: [-2740.4, -309.5], terrain: 0.5, top: 44.9 };
+
+/** The facade shader, layered onto the city's buildings light through shadeBuildings' edit. */
+function cubeEdit(shader) {
+  shader.fragmentShader = shader.fragmentShader.replace(
+    'outgoingLight = hazed(outgoingLight + cityLight, vWorldP);',
+    /* glsl */ `{
+        vec3 toEye = normalize(cameraPosition - vWorldP);
+        vec3 dir = reflect(-toEye, worldNormal);
+        // The wall's direction, snapped to whole degrees exactly as the window grid does it.
+        vec3 face = normalize(cross(dFdx(vRel), dFdy(vRel)));
+        float angle = atan(face.z, face.x);
+        angle = floor(angle / 0.017453 + 0.5) * 0.017453;
+        vec2 facing = vec2(cos(angle), sin(angle));
+        vec2 along = vec2(-facing.y, facing.x);
+        // A diamond lattice, half a storey on the diagonal, so the weave reads against the
+        // storey bands rather than repeating with them.
+        vec2 weave = vec2(dot(vWorldP.xz, along) / 3.1, height / 3.1);
+        vec2 diag = vec2(weave.x + weave.y, weave.x - weave.y);
+        vec2 paneId = floor(diag);
+        vec2 pane = abs(fract(diag) - 0.5);
+        float fw = max(fwidth(diag).x, fwidth(diag).y);
+        float fade = 1.0 - smoothstep(0.3, 0.8, fw);
+        float seam = max(smoothstep(0.46 - fw, 0.5, pane.x), smoothstep(0.46 - fw, 0.5, pane.y)) * fade * wall;
+        float tilt = (hash21(paneId) - 0.5) * 0.4;
+        vec3 paneDir = normalize(dir + vec3(facing.x * tilt, tilt * 0.6, facing.y * tilt));
+        vec3 glass = uSkyLight * (0.62 + 0.3 * dir.y) + uKeyLight * pow(max(dot(paneDir, normalize(uKeyDir)), 0.0), 70.0) * 2.4;
+        glass *= 0.82 + 0.36 * hash21(paneId + 3.1);
+        outgoingLight = mix(outgoingLight, glass, wall * 0.5) + cityLight;
+        outgoingLight -= outgoingLight * seam * 0.22;
+        outgoingLight = hazed(outgoingLight, vWorldP);
+      }
+      #include <opaque_fragment>`,
+  );
+}
+
+const cubeGlass = shadeBuildings(
+  new THREE.MeshPhongMaterial({ color: 0xdfe6ea, specular: 0x333844, shininess: 40, flatShading: true, side: THREE.DoubleSide }),
+  { windows: true, cuts: false, name: 'city-landmarks-cube', edit: cubeEdit },
+);
+
+function theCube() {
+  const parts = [
+    box(-19, 19, 0, 43.8, -19, 19), // the shaft, all skin
+  ];
+  for (let i = 1; i <= 10; i++) {
+    const y = i * 3.98;
+    parts.push(box(-19.3, 19.3, y - 0.35, y, -19.3, 19.3)); // the storey bands
+  }
+  parts.push(box(-19.3, 19.3, 43.8, 44.4, -19.3, 19.3)); // the parapet
+  // The roof terrace: a frame of deck with the courtyard opening in the middle, a glass
+  // balustrade around it, and the pavilion at its centre.
+  parts.push(
+    box(-19, 19, 43.8, 44.1, -19, -8),
+    box(-19, 19, 43.8, 44.1, 8, 19),
+    box(-19, -8, 43.8, 44.1, -8, 8),
+    box(8, 19, 43.8, 44.1, -8, 8),
+    box(-8.5, 8.5, 44.1, 44.9, -8.5, -8.1),
+    box(-8.5, 8.5, 44.1, 44.9, 8.1, 8.5),
+    box(-8.5, -8.1, 44.1, 44.9, -8.5, 8.5),
+    box(8.1, 8.5, 44.1, 44.9, -8.5, 8.5),
+    box(-5.5, 5.5, 43.8, 46.5, -5.5, 5.5),
+  );
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), cubeGlass);
+  mesh.matrix.set(0.832, 0, -0.554, -2740.4, 0, 1, 0, 0, 0.554, 0, 0.832, -309.5, 0, 0, 0, 1);
+  mesh.matrixAutoUpdate = false;
+  mesh.matrixWorldNeedsUpdate = true;
+  cityUniforms.uCuts.value[14].set(-2740.4, -309.5, 27, 6); // the tile's plain box, gone from 6 up
+  cityUniforms.uCutTurns.value[14].set(1, 0);
+  return mesh;
+}
+
 // --- Molecule Man ----------------------------------------------------------------------------
 // Jonathan Borofsky's 30 m sculpture standing in the Spree by the Treptowers, which the tiles
 // never had: three identical walking figures facing each other across a meeting point, every
@@ -1038,7 +1120,7 @@ function alxTower() {
   return mesh;
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower(), ...konzerthaus(), ...franzoesischerDom(), ...deutscherDom(), holocaustMahnmal(), ...hauptbahnhof()];
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower(), ...konzerthaus(), ...franzoesischerDom(), ...deutscherDom(), holocaustMahnmal(), ...hauptbahnhof(), theCube()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;

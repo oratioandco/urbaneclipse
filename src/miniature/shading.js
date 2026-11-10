@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 
-export const CUTS = 14;
+export const CUTS = 15;
 
 export const cityUniforms = {
   uMap: { value: null },
@@ -195,9 +195,11 @@ export function shadeGround(material) {
 /**
  * The buildings' light at night. With windows false, for modelled landmarks: no window grid,
  * and no cuts, since those only remove the LoD2 roofs a landmark replaces. A landmark may pass
- * its own program name, so a second material (the gilded figures) can share the same lighting.
+ * its own program name, so a second material (the gilded figures) can share the same lighting,
+ * and an `edit` hook to add its own fragment work on top of the shared light — it runs after
+ * the built-in replaces, so it sees `cityLight` and the terrain-relative `height` in scope.
  */
-export function shadeBuildings(material, { windows = true, cuts = true, name } = {}) {
+export function shadeBuildings(material, { windows = true, cuts = true, name, edit } = {}) {
   return inject(material, name ?? (windows ? 'city-buildings' : 'city-landmarks'), (shader) => {
     if (windows && cuts) {
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -248,6 +250,7 @@ export function shadeBuildings(material, { windows = true, cuts = true, name } =
       }
       #include <opaque_fragment>`,
     );
+    if (edit) edit(shader);
   });
 }
 
