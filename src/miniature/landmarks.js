@@ -4,7 +4,10 @@
  * Frankfurter Tor, which LoD2 reduces to a pyramid on each tower, the Brandenburger Tor, whose
  * colonnade LoD2 fills in as a solid block, the Siegessäule, which LoD2 flattens to a 25 m stub,
  * and the Reichstag's glass cupola, which LoD2 leaves out entirely, plus two whole towers the
- * tiles never had: the Estrel Tower and the EDGE East Side Tower.
+ * tiles never had: the Estrel Tower and the EDGE East Side Tower. The Gendarmenmarkt trio and
+ * the Holocaust-Mahnmal (2026-11-10) rebuild what LoD2 flattens: the Konzerthaus's portico,
+ * pediments, dome and Apollo group, the two cathedral towers with their domes and gilded
+ * figures, and Eisenman's field of stelae, which the tiles have only as stubs.
  *
  * Positions and sizes are in scene metres, measured on 2026-11-08 from OpenStreetMap (ways
  * 288514442, 373626457/59/62, 1547500040, 1013505135/36 and 373626454-61 for the bridge;
@@ -500,6 +503,321 @@ function berlinerDom() {
   return [place(body, material), place(dome, copper)];
 }
 
+// --- Konzerthaus am Gendarmenmarkt -----------------------------------------------------------
+// Schinkel's concert hall (OSM way 217512230), which LoD2 has as flat-topped blocks: the
+// portico is filled in solid, both pediments and the Apollo group are gone, and the dome over
+// the hall is missing. Frame: local x runs along the 81 m facade (scene +z), local z is depth
+// (scene +x), the portico faces EAST across the square at local z +29.9. Heights read from
+// photographs at the facade's 81.1 m scale (portico floor 5.2, columns to 18.2, lower pediment
+// apex 26.5, attic cornice 31.5-33, upper pediment apex 39.5, Apollo group to 45, wings'
+// attica 23.4). Cut at 19.6: LoD2's massif tops out at 32.1 with a flat top, its wings at 23.
+const KONZERTHAUS = { centre: [-1192.4, 804.85], terrain: 0.2, top: 45.3 };
+
+/** The Apollo quadriga's dark bronze: greenish where the patina catches the light. */
+const bronze = shadeBuildings(
+  new THREE.MeshPhongMaterial({ color: 0x55604f, specular: 0x8f9a85, shininess: 34, flatShading: true, side: THREE.DoubleSide }),
+  { windows: false, name: 'city-landmarks-bronze' },
+);
+
+function konzerthaus() {
+  const parts = [];
+  const clay = (list) => parts.push(...list);
+  // The wings' cornice and attica, a ring of bands on LoD2's walls cut at 19.6.
+  clay([
+    box(-40.5, 40.5, 19.6, 21.0, 28.9, 29.9), // east, over the facade
+    box(-40.5, 40.5, 19.6, 21.0, -29.9, -28.9), // west
+    box(-40.5, -39.5, 19.6, 21.0, -29.9, 29.9), // the ends
+    box(39.5, 40.5, 19.6, 21.0, -29.9, 29.9),
+    box(-40.0, 40.0, 21.0, 23.2, 28.4, 29.4), // the attica, set back
+    box(-40.0, 40.0, 21.0, 23.2, -29.4, -28.4),
+    box(-40.0, -39.0, 21.0, 23.2, -29.4, 29.4),
+    box(39.0, 40.0, 21.0, 23.2, -29.4, 29.4),
+  ]);
+  // Statues on the wings' attica, facing the square: slim figures with heads.
+  for (const u of [-34.5, -27.5, -22, 22.5, 28, 34.5]) {
+    parts.push(prism(6, 0.55, 23.2, 25.7, 0.3).translate(u, 0, 28.9));
+    parts.push(new THREE.SphereGeometry(0.28, 8, 6).translate(u, 26.1, 28.9));
+  }
+  // The central block, from the cut to the attic cornice, and the portico in front of it.
+  clay([
+    box(-22, 19, 19.6, 33.0, 6.5, 29.5), // the massif behind the portico
+    box(-18.5, 17, 0, 5.0, 29.5, 31.8), // the stylobate under the columns
+    box(-22.5, 19.5, 31.0, 33.0, 28.5, 30.0), // the attic band with the inscription
+  ]);
+  for (const u of [-16, -9.4, -2.8, 3.8, 10.4, 17]) {
+    clay([
+      prism(20, 0.95, 5.0, 18.4).translate(u, 0, 30.7),
+      prism(20, 1.15, 18.4, 19.2, 1.05).translate(u, 0, 30.7), // the capital
+    ]);
+  }
+  clay([box(-18.5, 18.5, 19.2, 20.4, 29.4, 31.0)]); // the portico's entablature
+  // Both pediments, thin triangles proud of the east face: the portico's low one and the great
+  // one over the attic, with the bronze Apollo group on its apex.
+  clay([wall([[-18, 20.4], [17, 20.4], [-0.5, 26.4]], [], 29.4, 31.0)]);
+  clay([wall([[-22.5, 33.0], [19.5, 33.0], [-1.5, 39.6]], [], 29.4, 31.0)]);
+  // The dome over the hall, behind the upper pediment: drum, shallow shell, finial. It
+  // sheathes in copper, not clay, so it keeps its own parts list.
+  const dome = [
+    prism(16, 9.5, 33.0, 36.4).translate(0, 0, 14.5),
+    new THREE.SphereGeometry(9.5, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.62, 1).translate(0, 36.4, 14.5),
+    prism(8, 0.75, 42.3, 44.3, 0.12).translate(0, 0, 14.5),
+  ];
+
+  const gilded = [];
+  // The Apollo group: four horses abreast looking west, the chariot on two wheels, Apollo
+  // standing in it with his arm raised — dark bronze, so it reads against the sky.
+  gilded.push(box(-4.4, 4.4, 39.6, 40.4, 29.2, 30.8)); // the pedestal block on the apex
+  for (const cx of [-3.3, -1.1, 1.1, 3.3]) {
+    gilded.push(box(cx - 0.4, cx + 0.4, 40.4, 41.0, 30.0, 31.6)); // legs
+    gilded.push(box(cx - 0.5, cx + 0.5, 40.8, 41.7, 28.6, 31.9)); // body
+    gilded.push(box(cx - 0.14, cx + 0.14, 41.0, 41.8, 32.1, 32.7)); // tail
+    gilded.push(new THREE.BoxGeometry(0.42, 0.46, 1.1).rotateX(0.75).translate(cx, 42.0, 28.0)); // neck and head, toward minus z
+  }
+  gilded.push(box(-3.2, 3.2, 40.4, 41.5, 26.9, 29.0)); // the chariot
+  for (const wx of [-3.0, 3.0]) gilded.push(new THREE.CylinderGeometry(1.0, 1.0, 0.2, 16).rotateZ(Math.PI / 2).translate(wx, 41.2, 27.9));
+  gilded.push(prism(6, 0.6, 41.5, 44.3, 0.35).translate(0.4, 0, 28.1)); // Apollo's robe
+  gilded.push(new THREE.SphereGeometry(0.34, 8, 6).translate(0.4, 44.6, 28.1)); // his head
+  gilded.push(prism(6, 0.1, 42.8, 45.1, 0.06).translate(1.1, 0, 28.1)); // the raised arm with the lyre
+
+  const matrix = [0, 0, 1, KONZERTHAUS.centre[0], 0, 1, 0, KONZERTHAUS.terrain, 1, 0, 0, KONZERTHAUS.centre[1], 0, 0, 0, 1];
+  const place = (list, withMaterial) => {
+    const mesh = new THREE.Mesh(mergeGeometries(list.map(clean)), withMaterial);
+    mesh.matrix.set(...matrix);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrixWorldNeedsUpdate = true;
+    return mesh;
+  };
+  cityUniforms.uCuts.value[7].set(KONZERTHAUS.centre[0], KONZERTHAUS.centre[1], 42, KONZERTHAUS.terrain + 19.6);
+  const domeMesh = new THREE.Mesh(mergeGeometries(dome.map(clean)), copper);
+  domeMesh.matrix.set(...matrix);
+  domeMesh.matrixAutoUpdate = false;
+  domeMesh.matrixWorldNeedsUpdate = true;
+  return [place(parts, towerUncut), place(gilded, bronze), domeMesh];
+}
+
+// --- Französischer Dom -----------------------------------------------------------------------
+// The French cathedral on the square's north side (OSM ways 28248283 and 43346292): its
+// portico faces SOUTH across the square, and behind the hall rises the oval tower with its
+// balustrade at 40 m and the tall swallow dome with gilded lucernes and the F on top, 65 m in
+// all (de.wikipedia). LoD2 has the hall's roofs about right (16-23 m) but the tower is a plain
+// prism with a crude bulge to 59 m: cut it at 38.8 and rebuild everything above. The tower
+// stands at scene (-1155.5, 714.2), read from the LoD2 grid. Frame: local x east along the
+// facade from (-1156, 733.2), local z SOUTH, proud of the facade.
+const FRANZOESISCHER_DOM = { centre: [-1155.5, 714.2], terrain: 0.1, top: 64.5 };
+
+function franzoesischerDom() {
+  const parts = [];
+  const clay = (list) => parts.push(...list);
+  // The portico: stylobate, six columns, entablature, pediment, standing proud to the south.
+  clay([
+    box(-21, 21, 0, 3.4, -0.4, 2.2),
+    box(-19, 19, 16.8, 18.6, 0.3, 1.9),
+  ]);
+  for (const u of [-16.5, -9.9, -3.3, 3.3, 9.9, 16.5]) {
+    clay([
+      prism(20, 0.85, 3.4, 16.8).translate(u, 0, 1.3),
+      prism(20, 1.05, 16.8, 17.5, 0.95).translate(u, 0, 1.3),
+    ]);
+  }
+  clay([wall([[-20, 18.6], [20, 18.6], [0, 25.8]], [], 0.3, 1.9)]);
+  // Statues along the hall's roof balustrade, in front of the parapet.
+  for (const u of [-42, -35, -28, -21, -7, 0, 7]) {
+    clay([
+      prism(6, 0.45, 21.6, 24.0, 0.25).translate(u, 0, 0.5),
+      new THREE.SphereGeometry(0.22, 8, 6).translate(u, 24.3, 0.5),
+    ]);
+  }
+  // The tower: the columned drum above the hall roof and its balustrade ring at 40 m, built
+  // at the tower's centre (local x 0.5, z -19.0).
+  const towerX = 0.5;
+  const towerZ = -19.0;
+  const tower = [prism(24, 7.4, 21.5, 38.5).translate(towerX, 0, towerZ)];
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    tower.push(prism(8, 0.42, 22.5, 37.9, 0.36).translate(towerX + Math.cos(a) * 7.4, 0, towerZ + Math.sin(a) * 7.4));
+  }
+  tower.push(prism(24, 8.2, 38.5, 39.6).translate(towerX, 0, towerZ));
+  tower.push(prism(24, 7.6, 39.6, 40.2).translate(towerX, 0, towerZ));
+  for (let i = 0; i < 24; i += 2) {
+    const a = (i / 24) * Math.PI * 2;
+    tower.push(prism(6, 0.28, 38.3, 39.6).translate(towerX + Math.cos(a) * 7.6, 0, towerZ + Math.sin(a) * 7.6)); // balusters
+  }
+  tower.push(prism(24, 6.3, 40.2, 46.6).translate(towerX, 0, towerZ)); // the oculus drum
+  // The swallow dome, its gilded lucernes and the F on top: copper and gold.
+  const dome = [
+    new THREE.SphereGeometry(6.3, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 2.05, 1).translate(towerX, 46.6, towerZ),
+    prism(8, 1.15, 59.5, 61.0).translate(towerX, 0, towerZ), // the F's plinth
+  ];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    dome.push(prism(6, 0.3, 47.2, 50.0, 0.04).translate(towerX + Math.cos(a) * 5.7, 0, towerZ + Math.sin(a) * 5.7)); // lucernes
+  }
+  const gold = [];
+  victory(gold, { x: towerX, z: towerZ, y0: 61.0, h: 3.5 }); // the gilded F
+
+  const matrix = [1, 0, 0, -1156.0, 0, 1, 0, FRANZOESISCHER_DOM.terrain, 0, 0, 1, 733.2, 0, 0, 0, 1];
+  const place = (list, withMaterial) => {
+    const mesh = new THREE.Mesh(mergeGeometries(list.map(clean)), withMaterial);
+    mesh.matrix.set(...matrix);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrixWorldNeedsUpdate = true;
+    return mesh;
+  };
+  cityUniforms.uCuts.value[8].set(FRANZOESISCHER_DOM.centre[0], FRANZOESISCHER_DOM.centre[1], 13, FRANZOESISCHER_DOM.terrain + 38.8);
+  return [place([...parts, ...tower], towerUncut), place(dome, copper), place(gold, gold)];
+}
+
+// --- Deutscher Dom ---------------------------------------------------------------------------
+// The German cathedral on the square's south side (OSM ways 43347270 and 43347597), mirroring
+// the French one: portico facing NORTH, the round tower (dome about 13 m across, de.wikipedia)
+// with its own swell dome and gilded figure to about 62 m, and the hall's great flat dome of
+// about 23 m diameter with a balustraded arcade drum, which LoD2 has as a 27 m mound. Frame:
+// local x east from (-1163.5, 881.5), local z SOUTH into the building.
+const DEUTSCHER_DOM = { centre: [-1136.5, 896.0], terrain: -0.15, top: 61.5 };
+
+function deutscherDom() {
+  const parts = [];
+  const clay = (list) => parts.push(...list);
+  // The portico, like the French one but a little squatter.
+  clay([
+    box(-19, 19, 0, 3.2, -2.4, 0.2),
+    box(-17, 17, 16.5, 18.3, -2.0, -0.3),
+  ]);
+  for (const u of [-15.5, -9.3, -3.1, 3.1, 9.3, 15.5]) {
+    clay([
+      prism(20, 0.8, 3.2, 16.5).translate(u, 0, -1.2),
+      prism(20, 1.0, 16.5, 17.2, 0.9).translate(u, 0, -1.2),
+    ]);
+  }
+  clay([wall([[-18, 18.3], [18, 18.3], [0, 25.4]], [], -2.0, -0.3)]);
+  for (const u of [-16.5, -13.5, 13.5, 16.5]) {
+    clay([
+      prism(6, 0.4, 24.2, 26.4, 0.22).translate(u, 0, -1.2), // the pediment's corner statues
+      new THREE.SphereGeometry(0.2, 8, 6).translate(u, 26.7, -1.2),
+    ]);
+  }
+  // The tower: columned drum, balustrade, oculus drum, built at the tower's centre.
+  const towerX = 27.0; // scene -1136.5
+  const towerZ = 14.5; // scene 896.0
+  clay([prism(24, 7.0, 21.5, 36.0).translate(towerX, 0, towerZ)]);
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2;
+    clay([prism(8, 0.4, 22.5, 35.4, 0.34).translate(towerX + Math.cos(a) * 7.0, 0, towerZ + Math.sin(a) * 7.0)]);
+  }
+  clay([
+    prism(24, 7.7, 36.0, 37.0).translate(towerX, 0, towerZ),
+    prism(24, 7.1, 37.0, 37.6).translate(towerX, 0, towerZ),
+  ]);
+  for (let i = 0; i < 24; i += 2) {
+    const a = (i / 24) * Math.PI * 2;
+    clay([prism(6, 0.26, 35.8, 37.0).translate(towerX + Math.cos(a) * 7.1, 0, towerZ + Math.sin(a) * 7.1)]);
+  }
+  clay([prism(24, 6.0, 37.6, 43.4).translate(towerX, 0, towerZ)]);
+  // The hall's great dome: an arcaded drum with its balustrade walkway, then the shell.
+  const hallX = 3.5; // scene -1160
+  const hallZ = 18.5; // scene 900
+  clay([
+    prism(32, 11.3, 21.3, 25.6).translate(hallX, 0, hallZ),
+    prism(32, 12.1, 25.6, 26.6).translate(hallX, 0, hallZ),
+    prism(32, 11.5, 26.6, 27.2).translate(hallX, 0, hallZ),
+  ]);
+  const hallDome = [
+    new THREE.SphereGeometry(11.3, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.56, 1).translate(hallX, 27.2, hallZ),
+    prism(8, 0.9, 33.5, 35.3, 0.6).translate(hallX, 0, hallZ), // the lantern
+  ];
+  // The tower's dome, lucernes, lantern and gilded figure.
+  const towerDome = [
+    new THREE.SphereGeometry(6.0, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.3, 1).translate(towerX, 43.4, towerZ),
+  ];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    towerDome.push(prism(6, 0.28, 44.0, 46.6, 0.04).translate(towerX + Math.cos(a) * 5.4, 0, towerZ + Math.sin(a) * 5.4));
+  }
+  towerDome.push(prism(8, 1.1, 51.2, 52.6).translate(towerX, 0, towerZ));
+  const goldParts = [];
+  victory(goldParts, { x: towerX, z: towerZ, y0: 52.6, h: 4.0 });
+
+  const dx = -1163.5;
+  const dz = 881.5;
+  const matrix = [1, 0, 0, dx, 0, 1, 0, DEUTSCHER_DOM.terrain, 0, 0, 1, dz, 0, 0, 0, 1];
+  const place = (list, withMaterial) => {
+    const mesh = new THREE.Mesh(mergeGeometries(list.map(clean)), withMaterial);
+    mesh.matrix.set(...matrix);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrixWorldNeedsUpdate = true;
+    return mesh;
+  };
+  cityUniforms.uCuts.value[9].set(-1136.5, 896.0, 12, DEUTSCHER_DOM.terrain + 36.15);
+  cityUniforms.uCuts.value[10].set(-1160.0, 900.0, 13, DEUTSCHER_DOM.terrain + 21.65);
+  return [place(parts, towerUncut), place(hallDome, copper), place(towerDome, copper), place(goldParts, gold)];
+}
+
+// --- Holocaust-Mahnmal ---------------------------------------------------------------------------
+// Eisenman's field of 2711 stelae (OSM way 172234733), which the tiles have only as scattered
+// two-metre stubs: 2.38 m by 0.95 m slabs in a strict grid over the sunken field, their
+// heights swinging between 0.2 and 4.7 m in long undulations. The field's terrain was probed
+// from the live mini on 2026-11-10 (a 7x7 grid, metres scene) and baked below, so every slab
+// stands on the ground it should. Cut -2.3: below everything, so the stubs go.
+const HOLOCAUST_MAHNMAL = { centre: [-2084.5, 769.1], terrain: -2.2, top: 4.7 };
+/** The field's edge, OSM way 172234733 converted to scene metres — 19,182 m² inside, matching
+ * the real field's published area, so the pitch below lands within a few of the real 2,711. */
+const HOLOCAUST_POLYGON = [
+  [-2061.2, 693.5], [-2152.5, 703.2], [-2171.2, 848.9], [-2171.5, 852.2], [-1997.6, 796.4], [-1999.0, 791.6],
+  [-2010.9, 752.5], [-2013.1, 745.4], [-2023.6, 713.3], [-2032.6, 686.0], [-2050.3, 691.1],
+];
+/** The field's ground, probed on a 7x7 grid from x -2160..-2000, z 695..845. */
+const FIELD_GROUND = [
+  [-0.4, -0.4, -0.4, -0.4, -0.4, -0.5, -0.6],
+  [-0.5, -0.7, -0.9, -1.1, -1.6, -1.2, -0.6],
+  [-0.7, -1.2, -1.4, -1.7, -2.2, -1.5, -0.6],
+  [-0.9, -1.9, -1.9, -2.0, -2.2, -1.4, -0.6],
+  [-0.6, -1.1, -1.1, -1.1, -1.2, -0.8, -0.3],
+  [-0.5, -0.6, -0.6, -0.6, -0.6, -0.3, -0.1],
+  [-0.7, -0.5, -0.5, -0.4, -0.3, 0.0, 0.1],
+];
+
+function fieldGroundAt(x, z) {
+  const gx = THREE.MathUtils.clamp((x + 2160) / 26.67, 0, 6.999);
+  const gz = THREE.MathUtils.clamp((z - 695) / 25.0, 0, 6.999);
+  const i = Math.floor(gx), j = Math.floor(gz);
+  const fx = gx - i, fz = gz - j;
+  const g = FIELD_GROUND;
+  return (g[i][j] * (1 - fx) + g[i + 1][j] * fx) * (1 - fz) + (g[i][j + 1] * (1 - fx) + g[i + 1][j + 1] * fx) * fz;
+}
+
+function insideHolocaust(x, z) {
+  let inPoly = false;
+  const poly = HOLOCAUST_POLYGON;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i], [xj, zj] = poly[j];
+    if (zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inPoly = !inPoly;
+  }
+  return inPoly;
+}
+
+function holocaustMahnmal() {
+  const parts = [];
+  // A long swell and a short one, so the heights swing in waves the way the real field does.
+  const wave = (x, z) => {
+    const u = x + 2084.5, v = z - 769.1;
+    const h = 2.1 + 2.2 * Math.sin(0.8 + u * 0.11 + v * 0.05) + 1.0 * Math.sin(u * 0.27 - v * 0.18 + 2.1);
+    return THREE.MathUtils.clamp(h, 0.2, 4.7);
+  };
+  for (let x = -2168; x <= -2002; x += 3.4) {
+    for (let z = 690; z <= 849; z += 2.08) {
+      if (!insideHolocaust(x, z)) continue;
+      const ground = fieldGroundAt(x, z);
+      const h = wave(x, z);
+      parts.push(box(x - 1.19, x + 1.19, ground - 0.35, ground + h, z - 0.475, z + 0.475));
+    }
+  }
+  const mesh = new THREE.Mesh(mergeGeometries(parts.map(clean)), material);
+  mesh.matrixAutoUpdate = false;
+  mesh.matrixWorldNeedsUpdate = true;
+  cityUniforms.uCuts.value[11].set(-2085, 771, 80, -2.3);
+  return mesh;
+}
+
 // --- Molecule Man ----------------------------------------------------------------------------
 // Jonathan Borofsky's 30 m sculpture standing in the Spree by the Treptowers, which the tiles
 // never had: three identical walking figures facing each other across a meeting point, every
@@ -632,7 +950,7 @@ function alxTower() {
   return mesh;
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower()];
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower(), ...konzerthaus(), ...franzoesischerDom(), ...deutscherDom(), holocaustMahnmal()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;

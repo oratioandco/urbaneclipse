@@ -5,7 +5,7 @@
  */
 import * as THREE from 'three';
 
-export const CUTS = 7;
+export const CUTS = 12;
 
 export const cityUniforms = {
   uMap: { value: null },
