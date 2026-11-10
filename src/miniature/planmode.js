@@ -150,41 +150,49 @@ export function renderPlanCards() {
   for (let i = 0; i < DAYS; i++) {
     const from = base + i * 86_400_000;
     const rows = rowsFor(from, i === 0 ? now : null).filter((row) => filter === 'all' || row.body === filter);
-    if (!rows.length) continue;
     const day = forecastFor(from);
+    // A poor sky is not a shot: over 75% cloud or grey soup hides the disc entirely. The
+    // strip still shows those days — light and cloud are exactly what a covered week is for
+    // glancing at — but they earn no cards and no ticks.
     const picks = rows
       .map((row) => ({ ...row, grade: gradeAt(day, from, row.t) }))
+      .filter((row) => row.grade !== 'poor')
       .sort((a, b) => GRADE_WEIGHT[b.grade ?? 'fair'] * b.score - GRADE_WEIGHT[a.grade ?? 'fair'] * a.score)
       .slice(0, PER_DAY);
     total += picks.length;
-    blocks.push({ from, i, picks, day, name: dayName(from, i), now: i === 0 ? now : null });
+    blocks.push({ from, i, picks, day, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }
   sheetToggle.querySelector('span').textContent = total
     ? `${total} shot${total === 1 ? '' : 's'} in the next ${DAYS === 3 ? 'three days' : `${DAYS} days`}`
     : 'No shots in the next three days';
-  if (!blocks.length) {
+  const flyTo = (row, from) => {
+    // The flight presets the slider to the shot's minute, on the shot's day: bring the day
+    // along first, or setMinute clamps a Tomorrow shot into tonight.
+    if (svDate(from) !== dateInput.value) setDay(svDate(from));
+    setPanelMode('shoot');
+    row.go();
+    modeToggle.focus({ preventScroll: true });
+    invalidate();
+  };
+  const stripHandlers = {
+    onTick: flyTo,
+    onDay: (from) =>
+      panel.querySelector(`.plan-day[data-date="${svDate(from)}"]`)?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }),
+  };
+  // The strip keeps its three days even when nothing is shootable: the light and the cloud
+  // are the answer to "when, then?".
+  renderSparkstrip(strip, blocks, stripHandlers);
+  if (!total) {
     const why = filter === 'all' ? 'Nothing lines up' : `No ${filter === 'sun' ? 'sun' : 'moon'} shots line up`;
-    strip.replaceChildren();
     panel.replaceChildren(
       Object.assign(document.createElement('p'), { className: 'muted', textContent: `${why} in the next three days. Try another day.` }),
     );
     return;
   }
-  renderSparkstrip(strip, blocks, {
-    // A tick flies to its shot, exactly as the card it mirrors does: bring the day along
-    // first, or setMinute clamps a Tomorrow shot into tonight.
-    onTick: (row, from) => {
-      if (svDate(from) !== dateInput.value) setDay(svDate(from));
-      setPanelMode('shoot');
-      row.go();
-      modeToggle.focus({ preventScroll: true });
-      invalidate();
-    },
-    onDay: (from) =>
-      panel.querySelector(`.plan-day[data-date="${svDate(from)}"]`)?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }),
-  });
   panel.replaceChildren(
-    ...blocks.flatMap(({ from, i, picks, day, name }) => {
+    ...blocks
+      .filter((block) => block.cards)
+      .flatMap(({ from, i, picks, day, name }) => {
       const heading = Object.assign(document.createElement('div'), { className: 'plan-day', textContent: name });
       heading.dataset.date = svDate(from);
       return [
@@ -197,15 +205,7 @@ export function renderPlanCards() {
         item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><i class="grade"${row.grade ? ` data-grade="${row.grade}"` : ''} title="${row.grade ?? 'waiting for the forecast'}"></i>`;
         item.querySelector('b').textContent = row.title;
         item.querySelector('small').textContent = row.detail + noteAt(day, from, row.t);
-        item.addEventListener('click', () => {
-          // The flight presets the slider to the shot's minute, on the shot's day: bring the
-          // day along first, or setMinute clamps a Tomorrow shot into tonight.
-          if (svDate(from) !== dateInput.value) setDay(svDate(from));
-          setPanelMode('shoot');
-          row.go();
-          modeToggle.focus({ preventScroll: true });
-          invalidate();
-        });
+        item.addEventListener('click', () => flyTo(row, from));
         return item;
       }),
       ];

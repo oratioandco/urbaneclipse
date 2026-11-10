@@ -255,7 +255,8 @@
       body[data-sheet='open'] #sheet-toggle b { transform: rotate(180deg); }
       /* At eye level the handle goes (as before) but the mode pill stays, on its own row, so
          a card in plan mode is never the only way back to the tools. */
-      body[data-eye='true'] #sheet-toggle, body[data-eye='true'] #daylist { display: none; }
+      /* The daylist hide needs the sheet state to out-rank the sheet show rule below. */
+      body[data-eye='true'] #sheet-toggle, body[data-eye='true'][data-sheet='open'] #daylist { display: none; }
       body[data-eye='true'] .panel-head, body[data-eye='true'] #plan-head, body[data-eye='true'] #plancards { grid-column: 1 / -1; }
       #dayfilter { display: none; gap: 6px; align-items: center; flex-wrap: wrap; }
       body[data-sheet='open']:not([data-eye='true']) #dayfilter { display: flex; }

@@ -57,10 +57,19 @@ let mapSize = 0;
 new ResizeObserver(() => {
   requestAnimationFrame(() => {
     const height = document.querySelector('.panel').offsetHeight;
-    // With the dates list open the card grows tall; the map keeps its size.
-    if (document.body.dataset.eye !== 'true' || document.body.dataset.dates === 'open' || height === mapSize) return;
-    mapSize = height;
-    document.body.style.setProperty('--map-size', `${height}px`);
+    // With the dates list open the card grows tall; the map keeps its size. The plan's card
+    // list is not the camera card the map mirrors, either. And the map's WIDTH rides the
+    // same variable, so an over-tall reading squeezes the panel into wrapping taller — a
+    // loop that, once started, runs away — hence the cap.
+    if (
+      document.body.dataset.eye !== 'true' ||
+      document.body.dataset.dates === 'open' ||
+      document.body.dataset.mode === 'plan' ||
+      height === mapSize
+    )
+      return;
+    mapSize = Math.min(height, 240);
+    document.body.style.setProperty('--map-size', `${mapSize}px`);
   });
 }).observe(document.querySelector('.panel'));
 // The bottom block: the sheet, and at eye level the camera row above it.
