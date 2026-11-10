@@ -15,7 +15,9 @@
  * the column) and from the LoD2 tiles: the towers' cornice is at 44 m scene height, which is
  * where the LoD2 pyramid starts; the gate's ground sits at −2.4 m scene, the column's at +0.3 m
  * (scripts/miniature/check_landmark_lod.mjs). Heights the data does not give (arch rise, arcade,
- * drum and dome, the quadriga's pose) are read from photographs and are approximate.
+ * drum and dome, the quadriga's pose) are read from photographs and are approximate. The
+ * Hauptbahnhof (2026-11-10) rebuilds the station the tiles flatten to slabs: both glass roofs
+ * and the DB tower, from ways 11345963, 226048335, 128280629/30 and 402787665/66.
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -818,6 +820,92 @@ function holocaustMahnmal() {
   return mesh;
 }
 
+// --- Hauptbahnhof ----------------------------------------------------------------------------
+// Berlin's central station (OSM ways 11345963 and 226048335 for the hall and its site, the
+// skylight strips 128280629/30, the tower ways 402787665/66), which LoD2 has as a jumble of
+// parallel slabs: the two glass roofs and the steel tower are missing. The station is a cross:
+// the long east-west hall, a barrel of glass 60 m wide springing at 27 and cresting at 38
+// (the hall stands 27 m over its viaduct deck, de.wikipedia), crossing the north-south arm,
+// a deck at 38-40 carrying two raised glass strips that crest at 46 (LoD2's strips reach
+// 45-49), and the DB tower at the crossing with its gold boards. Ground 4.8 m scene, probed.
+// Each arm gets its own cut square, rotated onto that arm's axis via uCutTurns: the hall's at
+// 27 (LoD2's slabs stay under the modelled body), the north-south arm's at 38, where the
+// modelled deck takes over. Frames: local x across, y up, z along each arm.
+const HAUPTBAHNHOF = { centre: [-2712.2, -455.9], terrain: 4.8, top: 50.4 };
+
+/** A half-elliptical glass arch, half-width w, rising r from y0, running z0..z1, arch up. */
+function barrel(w, r, y0, z0, z1) {
+  return new THREE.CylinderGeometry(w, w, z1 - z0, 18, 1, true, -Math.PI / 2, Math.PI)
+    .rotateX(-Math.PI / 2)
+    .scale(1, r / w, 1)
+    .translate(0, y0, (z0 + z1) / 2);
+}
+
+function hauptbahnhof() {
+  // The east-west hall: body from the cut to the springing, the barrel over it, and the west
+  // gable, whose arch face looks down Washingtonplatz.
+  const ew = [
+    box(-30, 30, 10, 27, -86, 120),
+    barrel(30, 11, 27, -86, 120),
+  ];
+  {
+    const pts = [];
+    for (let i = 0; i <= 12; i++) {
+      const a = (i / 12) * Math.PI;
+      pts.push([-30 * Math.cos(a), 27 + 11 * Math.sin(a)]);
+    }
+    ew.push(wall(pts, [], -86, -84.4));
+  }
+  // The DB tower at the crossing: a slender slab shaft, the wider head and the mast, with the
+  // gold DB boards on both long faces. Local (-14.4, 127.1) from the hall's frame, read off OSM.
+  ew.push(
+    box(-16.0, -12.8, 10, 26, 124.7, 129.5),
+    box(-15.7, -13.1, 26, 41, 124.7, 129.5),
+    box(-16.4, -12.4, 41, 45.8, 124.1, 130.1),
+    prism(4, 0.3, 45.8, 50.4, 0.1).translate(-14.4, 0, 127.1),
+  );
+  const boards = [
+    box(-15.9, -12.9, 42.6, 45.0, 130.1, 130.3),
+    box(-15.9, -12.9, 42.6, 45.0, 123.9, 124.1),
+  ];
+  // The north-south arm: body, the deck at 38-40, and the two glass strips over the tracks,
+  // each a low barrel rising to 46, with lens gables closing both ends under them.
+  const ns = [
+    box(-31, 31, 10, 38, -84, 84),
+    box(-31.5, 31.5, 38, 40, -85, 85),
+  ];
+  for (const s of [-30, 30]) ns.push(barrel(4.5, 8, 38, -85, 85).translate(s, 0, 0));
+  for (const end of [-84.8, 83.2]) {
+    for (const s of [-30, 30]) {
+      const pts = [];
+      for (let i = 0; i <= 8; i++) {
+        const a = Math.asin(0.25) + (i / 8) * (Math.PI / 2 - Math.asin(0.25));
+        pts.push([s - 4.5 * Math.cos(a), 38 + 8 * Math.sin(a)]);
+      }
+      for (let i = 7; i >= 0; i--) {
+        const a = Math.asin(0.25) + (i / 8) * (Math.PI / 2 - Math.asin(0.25));
+        pts.push([s + 4.5 * Math.cos(a), 38 + 8 * Math.sin(a)]);
+      }
+      ns.push(wall(pts, [], end, end + 1.6));
+    }
+  }
+  // The frames: x across, y up, z along each arm, origins on the crossing's centre lines.
+  const ewMatrix = [-0.419, 0, 0.908, -2813.5, 0, 1, 0, 0, -0.908, 0, -0.419, -436.8, 0, 0, 0, 1];
+  const nsMatrix = [0.918, 0, 0.396, -2712.2, 0, 1, 0, 0, -0.396, 0, 0.918, -455.9, 0, 0, 0, 1];
+  const place = (list, mat, matrix) => {
+    const mesh = new THREE.Mesh(mergeGeometries(list.map(clean)), mat);
+    mesh.matrix.set(...matrix);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrixWorldNeedsUpdate = true;
+    return mesh;
+  };
+  cityUniforms.uCuts.value[12].set(-2712.2, -455.9, 86, 38); // the north-south arm's square
+  cityUniforms.uCutTurns.value[12].set(0.396, 0.918);
+  cityUniforms.uCuts.value[13].set(-2798.1, -443.9, 104, 27); // the hall's square
+  cityUniforms.uCutTurns.value[13].set(0.908, -0.419);
+  return [place(ew, towerUncut, ewMatrix), place(boards, gold, ewMatrix), place(ns, towerUncut, nsMatrix)];
+}
+
 // --- Molecule Man ----------------------------------------------------------------------------
 // Jonathan Borofsky's 30 m sculpture standing in the Spree by the Treptowers, which the tiles
 // never had: three identical walking figures facing each other across a meeting point, every
@@ -950,7 +1038,7 @@ function alxTower() {
   return mesh;
 }
 
-export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower(), ...konzerthaus(), ...franzoesischerDom(), ...deutscherDom(), holocaustMahnmal()];
+export const landmarks = [oberbaumbruecke(), ...frankfurterTor(), ...brandenburgerTor(), ...siegessaeule(), reichstag(), estrelTower(), edgeEastSide(), berlinian(), atriumTower(), ...berlinerDom(), ...moleculeMan(), alxTower(), ...konzerthaus(), ...franzoesischerDom(), ...deutscherDom(), holocaustMahnmal(), ...hauptbahnhof()];
 for (const mesh of landmarks) {
   mesh.castShadow = true;
   mesh.receiveShadow = true;
