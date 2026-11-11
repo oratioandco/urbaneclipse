@@ -64,7 +64,7 @@ export async function cloudsFor(date, dayStart) {
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude', points.map((p) => p.lat.toFixed(3)).join(','));
     url.searchParams.set('longitude', points.map((p) => p.lon.toFixed(3)).join(','));
-    url.searchParams.set('hourly', 'cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m,visibility');
+    url.searchParams.set('hourly', 'cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation_probability,precipitation,wind_speed_10m,wind_direction_10m,visibility');
     url.searchParams.set('wind_speed_unit', 'ms');
     url.searchParams.set('timezone', 'Europe/Berlin');
     url.searchParams.set('start_date', date);
@@ -84,7 +84,8 @@ export async function cloudsFor(date, dayStart) {
     };
     const wind = { speed: berlin.wind_speed_10m.map((v) => v ?? 0), from: berlin.wind_direction_10m.map((v) => v ?? 270) };
     const vis = berlin.visibility.map((v) => v ?? 24_000);
-    return { berlin: series(0), wind, vis, riseHorizon: horizon(1), setHorizon: horizon(1 + HORIZON_KM.length), rise, set };
+    const rain = { prob: berlin.precipitation_probability.map((v) => (v ?? 0) / 100), mm: berlin.precipitation.map((v) => v ?? 0) };
+    return { berlin: series(0), rain, wind, vis, riseHorizon: horizon(1), setHorizon: horizon(1 + HORIZON_KM.length), rise, set };
   })().catch((error) => {
     console.error('[miniature] weather failed', error);
     cache.delete(date);
