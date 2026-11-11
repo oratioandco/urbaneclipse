@@ -5,7 +5,10 @@
  * it always was, reached by the same toggle or a card.
  */
 import { streetMoments } from '../lib/streets.ts';
+import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { litDiscPath, phaseName } from '../lib/moonPhase.ts';
+import { getMoonIllumination, getMoonTimes } from 'suncalc';
 import { formatClock } from './time.js';
 import { params } from './config.js';
 import { cloudsAt, cloudsFor, visibilityAt } from './weather.js';
@@ -28,6 +31,30 @@ const GRADE_WEIGHT = { good: 1.25, fair: 1, poor: 0.55 };
 /** The days the plan speaks of, in the city's time: real today, not the day being explored. */
 const svDate = (from) => new Date(from).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
 const realToday = () => dateDayStart(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' }));
+
+const moonDisc = document.getElementById('moon-head-disc');
+const moonText = document.getElementById('moon-head-text');
+let moonHeadDate = '';
+/** The header's moon: today's phase as a little disc, and when it rises and sets tonight —
+ * the plan's moon cards mean most when the moon is up and more than a sliver. */
+function renderMoonHead() {
+  const from = realToday();
+  const sv = svDate(from);
+  if (sv === moonHeadDate) return;
+  moonHeadDate = sv;
+  const mid = new Date(from + 43_200_000);
+  const moon = getMoonIllumination(mid);
+  moonDisc.innerHTML = `<circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing)}" transform="scale(0.92)" fill="#e8ecff"/>`;
+  const times = getMoonTimes(mid, FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const rise = times.rise ? `↑ ${formatClock(times.rise.getTime())}` : '';
+  const set = times.set ? `↓ ${formatClock(times.set.getTime())}` : '';
+  const times_ = rise && set ? `${rise} · ${set}` : rise || set || (sampleMoonUp(mid) ? 'up all day' : 'down all day');
+  moonText.textContent = `${phaseName(moon.fraction, moon.waxing)} ${Math.round(moon.fraction * 100)}% · ${times_}`;
+}
+/** Whether the moon stands above the horizon at midday. */
+function sampleMoonUp(when) {
+  return sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).alt > 0;
+}
 
 /** The panel's two modes; the body attribute drives what the stylesheet shows. */
 export function setPanelMode(mode) {
@@ -141,6 +168,7 @@ export function renderPlanCards() {
   if (document.body.dataset.mode !== 'plan') return;
   const now = Date.now();
   const base = realToday();
+  renderMoonHead();
   const filter = app.planFilter ?? 'all';
   for (const chip of planHead.querySelectorAll('[data-filter]')) {
     chip.setAttribute('aria-pressed', String(chip.dataset.filter === filter));

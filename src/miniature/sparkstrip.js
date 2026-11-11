@@ -44,14 +44,14 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   phases.style.background = `linear-gradient(90deg, ${lightGradientStops(lightBands(from, from + 86_400_000, FERNSEHTURM.lat, FERNSEHTURM.lon, 10 * 60_000), from, from + 86_400_000).map(({ phase, at }) => `${PHASE_COLOURS[phase]} ${(at * 100).toFixed(2)}%`).join(', ')})`;
   band.append(phases);
 
-  // The cloud forecast, once the day's fetch is in: cover runs 0..1 across the top. Each
-  // hourly sample sits at its hour's centre, so the line shares the ticks' time axis.
+  // The cloud forecast, once the day's fetch is in: cover runs 0..1 across the top, as a
+  // single line — the area fill under it read as a second series. Each hourly sample sits at
+  // its hour's centre, so the line shares the ticks' time axis.
   const svg = el('svg', { class: 'spark-svg', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
   if (day) {
     const cover = day.berlin.low.map((low, h) => Math.max(low, day.berlin.mid[h], day.berlin.high[h]));
     const pt = (h) => `${(((h + 0.5) / cover.length) * W).toFixed(1)},${(20 - cover[h] * 15).toFixed(1)}`;
     svg.append(
-      el('path', { d: `M0,20 L${cover.map((_, h) => pt(h)).join(' L')} L${W},20 Z`, fill: 'var(--muted)', opacity: '0.1' }),
       el('polyline', { points: cover.map((_, h) => pt(h)).join(' '), fill: 'none', stroke: 'var(--muted)', 'stroke-width': '2', 'vector-effect': 'non-scaling-stroke', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
     );
   }
