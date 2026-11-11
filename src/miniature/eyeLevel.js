@@ -1,6 +1,8 @@
 /** Standing in the street: arriving, which way to face, the lens and camera controls. */
 import * as THREE from 'three';
 import { attachLook, camera as cameraFormat, compassName, EYE_HEIGHT, FIXED_FORMATS, FORMATS, fovForLens, frameSize, lensRange, lookDirection, SENSOR_FORMATS, setFormat, setLens } from './eye.js';
+import { renderHorizon, setPickHandler } from './horizon.js';
+import { orbitTo } from './camera.js';
 import { instant } from './clock.js';
 import { showViewHere } from './pointer.js';
 import { FOV, controls, eyeCamera, overview, renderer } from './render.js';
@@ -187,7 +189,13 @@ export function updateEyeBar() {
   const lift = look.lift ?? 0;
   if (look.mode === 'drone') facingLabel.textContent += ` \u00b7 ${Math.round(lift)} m up`;
   else if (lift >= 1) facingLabel.textContent += ` \u00b7 on a roof, ${Math.round(lift)} m up`;
+  renderHorizon();
 }
+// The horizon strip turns to a tapped sun, moon or tower.
+setPickHandler((kind, az) => {
+  if (app.camera === eyeCamera) turnTo(az, look.pitch);
+  else orbitTo(null, (-az * Math.PI) / 180);
+});
 
 attachLook(renderer.domElement, look, () => {
   updateEyeBar();

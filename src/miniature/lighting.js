@@ -20,6 +20,7 @@ import { layers } from './chrome.js';
 import { clock, fine, instant, timeInput } from './clock.js';
 import { LIGHT_DISTANCE, MIRROR_SCALE, REFLECTION_REACH_M, SHADOW_SIZE, VIEW_RADIUS, params } from './config.js';
 import { look } from './eyeLevel.js';
+import { renderHorizon } from './horizon.js';
 import { updateHighlights, updateSpots } from './plan.js';
 import { controls, edgeBlur, eyeCamera, glow, groundMaterial, mirrorTarget, overview, renderer, scene, sky, skyDome, sun } from './render.js';
 import { app, invalidateShadows, smooth, stats, toDirection } from './state.js';
@@ -112,6 +113,7 @@ export function updateSun() {
   if (moonAt.alt > -1) app.bodies.push({ az: moonAt.az, alt: moonAt.alt, sunAlt: sunAt.alt, moon: illumination });
   document.getElementById('face-sun').hidden = !app.bodies.some((b) => !b.moon);
   document.getElementById('face-moon').hidden = !app.bodies.some((b) => b.moon);
+  renderHorizon();
 
   if (document.activeElement !== clock) clock.value = formatMinutes(Number(timeInput.value), fine.on);
   const phase = LIGHT_PHASE_NAMES[lightPhaseAt(sunAt.alt)];
