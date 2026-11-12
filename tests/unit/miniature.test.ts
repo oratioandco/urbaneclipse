@@ -4,7 +4,7 @@ import { parseTime } from '../../src/miniature/time.js';
 // @ts-expect-error plain JS module
 import { cloudDrift, cloudsAt, readSky, visibilityAt } from '../../src/miniature/weather.js';
 // @ts-expect-error plain JS module
-import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, antennaRange, bodyAgainstProfile, bodyAgainstTower, discOverSphere, findShots, findTowerShots, visibleMoon } from '../../src/miniature/towerShots.js';
+import { BIG_MOON_M, SPHERE_CENTRE_AGL, TIP_AGL, SPHERE_TOP_AGL, alignmentMinute, antennaRange, bodyAgainstProfile, bodyAgainstTower, discOverSphere, findShots, findTowerShots, visibleMoon } from '../../src/miniature/towerShots.js';
 // @ts-expect-error plain JS module
 import { TARGETS } from '../../src/miniature/targets.js';
 import { BRANDENBURGER_TOR, SIEGESSAEULE, landmarkHeight, profileRadius } from '../../src/lib/landmarks.ts';
@@ -176,6 +176,60 @@ describe('passes behind the tower from a spot', () => {
   it('leaves out a moon too thin to see', () => {
     const eye = at(1500);
     expect(run(eye, altOf(eye, SPHERE_CENTRE_AGL), 0.1).filter((s: { body: string }) => s.body === 'moon')).toEqual([]);
+  });
+
+  it('puts the alignment minute where the azimuth crosses the tower bearing', () => {
+    const eye = at(1500);
+    // The same sweep, started closer to the bearing: az = 0 at t0 + 8 min.
+    const near = (alt: number) => (_body: string, t: number) => ({ az: (((t - t0) / 60_000) * 0.25 - 2 + 360) % 360, alt });
+    const [sun] = findTowerShots({ eye, base, start: t0, end: t0 + 90 * 60_000, bodyAt: near(altOf(eye, SPHERE_CENTRE_AGL)), moonLit: () => 1 }).filter(
+      (s: { body: string }) => s.body === 'sun',
+    );
+    expect(sun).toBeDefined();
+    // Bisected on the wrapped azimuth difference, not read off the minute grid.
+    expect(Math.abs(sun.align - (t0 + 8 * 60_000))).toBeLessThanOrEqual(30_000);
+  });
+
+  it('keeps the alignment minute geometric when the score would pick another minute', () => {
+    const eye = at(1500);
+    // Azimuth sweeps slowly (crossing at t0 + 50 min, outside the hidden stretch), altitude
+    // drifts: the smallest separation — and so the score peak — sits near t0 + 9 min, while
+    // the azimuth keeps closing towards the bearing to the very end of the stretch.
+    const drift = (alt: number) => (_body: string, t: number) => ({
+      az: (((t - t0) / 60_000) * 0.02 - 1 + 360) % 360,
+      alt: alt - 0.5 + ((t - t0) / 60_000) * 0.05,
+    });
+    const [sun] = findTowerShots({ eye, base, start: t0, end: t0 + 90 * 60_000, bodyAt: drift(altOf(eye, SPHERE_CENTRE_AGL)), moonLit: () => 1 }).filter(
+      (s: { body: string }) => s.body === 'sun',
+    );
+    expect(sun).toBeDefined();
+    expect(Math.abs(sun.peak - sun.align)).toBeGreaterThan(60_000);
+    // The azimuth is closest to the bearing at the stretch's end: align follows the azimuth,
+    // not the separation.
+    expect(Math.abs(sun.align - sun.end)).toBeLessThanOrEqual(60_000);
+  });
+});
+
+describe('the alignment minute solver', () => {
+  const t0 = Date.UTC(2027, 2, 22, 12);
+  const bodyAt = (azOf: (t: number) => number) => (_body: string, t: number) => ({ az: azOf(t), alt: 20 });
+
+  it('bisects a crossing that lands between grid minutes', () => {
+    // Crossing due north at t0 + 10 min 30 s.
+    const at = alignmentMinute(bodyAt((t) => (((t - t0) / 60_000) * 0.25 - 2.625 + 360) % 360), 'sun', 0, t0, t0 + 60 * 60_000);
+    expect(Math.abs(at! - (t0 + 10.5 * 60_000))).toBeLessThanOrEqual(2_000);
+  });
+
+  it('crosses the 0/360 wrap without a false hit a half-turn away', () => {
+    // Azimuth walks 358 -> 360 (=0) at t0 + 8 min; the antipodal bearing is never crossed.
+    const at = alignmentMinute(bodyAt((t) => (358 + ((t - t0) / 60_000) * 0.25) % 360), 'sun', 0, t0, t0 + 60 * 60_000);
+    expect(Math.abs(at! - (t0 + 8 * 60_000))).toBeLessThanOrEqual(2_000);
+  });
+
+  it('falls back to the smallest offset when no crossing lies in the stretch', () => {
+    // Azimuth approaches 2 degrees but never reaches the bearing.
+    const at = alignmentMinute(bodyAt((t) => 2 + 10 - ((t - t0) / 60_000) * 0.25), 'sun', 0, t0, t0 + 30 * 60_000);
+    expect(Math.abs(at! - (t0 + 30 * 60_000))).toBeLessThanOrEqual(60_000);
   });
 });
 

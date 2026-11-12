@@ -190,6 +190,48 @@ const MINUTE = 60_000;
 const COARSE = 10 * MINUTE;
 
 /**
+ * The geometric alignment minute: where the body\u0027s azimuth crosses a bearing, solved by
+ * bisection on the wrapped azimuth difference rather than picked off a grid \u2014 the sun takes
+ * about four minutes to cross the sphere, so the minute matters. When the azimuth never
+ * crosses inside the stretch, the minute of the smallest offset stands in.
+ *
+ * @param bodyAt (body, t) => { az, alt } seen from the eye
+ * @param targetAz the bearing from the eye to the target, degrees clockwise from north
+ * @returns the instant, or null when the stretch is empty
+ */
+export function alignmentMinute(bodyAt, body, targetAz, start, end) {
+  if (!(end > start)) return null;
+  const off = (t) => {
+    const p = bodyAt(body, t);
+    return ((((p.az - targetAz) % 360) + 540) % 360) - 180;
+  };
+  let best = null;
+  let bestAbs = Infinity;
+  for (let t = start; t < end; t += MINUTE) {
+    const next = Math.min(t + MINUTE, end);
+    const d = off(t);
+    const d2 = off(next);
+    if (Math.abs(d) < bestAbs) best = t, (bestAbs = Math.abs(d));
+    // A sign change (or a touch of zero) brackets a crossing: bisect it down to the second.
+    if (d === 0 || (Math.sign(d) !== Math.sign(d2) && Math.abs(d) < 180)) {
+      let a = t;
+      let b = next;
+      let fa = d;
+      for (let i = 0; i < 12 && b - a > 1000; i++) {
+        const m = (a + b) / 2;
+        const fm = off(m);
+        if (fm === 0 || Math.sign(fm) === Math.sign(fa)) (a = m), (fa = fm);
+        else b = m;
+      }
+      const t2 = (a + b) / 2;
+      const abs2 = Math.abs(off(t2));
+      if (abs2 < bestAbs) best = t2, (bestAbs = abs2);
+    }
+  }
+  return best;
+}
+
+/**
  * Every pass of the sun and moon behind any of the targets from one spot, soonest first, by
  * the same rules as the eye-level line: scan every 10 minutes and look closer, minute by
  * minute, only when a body is near a target. One target owns the tower's rules
@@ -200,7 +242,9 @@ const COARSE = 10 * MINUTE;
  *   metres; outputs carry the target's id.
  * @param bodyAt (body, t) => { az, alt } seen from the spot
  * @param moonLit t => lit fraction; moon passes below `minMoonLit` are left out
- * @returns [{ target, body, start, end, peak, state, az, alt }]
+ * @returns [{ target, body, start, end, peak, align, state, az, alt }], with `peak` the best-looking
+ *   minute by the quality score and `align` the geometric one, where the body\u0027s azimuth crosses
+ *   the bearing from the eye to the target.
  */
 export function findShots({ eye, base, start, end, bodyAt, moonLit, minMoonLit = 0.25, targets }) {
   const shots = [];
@@ -215,7 +259,7 @@ export function findShots({ eye, base, start, end, bodyAt, moonLit, minMoonLit =
       let current = null;
       let refinedTo = -Infinity;
       const close = () => {
-        if (current) shots.push(current);
+        if (current) shots.push({ ...current, align: alignmentMinute(bodyAt, body, targetAz, current.start, current.end) ?? current.peak });
         current = null;
       };
       for (let t = start; t < end; t += COARSE) {
@@ -249,7 +293,7 @@ export function findShots({ eye, base, start, end, bodyAt, moonLit, minMoonLit =
     const last = merged.findLast((m) => m.target === shot.target && m.body === shot.body);
     if (last && shot.start - last.end <= 15 * MINUTE) {
       last.end = shot.end;
-      if (shot.score > last.score) Object.assign(last, { peak: shot.peak, state: shot.state, az: shot.az, alt: shot.alt, score: shot.score });
+      if (shot.score > last.score) Object.assign(last, { peak: shot.peak, state: shot.state, az: shot.az, alt: shot.alt, score: shot.score, align: shot.align });
     } else merged.push(shot);
   }
   return merged.map(({ score, ...shot }) => shot).sort((a, b) => a.peak - b.peak);
