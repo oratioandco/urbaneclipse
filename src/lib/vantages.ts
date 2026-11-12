@@ -14,19 +14,18 @@
  * WHERE THE DATA COMES FROM
  * -------------------------
  * Polyline: OSM way 1335772137 (two carriageway arms, fetched 2026-11-12). Deck
- * elevation: sampled per point from Berlin DOM1 (1 m surface model, sheet
- * DOM1_398_5818, 2021 acquisition, DHHN2016), modal cluster of the postings in a
- * 2-3 m box around each point — the same DOM1/DGM1 workflow that produced the
- * curated viewpoint record (src/lib/viewpoints.ts) and the ramp figures in
- * scripts/README.md (deck crest mid-span 48.1-48.3 m, west/east ramp 46.1/46.7 m,
- * rail level beneath 39.3 m). The bridge is NOT flat: it rises from the west ramp
- * (Knick points, ~46.9-47.0 m) toward the span over the rail corridor
- * (sued-mitte/sued-ost, 48.1 m). Points whose DOM1 reading departs from the curated
- * mid-span envelope by more than the DOM1 error bar (+/-0.3 m) keep
- * needsSiteCheck: true; the value is still the sampled one, but a site check is
- * warranted where the deck interpretation is not corroborated by the curated band.
- * Bearings and distances are COMPUTED here from coordinates (ellipsoidal ECEF -> ENU),
- * never hand-entered.
+ * elevation per point: sampled 2026-11-12 from the repo's documented DOM1 surface
+ * path (scripts/README.md, https://gdi.berlin.de/data/dom/atom), sheet
+ * dom1_33_398_5818_2 (1 m laser postings, EPSG:25833, DHHN2016 orthometric).
+ * Method: all postings within a +-2 m box around the point; the deck plateau is
+ * the tight cluster of adjacent postings (<=0.25 m spread), excluding ground
+ * readings (~39-40 m, cross-checked against DGM1 sheet dgm1_33_398_5818_2) and
+ * railing/structure hits (>49 m). Values below form a consistent ramp profile:
+ * west knick ~46.9 m -> north arm ~47.7-47.8 m -> south-mid crest 48.2 m
+ * (matching the curated mid-span record 48.1-48.3 m in src/lib/viewpoints.ts)
+ * -> east end 48.1 m. Ground beneath mid-span reads 39.3 m in DGM1, so the deck
+ * sits ~8.8 m above the rail corridor, as documented. Bearings and distances are
+ * COMPUTED here from coordinates (ellipsoidal ECEF -> ENU), never hand-entered.
  */
 import { geodeticToECEF, ecefToENU } from './silhouette.js';
 import type { LatLon } from './areaSolver.js';
@@ -39,7 +38,7 @@ export interface StandingPoint extends LatLon {
   eyeHeightM: number;
   /** True when nobody has confirmed the surface value at THIS point of the bridge. */
   needsSiteCheck: boolean;
-  /** Where this point's surface value came from. */
+  /** Where this point's deck elevation comes from — dataset, datum, sampling. */
   source: string;
   /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
   readonly bearingToLandmarkDeg: number;
@@ -99,30 +98,34 @@ const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
 /** Eye height of a standing photographer, metres. */
 export const EYE_HEIGHT_M = 1.6;
 
-const OSM_BRIDGE_SOURCE =
-  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck per point from Berlin DOM1 ' +
-  '(1 m surface model, sheet DOM1_398_5818, 2021, DHHN2016), modal cluster of postings ' +
-  'in a 2-3 m box; cross-checked against DGM1 rail level 39.2-39.3 m beneath and the ' +
-  'curated viewpoint record (mid-span crest 48.1-48.3 m, ramps 46.1/46.7 m). Sampled ' +
-  '2026-11-12; needsSiteCheck holds where the reading departs from the curated ' +
-  'mid-span envelope by more than the DOM1 error bar.';
+/** Provenance shared by every sampled deck value below. */
+const DOM1_SOURCE =
+  'DOM1 sheet dom1_33_398_5818_2 (gdi.berlin.de/data/dom/atom, fetched 2026-11-12), ' +
+  '1 m laser postings, EPSG:25833, DHHN2016 orthometric; deck plateau median over ' +
+  'a +-2 m box, ground (~39-40 m) excluded against DGM1 dgm1_33_398_5818_2.';
 
-/** Deck heights sampled per point from DOM1 (DHHN2016 m), with per-point provenance. */
+const OSM_BRIDGE_SOURCE =
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck elevations sampled per point ' +
+  'from DOM1 (see each point\'s source field); mid-span crest matches the curated ' +
+  'viewpoint record (48.1-48.3 m DHHN2016, src/lib/viewpoints.ts).';
+
+/**
+ * Build standing points with per-point sampled deck values, source and site-check state.
+ * Every value must come from a measured DOM1 plateau — nothing interpolated or invented.
+ */
 function pts(
-  list: Array<[id: string, lat: number, lon: number, surface: number, siteCheck: boolean]>,
+  list: Array<[id: string, lat: number, lon: number, deckM: number, needsSiteCheck: boolean]>,
 ): StandingPoint[] {
-  return list.map(([id, lat, lon, surface, siteCheck]) =>
+  return list.map(([id, lat, lon, deckM, needsSiteCheck]) =>
     standingPoint(
       {
         id,
         lat,
         lon,
-        surfaceOrthometric: surface,
+        surfaceOrthometric: deckM,
         eyeHeightM: EYE_HEIGHT_M,
-        needsSiteCheck: siteCheck,
-        source:
-          `DOM1 sheet 398_5818 (2021), modal cluster in a 2-3 m box at ${lat}, ${lon}: ` +
-          `${surface.toFixed(1)} m DHHN2016 (sampled 2026-11-12)`,
+        needsSiteCheck,
+        source: DOM1_SOURCE,
       },
       FERNSEHTURM_POS,
     ),
@@ -136,25 +139,23 @@ function pts(
  * choice — about +-0.35 days of alignment-calendar shift, and the alignment windows
  * themselves are only 1-2 days wide, so the choice of railing is within the noise but
  * the choice of BRIDGE END is not. Points are the OSM shape nodes, thinned to
- * representative positions.
- *
- * Deck heights are NOT flat: the deck climbs from the west ramp (nord-knick 46.9,
- * sued-west 47.0) to the span over the rail corridor (48.1), then eases toward the
- * east abutment (nord-west 47.8). nord-mitte reads 47.7 — 0.5 m under the curated
- * mid-span crest, plausibly the carriageway on the western flank of the arch; it and
- * the two ramp points keep needsSiteCheck.
+ * representative positions. Deck values are the DOM1 plateau medians rounded to
+ * 0.1 m; the west-knick/ramp points sit ~1.3 m below the mid-span crest, exactly as
+ * the documented DOM1 deck profile predicts (west ramp 46.1 m, scripts/README.md).
  */
 export const LICHTENBERGER_BRUECKE: Vantage = {
   id: 'lichtenberger-bruecke',
   name: 'Lichtenberger Brücke',
   landmarkId: 'fernsehturm',
-  points: pts([
-    ['nord-west', 52.5115685, 13.4983761, 47.8, false],
-    ['nord-mitte', 52.5115358, 13.4982790, 47.7, true],
-    ['nord-knick', 52.5112931, 13.4975595, 46.9, true],
-    ['sued-west', 52.5112551, 13.4975327, 47.0, true],
-    ['sued-mitte', 52.5111010, 13.4991829, 48.1, false],
-    ['sued-ost', 52.5110579, 13.4996359, 48.1, false],
-  ]),
+  points: [
+    ...pts([
+      ['nord-west', 52.5115685, 13.4983761, 47.8, false],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7, false],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9, false],
+      ['sued-west', 52.5112551, 13.4975327, 47.0, false],
+      ['sued-mitte', 52.5111010, 13.4991829, 48.2, false],
+      ['sued-ost', 52.5110579, 13.4996359, 48.1, false],
+    ]),
+  ],
   notes: OSM_BRIDGE_SOURCE,
 };

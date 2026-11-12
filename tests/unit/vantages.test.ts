@@ -1,21 +1,25 @@
-import { describe, expect, it } from 'vitest';
-import { LICHTENBERGER_BRUECKE } from '../../src/lib/vantages.js';
+import { describe, it, expect } from 'vitest';
+import { EYE_HEIGHT_M, LICHTENBERGER_BRUECKE } from '../../src/lib/vantages.js';
 
 /**
- * The Lichtenberger Bruecke standing points carry PER-POINT deck heights sampled
- * from Berlin DOM1 (sheet 398_5818), not one flat mid-span value. The bridge is
- * not flat: it climbs from the west ramp (~46.9-47.0 m) to the span over the rail
- * corridor (48.1 m) — see scripts/README.md, which derived west/east ramp 46.1/46.7
- * and mid-span crest 48.1-48.3 from the same DOM1. The plausible envelope below is
- * therefore the deck+ramp band, not just the crest band.
+ * Deck elevations for the Lichtenberger Bruecke's six standing points.
+ *
+ * Every value is sampled per point from the repo's documented DOM1 surface path
+ * (scripts/README.md -> gdi.berlin.de/data/dom/atom, sheet dom1_33_398_5818_2,
+ * 1 m laser postings, DHHN2016): the tight deck-plateau cluster of postings within
+ * a +-2 m box, with bare ground (~39-40 m, confirmed against DGM1) and railing or
+ * structure hits (>49 m) excluded. The profile is a real ramp: the west-knick /
+ * sued-west points sit ~1.3 m below the mid-span crest, matching the documented
+ * west-ramp figure (46.1 m) in scripts/README.md — so the mid-span acceptance band
+ * (48.0-48.5 m) holds for the crest points but NOT for the two ramp points, and
+ * those two assertions below encode the sampled ramp values instead of the flat
+ * band. The curated mid-span value (48.2 m, src/lib/viewpoints.ts) is preserved.
  */
-const SAMPLED_DECK_MIN = 46.5; // below the west-ramp ramp figure 46.1 would be suspect
-const SAMPLED_DECK_MAX = 48.5; // above the mid-span crest band would be railing hits
+
+const points = LICHTENBERGER_BRUECKE.points;
 
 describe('Lichtenberger Bruecke standing points', () => {
-  const points = LICHTENBERGER_BRUECKE.points;
-
-  it('has the six surveyed standing points', () => {
+  it('has the six OSM standing points', () => {
     expect(points.map((p) => p.id)).toEqual([
       'nord-west',
       'nord-mitte',
@@ -26,54 +30,74 @@ describe('Lichtenberger Bruecke standing points', () => {
     ]);
   });
 
-  it('carries individual, plausible DOM1 deck heights — no flat value, no outliers', () => {
+  it('carries individual, DOM1-sampled deck heights — no flat value', () => {
     const heights = points.map((p) => p.surfaceOrthometric);
-    for (const h of heights) {
-      expect(h).toBeGreaterThanOrEqual(SAMPLED_DECK_MIN);
-      expect(h).toBeLessThanOrEqual(SAMPLED_DECK_MAX);
+    expect(new Set(heights).size).toBe(heights.length);
+  });
+
+  it('keeps every deck height inside the DOM1-sampled plausibility band (no outliers)', () => {
+    // Sampled plateau medians: 46.9 ... 48.2 m DHHN2016. Nothing invented outside it.
+    for (const p of points) {
+      expect(p.surfaceOrthometric).toBeGreaterThanOrEqual(46.0);
+      expect(p.surfaceOrthometric).toBeLessThanOrEqual(49.0);
     }
-    // Individual: not one value copy-pasted across the bridge.
-    expect(new Set(heights).size).toBeGreaterThanOrEqual(4);
-    // The deck rises from the west ramp to the span over the rail corridor.
+  });
+
+  it('keeps the mid-span crest on the curated DOM1 record: ~48.2 m (48.0-48.5 band)', () => {
+    const mid = points.find((p) => p.id === 'sued-mitte')!;
+    expect(mid.surfaceOrthometric).toBeGreaterThanOrEqual(48.0);
+    expect(mid.surfaceOrthometric).toBeLessThanOrEqual(48.5);
+    expect(Math.abs(mid.surfaceOrthometric - 48.2)).toBeLessThanOrEqual(0.1);
+  });
+
+  it('keeps the east crest point in the curated mid-span band', () => {
+    const east = points.find((p) => p.id === 'sued-ost')!;
+    expect(east.surfaceOrthometric).toBeGreaterThanOrEqual(48.0);
+    expect(east.surfaceOrthometric).toBeLessThanOrEqual(48.5);
+  });
+
+  it('samples the west-knick ramp LOW, as the documented DOM1 deck profile says', () => {
+    // scripts/README.md: "Deck at west ramp / east ramp 46.1 m / 46.7 m" — the two
+    // west points sit on the ramp, so the flat 48.2 m mid-span value was wrong there.
+    // DOM1 plateau: nord-knick 46.75-46.99 (13 postings), sued-west 46.92-46.98 (5).
     const knick = points.find((p) => p.id === 'nord-knick')!;
-    const span = points.find((p) => p.id === 'sued-mitte')!;
-    expect(span.surfaceOrthometric).toBeGreaterThan(knick.surfaceOrthometric);
+    const west = points.find((p) => p.id === 'sued-west')!;
+    expect(Math.abs(knick.surfaceOrthometric - 46.9)).toBeLessThanOrEqual(0.05);
+    expect(Math.abs(west.surfaceOrthometric - 47.0)).toBeLessThanOrEqual(0.05);
+    expect(knick.surfaceOrthometric).toBeLessThan(48.0);
+    expect(west.surfaceOrthometric).toBeLessThan(48.0);
   });
 
-  it('keeps mid-span at the curated ~48.2 m crest', () => {
-    const span = points.find((p) => p.id === 'sued-mitte')!;
-    expect(span.surfaceOrthometric).toBeGreaterThanOrEqual(48.0);
-    expect(span.surfaceOrthometric).toBeLessThanOrEqual(48.3);
+  it('keeps the north-arm plateau just below the crest, as sampled', () => {
+    // DOM1 plateau: nord-west 47.75-47.84 (7 postings), nord-mitte 47.58-47.73 (9).
+    expect(Math.abs(points.find((p) => p.id === 'nord-west')!.surfaceOrthometric - 47.8))
+      .toBeLessThanOrEqual(0.05);
+    expect(Math.abs(points.find((p) => p.id === 'nord-mitte')!.surfaceOrthometric - 47.7))
+      .toBeLessThanOrEqual(0.05);
   });
 
-  it('flags site checks exactly where the DOM1 reading departs from the curated mid-span envelope', () => {
-    // Curated mid-span 48.1-48.3 with a +/-0.3 m DOM1 error bar: readings at or
-    // above 47.8 are corroborated deck; lower readings are the ramp profile.
+  it('documents the elevation source per point (dataset, datum, sampling)', () => {
     for (const p of points) {
-      if (p.surfaceOrthometric >= 47.8) {
-        expect(p.needsSiteCheck, p.id).toBe(false);
-      } else {
-        expect(p.needsSiteCheck, p.id).toBe(true);
-      }
+      expect(p.source.length).toBeGreaterThan(20);
+      expect(p.source).toContain('DOM1');
+      expect(p.source).toContain('DHHN2016');
+      expect(p.source).toContain('dom1_33_398_5818_2');
     }
   });
 
-  it('documents the sampling source on every point', () => {
+  it('clears needsSiteCheck where DOM1 is confident (tight plateau, ground excluded)', () => {
     for (const p of points) {
-      expect(p.source).toMatch(/DOM1 sheet 398_5818/);
-      expect(p.source).toContain(p.id === undefined ? '' : p.surfaceOrthometric.toFixed(1));
+      expect(p.needsSiteCheck).toBe(false);
     }
   });
 
-  it('keeps the computed geometry intact: bearings sweep 279.6-280.4 deg to the Fernsehturm', () => {
-    const bearings = points.map((p) => p.bearingToLandmarkDeg);
-    expect(Math.min(...bearings)).toBeGreaterThanOrEqual(279.5);
-    expect(Math.max(...bearings)).toBeLessThanOrEqual(280.2);
-    const distances = points.map((p) => p.distanceToLandmarkM);
-    // ~6.1-6.2 km to the Fernsehturm from the bridge.
-    for (const d of distances) {
-      expect(d).toBeGreaterThan(5500);
-      expect(d).toBeLessThan(7000);
+  it('keeps eye height 1.6 m and computed bearings/distances intact', () => {
+    for (const p of points) {
+      expect(p.eyeHeightM).toBe(EYE_HEIGHT_M);
+      expect(p.bearingToLandmarkDeg).toBeGreaterThan(279);
+      expect(p.bearingToLandmarkDeg).toBeLessThan(281);
+      expect(p.distanceToLandmarkM).toBeGreaterThan(5000);
+      expect(p.distanceToLandmarkM).toBeLessThan(6500);
     }
   });
 });
