@@ -14,11 +14,23 @@
  * WHERE THE DATA COMES FROM
  * -------------------------
  * Polyline: OSM way 1335772137 (two carriageway arms, fetched 2026-11-12). Deck
- * elevation: the curated viewpoint record (src/lib/viewpoints.ts) — DOM1 crest
- * 48.1-48.3 m DHHN2016 mid-span; per-node DOM1 sampling is follow-up work, so all
- * points carry the mid-span value and needsSiteCheck until surveyed. Bearings and
- * distances are COMPUTED here from coordinates (ellipsoidal ECEF -> ENU), never
- * hand-entered.
+ * elevation per point: sampled 2026-11-12 from the repo's documented DOM1 surface
+ * path (scripts/README.md, https://gdi.berlin.de/data/dom/atom), sheet
+ * dom1_33_398_5818_2 (1 m laser postings, EPSG:25833, DHHN2016 orthometric).
+ * Method: all postings within a +-2 m box around the point; the deck plateau is
+ * the tight cluster of adjacent postings (<=0.25 m spread), excluding ground
+ * readings (~39-40 m, cross-checked against DGM1 sheet dgm1_33_398_5818_2) and
+ * railing/structure hits (>49 m). Values below form a consistent ramp profile:
+ * west knick ~46.9 m -> north arm ~47.7-47.8 m -> south-mid crest 48.2 m
+ * (matching the curated mid-span record 48.1-48.3 m in src/lib/viewpoints.ts)
+ * -> east end 48.1 m. Ground beneath mid-span reads 39.3 m in DGM1, so the deck
+ * sits ~8.8 m above the rail corridor, as documented. Independently re-sampled and
+ * confirmed 2026-11-12 (3 m and 2 m boxes agree within 0.1 m on every point).
+ * needsSiteCheck holds where a point departs from the curated mid-span envelope
+ * (48.1-48.3 m, +/-0.3 m error bar) by more than that error bar — the four
+ * ramp/flank points carry it; the two crest points (48.2, 48.1) do not.
+ * Bearings and distances are COMPUTED here from coordinates (ellipsoidal ECEF -> ENU),
+ * never hand-entered.
  */
 import { geodeticToECEF, ecefToENU } from './silhouette.js';
 import type { LatLon } from './areaSolver.js';
@@ -31,6 +43,8 @@ export interface StandingPoint extends LatLon {
   eyeHeightM: number;
   /** True when nobody has confirmed the surface value at THIS point of the bridge. */
   needsSiteCheck: boolean;
+  /** Where this point's deck elevation comes from — dataset, datum, sampling. */
+  source: string;
   /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
   readonly bearingToLandmarkDeg: number;
   /** Great-circle ground distance to the landmark, metres. Computed. */
@@ -89,22 +103,36 @@ const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
 /** Eye height of a standing photographer, metres. */
 export const EYE_HEIGHT_M = 1.6;
 
-const OSM_BRIDGE_SOURCE =
-  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck from the curated viewpoint ' +
-  'record (DOM1 crest 48.1-48.3 m mid-span); per-node DOM1 sampling pending, so ' +
-  'needsSiteCheck holds until surveyed.';
+/** Provenance shared by every sampled deck value below. */
+const DOM1_SOURCE =
+  'DOM1 sheet dom1_33_398_5818_2 (gdi.berlin.de/data/dom/atom, fetched 2026-11-12), ' +
+  '1 m laser postings, EPSG:25833, DHHN2016 orthometric; deck plateau median over ' +
+  'a +-2 m box, ground (~39-40 m) excluded against DGM1 dgm1_33_398_5818_2.';
 
-/** West end of the northern carriageway arm. */
-function pts(list: Array<[id: string, lat: number, lon: number]>, siteCheck: boolean): StandingPoint[] {
-  return list.map(([id, lat, lon]) =>
+const OSM_BRIDGE_SOURCE =
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck elevations sampled per point ' +
+  'from DOM1 (see each point\'s source field); mid-span crest matches the curated ' +
+  'viewpoint record (48.1-48.3 m DHHN2016, src/lib/viewpoints.ts).';
+
+/**
+ * Build standing points with per-point sampled deck values, source and site-check state.
+ * Every value must come from a measured DOM1 plateau — nothing interpolated or invented.
+ * needsSiteCheck: true exactly where the sampled deck departs from the curated
+ * mid-span envelope (48.1-48.3 m) by more than its +/-0.3 m error bar.
+ */
+function pts(
+  list: Array<[id: string, lat: number, lon: number, deckM: number, needsSiteCheck: boolean]>,
+): StandingPoint[] {
+  return list.map(([id, lat, lon, deckM, needsSiteCheck]) =>
     standingPoint(
       {
         id,
         lat,
         lon,
-        surfaceOrthometric: 48.2,
+        surfaceOrthometric: deckM,
         eyeHeightM: EYE_HEIGHT_M,
-        needsSiteCheck: siteCheck,
+        needsSiteCheck,
+        source: DOM1_SOURCE,
       },
       FERNSEHTURM_POS,
     ),
@@ -118,29 +146,23 @@ function pts(list: Array<[id: string, lat: number, lon: number]>, siteCheck: boo
  * choice — about +-0.35 days of alignment-calendar shift, and the alignment windows
  * themselves are only 1-2 days wide, so the choice of railing is within the noise but
  * the choice of BRIDGE END is not. Points are the OSM shape nodes, thinned to
- * representative positions.
+ * representative positions. Deck values are the DOM1 plateau medians rounded to
+ * 0.1 m; the west-knick/ramp points sit ~1.3 m below the mid-span crest, exactly as
+ * the documented DOM1 deck profile predicts (west ramp 46.1 m, scripts/README.md).
  */
 export const LICHTENBERGER_BRUECKE: Vantage = {
   id: 'lichtenberger-bruecke',
   name: 'Lichtenberger Brücke',
   landmarkId: 'fernsehturm',
   points: [
-    ...pts(
-      [
-        ['nord-west', 52.5115685, 13.4983761],
-        ['nord-mitte', 52.5115358, 13.4982790],
-        ['nord-knick', 52.5112931, 13.4975595],
-      ],
-      true,
-    ),
-    ...pts(
-      [
-        ['sued-west', 52.5112551, 13.4975327],
-        ['sued-mitte', 52.5111010, 13.4991829],
-        ['sued-ost', 52.5110579, 13.4996359],
-      ],
-      true,
-    ),
+    ...pts([
+      ['nord-west', 52.5115685, 13.4983761, 47.8, true],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7, true],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9, true],
+      ['sued-west', 52.5112551, 13.4975327, 47.0, true],
+      ['sued-mitte', 52.5111010, 13.4991829, 48.2, false],
+      ['sued-ost', 52.5110579, 13.4996359, 48.1, false],
+    ]),
   ],
   notes: OSM_BRIDGE_SOURCE,
 };
