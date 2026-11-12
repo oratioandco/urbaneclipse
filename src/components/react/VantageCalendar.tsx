@@ -14,13 +14,21 @@
  *
  * Honesty rules carried over from the sketch panel: vantage names are the real OSM
  * standing points; needsSiteCheck points say so; the moon disclaimer states suncalc's
- * lunar accuracy limit instead of promising dates the ephemeris cannot back.
+ * lunar accuracy limit instead of promising dates the ephemeris cannot back. The
+ * weather (Open-Meteo, next 3 days) only ANNOTATES the geometric list — a dead
+ * forecast degrades the panel to its calendar, never the other way round.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { LICHTENBERGER_BRUECKE } from '../../lib/vantages.js';
 import { enumerateVantageWindows, type VantageWindow } from '../../lib/vantageWindows.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
+import {
+  assessWindowWeather,
+  formatAssessment,
+  loadForecast,
+  type WeatherAssessment,
+} from '../../lib/shotWeather.js';
 import { dateTime, viewMode } from '../../store.js';
 
 const WINDOW_MONTHS = 12;
@@ -46,10 +54,19 @@ function formatWhen(d: Date): string {
   );
 }
 
+type WeatherState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'ok'; assessments: Map<string, WeatherAssessment> }
+  | { status: 'error' };
+
 export default function VantageCalendar() {
   const [pointId, setPointId] = useState(LICHTENBERGER_BRUECKE.points[0]!.id);
   const [state, setState] = useState<'idle' | 'running' | 'done'>('idle');
   const [windows, setWindows] = useState<VantageWindow[]>([]);
+  const [weather, setWeather] = useState<WeatherState>({ status: 'idle' });
+  // Guards a stale weather answer from an earlier run landing on a newer list.
+  const runSeq = useRef(0);
 
   const point = useMemo(
     // The registry is a non-empty constant; the ?? guards only the type, not reality.
@@ -59,6 +76,8 @@ export default function VantageCalendar() {
 
   const run = (): void => {
     setState('running');
+    setWeather({ status: 'idle' });
+    const epoch = ++runSeq.current;
     // Two rAFs so the "running" state paints before the synchronous sweep blocks.
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
@@ -76,6 +95,23 @@ export default function VantageCalendar() {
         });
         setWindows(found);
         setState('done');
+
+        // The geometric list is the answer; the weather only annotates it. Async so a
+        // dead network costs the calendar nothing.
+        setWeather({ status: 'loading' });
+        loadForecast(point.lat, point.lon)
+          .then((forecast) => {
+            if (runSeq.current !== epoch) return;
+            const assessments = new Map<string, WeatherAssessment>();
+            for (const w of found) {
+              const a = assessWindowWeather(forecast, w.peak);
+              if (a) assessments.set(w.peak.toISOString(), a);
+            }
+            setWeather({ status: 'ok', assessments });
+          })
+          .catch(() => {
+            if (runSeq.current === epoch) setWeather({ status: 'error' });
+          });
       }),
     );
   };
@@ -105,6 +141,7 @@ export default function VantageCalendar() {
                 setPointId(e.target.value);
                 setState('idle');
                 setWindows([]);
+                setWeather({ status: 'idle' });
               }}
             >
               {LICHTENBERGER_BRUECKE.points.map((p) => (
@@ -153,6 +190,9 @@ export default function VantageCalendar() {
                   {formatWhen(w.peak)}
                   <span className="pv-list__meta">
                     {BODY_LABEL[w.body]} · {BAND_LABEL[w.band]} · {Math.round(w.coveredFraction * 100)} %
+                    {weather.status === 'ok' &&
+                      weather.assessments.get(w.peak.toISOString()) &&
+                      ` · ${formatAssessment(weather.assessments.get(w.peak.toISOString())!)}`}
                   </span>
                 </button>
               </li>
@@ -166,6 +206,34 @@ export default function VantageCalendar() {
               : `${sunRows.length} Sonnenfenster${moonRows.length ? `, ${moonRows.length} Mondfenster` : ''}. Wo keine Zeile steht, passiert es nicht — das ist keine Lücke, sondern das Ergebnis.`}
             {' '}Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc); die Spitzen-Treffer im Frühjahr/Spätsommer sind die verlässlichsten.
           </div>
+
+          {weather.status === 'loading' && (
+            <div className="pv-msg" role="status">
+              Frage das Wetter für die nächsten 3 Tage… (Open-Meteo, stündliche Wolkenwerte)
+            </div>
+          )}
+          {weather.status === 'error' && (
+            <div className="pv-msg pv-msg--warn" role="status">
+              <strong className="pv-msg__title">Wetter jetzt nicht erreichbar.</strong> Die
+              Kalender-Zeiten stehen trotzdem — ob der Himmel mitspielt, musst du gerade
+              selbst nachschauen.
+            </div>
+          )}
+          {weather.status === 'ok' && (() => {
+            const assessed = windows.filter((w) => weather.assessments.has(w.peak.toISOString()));
+            const promising = assessed.filter((w) => {
+              const a = weather.assessments.get(w.peak.toISOString())!;
+              return a.verdict !== 'bedeckt';
+            });
+            return (
+              <div className="pv-msg" role="status">
+                <strong className="pv-msg__title">Nächste 3 Tage</strong>
+                {assessed.length === 0
+                  ? 'Kein Fenster in den nächsten 3 Tagen — wo keins steht, entscheidet auch das Wetter nicht. Die Liste oben bleibt die Zukunft.'
+                  : `${assessed.length} der Fenster liegen in den nächsten 3 Tagen, ${promising.length} davon mit brauchbarem Himmel (unter 65 % Wolken). Die Wolkenangabe steht an der Zeile; ein Modell bleibt ein Modell.`}
+              </div>
+            );
+          })()}
         </>
       )}
     </section>
