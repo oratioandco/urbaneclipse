@@ -3,6 +3,7 @@ import { formatDay, formatMinutes, parseTime, uses12h } from './time.js';
 import { params } from './config.js';
 import { updateSun } from './lighting.js';
 import { PHASE_COLOURS, updateDay } from './plan.js';
+import { snapMinute } from './daylist.js';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { lightBands, lightGradientStops } from '../lib/lightPhases.ts';
 import { invalidate } from './state.js';
@@ -135,4 +136,12 @@ document.getElementById('prev-day').addEventListener('click', () => shiftDay(-1)
 document.getElementById('next-day').addEventListener('click', () => shiftDay(1));
 document.getElementById('today').addEventListener('click', () => setDay(todayInBerlin()));
 showDay();
-timeInput.addEventListener('input', updateSun);
+// Scrubbing near a tower alignment snaps to its minute, so the disc lands behind the
+// sphere instead of a minute beside it. Fine timing is the photographer's hand, not a scrub.
+timeInput.addEventListener('input', () => {
+  if (!fine.on) {
+    const snap = snapMinute(dayStart() + Number(timeInput.value) * 60_000);
+    if (snap !== null) timeInput.value = String(Math.round((snap - dayStart()) / 60_000));
+  }
+  updateSun();
+});

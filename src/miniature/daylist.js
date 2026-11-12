@@ -7,7 +7,7 @@ import { compassPoint } from '../lib/dailyPaths.ts';
 import { litDiscPath } from '../lib/moonPhase.ts';
 import { formatClock } from './time.js';
 import { EYE_HEIGHT } from './eye.js';
-import { discOverSphere, SPHERE_TOP_AGL, TIP_AGL } from './towerShots.js';
+import { alignmentMinute, discOverSphere, SPHERE_TOP_AGL, TIP_AGL } from './towerShots.js';
 import { layers, shownBody } from './chrome.js';
 import { dayStart } from './clock.js';
 import { BODY_NAME } from './eclipse.js';
@@ -50,8 +50,18 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
         const lastPoint = w.points[w.points.length - 1];
         if (lastPoint.t - first.t < 4 * 60_000) continue;
         const mid = w.points[Math.floor(w.points.length / 2)];
+        // The geometric alignment minute for this standpoint: when the body's azimuth crosses the
+        // bearing from here to the tower — not the window's start, and not a middle sample.
+        const align =
+          alignmentMinute(
+            (body, t) => sampleBody(body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon),
+            path.body,
+            (mid.bearingDeg + 180) % 360,
+            first.t,
+            lastPoint.t,
+          ) ?? mid.t;
         rows.push({
-          t: first.t,
+          t: align,
           body: path.body,
           kind: 'tower',
           // The closer the tower, the larger the body behind it: the spectacle, scored.
@@ -63,7 +73,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
                 ? 'Ring of sun round the TV tower\u2019s sphere'
                 : 'Sun behind the TV tower\u2019s sphere',
           detail: `${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
-          go: () => goViewHere({ kind: 'tower', body: path.body, t: mid.t, ...toScene(mid) }),
+          go: () => goViewHere({ kind: 'tower', body: path.body, t: align, ...toScene(mid) }),
         });
       }
     }
@@ -131,9 +141,27 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
   return rows;
 }
 
+/** The last rendered day list, so the time slider can snap to a tower alignment near a scrub. */
+let snapRows = [];
+/**
+ * The tower alignment to snap a scrubbed minute to, or null: the nearest row\u0027s alignment
+ * minute within two minutes of it \u2014 the sun needs minutes to cross the sphere, so landing
+ * a minute off misses the shot.
+ */
+export function snapMinute(t) {
+  let best = null;
+  for (const row of snapRows) {
+    if (row.kind !== 'tower') continue;
+    const d = Math.abs(row.t - t);
+    if (d <= 2 * 60_000 && (!best || d < best.d)) best = { t: row.t, d };
+  }
+  return best ? best.t : null;
+}
+
 /** The day as a list in the expanded sheet: the same rows, in time order, each with Go. */
 export function renderDayList() {
   const rows = collectRows(app.dayPaths, app.moments, dayStart(), { tower: layers.tower, streets: layers.streets, moon: layers.moon });
+  snapRows = rows;
   dayList.replaceChildren(
     ...rows.map((row) => {
       const item = document.createElement('button');
