@@ -108,6 +108,7 @@ import PlacementControls from './PlacementControls.js';
 import PlanningMap from './PlanningMap.js';
 import HourTimeline from './HourTimeline.js';
 import SolverSearch from './SolverSearch.js';
+import VantageCalendar from './VantageCalendar.js';
 import CameraControls from './CameraControls.js';
 
 // The DEPLOYED app serves the committed core subset (public/berlin-core/, the
@@ -1333,6 +1334,7 @@ export default function CesiumViewer({
             </section>
           )}
           <SolverSearch />
+          <VantageCalendar />
         </div>
         <div className="pv-dock">
           <HourTimeline />
