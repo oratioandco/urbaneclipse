@@ -149,10 +149,10 @@ export const LICHTENBERGER_BRUECKE: Vantage = {
   landmarkId: 'fernsehturm',
   points: [
     ...pts([
-      ['nord-west', 52.5115685, 13.4983761, 47.8, false],
-      ['nord-mitte', 52.5115358, 13.4982790, 47.7, false],
-      ['nord-knick', 52.5112931, 13.4975595, 46.9, false],
-      ['sued-west', 52.5112551, 13.4975327, 47.0, false],
+      ['nord-west', 52.5115685, 13.4983761, 47.8, true],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7, true],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9, true],
+      ['sued-west', 52.5112551, 13.4975327, 47.0, true],
       ['sued-mitte', 52.5111010, 13.4991829, 48.2, false],
       ['sued-ost', 52.5110579, 13.4996359, 48.1, false],
     ]),

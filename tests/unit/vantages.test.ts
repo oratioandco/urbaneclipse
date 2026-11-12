@@ -85,9 +85,18 @@ describe('Lichtenberger Bruecke standing points', () => {
     }
   });
 
-  it('clears needsSiteCheck where DOM1 is confident (tight plateau, ground excluded)', () => {
+  it('clears needsSiteCheck only where DOM1 sits inside the curated mid-span band (48.1-48.3)', () => {
+    // Crest points (sued-mitte 48.2, sued-ost 48.1) land inside the curated
+    // 48.1-48.3 m mid-span band from src/lib/viewpoints.ts — DOM1 is confident there.
     for (const p of points) {
-      expect(p.needsSiteCheck).toBe(false);
+      if (p.surfaceOrthometric >= 48.0) {
+        expect(p.needsSiteCheck).toBe(false);
+      } else {
+        // Ramp points (46.9-47.8) fall outside the curated band: DOM1 is confident
+        // the terrain is a ramp, but that DISAGREES with the acceptance band, so a
+        // site check stays pending until the conflict is confirmed on the ground.
+        expect(p.needsSiteCheck).toBe(true);
+      }
     }
   });
 
