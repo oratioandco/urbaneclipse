@@ -7,10 +7,16 @@
  * mid-May, when the sun crosses the tower bearing far above the spire, there is no row,
  * and the caption says so in words.
  *
+ * The panel answers the photographer's questions in the order they are asked on the
+ * bridge: (1) "when is the next one?" — the Nächster-Termin head; (2) "will the sky
+ * hold?" — weather verdicts on the next-3-days rows; (3) "what does the year look
+ * like?" — the full list, with each moon row stating its illumination, because a
+ * 2-percent crescent behind the spire is not the same shot as a full moon.
+ *
  * Computation runs on demand (button press), on the main thread: a full-year
- * enumerateVantageWindows sweep measures ~0.3 s in the unit suite, far below the
- * worker threshold SolverSearch needs for its per-instant area solves. If this ever
- * grows a per-minute refinement, move it into a worker like SolverSearch's.
+ * enumerateVantageWindows sweep measures well under a second, far below the worker
+ * threshold SolverSearch needs for its per-instant area solves. If this ever grows a
+ * per-minute refinement of the whole list, move it into a worker like SolverSearch's.
  *
  * Honesty rules carried over from the sketch panel: vantage names are the real OSM
  * standing points; needsSiteCheck points say so; the moon disclaimer states suncalc's
@@ -19,10 +25,12 @@
  * forecast degrades the panel to its calendar, never the other way round.
  */
 import { useMemo, useRef, useState } from 'react';
+import { useStore } from '@nanostores/react';
 import { LICHTENBERGER_BRUECKE } from '../../lib/vantages.js';
 import { enumerateVantageWindows, type VantageWindow } from '../../lib/vantageWindows.js';
 import { FERNSEHTURM } from '../../lib/landmarks.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
+import { moonLighting } from '../../lib/moonPhase.js';
 import {
   assessWindowWeather,
   formatAssessment,
@@ -45,13 +53,22 @@ const BODY_LABEL: Record<VantageWindow['body'], string> = {
   moon: 'Mond',
 };
 
-/** "11. Apr, 19:12" in the observer's own timezone — a photo plan is a local plan. */
+/** "Fr, 3. Apr, 19:42" in the observer's own timezone — a photo plan is a local plan. */
 function formatWhen(d: Date): string {
   return (
-    d.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }) +
+    d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' }) +
     ', ' +
     d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
   );
+}
+
+/** Distance from the sweep's "now" in the words a photographer plans with. */
+function formatIn(when: Date, now: Date): string {
+  const days = (when.getTime() - now.getTime()) / 86_400_000;
+  if (days < 0.5) return 'heute';
+  if (days < 1.5) return 'morgen';
+  if (days < 60) return `in ${Math.round(days)} Tagen`;
+  return `in ${Math.round(days / 30.44)} Monaten`;
 }
 
 type WeatherState =
@@ -65,14 +82,21 @@ export default function VantageCalendar() {
   const [state, setState] = useState<'idle' | 'running' | 'done'>('idle');
   const [windows, setWindows] = useState<VantageWindow[]>([]);
   const [weather, setWeather] = useState<WeatherState>({ status: 'idle' });
+  // "Now" as of the sweep, so "in N Tagen" stays put while the panel sits open.
+  const [sweptAt, setSweptAt] = useState<Date | null>(null);
   // Guards a stale weather answer from an earlier run landing on a newer list.
   const runSeq = useRef(0);
+  // The scrubbed instant, to mark the live row like SolverSearch does.
+  const dt = useStore(dateTime);
 
   const point = useMemo(
     // The registry is a non-empty constant; the ?? guards only the type, not reality.
     () => LICHTENBERGER_BRUECKE.points.find((p) => p.id === pointId) ?? LICHTENBERGER_BRUECKE.points[0]!,
     [pointId],
   );
+
+  const assessmentFor = (w: VantageWindow): WeatherAssessment | undefined =>
+    weather.status === 'ok' ? weather.assessments.get(w.peak.toISOString()) : undefined;
 
   const run = (): void => {
     setState('running');
@@ -94,6 +118,7 @@ export default function VantageCalendar() {
           refinePeaks: true,
         });
         setWindows(found);
+        setSweptAt(now);
         setState('done');
 
         // The geometric list is the answer; the weather only annotates it. Async so a
@@ -116,8 +141,7 @@ export default function VantageCalendar() {
     );
   };
 
-  const sunRows = windows.filter((w) => w.body === 'sun');
-  const moonRows = windows.filter((w) => w.body === 'moon');
+  const next = windows[0];
 
   return (
     <section className="pv-panel" data-testid="vantage-calendar">
@@ -146,7 +170,7 @@ export default function VantageCalendar() {
             >
               {LICHTENBERGER_BRUECKE.points.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.id} · {p.bearingToLandmarkDeg.toFixed(2)}° · {(p.distanceToLandmarkM / 1000).toFixed(2)} km
+                  {p.id} · {(p.distanceToLandmarkM / 1000).toFixed(2)} km
                 </option>
               ))}
             </select>
@@ -158,52 +182,69 @@ export default function VantageCalendar() {
         </div>
       </div>
 
-      {point.needsSiteCheck && (
-        <div className="pv-msg" role="note">
-          Deckhöhe an dieser Stelle noch nicht verifiziert (Mid-Span-Wert 48,2 m angenommen) —
-          das verschiebt Band-Grenzen um Zentimeter, nicht um Fenster.
-        </div>
-      )}
-
       <div className="pv-btn-row">
         <button type="button" onClick={run} disabled={state === 'running'} className="pv-btn pv-btn--primary">
-          {state === 'running' ? 'Scanne 12 Monate…' : 'Kalender für 12 Monate rechnen'}
+          {state === 'running' ? 'Scanne 12 Monate…' : '12 Monate rechnen'}
         </button>
       </div>
 
       {state === 'done' && (
         <>
+          {next && sweptAt && (
+            <div className="pv-msg" role="status">
+              <strong className="pv-msg__title">Nächster Termin</strong>
+              {formatWhen(next.peak)} · {BODY_LABEL[next.body]} · {BAND_LABEL[next.band]} ·{' '}
+              {formatIn(next.peak, sweptAt)}
+              {assessmentFor(next) && ` · ${formatAssessment(assessmentFor(next)!)}`}
+            </div>
+          )}
+
           <ul className="pv-list">
-            {windows.map((w, i) => (
-              <li key={`${w.body}-${w.peak.toISOString()}`}>
-                <button
-                  type="button"
-                  className="pv-list__item"
-                  onClick={() => {
-                    // Same contract as SolverSearch's results: scrub the clock to the
-                    // instant and show the actual composition in the preview.
-                    dateTime.set(w.peak);
-                    viewMode.set('preview');
-                  }}
-                >
-                  <span className="pv-list__ord">{String(i + 1).padStart(2, '0')}</span>
-                  {formatWhen(w.peak)}
-                  <span className="pv-list__meta">
-                    {BODY_LABEL[w.body]} · {BAND_LABEL[w.band]} · {Math.round(w.coveredFraction * 100)} %
-                    {weather.status === 'ok' &&
-                      weather.assessments.get(w.peak.toISOString()) &&
-                      ` · ${formatAssessment(weather.assessments.get(w.peak.toISOString())!)}`}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {windows.map((w, i) => {
+              const a = assessmentFor(w);
+              // Offsets under half an hour are inside the forecast's own grain.
+              const offsetNote =
+                a && a.verdict === 'grenzwertig' && a.sampleOffsetHours >= 0.5
+                  ? ` (±${Math.round(a.sampleOffsetHours * 60)} min)`
+                  : '';
+              const active = w.peak.getTime() === dt.getTime();
+              return (
+                <li key={`${w.body}-${w.peak.toISOString()}`}>
+                  <button
+                    type="button"
+                    className="pv-list__item"
+                    aria-current={active}
+                    onClick={() => {
+                      // Same contract as SolverSearch's results: scrub the clock to the
+                      // instant and show the actual composition in the preview.
+                      dateTime.set(w.peak);
+                      viewMode.set('preview');
+                    }}
+                  >
+                    <span className="pv-list__ord">{String(i + 1).padStart(2, '0')}</span>
+                    {formatWhen(w.peak)}
+                    <span className="pv-list__meta">
+                      {BODY_LABEL[w.body]} · {BAND_LABEL[w.band]} · {Math.round(w.coveredFraction * 100)} %
+                      {w.body === 'moon' &&
+                        ` · ${Math.round(moonLighting(w.peak, point.lat, point.lon).fraction * 100)} % beleuchtet`}
+                      {a && (
+                        <span className={`pv-wx pv-wx--${a.verdict}`}>
+                          {formatAssessment(a)}
+                          {offsetNote}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="pv-msg" role="status">
             <strong className="pv-msg__title">Ehrlich gelesen</strong>
-            {sunRows.length === 0
+            {windows.filter((w) => w.body === 'sun').length === 0
               ? 'In den nächsten 12 Monaten geht die Sonne auf dieser Linie nie hinter dem Turm unter — die Geometrie erlaubt es in diesem Zeitraum nicht.'
-              : `${sunRows.length} Sonnenfenster${moonRows.length ? `, ${moonRows.length} Mondfenster` : ''}. Wo keine Zeile steht, passiert es nicht — das ist keine Lücke, sondern das Ergebnis.`}
+              : `${windows.filter((w) => w.body === 'sun').length} Sonnenfenster, ${windows.filter((w) => w.body === 'moon').length} Mondfenster. Wo keine Zeile steht, passiert es nicht — das ist keine Lücke, sondern das Ergebnis.`}
             {' '}Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc); die Spitzen-Treffer im Frühjahr/Spätsommer sind die verlässlichsten.
           </div>
 
@@ -221,10 +262,7 @@ export default function VantageCalendar() {
           )}
           {weather.status === 'ok' && (() => {
             const assessed = windows.filter((w) => weather.assessments.has(w.peak.toISOString()));
-            const promising = assessed.filter((w) => {
-              const a = weather.assessments.get(w.peak.toISOString())!;
-              return a.verdict !== 'bedeckt';
-            });
+            const promising = assessed.filter((w) => weather.assessments.get(w.peak.toISOString())!.verdict !== 'bedeckt');
             return (
               <div className="pv-msg" role="status">
                 <strong className="pv-msg__title">Nächste 3 Tage</strong>
@@ -234,6 +272,13 @@ export default function VantageCalendar() {
               </div>
             );
           })()}
+
+          {point.needsSiteCheck && (
+            <div className="pv-msg" role="note">
+              Deckhöhe an dieser Stelle noch nicht verifiziert (Mid-Span-Wert 48,2 m angenommen) —
+              das verschiebt Band-Grenzen um Zentimeter, nicht um Fenster.
+            </div>
+          )}
         </>
       )}
     </section>

@@ -924,6 +924,28 @@ body,
   letter-spacing: 0.02em;
 }
 
+/* Weather verdict on a vantage row: a dot triageable at arm's length — sage = set the
+   alarm, ochre = hole-in-the-clouds gamble, grey = stay home. Colour carries the
+   glance; the three honest words beside it carry the meaning. */
+.pv-wx::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: 1px;
+}
+.pv-wx--klar::before {
+  background: #56795a;
+}
+.pv-wx--grenzwertig::before {
+  background: #b3893c;
+}
+.pv-wx--bedeckt::before {
+  background: rgba(0, 0, 0, 0.22);
+}
+
 /* Viewpoint dropdown — matches the hairline field aesthetic. */
 .pv-select {
   width: 100%;
