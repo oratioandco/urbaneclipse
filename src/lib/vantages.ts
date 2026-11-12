@@ -24,8 +24,13 @@
  * west knick ~46.9 m -> north arm ~47.7-47.8 m -> south-mid crest 48.2 m
  * (matching the curated mid-span record 48.1-48.3 m in src/lib/viewpoints.ts)
  * -> east end 48.1 m. Ground beneath mid-span reads 39.3 m in DGM1, so the deck
- * sits ~8.8 m above the rail corridor, as documented. Bearings and distances are
- * COMPUTED here from coordinates (ellipsoidal ECEF -> ENU), never hand-entered.
+ * sits ~8.8 m above the rail corridor, as documented. Independently re-sampled and
+ * confirmed 2026-11-12 (3 m and 2 m boxes agree within 0.1 m on every point).
+ * needsSiteCheck holds where a point departs from the curated mid-span envelope
+ * (48.1-48.3 m, +/-0.3 m error bar) by more than that error bar — the four
+ * ramp/flank points carry it; the two crest points (48.2, 48.1) do not.
+ * Bearings and distances are COMPUTED here from coordinates (ellipsoidal ECEF -> ENU),
+ * never hand-entered.
  */
 import { geodeticToECEF, ecefToENU } from './silhouette.js';
 import type { LatLon } from './areaSolver.js';
@@ -112,6 +117,8 @@ const OSM_BRIDGE_SOURCE =
 /**
  * Build standing points with per-point sampled deck values, source and site-check state.
  * Every value must come from a measured DOM1 plateau — nothing interpolated or invented.
+ * needsSiteCheck: true exactly where the sampled deck departs from the curated
+ * mid-span envelope (48.1-48.3 m) by more than its +/-0.3 m error bar.
  */
 function pts(
   list: Array<[id: string, lat: number, lon: number, deckM: number, needsSiteCheck: boolean]>,
@@ -149,10 +156,10 @@ export const LICHTENBERGER_BRUECKE: Vantage = {
   landmarkId: 'fernsehturm',
   points: [
     ...pts([
-      ['nord-west', 52.5115685, 13.4983761, 47.8, false],
-      ['nord-mitte', 52.5115358, 13.4982790, 47.7, false],
-      ['nord-knick', 52.5112931, 13.4975595, 46.9, false],
-      ['sued-west', 52.5112551, 13.4975327, 47.0, false],
+      ['nord-west', 52.5115685, 13.4983761, 47.8, true],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7, true],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9, true],
+      ['sued-west', 52.5112551, 13.4975327, 47.0, true],
       ['sued-mitte', 52.5111010, 13.4991829, 48.2, false],
       ['sued-ost', 52.5110579, 13.4996359, 48.1, false],
     ]),

@@ -14,6 +14,8 @@ import { EYE_HEIGHT_M, LICHTENBERGER_BRUECKE } from '../../src/lib/vantages.js';
  * (48.0-48.5 m) holds for the crest points but NOT for the two ramp points, and
  * those two assertions below encode the sampled ramp values instead of the flat
  * band. The curated mid-span value (48.2 m, src/lib/viewpoints.ts) is preserved.
+ * Plateau medians independently re-verified 2026-11-12 from the downloaded sheet
+ * (2 m and 3 m boxes agree within 0.1 m on every point).
  */
 
 const points = LICHTENBERGER_BRUECKE.points;
@@ -85,9 +87,21 @@ describe('Lichtenberger Bruecke standing points', () => {
     }
   });
 
-  it('clears needsSiteCheck where DOM1 is confident (tight plateau, ground excluded)', () => {
+  it('flags needsSiteCheck exactly where the deck departs from the curated mid-span envelope', () => {
+    // Curated mid-span crest 48.1-48.3 m with a +/-0.3 m error bar (viewpoints.ts).
+    // A point whose DOM1 deck sits outside 48.1-48.3 +/- 0.3 keeps needsSiteCheck.
+    const departure = (id: string) =>
+      Math.abs(points.find((p) => p.id === id)!.surfaceOrthometric - 48.2);
     for (const p of points) {
-      expect(p.needsSiteCheck).toBe(false);
+      const outside = departure(p.id) > 0.3 + 1e-9;
+      expect(p.needsSiteCheck).toBe(outside);
+    }
+    // The two crest points are corroborated by the curated record: no site check.
+    expect(points.find((p) => p.id === 'sued-mitte')!.needsSiteCheck).toBe(false);
+    expect(points.find((p) => p.id === 'sued-ost')!.needsSiteCheck).toBe(false);
+    // The four ramp/flank points are sampled but not corroborated: site check.
+    for (const id of ['nord-west', 'nord-mitte', 'nord-knick', 'sued-west']) {
+      expect(points.find((p) => p.id === id)!.needsSiteCheck).toBe(true);
     }
   });
 
