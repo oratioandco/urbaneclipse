@@ -20,7 +20,14 @@ const point = LICHTENBERGER_BRUECKE.points[0];
 
 const bodyAt = (t: Date, body: CelestialBody) => sampleBody(body, t, point.lat, point.lon);
 
-const scan = (year: number, fromMonth: number, toMonth: number, stepMinutes: number, bodies: CelestialBody[]) =>
+const scan = (
+  year: number,
+  fromMonth: number,
+  toMonth: number,
+  stepMinutes: number,
+  bodies: CelestialBody[],
+  refinePeaks = false,
+) =>
   enumerateVantageWindows({
     point,
     landmark: FERNSEHTURM,
@@ -29,6 +36,7 @@ const scan = (year: number, fromMonth: number, toMonth: number, stepMinutes: num
     start: new Date(Date.UTC(year, fromMonth, 1)),
     end: new Date(Date.UTC(year, toMonth, 1)),
     stepMinutes,
+    refinePeaks,
   });
 
 const dayOf = (d: Date) => d.toISOString().slice(0, 10);
@@ -130,5 +138,35 @@ describe('2027 moon calendar from the bridge', () => {
   it('and the moon also offers the forgiving shaft-band shots (>= 2 per year)', () => {
     const shaft = scan(2027, 0, 12, 10, ['moon']).filter((w) => w.band === 'shaft');
     expect(shaft.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('peak refinement (refinePeaks)', () => {
+  /**
+   * The sweep quantises peaks to stepMinutes; refinement sharpens each window's peak
+   * with a guarded golden-section search on classifyAtInstant. Contracts: the window
+   * SET is unchanged (same grouping), no peak ever worsens, every refined peak stays
+   * within one scan step of the coarse one, and on a smooth transit curve at least one
+   * window in a season actually gains coverage.
+   */
+  const coarse = scan(2027, 2, 4, 5, ['sun']);
+  const refined = scan(2027, 2, 4, 5, ['sun'], true);
+
+  it('finds the same windows, only sharper', () => {
+    expect(refined.length).toBe(coarse.length);
+  });
+
+  it('never worsens coverage and stays within one step of the coarse peak', () => {
+    for (let i = 0; i < coarse.length; i++) {
+      expect(refined[i]!.coveredFraction).toBeGreaterThanOrEqual(coarse[i]!.coveredFraction - 1e-9);
+      expect(Math.abs(refined[i]!.peak.getTime() - coarse[i]!.peak.getTime())).toBeLessThanOrEqual(
+        5 * 60_000,
+      );
+    }
+  });
+
+  it('actually moves at least one peak off the scan grid and gains coverage', () => {
+    const improved = refined.filter((w, i) => w.coveredFraction > coarse[i]!.coveredFraction);
+    expect(improved.length).toBeGreaterThanOrEqual(1);
   });
 });

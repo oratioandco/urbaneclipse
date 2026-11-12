@@ -353,6 +353,15 @@ export interface FixedSearchRequest {
   limit?: number;
 }
 
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
 /**
  * Sweep time at a FIXED observer position and classify the occultation at each step.
  *
@@ -369,7 +378,6 @@ export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandid
     start,
     end,
     stepMinutes,
-    bodyAt,
     wanted = ['full', 'partial'],
     minAltitudeDeg = 0,
     limit = 200,
@@ -390,41 +398,9 @@ export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandid
   const dirs = buildSilhouetteDirections(observer, landmark);
   if (dirs.outline.length < 3) return [];
 
-  // Cheap rejection margin: no disc wider than ~1 deg matters, so anything further than
-  // this from the landmark's angular bounds cannot interact with it. This skips the
-  // projection entirely for the overwhelming majority of instants.
-  const REJECT_MARGIN_DEG = 2;
-  const { azMin, azMax, altMin, altMax } = dirs.bounds;
-
   for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
-    const when = new Date(t);
-    const body = bodyAt(when);
-
-    // Below the horizon there is nothing to photograph.
-    if (!(body.alt > minAltitudeDeg)) continue;
-
-    // Bounds pre-filter. Azimuth difference is wrapped to handle the 0/360 seam.
-    let dAz = Math.abs(body.az - (azMin + azMax) / 2);
-    if (dAz > 180) dAz = 360 - dAz;
-    if (dAz > (azMax - azMin) / 2 + REJECT_MARGIN_DEG) continue;
-    if (body.alt < altMin - REJECT_MARGIN_DEG || body.alt > altMax + REJECT_MARGIN_DEG) continue;
-
-    const reference = { az: body.az, alt: body.alt };
-    const silhouette = projectSilhouette(dirs, reference);
-    if (silhouette.length < 3) continue;
-
-    const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
-    const result = classifyOccultation(discRadius, silhouette);
-    if (!wanted.includes(result.kind)) continue;
-
-    out.push({
-      when,
-      kind: result.kind,
-      coveredFraction: result.coveredFraction,
-      separationDeg: result.separationDeg,
-      bodyAz: body.az,
-      bodyAlt: body.alt,
-    });
+    const candidate = classifyWithDirections(dirs, req, new Date(t));
+    if (candidate) out.push(candidate);
   }
 
   out.sort((a, b) => {
@@ -436,6 +412,61 @@ export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandid
   });
 
   return out.slice(0, limit);
+}
+
+/**
+ * Classify ONE instant at a fixed observer — the sweep's per-step body, callable alone.
+ *
+ * The vantage calendar uses this to refine window peaks past the sweep's stepMinutes:
+ * a golden-section search over a window's bracket evaluates only a few dozen instants,
+ * and each needs the same projection + classification the sweep applies. Returns null
+ * when there is nothing to photograph at this instant (below the altitude floor,
+ * silhouette degenerate, or the composition not among `wanted`).
+ */
+export function classifyAtInstant(req: InstantClassifyRequest, when: Date): FixedCandidate | null {
+  const dirs = buildSilhouetteDirections(req.observer, req.landmark);
+  if (dirs.outline.length < 3) return null;
+  return classifyWithDirections(dirs, req, when);
+}
+
+function classifyWithDirections(
+  dirs: ReturnType<typeof buildSilhouetteDirections>,
+  req: InstantClassifyRequest,
+  when: Date,
+): FixedCandidate | null {
+  const wanted = req.wanted ?? ['full', 'partial'];
+  const minAltitudeDeg = req.minAltitudeDeg ?? 0;
+  const body = req.bodyAt(when);
+
+  // Below the horizon there is nothing to photograph.
+  if (!(body.alt > minAltitudeDeg)) return null;
+
+  // Cheap rejection margin: no disc wider than ~1 deg matters, so anything further than
+  // this from the landmark's angular bounds cannot interact with it. This skips the
+  // projection entirely for the overwhelming majority of instants. Azimuth difference is
+  // wrapped to handle the 0/360 seam.
+  const REJECT_MARGIN_DEG = 2;
+  const { azMin, azMax, altMin, altMax } = dirs.bounds;
+  let dAz = Math.abs(body.az - (azMin + azMax) / 2);
+  if (dAz > 180) dAz = 360 - dAz;
+  if (dAz > (azMax - azMin) / 2 + REJECT_MARGIN_DEG) return null;
+  if (body.alt < altMin - REJECT_MARGIN_DEG || body.alt > altMax + REJECT_MARGIN_DEG) return null;
+
+  const silhouette = projectSilhouette(dirs, { az: body.az, alt: body.alt });
+  if (silhouette.length < 3) return null;
+
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+  const result = classifyOccultation(discRadius, silhouette);
+  if (!wanted.includes(result.kind)) return null;
+
+  return {
+    when,
+    kind: result.kind,
+    coveredFraction: result.coveredFraction,
+    separationDeg: result.separationDeg,
+    bodyAz: body.az,
+    bodyAlt: body.alt,
+  };
 }
 
 /**

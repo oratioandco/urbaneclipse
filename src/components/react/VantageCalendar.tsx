@@ -72,6 +72,7 @@ export default function VantageCalendar() {
           start: now,
           end,
           stepMinutes: 5,
+          refinePeaks: true,
         });
         setWindows(found);
         setState('done');

@@ -14,7 +14,12 @@
  * with which band of the structure the disc crosses (spire / sphere / shaft / base) —
  * the difference between "sun setting on the tip" and "sun behind the concrete".
  */
-import { findOccultationsAtPosition, type BodySample, type FixedCandidate } from './areaSolver.js';
+import {
+  classifyAtInstant,
+  findOccultationsAtPosition,
+  type BodySample,
+  type FixedCandidate,
+} from './areaSolver.js';
 import { resolveEyeEllipsoidalHeight } from './elevation.js';
 import { landmarkHeight, type RevolutionLandmark } from './landmarks.js';
 import type { OccultationKind } from './occultation.js';
@@ -57,6 +62,14 @@ export interface WindowScanRequest {
    * The silhouette bounds do the real gating; nothing below the structure can overlap.
    */
   minAltitudeDeg?: number;
+  /**
+   * Refine each window's peak past the scan's stepMinutes with a golden-section search
+   * on coveredFraction (classifyAtInstant, ~2 dozen evals per window). Costs a few
+   * hundred single-instant classifications per year — noise next to the sweep itself —
+   * and buys minute-true shot times. Default false: the coarse sweep's contract is
+   * unchanged for existing callers.
+   */
+  refinePeaks?: boolean;
 }
 
 /** Altitude (deg) of a height above the landmark base as seen from the standing point. */
@@ -90,10 +103,10 @@ export function bandAtAltitude(altDeg: number, landmark: RevolutionLandmark, poi
  * Enumerate the alignment windows of one standing point over a time range, per body,
  * in chronological order.
  *
- * The sweep runs at `stepMinutes` resolution, so window edges and `peak` are quantised
- * to it; callers wanting minute-true peaks refine afterwards (the bisection in the
- * solver layer). Throws through to resolveEyeEllipsoidalHeight on bad surface data —
- * an unsurveyed deck must not silently scan from the wrong eye height.
+ * The sweep runs at `stepMinutes` resolution, so window edges stay quantised to it;
+ * set `refinePeaks` for minute-true `peak` instants (golden-section search via
+ * classifyAtInstant). Throws through to resolveEyeEllipsoidalHeight on bad surface
+ * data — an unsurveyed deck must not silently scan from the wrong eye height.
  */
 export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[] {
   const {
@@ -106,6 +119,7 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
     stepMinutes,
     gapMinutes = 30,
     minAltitudeDeg = -1,
+    refinePeaks = false,
   } = req;
 
   const observer = {
@@ -133,6 +147,7 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
     });
     hits.sort((a, b) => a.when.getTime() - b.when.getTime());
 
+    const before = windows.length;
     let current: { list: FixedCandidate[]; last: Date } | null = null;
     const gapMs = gapMinutes * 60_000;
     for (const hit of hits) {
@@ -145,6 +160,23 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
       }
     }
     if (current) windows.push(finishWindow(current.list, body, landmark, point));
+
+    if (refinePeaks) {
+      const classify = (t: Date): FixedCandidate | null =>
+        classifyAtInstant(
+          {
+            observer,
+            landmark,
+            bodyAt: (t2) => bodyAt(t2, body),
+            wanted: ['full', 'partial'],
+            minAltitudeDeg,
+          },
+          t,
+        );
+      for (let i = before; i < windows.length; i++) {
+        windows[i] = refineWindowPeak(windows[i]!, classify, landmark, point, stepMinutes);
+      }
+    }
   }
 
   return windows.sort((a, b) => a.peak.getTime() - b.peak.getTime());
@@ -168,5 +200,66 @@ function finishWindow(
     kind: best.kind,
     coveredFraction: best.coveredFraction,
     band: bandAtAltitude(best.bodyAlt, landmark, point),
+  };
+}
+
+/**
+ * Sharpen a scan-quantised window peak to a true coveredFraction maximum.
+ *
+ * Golden-section search within ±stepMinutes of the coarse peak. The coverage curve of a
+ * transit is smooth and single-humped between the sweep's samples, but the classifier
+ * returns null (read as 0) at instants with no composition, so the search is guarded:
+ * the best REAL candidate seen anywhere — the sweep's own hit included — is what gets
+ * returned. A plateau of zeros can wander the bracket; it can never worsen the result.
+ */
+function refineWindowPeak(
+  win: VantageWindow,
+  classify: (t: Date) => FixedCandidate | null,
+  landmark: RevolutionLandmark,
+  point: StandingPoint,
+  stepMinutes: number,
+): VantageWindow {
+  const bracketMs = stepMinutes * 60_000;
+  const PHI = (Math.sqrt(5) - 1) / 2;
+
+  let best = { t: win.peak.getTime(), candidate: null as FixedCandidate | null };
+  const probe = (tMs: number): number => {
+    const candidate = classify(new Date(tMs));
+    if (candidate && candidate.coveredFraction > (best.candidate?.coveredFraction ?? win.coveredFraction)) {
+      best = { t: tMs, candidate };
+    }
+    return candidate?.coveredFraction ?? 0;
+  };
+
+  let lo = win.peak.getTime() - bracketMs;
+  let hi = win.peak.getTime() + bracketMs;
+  let a = hi - PHI * (hi - lo);
+  let b = lo + PHI * (hi - lo);
+  let fa = probe(a);
+  let fb = probe(b);
+  for (let i = 0; i < 24; i++) {
+    if (fa >= fb) {
+      hi = b;
+      b = a;
+      fb = fa;
+      a = hi - PHI * (hi - lo);
+      fa = probe(a);
+    } else {
+      lo = a;
+      a = b;
+      fa = fb;
+      b = lo + PHI * (hi - lo);
+      fb = probe(b);
+    }
+  }
+
+  if (!best.candidate) return win; // No classifier hit anywhere probed: keep the sweep's own.
+  const candidate = best.candidate;
+  return {
+    ...win,
+    peak: new Date(best.t),
+    kind: candidate.kind,
+    coveredFraction: candidate.coveredFraction,
+    band: bandAtAltitude(candidate.bodyAlt, landmark, point),
   };
 }
