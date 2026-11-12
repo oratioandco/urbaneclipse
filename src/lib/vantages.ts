@@ -14,11 +14,18 @@
  * WHERE THE DATA COMES FROM
  * -------------------------
  * Polyline: OSM way 1335772137 (two carriageway arms, fetched 2026-11-12). Deck
- * elevation: the curated viewpoint record (src/lib/viewpoints.ts) — DOM1 crest
- * 48.1-48.3 m DHHN2016 mid-span; per-node DOM1 sampling is follow-up work, so all
- * points carry the mid-span value and needsSiteCheck until surveyed. Bearings and
- * distances are COMPUTED here from coordinates (ellipsoidal ECEF -> ENU), never
- * hand-entered.
+ * elevation: Berlin DOM1 (1 m surface model, sheet dom1_33_398_5818_2, EPSG:25833,
+ * DHHN2016), sampled per node on 2026-11-12. Only crest nodes whose measured median
+ * falls inside the curated mid-span envelope 48.1-48.3 m adopt their own value. The
+ * ramp/flank nodes measure 46.9-47.8 m — the real ramp profile (scripts/README.md:
+ * west ramp 46.1 m, east ramp 46.7 m), but not a confirmed deck height for the
+ * curated band, so they keep the curated 48.2 m with needsSiteCheck until surveyed.
+ * Every measurement is kept in the point's `source`; none is raised to fit a band.
+ * Bearings and distances are COMPUTED here from coordinates (ellipsoidal ECEF ->
+ * ENU), never hand-entered.
+ *
+ * DATUM TRAP: public/heightmap/berlin-dgm1.bin is DGM1 = bare earth. Under this deck
+ * it returns the rail cutting (~39-41 m), not the deck. Deck surface needs DOM1.
  */
 import { geodeticToECEF, ecefToENU } from './silhouette.js';
 import type { LatLon } from './areaSolver.js';
@@ -31,6 +38,12 @@ export interface StandingPoint extends LatLon {
   eyeHeightM: number;
   /** True when nobody has confirmed the surface value at THIS point of the bridge. */
   needsSiteCheck: boolean;
+  /**
+   * Provenance of the surface value: dataset, fetch date, CRS/vertical datum, sampling
+   * method and the measured median — including the median REJECTED for the height
+   * field, so the evidence survives without asserting an unconfirmed height.
+   */
+  source: string;
   /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
   readonly bearingToLandmarkDeg: number;
   /** Great-circle ground distance to the landmark, metres. Computed. */
@@ -90,25 +103,70 @@ const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
 export const EYE_HEIGHT_M = 1.6;
 
 const OSM_BRIDGE_SOURCE =
-  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck from the curated viewpoint ' +
-  'record (DOM1 crest 48.1-48.3 m mid-span); per-node DOM1 sampling pending, so ' +
-  'needsSiteCheck holds until surveyed.';
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck heights per node from Berlin ' +
+  'DOM1 (sheet dom1_33_398_5818_2, EPSG:25833, DHHN2016), sampled 2026-11-12: only the ' +
+  'crest nodes inside the curated 48.1-48.3 m mid-span envelope adopt their measured ' +
+  'median; the ramp/flank nodes keep the curated 48.2 m with needsSiteCheck until ' +
+  'surveyed. Each point carries its own source, including the rejected measurement.';
 
-/** West end of the northern carriageway arm. */
-function pts(list: Array<[id: string, lat: number, lon: number]>, siteCheck: boolean): StandingPoint[] {
-  return list.map(([id, lat, lon]) =>
-    standingPoint(
+/** The curated mid-span deck record (src/lib/viewpoints.ts), metres DHHN2016. */
+const CURATED_MIDSPAN_M = 48.2;
+
+/**
+ * The curated mid-span crest envelope, metres DHHN2016 (p05-p95 of the DOM1 crest,
+ * src/lib/viewpoints.ts). DOM1 is trusted for the deck ONLY inside this band: a node
+ * measuring within it is on the confirmed crest, a node below it is on the ramp, where
+ * the surface model does not establish a deck height for this bridge.
+ */
+export const CURATED_CREST_ENVELOPE_M: readonly [number, number] = [48.1, 48.3];
+
+/** Dataset provenance shared by every point; the per-node measurement is appended. */
+const DOM1_DATASET_SOURCE =
+  'Deck surface from Berlin DOM1 (1 m digital surface model), sheet dom1_33_398_5818_2 ' +
+  '(DOM1_398_5818.zip, member dom1_33_398_5818_2_be.txt), ' +
+  'https://gdi.berlin.de/data/dom/atom/, fetched 2026-11-12; EPSG:25833 (ETRS89/UTM33N), ' +
+  'heights DHHN2016 orthometric, licence dl-de/zero-2-0. Method: median of the 1 m ' +
+  'postings on the deck plateau around this OSM node; three independent samplings ' +
+  'agreed within 0.1 m. NOT DGM1 (bare earth), which returns the rail cutting (~39-41 m) ' +
+  'under this deck.';
+
+/**
+ * Build the standing points of one carriageway arm from its OSM shape nodes and the
+ * DOM1 median measured at each node.
+ *
+ * The adoption rule is the decision, not a hand-typed table: a median inside the
+ * curated crest envelope becomes the point's deck height and clears needsSiteCheck;
+ * anything outside it is ramp profile, so the point keeps the curated mid-span value
+ * and still needs a site survey. The rejected measurement is recorded either way —
+ * no value is ever raised to fit the band.
+ */
+function pts(list: Array<[id: string, lat: number, lon: number, dom1MedianM: number]>): StandingPoint[] {
+  const [lo, hi] = CURATED_CREST_ENVELOPE_M;
+  return list.map(([id, lat, lon, dom1MedianM]) => {
+    const onCrest = dom1MedianM >= lo && dom1MedianM <= hi;
+    const measured = dom1MedianM.toFixed(1);
+    const source = onCrest
+      ? `${DOM1_DATASET_SOURCE} Measured median ${measured} m lies inside the curated ` +
+        `mid-span envelope ${lo}-${hi} m, so it is adopted as the deck height and ` +
+        'needsSiteCheck is false.'
+      : `${DOM1_DATASET_SOURCE} Measured median ${measured} m lies outside the curated ` +
+        `mid-span envelope ${lo}-${hi} m — the expected ramp profile (scripts/README.md: ` +
+        'west ramp 46.1 m, east ramp 46.7 m) — so it is NOT adopted: this point keeps ' +
+        `the curated mid-span ${CURATED_MIDSPAN_M.toFixed(1)} m and needsSiteCheck stays ` +
+        'true until surveyed on site.';
+    return standingPoint(
       {
         id,
         lat,
         lon,
-        surfaceOrthometric: 48.2,
+        surfaceOrthometric: onCrest ? dom1MedianM : CURATED_MIDSPAN_M,
         eyeHeightM: EYE_HEIGHT_M,
-        needsSiteCheck: siteCheck,
+        needsSiteCheck: !onCrest,
+        source,
       },
       FERNSEHTURM_POS,
-    ),
-  );
+    );
+  });
 }
 
 /**
@@ -125,22 +183,17 @@ export const LICHTENBERGER_BRUECKE: Vantage = {
   name: 'Lichtenberger Brücke',
   landmarkId: 'fernsehturm',
   points: [
-    ...pts(
-      [
-        ['nord-west', 52.5115685, 13.4983761],
-        ['nord-mitte', 52.5115358, 13.4982790],
-        ['nord-knick', 52.5112931, 13.4975595],
-      ],
-      true,
-    ),
-    ...pts(
-      [
-        ['sued-west', 52.5112551, 13.4975327],
-        ['sued-mitte', 52.5111010, 13.4991829],
-        ['sued-ost', 52.5110579, 13.4996359],
-      ],
-      true,
-    ),
+    // Fourth column: DOM1 plateau median measured at that node, metres DHHN2016.
+    ...pts([
+      ['nord-west', 52.5115685, 13.4983761, 47.8],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9],
+    ]),
+    ...pts([
+      ['sued-west', 52.5112551, 13.4975327, 47.0],
+      ['sued-mitte', 52.5111010, 13.4991829, 48.2],
+      ['sued-ost', 52.5110579, 13.4996359, 48.1],
+    ]),
   ],
   notes: OSM_BRIDGE_SOURCE,
 };
