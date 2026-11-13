@@ -93,6 +93,63 @@ const SPHERE_RADIUS = 16; // 32 m diameter
  * All comfortably inside tolerance. Only the sphere diameter (32 m) and total height
  * (368.03 m) need precision, and both are high-confidence published values.
  */
+/**
+ * BERLINER DOM — dome-only revolution model.
+ *
+ * PROVENANCE
+ * - Position: OSM way 313670734 ("Berliner Dom"), centroid 52.5190822, 13.4010942,
+ *   from .research/dom-nominatim.json (Nominatim lookup, fetched in the round-1
+ *   research pass of this task; no network is used at build or test time).
+ * - Height: de.wikipedia infobox (.research/dom-de.wiki) gives HÖHE = 98 m for the
+ *   CURRENT building. en.wikipedia (.research/dom-en.wiki) gives 114 m — but that
+ *   figure held only until the 1975 demolition of the northern memorial hall — and
+ *   115 m outer height until the 1944 destruction. THE SOURCES DISAGREE because they
+ *   describe different building states; this model claims the current ~98 m dome,
+ *   never the historic 114/115 m silhouette.
+ * - Dome diameter: 33 m (de.wikipedia, "Durchmesser von 33 m" for the Kuppel).
+ * - .research/dom-geom.json was a FAILED fetch (HTTP 406 error page) and is ignored;
+ *   no footprint geometry was available, so the profile below is an explicit
+ *   approximation, not a traced outline.
+ *
+ * MODELING DECISION (tested in tests/unit/domLandmark.test.ts)
+ * Dome-only surface of revolution: tambour band + hemispherical dome shell +
+ * lantern + cross. The four corner towers and the nave are EXCLUDED. From the
+ * canonical vantage (Friedrichsbrücke, OSM way 339201182, 172 m to the north) the
+ * dome is the skyline feature; the model therefore claims DOME alignments only
+ * (sun/moon passing behind the tambour, dome, lantern or cross). It must NOT be
+ * used to claim alignments against the towers or the nave body — those would need
+ * a west-facade-inclusive or multi-volume model.
+ *
+ * Sourced vs assumed: 98 m apex, 33 m dome diameter and the position are sourced
+ * (above). The 68 m dome springing, the 62 m tambour foot and the 2.6 m lantern
+ * radius are stated assumptions: a 16.5 m-radius hemisphere sprung at 68 m crowns
+ * at 84.5 m, leaving 13.5 m for lantern + cross up to the sourced 98 m apex.
+ * baseOrthometric 35.26 m is the DGM1 ground sample at the dome axis
+ * (public/heightmap/berlin-dgm1.bin, bilinear, measured offline for this task).
+ */
+export const BERLINER_DOM: RevolutionLandmark = {
+  id: 'berliner-dom',
+  name: 'Berliner Dom',
+  lat: 52.5190822,
+  lon: 13.4010942,
+  baseOrthometric: 35.26,
+  profile: [
+    [62, 16.5], // tambour foot (assumed band; diameter sourced: 33 m)
+    [68, 16.5], // dome springing (assumed height)
+    [71, 16.22], // hemisphere r(h) = sqrt(16.5^2 - (h-68)^2)
+    [74, 15.37],
+    [77, 13.83],
+    [80, 11.32],
+    [82, 8.73],
+    [84, 4.03],
+    [84.5, 2.6], // dome crown -> lantern (assumed radius)
+    [93, 2.6], // lantern top
+    [95, 1.2], // cross taper
+    [96.5, 0.6],
+    [98, 0.2], // apex: CURRENT building height (de.wiki), not 114/115 m
+  ],
+};
+
 export const FERNSEHTURM: RevolutionLandmark = {
   id: 'fernsehturm',
   name: 'Berliner Fernsehturm',
