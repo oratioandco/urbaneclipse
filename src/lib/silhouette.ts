@@ -280,8 +280,14 @@ export function buildSilhouetteDirections(
   let altMin = Infinity;
   let altMax = -Infinity;
 
+  // Sweep from the profile's own floor, not the ground: radiusAtHeight clamps
+  // below the first sample, so sweeping from 0 would fabricate a plinth of the
+  // bottom ring's diameter under any landmark whose model starts above ground
+  // (e.g. the Berliner Dom's dome-only profile, which must not claim the nave).
+  const hFloorAgl = landmark.profile[0]?.[0] ?? 0;
+
   for (let i = 0; i <= steps; i++) {
-    const hAgl = (total * i) / steps;
+    const hAgl = hFloorAgl + ((total - hFloorAgl) * i) / steps;
     const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
     const r = radiusAtHeight(landmark, hAgl);
 
