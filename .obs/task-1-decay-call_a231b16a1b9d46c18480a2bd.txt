@@ -1,0 +1,3 @@
+domGround 35.26 friedGround 30.80
+vincenty dist 172.270 bearing 161.8036
+apexAltDeg 30.335 halfwidthDeg 5.471

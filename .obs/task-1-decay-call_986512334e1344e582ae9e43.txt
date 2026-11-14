@@ -1,0 +1,20 @@
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+375-  const {
+376-    observer,
+377-    landmark,
+378-    start,
+379-    end,
+380-    stepMinutes,
+381-    wanted = ['full', 'partial'],
+382-    minAltitudeDeg = 0,
+383-    limit = 200,
+384-  } = req;

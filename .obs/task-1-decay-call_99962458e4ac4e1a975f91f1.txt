@@ -1,0 +1,162 @@
+41:export interface ObserverGeodetic {
+49:export interface AzAlt {
+59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+90:export function directionOffsetECEF(
+122:export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+127:export function ecefToGeodetic(x: number, y: number, z: number): {
+156:export function offsetGeodetic(
+182:export function azAltTo(
+210:export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+239:export function buildSilhouette(
+260:export interface SilhouetteDirections {
+265:export function buildSilhouetteDirections(
+314:export function projectSilhouette(
+ * For a solid of revolution the silhouette limb at height h sits at horizontal angular
+ * half-width asin(r(h)/d). The outline is therefore traced up one side and down the
+ * other.
+ */
+import { orthometricToEllipsoidal } from './elevation.js';
+import { radiusAtHeight, landmarkHeight, type RevolutionLandmark } from './landmarks.js';
+import type { AngularPoint } from './occultation.js';
+
+const DEG = 180 / Math.PI;
+const RAD = Math.PI / 180;
+
+// WGS84
+const A = 6378137.0;
+const F = 1 / 298.257223563;
+const E2 = F * (2 - F);
+
+export interface ObserverGeodetic {
+  lat: number;
+  lon: number;
+  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+  ellipsoidalHeight: number;
+}
+
+/** Direction in the observer's horizontal frame. */
+export interface AzAlt {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+}
+
+type Vec3 = [number, number, number];
+
+/** Geodetic (deg, deg, ellipsoidal m) -> ECEF metres. */
+export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+  const sφ = Math.sin(lat * RAD);
+  const cφ = Math.cos(lat * RAD);
+  const sλ = Math.sin(lon * RAD);
+  const cλ = Math.cos(lon * RAD);
+  const N = A / Math.sqrt(1 - E2 * sφ * sφ);
+  return [(N + h) * cφ * cλ, (N + h) * cφ * sλ, (N * (1 - E2) + h) * sφ];
+}
+
+/** ECEF delta -> local ENU at the given geodetic origin. */
+export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+  const sφ = Math.sin(originLat * RAD);
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+44-  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+45-  ellipsoidalHeight: number;
+46-}
+47-
+48-/** Direction in the observer's horizontal frame. */
+49-export interface AzAlt {
+50-  /** Degrees clockwise from north. */
+51-  az: number;
+52-  /** Degrees above the horizon. */
+53-  alt: number;
+265:export function buildSilhouetteDirections(
+266-  observer: ObserverGeodetic,
+267-  landmark: RevolutionLandmark,
+268-  steps = 96,
+269-): SilhouetteDirections {
+270-  const total = landmarkHeight(landmark);
+271-  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+272-  if (total <= 0) return empty;
+273-
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+375-  const {
+376-    observer,
+377-    landmark,
+378-    start,
+379-    end,
+380-    stepMinutes,
+381-    wanted = ['full', 'partial'],
+382-    minAltitudeDeg = 0,
+383-    limit = 200,
+384-  } = req;
+385-
+386-  if (!(stepMinutes > 0)) {
+54:export interface BodySample {
+55-  /** Degrees clockwise from north. */
+56-  az: number;
+57-  /** Degrees above the horizon. */
+58-  alt: number;
+59-  /** Distance to the body, km — sets its apparent size. */
+60-  distanceKm: number;
+61-  /** Physical radius of the body, km. */
+62-  radiusKm: number;
+height" content="300">
+height="0" width="0" style="display:none;visib
+height:33px; font-size:100%;">Download 46.000+
+height:33px; font-size:100%;">Simple data diag
+height:33px; font-size:100%;">Full texts for s
+height.js" type="817753166a125f329cd8ae01-text
+task/berliner-dom-landmark
+7:    "strict": true,
+8:    "noUncheckedIndexedAccess": true,
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+67:export function orthometricToEllipsoidal(
+69:  undulation: number = GEOID_UNDULATION_BERLIN,
+79:  undulation: number = GEOID_UNDULATION_BERLIN,
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+118-  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+119-
+120-  assertFinite(eyeHeight, 'eye height');
+121-  if (eyeHeight < 0) {
+122-    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+123-  }
+{
+  "format": "plaster-void-heightmap",
+  "version": 1,
+  "binary": "berlin-dgm1.bin",
+  "byteLength": 724280,
+  "dtype": "int16",
+  "byteOrder": "little",
+  "scale": 0.1,
+  "offset": 0.0,
+  "nodata": -32768,
+  "width": 953,
+  "height": 380,
+  "rowOrder": "south-to-north",
+  "colOrder": "west-to-east",
+  "index": "row * width + col",
+  "crs": "EPSG:4326",
+  "bbox": {
+    "lonMin": 13.361066222368226,
+    "latMin": 52.50264683471231,
+    "lonMax": 13.501555326397026,
+    "latMax": 52.53671451596954
+  },
+  "dLon": 0.00014757258826554657,
+  "dLat": 8.98883410481109e-05,
+  "approxSpacingMetres": 10.0,
+  "heightUnit":
+10:import { readFileSync } from 'node:fs';
+118:    readFileSync('public/heightmap/berlin-dgm1.json', 'utf8'),
+120:  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');

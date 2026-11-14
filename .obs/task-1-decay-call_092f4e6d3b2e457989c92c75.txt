@@ -1,0 +1,25 @@
+    eyeHeight: 1.5,
+    ground: FLAT_GROUND,
+  };
+
+  /** Synthetic body tracking across the sky so the sweep is deterministic. */
+  const bodyAt = (t: Date): BodySample => {
+    const hours = (t.getTime() - Date.UTC(2026, 7, 1)) / 3_600_000;
+    return moon(240 + hours * 5, 5 + hours * 2);
+  };
+
+  it('returns ranked candidates, best first', () => {
+    const res = findCompositions({
+      ...base,
+      start: new Date(Date.UTC(2026, 7, 1, 0, 0)),
+      end: new Date(Date.UTC(2026, 7, 1, 6, 0)),
+      stepMinutes: 30,
+      bodyAt,
+      requireWithinArea: false,
+    });
+
+    expect(res.length).toBeGreaterThan(0);
+    for (let i = 1; i < res.length; i++) {
+      const prev = res[i - 1];
+      const cur = res[i];
+      const rank = (k: string) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0)

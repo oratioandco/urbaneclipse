@@ -1,0 +1,3 @@
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+77:function realBerlin(): Heightmap {
+354:  function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {

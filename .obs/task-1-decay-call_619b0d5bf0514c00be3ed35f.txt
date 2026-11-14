@@ -1,0 +1,19 @@
+182:  id: 'lichtenberger-bruecke',
+13: * The relation is  h = H + N,  where N is the geoid undulation (~39.5 m in Berlin).
+25: * Consumers should treat `resolveEyeEllipsoidalHeight` as the ONLY way to turn a
+30: * Berlin geoid undulation (ETRS89/GRS80 geoid height above the ellipsoid), metres.
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+37: * undulation varies by roughly +/-0.5 m across the Berlin AOI. Replacing it with a
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+.research/structurae.html:43:<meta property="og:image:width" content="300">
+.research/structurae.html:44:<meta property="og:image:height" content="300">
+.research/structurae.html:54:<meta name="viewport" content="width=device-width, initial-scale=1.0">
+.research/structurae.html:104:height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+.research/structurae.html:1356:<span style="vertical-align: middle; display:inline-block; height:33px; font-size:100%;">Download 46.000+ images</span></li>
+.research/structurae.html:1359:<span style="vertical-align: middle; display:inline-block; height:33px; font-size:100%;">Simple data diagrams</span>	</li>
+.research/structurae.html:1363:<span style="vertical-align: middle; display:inline-block; height:33px; font-size:100%;">Full texts for select publications</span></li>
+.research/structurae.html:1366:<a href="/en/my-structurae/register" class="mystructurae-login-btn mod_teaser_newsletter" style="width: 94%; padding-top: 10px; padding-bottom: 10px; font-size: 100%; background-color: #F2C771; color: black">
+.research/structurae.html:1734:<a href="#ajaxLoginPopup" class="green-login mystructurae-login-btn mystructurae-login-btn-popup" style="width: 73%; margin: 0 auto;z-index:0;">
+.research/structurae.html:1747:<h3><div style="text-align: center; max-width: 300px;">
+.research/structurae.html:2051:if ($('#contributionForm').length) {
+.research/structurae.html:2080:<script src="/layouts/js/new/jquery.syncheight.js" type="817753166a125f329cd8ae01-text/javascript"></script>

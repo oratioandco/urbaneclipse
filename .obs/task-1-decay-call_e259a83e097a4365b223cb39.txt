@@ -1,0 +1,22 @@
+src/lib/coords.ts:22:export type Vec3 = [number, number, number];
+src/lib/coords.ts:26:export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+src/lib/vantages.ts:33:export interface StandingPoint extends LatLon {
+src/lib/vantages.ts:53:export interface Vantage {
+src/lib/vantages.ts:67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+src/lib/vantages.ts:85:export function standingPoint(
+src/lib/vantages.ts:103:export const EYE_HEIGHT_M = 1.6;
+src/lib/vantages.ts:121:export const CURATED_CREST_ENVELOPE_M: readonly [number, number] = [48.1, 48.3];
+src/lib/vantages.ts:181:export const LICHTENBERGER_BRUECKE: Vantage = {
+src/lib/elevation.ts:40:export const GEOID_UNDULATION_BERLIN = 39.5;
+src/lib/elevation.ts:48:export const BERLIN_GROUND_ORTHOMETRIC_FALLBACK = 34;
+src/lib/elevation.ts:67:export function orthometricToEllipsoidal(
+src/lib/elevation.ts:77:export function ellipsoidalToOrthometric(
+src/lib/elevation.ts:86:export interface EyeHeightInput {
+src/lib/elevation.ts:117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+src/lib/occlusionMath.ts:10:export type Vec3 = [number, number, number];
+src/lib/occlusionMath.ts:13:export type IntersectionKind = 'building' | 'terrain' | 'other';
+src/lib/occlusionMath.ts:16:export interface Intersection {
+src/lib/occlusionMath.ts:21:export type OcclusionResult = 'occluded' | 'marginal' | 'clear' | 'same-point';
+src/lib/occlusionMath.ts:24:export function distance(a: Vec3, b: Vec3): number {
+src/lib/occlusionMath.ts:34:export function rayDirection(observer: Vec3, target: Vec3): Vec3 {
+src/lib/occlusionMath.ts:59:export function classifyOcclusion(

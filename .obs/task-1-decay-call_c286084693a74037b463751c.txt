@@ -1,0 +1,5 @@
+TSC-IN-TOUCHED: 21
+["src/lib/landmarks.ts(130,14): error TS2741: Property 'notes' is missing in type '{ id: string; name: string; lat: number; lon: number; baseOrthometric: number; profile: [number, number][]; }' but required in type 'RevolutionLandmark'.\n", "src/lib/landmarks.ts(262,26): error TS2532: Object is possibly 'undefined'.\n"]
+FILES: ['Test Files  1 failed | 40 passed (41)']
+TESTS: ['Tests 6 ⎯⎯⎯⎯⎯⎯⎯', 'Tests  6 failed | 573 passed | 1 skipped (580)']
+DOM: ['❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms', 'FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced']

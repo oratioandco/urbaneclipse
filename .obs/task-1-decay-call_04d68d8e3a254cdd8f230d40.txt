@@ -1,0 +1,34 @@
+48:export interface LatLon {
+54:export interface BodySample {
+66:export type GroundProvider = (pos: LatLon) => number | undefined;
+68:export interface SolveOptions {
+84:export interface Candidate {
+256:export interface SearchRequest extends SolveOptions {
+332:export interface FixedCandidate {
+342:export interface FixedSearchRequest {
+357:export interface InstantClassifyRequest {
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
+/**

@@ -1,0 +1,81 @@
+  { lat: SIEGESSAEULE.lat, lon: SIEGESSAEULE.lon },
+);
+
+/** Flat synthetic grid, 40.0 m everywhere, ~111 m row spacing, centred on 52.01/13.01. */
+function grid(fill: (row: number, col: number) => number): Heightmap {
+  const width = 21;
+  const height = 21;
+  const header: HeightmapHeader = {
+    format: 'plaster-void-heightmap',
+    version: 1,
+    dtype: 'int16',
+    scale: 0.1,
+    offset: 0,
+    nodata: -32768,
+    width,
+    height,
+    bbox: { lonMin: 13.0, latMin: 52.0, lonMax: 13.02, latMax: 52.02 },
+    dLon: 0.001,
+    dLat: 0.001,
+  };
+  const samples = new Int16Array(width * height);
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) samples[r * width + c] = Math.round(fill(r, c) * 10);
+  }
+  return createHeightmap(header, samples);
+}
+
+const FLAT = grid(() => 40);
+const CENTRE = standingPoint(
+  { id: 'c', lat: 52.01, lon: 13.01, surfaceOrthometric: 40, eyeHeightM: 1.6, needsSiteCheck: true, source: 'fixture' },
+  { lat: 52.02, lon: 13.01 },
+);
+
+function realBerlin(): Heightmap {
+  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
+  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  return createHeightmap(header, decodeSamples(ab));
+}
+
+describe('the feature flag keeps this out of the app', () => {
+  it('is OFF when nothing is set', () => {
+    expect(horizonWindowsEnabled({})).toBe(false);
+    expect(horizonWindowsEnabled(undefined)).toBe(false);
+  });
+
+  it('is OFF for anything that is not an explicit truthy string', () => {
+    for (const v of ['0', 'false', 'off', '', 'yes', 'TRUE']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(false);
+    }
+  });
+
+  it('is ON only for 1 / true / on', () => {
+    for (const v of ['1', 'true', 'on']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(true);
+    }
+  });
+});
+
+describe('groundAltitudeDeg — known answers (independent computation)', () => {
+  it('is level ground slightly BELOW zero because the Earth curves away', () => {
+    // Same height as the eye: only curvature+refraction remain. -(1-k)d^2/(2R).
+    expect(groundAltitudeDeg(41.6, 41.6, 1000)).toBeCloseTo(-0.003912049, 8);
+    expect(groundAltitudeDeg(41.6, 41.6, 2000)).toBeCloseTo(-0.007824098, 8);
+  });
+
+  it('matches atan2 of rise over distance for a 10 m rise at 1 km', () => {
+8:import { describe, it, expect } from 'vitest';
+9:import {
+19:import { FERNSEHTURM } from '../../src/lib/landmarks.js';
+20:import { azAltTo } from '../../src/lib/silhouette.js';
+21:import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+22:import { MOON_RADIUS_KM, SUN_RADIUS_KM } from '../../src/lib/occultation.js';
+189:  const bodyAt = (t: Date): BodySample => {
+200:      bodyAt,
+219:      bodyAt,
+239:      bodyAt,
+250:      bodyAt,
+262:      bodyAt,
+372:    const bodyAt = (t: Date): BodySample => {
+386:      bodyAt,

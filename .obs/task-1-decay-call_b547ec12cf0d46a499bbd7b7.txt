@@ -1,0 +1,48 @@
+22:export type Vec3 = [number, number, number];
+26:export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+===SOLVER-REQ===
+export interface SearchRequest extends SolveOptions {
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  /** Positions of the body over time. */
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Keep only candidates inside the area. Defaults to true when an area is given. */
+  requireWithinArea?: boolean;
+  /** Cap on returned candidates, best first. */
+  limit?: number;
+}
+
+/**
+ * Rank candidates.
+ *
+ * REACHABILITY DOMINATES. A merely-good composition you can actually walk to beats a
+ * perfect one you cannot: the whole point of giving the solver an area is to respect
+ * it. Out-of-area candidates are still returned — "nothing inside your area works, but
+ * here is the nearest spot that does" is far more useful than an empty list — they
+ * simply rank below everything reachable.
+ *
+ * Within each group: full first, then by covered fraction; for adjacent framings,
+ * closer to the silhouette is better.
+ */
+function score(c: Candidate): number {
+  let s: number;
+  if (c.kind === 'full') s = 1000;
+  else if (c.kind === 'partial') s = 100 + c.coveredFraction * 100;
+  else if (c.kind === 'adjacent') s = 50 - Math.min(c.separationDeg, 50);
+  else s = 0;
+
+  return c.withinArea ? s + 10_000 : s;
+}
+
+/**
+ * Sweep the time window, solving the required observer position at each step and
+ * classifying the resulting composition.
+ *
+ * Cost is linear in the number of time steps — the position is SOLVED, never searched.
+ */
+export function findCompositions(req: SearchRequest): Candidate[] {
+  const {
+    start,

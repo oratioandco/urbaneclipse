@@ -1,0 +1,4 @@
+ProfilePoint: MISSING
+RevolutionLandmark: interface RevolutionLandmark { id: string; name: string; lat: number; lon: number; baseOrthometric: number; profile: ReadonlyArray<readonly [number, number]>; notes: string; }
+FT: MISSING
+LM-EXPORTS: export const FERNSEHTURM: RevolutionLandmark | export const SIEGESSAEULE: RevolutionLandmark | export const 

@@ -1,0 +1,32 @@
+    [1.1, 30],
+    [1.3, 10.2], // the square hall's colonnade edge, about 20.4 m across
+    [12.6, 10.2],
+    [12.8, 3.0], // column foot
+    [48.8, 2.45],
+    [49.0, 3.6], // viewing platform's ring
+    [50.6, 3.6],
+    [50.8, 2.3],
+    [58.6, 2.25],
+    [58.9, 1.5], // the Viktoria
+    [67.0, 0.3],
+  ],
+  notes:
+    'Solid of revolution approximation. Total height 67 m and statue 8.3 m are published; ' +
+    'hall width, column taper and platform height are read from photographs and are the ' +
+    'larger uncertainty.',
+};
+
+/**
+export const BRANDENBURGER_TOR: RevolutionLandmark = {
+  id: 'brandenburger-tor',
+  name: 'Brandenburger Tor',
+  lat: 52.516273,
+  lon: 13.377704,
+  baseOrthometric: 34.5,
+  profile: [
+    [0, 12.9],
+    [20.5, 12.9], // the gate's mass, columns to entablature
+    [21.0, 5.0], // the attic
+    [22.2, 5.0],
+    [22.4, 2.6], // the 225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {

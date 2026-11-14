@@ -1,0 +1,3 @@
+D: GEOID_UNDULATION_BERLIN = 39.5
+COORDS: export function transformCoord(from: string, to: string, coord: Vec3)
+BS: MISS

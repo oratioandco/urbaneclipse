@@ -1,0 +1,1 @@
+[' * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in', 'export const GEOID_UNDULATION_BERLIN = 39.5;', 'export const BERLIN_GROUND_ORTHOMET

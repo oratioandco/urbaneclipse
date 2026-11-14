@@ -1,0 +1,1 @@
+Now the solver sweep signature, test patterns, and the fetched data — compact reads.

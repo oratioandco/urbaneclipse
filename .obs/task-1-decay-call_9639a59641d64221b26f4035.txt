@@ -1,0 +1,2 @@
+rom 'vitest'; import {
+VT-MEASURED: function measured(id: string): number { const m = MEASURED[id]; if (m === undefined) throw new Error(`no DOM1 median recorded for ${id}`); return m; } const CURATED_MIDSPAN = 48.2; const CREST_IDS = ['sued-mitte', 'sued-ost']; const RAMP_IDS = ['nord-west', 'nord-mitte', 'nord-knick', 'sued-west']; const points =

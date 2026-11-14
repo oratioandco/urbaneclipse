@@ -1,0 +1,21 @@
+[Showing lines 8-27 of 27, the last 3768 of 11398 bytes. Whole output: .obs/task-1-10.txt — read the start with sh: sed -n '1,7p' .obs/task-1-10.txt]
+94:Die Kosten für den Wiederaufbau des Berliner Doms waren laut dem damaligen Mitakteur [[Manfred Stolpe]] auf ursprünglich 45 Millionen [[Valutamark]] veranschlagt, die die [[Evangelische Kirche Deutschlands]] (EKD) und die [[Bundesregierung (Deutschland)|Bundesregierung]] in Höhe von 45 Millionen [[Deutsche Mark|DM]] bezahlten.<ref>Manfred Stolpe: [https://web.archive.org/web/20230208211609/https://stk.brandenburg.de/reden/2000/0204.htm ''Die Evangelischen Kirchen in der DDR und der Wiederaufbau des Doms''], Vortrag des Ministerpräsidenten  beim 3. Dom-Kolloquium in Berlin am 4. Februar 2000; archivierter Weblink, abgerufen am 7. November 2023</ref> Diese Summe hat [[Ludwig Geißel]], Verhandlungsführer im Auftrag der [[EKD]], bestätigt.
+98:Im Jahr 1976 kam es zur Nachtragszahlung zu den bereits bezahlten Baukosten von 45 Millionen DM in Höhe von 20,5 Millionen DM, in Summe nun 65,5 Millionen DM.<ref>[[Ludwig Geißel]]: ''Unterhändler der Menschlichkeit – Erinnerungen''. Mit Begleitwort von [[Manfred Stolpe]]. Stuttgart 1991, ISBN 3-7918-1984-4, S. 392, 382, 408, 422.</ref>
+116:  Bundesarchiv Bild 183-1982-0113-301, Berlin, Dom.jpg|Dom nach Abschluss des Wiederaufbaus, links der [[Palast der Republik]], 1982
+117:  Bundesarchiv Bild 183-1987-0806-024, Berlin, Palast der Republik, Berliner Dom.jpg|Blick vom [[Zeughaus Berlin|Zeughaus]] auf den Dom, [[Berliner Fernsehturm|Fernsehturm]] und Palast der Republik, 1987
+127:Anfang Dezember 2006 wurde die 1981 im Zuge des Wiederaufbaus auf die Domkuppel gesetzte Laternenbekrönung abgenommen. Das Dombaubüro hatte [[Baustatik|Statiker]] eingeschaltet, nachdem im August 2006 Rostschäden unter der vergoldeten Kupferblechverkleidung entdeckt worden waren. In den Gutachten wurde festgestellt, dass die Standfestigkeit des 12,5&nbsp;Tonnen schweren und 15&nbsp;Meter hohen Kuppelkreuzes bei Stürmen nicht mehr gewährleistet sei.<ref>[https://www.morgenpost.de/printarchiv/bezirke/article103024967/Berliner-Dom-Kuppelkreuz-wird-auf-Schaeden-untersucht.html ''Berliner Dom: Kuppelkreuz wird auf Schäden untersucht''.] In: ''[[Berliner Morgenpost]]'', 7. Dezember 2006, abgerufen am 14. November 2014.</ref> Da die Konstruktion aus hohlen Stahlformen von innen und außen vollständig zerfressen war, konnte sie nicht restauriert werden.
+===STRUCT===
+height" content="300">
+height="0" width="0" style="display:none;visibility:hidden">
+height:33px; font-size:100%;">Download 46.000+ images
+height:33px; font-size:100%;">Simple data diagrams
+height:33px; font-size:100%;">Full texts for select publications
+height.js" type="817753166a125f329cd8ae01-text/javascript">
+===DGM===
+{'format': 'plaster-void-heightmap', 'version': 1, 'binary': 'berlin-dgm1.bin', 'byteLength': 724280, 'dtype': 'int16', 'byteOrder': 'little', 'scale': 0.1, 'offset': 0.0, 'nodata': -32768, 'width': 953, 'height': 380, 'rowOrder': 'south-to-north', 'colOrder': 'west-to-east', 'index': 'row * width + col', 'crs': 'EPSG:4326', 'dLon': 0.00014757258826554657, 'dLat': 8.98883410481109e-05, 'approxSpacingMetres': 10.0, 'heightUnit': 'metre', 'heightType': 'orthometric', 'verticalDatum': 'DHHN2016 (normal heights, NHN)', 'toEllipsoidal': 'h_wgs84 = sample + geoidUndulation.appliedByConvertTile', 'resampling': 'mean of 1 m DGM1 postings in a 10 m box per node', 'generatedBy': 'scripts/build_heightmap.py', 'generatedAt': '2026-07-22T05:10:12Z'}
+17:export interface HeightmapHeader {
+31:export interface Heightmap {
+46:export function createHeightmap(header: HeightmapHeader, samples: Int16Array): Heightmap {
+87:export function sampleGroundOrthometric(
+132:export function isWithinCoverage(map: Heightmap, lat: number, lon: number): boolean {
+143:export function decodeSamples(buffer: ArrayBuffer): Int16Array {

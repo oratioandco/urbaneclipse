@@ -1,0 +1,2 @@
+mpleGroundOrthometric( map: Heightmap, lat: number, lon: number, ): number | undefined
+HM-EXPORTS: export interface Heig

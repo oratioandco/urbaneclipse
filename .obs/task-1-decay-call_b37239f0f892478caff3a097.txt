@@ -1,0 +1,13 @@
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+67:export function orthometricToEllipsoidal(
+69:  undulation: number = GEOID_UNDULATION_BERLIN,
+79:  undulation: number = GEOID_UNDULATION_BERLIN,
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+118-  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+119-
+120-  assertFinite(eyeHeight, 'eye height');
+121-  if (eyeHeight < 0) {
+122-    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+123-  }

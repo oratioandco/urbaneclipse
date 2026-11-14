@@ -1,0 +1,115 @@
+import proj4 from 'proj4';
+
+/**
+ * Pure CRS transforms for the Berlin LoD2 pipeline. NO Cesium.
+ *
+ * Berlin's LoD2 distribution CRS is EPSG:25833 (ETRS89 / UTM zone 33N), confirmed from the
+ * GDI ATOM feed (gdi.berlin.de/data/a_lod2/atom) and the tile filenames (LoD2_33_*). Verified
+ * via round-trip.
+ * EPSG:31468 (historical DHDN / Gauss-Kruger zone 4) is VERIFY-LIVE: its +towgs84 datum
+ * parameters must be confirmed against an authoritative PROJ reference before use, so the
+ * datum-shift path is intentionally not registered here yet (see research.md VERIFY-LIVE).
+ */
+proj4.defs(
+  'EPSG:25832',
+  '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+);
+proj4.defs(
+  'EPSG:25833',
+  '+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+);
+
+export type Vec3 = [number, number, number];
+
+/** Transform an [x, y, z] coordinate between two CRSes. EPSG:4326 expects [lon, lat].
+ *  The vertical z passes through unchanged (horizontal CRS transform only). */
+export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+  const [x, y, z] = coord;
+  const [outX, outY] = proj4(from, to, [x, y]) as [number, number];
+  return [outX, outY, z];
+}
+22:export type Vec3 = [number, number, number];
+26:export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+41:export interface ObserverGeodetic {
+91:  observer: ObserverGeodetic,
+183:  observer: ObserverGeodetic,
+240:  observer: ObserverGeodetic,
+245:  return projectSilhouette(buildSilhouetteDirections(observer, landmark, steps), reference);
+265:export function buildSilhouetteDirections(
+export interface ObserverGeodetic {
+  lat: number;
+  lon: number;
+  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+  ellipsoidalHeight: number;
+}
+
+/** Direction in the observer's horizontal frame. */
+export interface AzAlt {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+}
+
+type Vec3 = [number, number, number];
+
+/** Geodetic (deg, deg, ellipsoidal m) -> ECEF metres. */
+export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+  const sφ = Math.sin(lat * RAD);
+  const cφ = Math.cos(lat * RAD);
+  const sλ = Math.sin(lon * RAD);
+  const cλ = Math.cos(lon * RAD);
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: 

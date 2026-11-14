@@ -1,0 +1,71 @@
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+44-  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+45-  ellipsoidalHeight: number;
+46-}
+47-
+48-/** Direction in the observer's horizontal frame. */
+49-export interface AzAlt {
+50-  /** Degrees clockwise from north. */
+51-  az: number;
+332:export interface FixedCandidate {
+333-  when: Date;
+334-  kind: OccultationKind;
+335-  coveredFraction: number;
+336-  separationDeg: number;
+337-  /** Body direction at that instant, for display and framing. */
+338-  bodyAz: number;
+339-  bodyAlt: number;
+340-}
+341-
+342-export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const candidate = classifyWithDirections(dirs, req, new Date(t));
+    if (candidate) out.push(candidate);
+  }
+
+  out.sort((a, b) => {
+    const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+    const d = rank(b.kind) - rank(a.kind);
+    if (d !== 0) return d;
+    if (b.coveredFraction !== a.coveredFraction) return b.coveredFraction - a.coveredFraction;
+    return a.separationDeg - b.separationDeg;
+  });
+
+  return out.slice(0, limit);
+}
+
+/**
+ * Classify ONE instant at a fixed observer — the sweep's per-step body, callable alone.
+ *
+ * The vantage calendar uses this to refine window peaks past the sweep's stepMinutes:
+ * a golden-section search over a window's bracket evaluates only a few dozen instants,
+ * and each needs the same projection + classification the sweep applies. Returns null
+ * when there is nothing to photograph at this instant (below the altitude floor,
+ * silhouette degenerate, or the composition not among `wanted`).
+ */
+export function classifyAtInstant(req: InstantClassifyRequest, when: Date): FixedCandidate | null {
+  const dirs = buildSilhouetteDirections(req.observer, req.landmark);
+  if (dirs.outline.length < 3) return null;

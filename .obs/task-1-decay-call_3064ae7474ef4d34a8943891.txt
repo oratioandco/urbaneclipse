@@ -1,0 +1,5 @@
+: Omit< StandingPoint, 'bearingToLandmarkDeg' | 'distanceToLandmarkM' >, landmark: LatLon, ): StandingPoint
+bearingDistanceTo: export function bearingDistanceTo(from: LatLon, to: LatLon):
+SP: MISSING
+EYE: EYE_HEIGHT_M = 1.6
+ELEV-EXPORTS: export const GEOID_UNDULATION_BERLIN | export const BERLIN_GROUND_ORTHOMETRIC_FALLBACK | export function orthome

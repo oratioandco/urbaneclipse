@@ -1,0 +1,49 @@
+17:export interface HeightmapHeader {
+18-  format: string;
+19-  version: number;
+20-  dtype: string;
+21-  scale: number;
+22-  offset: number;
+23-  nodata: number;
+24-  width: number;
+25-  height: number;
+--
+31:export interface Heightmap {
+32-  header: HeightmapHeader;
+33-  samples: Int16Array;
+34-}
+35-
+36-/** Thrown when the header and binary payload disagree — a corrupt or truncated fetch. */
+37-export class HeightmapError extends Error {}
+38-
+39-/**
+--
+46:export function createHeightmap(header: HeightmapHeader, samples: Int16Array): Heightmap {
+47-  if (header.format !== 'plaster-void-heightmap') {
+48-    throw new HeightmapError(`unexpected heightmap format ${header.format}`);
+49-  }
+50-  if (header.version !== 1) {
+51-    throw new HeightmapError(`unsupported heightmap version ${header.version}`);
+52-  }
+53-  if (header.dtype !== 'int16') {
+54-    throw new HeightmapError(`unsupported dtype ${header.dtype}`);
+--
+87:export function sampleGroundOrthometric(
+88-  map: Heightmap,
+89-  lat: number,
+90-  lon: number,
+91-): number | undefined {
+92-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return undefined;
+93-
+94-  const { bbox, dLon, dLat } = map.header;
+95-  if (lon < bbox.lonMin || lon > bbox.lonMax || lat < bbox.latMin || lat > bbox.latMax) {
+--
+143:export function decodeSamples(buffer: ArrayBuffer): Int16Array {
+144-  const littleEndianHost = new Uint8Array(new Uint16Array([1]).buffer)[0] === 1;
+145-  if (littleEndianHost) return new Int16Array(buffer);
+146-
+147-  const view = new DataView(buffer);
+148-  const out = new Int16Array(buffer.byteLength / 2);
+149-  for (let i = 0; i < out.length; i++) out[i] = view.getInt16(i * 2, true);
+150-  return out;
+151-}

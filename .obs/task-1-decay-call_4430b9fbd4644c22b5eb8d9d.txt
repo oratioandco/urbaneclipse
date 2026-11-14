@@ -1,0 +1,5 @@
+ERROR: exit: exit status 1
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+AttributeError: 'NoneType' object has no attribute 'group'
+export const FERNSEHTURM: RevolutionLandmark = { id: 'fernsehturm', name: 'Berliner Fernsehturm', lat: 52.520815, lon: 13.409419, baseOrthometric: 34.6, profile: [ [0, 16

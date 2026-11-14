@@ -1,0 +1,6 @@
+12:import { findOccultationsAtPosition, feasibility } from '../../src/lib/areaSolver.js';
+107:describe('findOccultationsAtPosition over a real window', () => {
+123:    const hits = findOccultationsAtPosition({
+154:    const hits = findOccultationsAtPosition({
+168:    const hits = findOccultationsAtPosition({
+187:    const hits = findOccultationsAtPosition({

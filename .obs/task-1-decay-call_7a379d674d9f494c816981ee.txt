@@ -1,0 +1,35 @@
+export function bearingDistanceTo(from: LatLon, to: LatLon): {
+  bearingDeg: number;
+  distanceM: number;
+} {
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+67:export function orthometricToEllipsoidal(
+69:  undulation: number = GEOID_UNDULATION_BERLIN,
+77:export function ellipsoidalToOrthometric(
+79:  undulation: number = GEOID_UNDULATION_BERLIN,
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+33:export interface StandingPoint extends LatLon {
+34-  id: string;
+35-  /** Deck/platform surface at this point, DHHN2016 orthometric metres. */
+36-  surfaceOrthometric: number;
+37-  /** Photographer's eye above the surface, metres. */
+38-  eyeHeightM: number;
+39-  /** True when nobody has confirmed the surface value at THIS point of the bridge. */
+40-  needsSiteCheck: boolean;
+41-  /**
+42-   * Provenance of the surface value: dataset, fetch date, CRS/vertical datum, sampling
+43-   * method and the measured median — including the median REJECTED for the height
+44-   * field, so the evidence survives without asserting an unconfirmed height.
+45-   */
+46-  source: string;
+47-  /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
+48-  readonly bearingToLandmarkDeg: number;
+49-  /** Great-circle ground distance to the landmark, metres. Computed. */
+--
+58:  points: StandingPoint[];
+59-  notes: string;
+60-}
+61-
+62-/**
+63- * Initial bearing (degrees true) and ground distance (metres) between two geodetic

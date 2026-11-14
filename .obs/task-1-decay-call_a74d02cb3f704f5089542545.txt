@@ -1,0 +1,2 @@
+ProfilePoint: MISSING
+RevolutionLandmark: interface RevolutionLandmark { id: str

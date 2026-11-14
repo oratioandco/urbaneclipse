@@ -1,0 +1,3 @@
+ steps = 96, ): SilhouetteDirections
+SD: interface SilhouetteDirections { outline: AzAlt[]; bounds: { azMin: number; azMax: number; altMin: number; altMax: number }
+SIL-EXPORTS: export interface ObserverGeodetic | export interface AzAlt | export function geodeticToECEF | export function ecefToENU | export function directionOffsetECEF | export funct

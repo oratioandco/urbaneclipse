@@ -1,0 +1,10 @@
+4: * The expectations below were computed INDEPENDENTLY (spherical trig / atan2 in a
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+77:function realBerlin(): Heightmap {
+103:describe('groundAltitudeDeg — known answers (independent computation)', () => {
+213:    // Independent WGS84 Vincenty inverse: 270.069244374 deg. (A mean-sphere
+220:    // Independent: base 44 + 67 = 111 m, eye 35.6 m, WGS84 geodesic d = 1351.037460 m
+342: * half-width. Measured independently before writing these expectations: six windows,
+354:  function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {
+src/lib/vantages.ts:100:const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
+src/lib/vantages.ts:167:      FERNSEHTURM_POS,

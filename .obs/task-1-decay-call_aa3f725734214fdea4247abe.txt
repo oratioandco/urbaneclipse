@@ -1,0 +1,54 @@
+/**
+ * T040 — Cesium-vs-suncalc sun-position agreement test (research.md VERIFY-LIVE #2).
+ *
+ * WHY THIS EXISTS (the architectural decision it ratifies)
+ * -------------------------------------------------------
+ * The app uses "Strategy B" for sun/shadows: rather than installing a custom
+ * `DirectionalLight`, it drives `viewer.clock.currentTime` and lets Cesium's own
+ * internal sun position light the scene and cast the shadows. Meanwhile the
+ * reverse-ephemeris SOLVER (src/lib/solver.ts, src/workers/solver.worker.ts)
+ * predicts alignments using `suncalc`.
+ *
+ * Those are two INDEPENDENT ephemeris implementations. Strategy B is only sound
+ * if they agree: the solver says "the sun aligns with the Fernsehturm at 19:42",
+ * and the render must actually show it there. If they diverge by more than the
+ * solver's own matching tolerance, the tool would confidently report alignments
+ * that the picture does not corroborate.
+ *
+ * This test is pure math — `Simon1994PlanetaryPositions` runs in Node with no
+ * Viewer, no WebGL and no network.
+ *
+ * THE METRIC
+ * ----------
+ * We compare TRUE ANGULAR SEPARATION on the sky, not raw azimuth deltas. Azimuth
+ * error is amplified near the zenith (a 0.7 deg azimuth delta at 59 deg altitude is
+ * only ~0.36 deg of actual sky separation), so comparing azimuth alone would
+ * spuriously fail this gate in summer. Angular separation is also precisely what
+ * `angularDistanceDeg` in src/lib/solver.ts matches on, so this test measures the
+ * quantity the product actually depends on.
+ *
+ * MEASURED RESULT (cesium 1.143, suncalc 2.0.1, Berlin)
+ * -----------------------------------------------------
+ * Separation is a near-CONSTANT ~0.37 deg across all seasons and times of day
+ * (spread < 0.01 deg). That flatness is the signature of a systematic reference-frame
+ * offset rather than ephemeris error, and its magnitude matches precession since
+ * J2000 (~50.3 arcsec/yr * 26 yr ~= 0.363 deg).
+ *
+ * The cause: `Transforms.computeIcrfToFixedMatrix` needs Earth-orientation (EOP)
+ * data fetched from Cesium Ion over the network. It is unavailable offline, so
+ * Cesium falls back to `computeTemeToPseudoFixedMatrix`, which does not apply
+ * precession/nutation. This test asserts that fallback is in use, because it is
+ * the operative path here.
+ *
+ * CONSEQUENCE / CAVEAT (deliberately encoded below):
+ * The offset GROWS at roughly 0.014 deg/yr. At ~0.37 deg it fits inside the 0.5 deg gate,
+ * but the margin is ~9 years wide, not indefinite. `DRIFT_CEILING_DEG` below will
+ * trip well before correctness silently degrades, and the failure message points
+ * at the fix (preload ICRF/EOP data, or apply a precession correction).
+ */
+import { describe, it, expect } from 'vitest';
+import * as Cesium from 'cesium';
+93:function cesiumSunAltAz(date: Date): AltAz {
+131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc
+135:function refractionDeg(altDeg: number): number {
+141:function angularSeparationDeg(azA: number, altA: number, azB: number, altB: number): number {

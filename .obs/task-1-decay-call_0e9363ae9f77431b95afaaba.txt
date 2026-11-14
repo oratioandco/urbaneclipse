@@ -1,0 +1,49 @@
+332:export interface FixedCandidate {
+333-  when: Date;
+334-  kind: OccultationKind;
+335-  coveredFraction: number;
+336-  separationDeg: number;
+337-  /** Body direction at that instant, for display and framing. */
+338-  bodyAz: number;
+339-  bodyAlt: number;
+340-}
+341-
+342-export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+347-  stepMinutes: number;
+348-  bodyAt: (t: Date) => BodySample;
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+78-  return {
+79-    bearingDeg: (bearingDeg + 360) % 360,
+80-    distanceM: Math.hypot(enu[0], enu[1]),
+81-  };
+82-}
+83-
+31:export interface RevolutionLandmark {
+32-  id: string;
+33-  name: string;
+35-  lat: number;
+36-  lon: number;
+38-  baseOrthometric: number;
+--
+282:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+283-  return profileRadius(landmark.profile, heightAboveBase);
+284-}
+285-
+287:export function landmarkHeight(landmark: RevolutionLandmark): number {
+288-  const p = landmark.profile;
+289-  return p.length === 0 ? 0 : p[p.length - 1][0];
+290-}

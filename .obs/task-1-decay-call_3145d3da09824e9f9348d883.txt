@@ -1,0 +1,22 @@
+11:import { describe, it, expect } from 'vitest';
+12:import { readFileSync } from 'node:fs';
+13:import {
+27:import { sampleBody } from '../../src/lib/bodyPosition.js';
+28:import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+29:import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+30:import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+31:import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+34:const OBS = standingPoint(
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+49:  const width = 21;
+50:  const height = 21;
+51:  const header: HeightmapHeader = {
+64:  const samples = new Int16Array(width * height);
+71:const FLAT = grid(() => 40);
+72:const CENTRE = standingPoint(
+77:function realBerlin(): Heightmap {
+78:  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
+79:  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+80:  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+91:    for (const v of ['0', 'false', 'off', '', 'yes', 'TRUE']) {
+97:    for (const v of ['1', 'true', 'on']) {

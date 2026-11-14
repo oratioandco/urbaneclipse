@@ -1,0 +1,96 @@
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
+/**
+ * Sweep time at a FIXED observer position and classify the occultation at each step.
+ *
+ * This is the "I am standing here, when does it happen?" search, as opposed to
+ * findCompositions' "where do I need to stand?". It replaces the original
+ * bearing-tolerance sweep: matching on "body within +/-0.5 deg of the target bearing" only
+ * means "within roughly one lunar diameter", which finds near misses rather than
+ * compositions. Here the real silhouette is built and the disc's covered AREA measured.
+ */
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+function classifyWithDirections(
+  dirs: ReturnType<typeof buildSilhouetteDirections>,
+  req: InstantClassifyRequest,
+  when: Date,
+): FixedCandidate | null {
+  const wanted = req.wanted ?? ['full', 'partial'];
+  const minAltitudeDeg = req.minAltitudeDeg ?? 0;
+  const body = req.bodyAt(when);
+
+  // Below the horizon there is nothing to photograph.
+  if (!(body.alt > minAltitudeDeg)) return null;
+
+  // Cheap rejection margin: no disc wider than ~1 deg matters, so anything further than
+  // this from the landmark's angular bounds cannot interact with it. This skips the
+  // projection entirely for the overwhelming majority of instants. Azimuth difference is
+  // wrapped to handle the 0/360 seam.
+  const REJECT_MARGIN_DEG = 2;
+  const { azMin, azMax, altMin, altMax } = dirs.bounds;
+  let dAz = Math.abs(body.az - (azMin + azMax) / 2);
+  if (dAz > 180) dAz = 360 - dAz;
+  if (dAz > (azMax - azMin) / 2 + REJECT_MARGIN_DEG) return null;
+  if (body.alt < altMin - REJECT_MARGIN_DEG || body.alt > altMax + REJECT_MARGIN_DEG) return null;
+
+  const silhouette = projectSilhouette(dirs, { az: body.az, alt: body.alt });
+  if (silhouette.length < 3) return null;
+
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+  const result = classifyOccultation(discRadius, silhouette);
+  if (!wanted.includes(result.kind)) return null;
+
+  return {
+    when,
+    kind: result.kind,
+    coveredFraction: result.coveredFraction,
+    separationDeg: result.separationDeg,
+    bodyAz: body.az,
+    bodyAlt: body.alt,
+  };
+}
+export function feasibility(
+  landmark: RevolutionLandmark,
+  body: Pick<BodySample, 'distanceKm' | 'radiusKm'>,
+  observedFromM: number,
+): { fullPossible: boolean; maxRangeForFullM: number; landmarkWidthDeg: number } {
+  let widest = 0;
+  const total = landmarkHeight(landmark);
+  for (const [h, r] of landmark.profile) {
+    if (h <= total) widest = Math.max(widest, r * 2);
+  }
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+  const maxRangeForFullM = widest / (2 * Math.tan((discRadius * Math.PI) / 180));
+  return {
+    fullPossible: observedFromM <= maxRangeForFullM,
+    maxRangeForFullM,
+    landmarkWidthDeg: (Math.atan2(widest / 2, observedFromM) * 2 * 180) / Math.PI,
+  };
+}

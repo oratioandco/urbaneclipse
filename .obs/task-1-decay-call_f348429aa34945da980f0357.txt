@@ -1,0 +1,1 @@
+hRequest: interface FixedSearchRequest { observer: ObserverGeodetic; landmark: RevolutionLandmark; start: Date; end: Dat

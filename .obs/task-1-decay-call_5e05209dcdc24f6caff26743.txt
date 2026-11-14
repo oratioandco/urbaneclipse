@@ -1,0 +1,25 @@
+src/lib/bodyPosition.ts:39:export function sunDistanceKm(date: Date): number {
+src/lib/bodyPosition.ts:52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+src/lib/ephemerisMath.ts:37:export function positionToENU(azimuth: number, altitude: number): Vec3 {
+src/lib/ephemerisMath.ts:50:export function southToNorthAzimuth(az: number): number {
+src/lib/ephemerisMath.ts:67:export function enuToECEF(enu: Vec3, lat: number, lon: number): Vec3 {
+src/lib/ephemerisMath.ts:99:export function sunDirectionECEF(date: Date, lat: number, lon: number): Vec3 {
+src/lib/coords.ts:26:export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+  if (body === 'moon') {
+    const p = getMoonPosition(date, lat, lon);
+    return {
+      az: p.azimuth,
+      alt: p.altitude,
+      distanceKm: p.distance,
+      radiusKm: MOON_RADIUS_KM,
+    };
+  }
+  const p = getPosition(date, lat, lon);
+  return {
+    az: p.azimuth,
+    alt: p.altitude,
+    distanceKm: sunDistanceKm(date),
+    radiusKm: SUN_RADIUS_KM,
+  };
+}

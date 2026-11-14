@@ -1,0 +1,203 @@
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const candidate = classifyWithDirections(dirs, req, new Date(t));
+    if (candidate) out.push(candidate);
+  }
+
+  out.sort((a, b) => {
+    const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+    const d = rank(b.kind) - rank(a.kind);
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+375-  const {
+376-    observer,
+377-    landmark,
+378-    start,
+379-    end,
+380-    stepMinutes,
+381-    wanted = ['full', 'partial'],
+382-    minAltitudeDeg = 0,
+383-    limit = 200,
+384-  } = req;
+385-
+386-  if (!(stepMinutes > 0)) {
+54:export interface BodySample {
+55-  /** Degrees clockwise from north. */
+56-  az: number;
+57-  /** Degrees above the horizon. */
+58-  alt: number;
+59-  /** Distance to the body, km — sets its apparent size. */
+60-  distanceKm: number;
+61-  /** Physical radius of the body, km. */
+62-  radiusKm: number;
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+78-  return {
+79-    bearingDeg: (bearingDeg + 360) % 360,
+80-    distanceM: Math.hypot(enu[0], enu[1]),
+81-  };
+82-}
+83-
+84-/** Build a standing point, computing bearing/distance to the landmark from coordinates. */
+85-export function standingPoint(
+86-  base: Omit<
+87-    StandingPoint,
+88-    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+89-  >,
+90-  landmark: LatLon,
+91-): StandingPoint {
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+86:export interface EyeHeightInput {
+87-  /**
+88-   * Ground elevation at the location in DHHN2016 metres, as sampled from the DGM1
+89-   * heightmap. `undefined` when no sample is available (outside the AOI, or the
+90-   * heightmap failed to load) — the Berlin mean is substituted.
+91-   */
+92-  groundOrthometric: number | undefined;
+93-  /**
+94-   * Explicit elevation of the surface actually being stood on, DHHN2016 metres.
+95-   * Overrides `groundOrthometric` when present.
+96-   *
+/**
+ * Horizon-gated windows for a second landmark (Siegessäule) — known-answer tests.
+ *
+ * The expectations below were computed INDEPENDENTLY (spherical trig / atan2 in a
+ * separate script), not read back out of the implementation, so a sign error or a
+ * missing curvature term cannot pass by agreeing with itself.
+ *
+ * This module is flag-gated and not shipped: the first group proves the flag is OFF
+ * by default, which is what keeps the trial out of the app.
+ */
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import {
+  HORIZON_WINDOWS_FLAG,
+  horizonWindowsEnabled,
+  groundAltitudeDeg,
+  sampleHorizonProfile,
+  azimuthToLandmark,
+  landmarkTipAltitudeDeg,
+  targetWindow,
+  gateDirection,
+  horizonTowardsLandmark,
+  eyeEllipsoidal,
+  enumerateHorizonGatedWindows,
+  HorizonWindowsDisabledError,
+} from '../../src/lib/horizonWindows.js';
+import { sampleBody } from '../../src/lib/bodyPosition.js';
+import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+
+/** A standing point on Straße des 17. Juni, east of the column, looking west. */
+const OBS = standingPoint(
+  {
+    id: 'strasse-des-17-juni',
+    lat: 52.5145,
+    lon: 13.37,
+    surfaceOrthometric: 34,
+    eyeHeightM: EYE_HEIGHT_M,
+    needsSiteCheck: true,
+    source: 'Test observer; ground ~33.4 m from the committed DGM1 grid.',
+  },
+  { lat: SIEGESSAEULE.lat, lon: SIEGESSAEULE.lon },
+);
+
+/** Flat synthetic grid, 40.0 m everywhere, ~111 m row spacing, centred on 52.01/13.01. */
+function grid(fill: (row: number, col: number) => number): Heightmap {
+  const width = 21;
+  const height = 21;
+  const header: HeightmapHeader = {
+    format: 'plaster-void-heightmap',
+    version: 1,
+    dtype: 'int16',
+    scale: 0.1,
+    offset: 0,
+    nodata: -32768,
+    width,
+    height,
+    bbox: { lonMin: 13.0, latMin: 52.0, lonMax: 13.02, latMax: 52.02 },
+    dLon: 0.001,
+    dLat: 0.001,
+  };
+  const samples = new Int16Array(width * height);
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) samples[r * width + c] = Math.round(fill(r, c) * 10);
+  }
+  return createHeightmap(header, samples);
+}
+
+const FLAT = grid(() => 40);
+const CENTRE = standingPoint(
+  { id: 'c', lat: 52.01, lon: 13.01, surfaceOrthometric: 40, eyeHeightM: 1.6, needsSiteCheck: true, source: 'fixture' },
+  { lat: 52.02, lon: 13.01 },
+);
+
+function realBerlin(): Heightmap {
+  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
+  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  return createHeightmap(header, decodeSamples(ab));
+}
+
+describe('the feature flag keeps this out of the app', () => {
+  it('is OFF when nothing is set', () => {
+    expect(horizonWindowsEnabled({})).toBe(false);
+    expect(horizonWindowsEnabled(undefined)).toBe(false);
+  });
+
+  it('is OFF for anything that is not an explicit truthy string', () => {
+    for (const v of ['0', 'false', 'off', '', 'yes', 'TRUE']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(false);
+    }
+  });
+
+  it('is ON only for 1 / true / on', () => {
+    for (const v of ['1', 'true', 'on']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(true);
+    }
+  });

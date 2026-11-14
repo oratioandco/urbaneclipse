@@ -1,0 +1,14 @@
+Test Files  1 failed | 40 passed (41)
+Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+Tests  6 failed | 573 passed | 1 skipped (580)
+domLandmark.test.ts (10 tests | 6 failed) 783ms
+domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring
+domLandmark.test.ts:143:18
+COMMIT-OUT: bbb2c522f0f32011a799fc1cbc42e6f472c5171a
+ src/lib/landmarks.ts           |  57 ++++++++
+ tests/unit/domLandmark.test.ts | 306 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 363 insertions(+)
+tsc errors in touched files: 21
+tsc total error lines: 742
+INDEP-WINDOWS: spring first 2026-02-10T10:00:00.000Z last 2026-03-07T10:00:00.000Z fullSamples 184
+autumn first 2026-10-06T09:35:00.000Z last 2026-11-04T09:55:00.000Z fullSamples 200

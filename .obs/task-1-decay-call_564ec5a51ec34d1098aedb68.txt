@@ -1,0 +1,45 @@
+259- */
+260-export interface SilhouetteDirections {
+261-  outline: AzAlt[];
+262-  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+263-}
+264-
+265:export function buildSilhouetteDirections(
+266-  observer: ObserverGeodetic,
+267-  landmark: RevolutionLandmark,
+268-  steps = 96,
+269-): SilhouetteDirections {
+270-  const total = landmarkHeight(landmark);
+271-  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+272-  if (total <= 0) return empty;
+273-
+274-  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+275-
+276-  const left: AzAlt[] = [];
+277-  const right: AzAlt[] = [];
+278-  let azMin = Infinity;
+279-  let azMax = -Infinity;
+280-  let altMin = Infinity;
+281-  let altMax = -Infinity;
+282-
+283-  for (let i = 0; i <= steps; i++) {
+284-    const hAgl = (total * i) / steps;
+285-    const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
+286-    const r = radiusAtHeight(landmark, hAgl);
+287-
+288-    // Horizontal angular half-width of the limb at this height.
+289-    const ratio = Math.min(1, r / Math.max(axis.rangeM, 1e-9));
+290-    const halfWidthDeg = Math.asin(ratio) * DEG;
+291-
+292-    // Offset in azimuth. Divide by cos(alt) so that after the tangent-plane
+293-    // projection's cos(alt) compression the on-sky width is correct.
+294-    const cosAlt = Math.max(Math.cos(axis.alt * RAD), 1e-9);
+295-    const dAz = halfWidthDeg / cosAlt;
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+45-  ellipsoidalHeight: number;
+46-}
+47-
+49-export interface AzAlt {
+51-  az: number;

@@ -1,0 +1,180 @@
+/**
+ * Horizon-gated windows for a second landmark (Siegessäule) — known-answer tests.
+ *
+ * The expectations below were computed INDEPENDENTLY (spherical trig / atan2 in a
+ * separate script), not read back out of the implementation, so a sign error or a
+ * missing curvature term cannot pass by agreeing with itself.
+ *
+ * This module is flag-gated and not shipped: the first group proves the flag is OFF
+ * by default, which is what keeps the trial out of the app.
+ */
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import {
+  HORIZON_WINDOWS_FLAG,
+  horizonWindowsEnabled,
+  groundAltitudeDeg,
+  sampleHorizonProfile,
+  azimuthToLandmark,
+  landmarkTipAltitudeDeg,
+  targetWindow,
+  gateDirection,
+  horizonTowardsLandmark,
+  eyeEllipsoidal,
+  enumerateHorizonGatedWindows,
+  HorizonWindowsDisabledError,
+} from '../../src/lib/horizonWindows.js';
+import { sampleBody } from '../../src/lib/bodyPosition.js';
+import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+
+/** A standing point on Straße des 17. Juni, east of the column, looking west. */
+const OBS = standingPoint(
+  {
+    id: 'strasse-des-17-juni',
+    lat: 52.5145,
+    lon: 13.37,
+    surfaceOrthometric: 34,
+    eyeHeightM: EYE_HEIGHT_M,
+    needsSiteCheck: true,
+    source: 'Test observer; ground ~33.4 m from the committed DGM1 grid.',
+  },
+  { lat: SIEGESSAEULE.lat, lon: SIEGESSAEULE.lon },
+);
+
+/** Flat synthetic grid, 40.0 m everywhere, ~111 m row spacing, centred on 52.01/13.01. */
+function grid(fill: (row: number, col: number) => number): Heightmap {
+  const width = 21;
+  const height = 21;
+  const header: HeightmapHeader = {
+    format: 'plaster-void-heightmap',
+    version: 1,
+    dtype: 'int16',
+    scale: 0.1,
+    offset: 0,
+    nodata: -32768,
+    width,
+    height,
+    bbox: { lonMin: 13.0, latMin: 52.0, lonMax: 13.02, latMax: 52.02 },
+    dLon: 0.001,
+    dLat: 0.001,
+  };
+  const samples = new Int16Array(width * height);
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) samples[r * width + c] = Math.round(fill(r, c) * 10);
+  }
+  return createHeightmap(header, samples);
+}
+
+const FLAT = grid(() => 40);
+const CENTRE = standingPoint(
+  { id: 'c', lat: 52.01, lon: 13.01, surfaceOrthometric: 40, eyeHeightM: 1.6, needsSiteCheck: true, source: 'fixture' },
+  { lat: 52.02, lon: 13.01 },
+);
+
+function realBerlin(): Heightmap {
+  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
+  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  return createHeightmap(header, decodeSamples(ab));
+}
+
+describe('the feature flag keeps this out of the app', () => {
+  it('is OFF when nothing is set', () => {
+    expect(horizonWindowsEnabled({})).toBe(false);
+    expect(horizonWindowsEnabled(undefined)).toBe(false);
+  });
+
+  it('is OFF for anything that is not an explicit truthy string', () => {
+    for (const v of ['0', 'false', 'off', '', 'yes', 'TRUE']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(false);
+    }
+  });
+
+  it('is ON only for 1 / true / on', () => {
+    for (const v of ['1', 'true', 'on']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(true);
+    }
+  });
+});
+
+describe('groundAltitudeDeg — known answers (independent computation)', () => {
+  it('is level ground slightly BELOW zero because the Earth curves away', () => {
+    // Same height as the eye: only curvature+refraction remain. -(1-k)d^2/(2R).
+    expect(groundAltitudeDeg(41.6, 41.6, 1000)).toBeCloseTo(-0.003912049, 8);
+    expect(groundAltitudeDeg(41.6, 41.6, 2000)).toBeCloseTo(-0.007824098, 8);
+  });
+
+  it('matches atan2 of rise over distance for a 10 m rise at 1 km', () => {
+    expect(groundAltitudeDeg(51.6, 41.6, 1000)).toBeCloseTo(0.569027037, 8);
+  });
+
+  it('matches a steep near obstruction', () => {
+    expect(groundAltitudeDeg(60, 41.6, 100)).toBeCloseTo(10.425430131, 8);
+    expect(groundAltitudeDeg(100, 41.6, 800)).toBeCloseTo(4.172072831, 8);
+  });
+
+  it('is negative for ground below the eye', () => {
+    expect(groundAltitudeDeg(30, 41.6, 500)).toBeCloseTo(-1.330978645, 8);
+  });
+
+  it('applies refraction: the drop is 0.0683 m at 1 km, not the bare 0.0785 m', () => {
+    const bare = (1000 * 1000) / (2 * 6371000);
+    const withRefraction = -Math.tan((groundAltitudeDeg(41.6, 41.6, 1000) * Math.PI) / 180) * 1000;
+    expect(bare).toBeCloseTo(0.0784806, 6);
+    expect(withRefraction).toBeCloseTo(0.0682781, 6);
+    expect(withRefraction).toBeLessThan(bare);
+  });
+
+  it('is monotone: a higher obstruction is a higher angle at the same distance', () => {
+    expect(groundAltitudeDeg(70, 41.6, 500)).toBeGreaterThan(groundAltitudeDeg(60, 41.6, 500));
+    expect(groundAltitudeDeg(60, 41.6, 500)).toBeGreaterThan(groundAltitudeDeg(60, 41.6, 1500));
+  });
+});
+
+describe('sampleHorizonProfile — skyline semantics', () => {
+  it('on flat ground BELOW the eye nothing obstructs: the skyline tends to 0 from below', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 1000, stepM: 100, map: FLAT });
+    expect(p.samples).toHaveLength(10);
+    // Ground 40 m, eye 41.6 m: rise/d = (-1.6 - drop)/d, so the angle is negative and
+    // RISES toward 0 as d grows. The maximum is therefore the FARTHEST sample — flat
+    // terrain never blocks a sunset, which is exactly what this must report.
+    expect(p.horizonDistanceM).toBe(1000);
+    expect(p.horizonAltitudeDeg).toBeCloseTo(groundAltitudeDeg(40, 41.6, 1000), 9);
+    expect(p.horizonAltitudeDeg).toBeLessThan(0);
+    expect(p.samples[0]!.altitudeDeg).toBeLessThan(p.horizonAltitudeDeg);
+    expect(p.coverage).toBe(1);
+    expect(p.truncated).toBe(false);
+    expect(p.maxDistanceM).toBe(1000);
+  });
+
+  it('on flat ground ABOVE the eye the NEAREST sample wins, since angle falls with distance', () => {
+    // Eye at 36.4 + 1.6 = 38.0 m, i.e. 2 m BELOW the 40 m plain: every sample is above
+    // the eye, the angle falls with distance, so the closest sample subtends the most.
+    const low = standingPoint(
+      { id: 'low', lat: 52.01, lon: 13.01, surfaceOrthometric: 36.4, eyeHeightM: 1.6, needsSiteCheck: true, source: 'fixture' },
+      { lat: 52.02, lon: 13.01 },
+    );
+    const p = sampleHorizonProfile({ point: low, azimuthDeg: 0, maxDistanceM: 1000, stepM: 100, map: FLAT });
+    expect(p.horizonDistanceM).toBe(100);
+    expect(p.horizonAltitudeDeg).toBeGreaterThan(0);
+    expect(p.samples[p.samples.length - 1]!.altitudeDeg).toBeCloseTo(p.horizonAltitudeDeg, 9);
+  });
+
+  it('returns the RUNNING MAXIMUM, never a decreasing skyline', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 1000, stepM: 50, map: FLAT });
+    for (let i = 1; i < p.samples.length; i++) {
+      expect(p.samples[i]!.altitudeDeg).toBeGreaterThanOrEqual(p.samples[i - 1]!.altitudeDeg);
+    }
+  });
+
+  it('finds a ridge north of the observer and reports where it is', () => {
+    // Rows 13..16 are ~333-667 m north of the centre row 10: a 60 m plateau.
+    const ridged = grid((r) => (r >= 13 && r <= 16 ? 60 : 40));
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 1000, stepM: 25, map: ridged });
+    expect(p.horizonAltitudeDeg).toBeGreaterThan(2);
+    expect(p.horizonAltitudeDeg).toBeLessThan(4);
+    expect(p.horizonDistanceM).toBeGreaterThan(300);
+    expect(p.horizonDistanceM).toBeLessThan(700);

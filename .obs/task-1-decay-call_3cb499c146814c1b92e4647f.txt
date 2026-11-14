@@ -1,0 +1,16 @@
+src/lib/areaSolver.ts:45:  type OccultationKind,
+src/lib/areaSolver.ts:332:export interface FixedCandidate {
+src/lib/occultation.ts:42:export type OccultationKind = 'full' | 'partial' | 'adjacent' | 'clear';
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+export type OccultationKind = 'full' | 'partial' | 'adjacent' | 'clear';
+
+export interface OccultationResult {
+  kind: OccultationKind;

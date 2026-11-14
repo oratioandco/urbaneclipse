@@ -1,0 +1,43 @@
+), converted to WGS84. Base ground 34.6 m DHHN2016, taken from the
+ * LoD2 GroundSurface so it stays consistent with the rest of the scene rather than
+ * with Wikipedia's 32 m ue. NHN.
+ *
+ * SENSITIVITY at 3953 m (1 deg = 69.0 m, tolerance ~0.05 deg):
+ *   sphere centre height +/-1 m  -> +/-0.014 deg
+ *   axis position       +/-1 m  -> +/-0.014 deg
+ *   antenna base dia    +/-2 m  -> +/-0.015 deg  (the one low-confidence figure)
+ * All comfortably inside tolerance. Only the sphere diameter (32 m) and total height
+ * (368.03 m) need precision, and both are high-confidence published values.
+ */
+export const FERNSEHTURM: RevolutionLandmark = {
+  id: 'fernsehturm',
+  name: 'Berliner Fernsehturm',
+  lat: 52.520815,
+  lon: 13.409419,
+  baseOrthometric: 34.6,
+  profile: [
+    [0, 16.0], // foot, 32 m diameter, 20 m hyperbolic cone stump
+    [10, 12.0],
+    [20, 8.0], // shaft taper begins, 16 m diameter
+    [100, 6.77],
+    // Evakuierungsbühnen: two open rescue platforms, 1.6 m out around the shaft (188 / 191 m).
+    [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7, 5.5],
+    [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7, 5.43],
+    [196, 5.3], // just below the sphere
+    ...sphereSamples(SPHERE_CENTRE_AGL, SPHERE_RADIUS, fernsehturmShaftRadius),
+    [230.4, 4.62], // the sphere rests on a console at 229 m; shaft resumes
+    [231.2, 5.7], // Richtfunk section: the microwave skeleton reads as a slightly wider drum
+    [247.6, 5.7],
+    [248.7, 6.4], // 'Eisteller', the ice-catching plate at 248.7 m
+    [249.4, 5.4],
+    [249.8, 2.0], // antenna base, 4 m diameter
+    [327, 1.45], // the 1997 antenna tip starts at 327 m
+96:export const FERNSEHTURM: RevolutionLandmark = {
+142:export const SIEGESSAEULE: RevolutionLandmark = {
+175:export const BRANDENBURGER_TOR: RevolutionLandmark = {
+199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {
+199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {

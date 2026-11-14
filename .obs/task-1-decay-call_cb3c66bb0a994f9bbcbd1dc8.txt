@@ -1,0 +1,14 @@
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);

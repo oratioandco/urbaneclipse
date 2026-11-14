@@ -1,0 +1,34 @@
+src/lib/silhouette.ts:41:export interface ObserverGeodetic {
+src/lib/silhouette.ts:49:export interface AzAlt {
+src/lib/silhouette.ts:59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+src/lib/silhouette.ts:69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+src/lib/silhouette.ts:90:export function directionOffsetECEF(
+src/lib/silhouette.ts:122:export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+src/lib/silhouette.ts:127:export function ecefToGeodetic(x: number, y: number, z: number): {
+src/lib/silhouette.ts:156:export function offsetGeodetic(
+src/lib/silhouette.ts:182:export function azAltTo(
+src/lib/silhouette.ts:210:export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+src/lib/silhouette.ts:239:export function buildSilhouette(
+src/lib/silhouette.ts:260:export interface SilhouetteDirections {
+src/lib/silhouette.ts:265:export function buildSilhouetteDirections(
+src/lib/silhouette.ts:314:export function projectSilhouette(
+src/lib/bodyPosition.ts:39:export function sunDistanceKm(date: Date): number {
+src/lib/bodyPosition.ts:52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+  if (body === 'moon') {
+    const p = getMoonPosition(date, lat, lon);
+    return {
+      az: p.azimuth,
+      alt: p.altitude,
+      distanceKm: p.distance,
+      radiusKm: MOON_RADIUS_KM,
+    };
+  }
+  const p = getPosition(date, lat, lon);
+  return {
+    az: p.azimuth,
+    alt: p.altitude,
+    distanceKm: sunDistanceKm(date),
+    radiusKm: SUN_RADIUS_KM,
+  };
+}

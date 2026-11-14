@@ -1,0 +1,86 @@
+23:  bearingDistanceTo,
+178:      const { bearingDeg, distanceM } = bearingDistanceTo(p, FERNSEHTURM);
+184:  it('agrees with an independent Vincenty inverse on WGS84 to 0.001 deg / 0.01 m', () => {
+185:    // Genuinely independent of the repo's ECEF -> ENU path: Vincenty's inverse geodesic
+260:  it('is independent of the deck height, so the height decision cannot move a bearing', () => {
+    }
+  });
+
+  it('uses the standing photographer eye height of 1.6 m everywhere', () => {
+    expect(EYE_HEIGHT_M).toBe(1.6);
+    for (const p of points) expect(p.eyeHeightM).toBe(1.6);
+  });
+});
+
+describe('per-point provenance', () => {
+  it('gives every point a non-empty source', () => {
+    for (const p of points) {
+      expect(typeof p.source).toBe('string');
+      expect(p.source.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('names dataset, sheet, fetch date, CRS, vertical datum, licence and method', () => {
+    for (const p of points) {
+      expect(p.source).toContain('DOM1');
+      expect(p.source).toContain('dom1_33_398_5818_2');
+      expect(p.source).toContain('2026-11-12');
+      expect(p.source).toContain('EPSG:25833');
+      expect(p.source).toContain('DHHN2016');
+      expect(p.source).toContain('dl-de/zero-2-0');
+      expect(p.source).toMatch(/median/i);
+      expect(p.source).toContain('https://gdi.berlin.de/data/dom/atom/');
+    }
+  });
+
+  it('records the measured median of each point, adopted or rejected', () => {
+    for (const p of points) {
+      expect(p.source).toContain(`Measured median ${measured(p.id).toFixed(1)} m`);
+    }
+  });
+
+  it('says explicitly which medians were rejected and why', () => {
+    for (const id of RAMP_IDS) {
+      const src = byId(id).source;
+      expect(src).toMatch(/NOT adopted/);
+      expect(src).toContain('needsSiteCheck stays true');
+      // The rejected measurement is preserved, not overwritten by the flat value.
+      expect(src).toContain(measured(id).toFixed(1));
+    }
+    for (const id of CREST_IDS) {
+      expect(byId(id).source).toMatch(/adopted as the deck height/);
+      expect(byId(id).source).toContain('needsSiteCheck is false');
+    }
+  });
+
+  it('warns that DGM1 bare earth is not the deck', () => {
+    for (const p of points) expect(p.source).toContain('NOT DGM1');
+  });
+});
+
+describe('geometry stays computed, never hand-entered', () => {
+  it('reproduces bearing and distance from the coordinates via ECEF -> ENU', () => {
+    for (const p of points) {
+      const { bearingDeg, distanceM } = bearingDistanceTo(p, FERNSEHTURM);
+      expect(p.bearingToLandmarkDeg).toBe(bearingDeg);
+      expect(p.distanceToLandmarkM).toBe(distanceM);
+    }
+  });
+
+  it('agrees with an independent Vincenty inverse on WGS84 to 0.001 deg / 0.01 m', () => {
+    // Genuinely independent of the repo's ECEF -> ENU path: Vincenty's inverse geodesic
+    // on the same ellipsoid. The only residual is chord-vs-geodesic tangent, ~1e-5 deg
+    // over 6 km, hence the 0.001 deg bound.
+    const a = 6378137;
+    const f = 1 / 298.257223563;
+    const b = a * (1 - f);
+    const rad = Math.PI / 180;
+    for (const p of points) {
+      const U1 = Math.atan((1 - f) * Math.tan(p.lat * rad));
+      const U2 = Math.atan((1 - f) * Math.tan(FERNSEHTURM.lat * rad));
+      const L = (FERNSEHTURM.lon - p.lon) * rad;
+      let lambda = L;
+      let sinSigma = 0;
+      let cosSigma = 0;
+      let cos2SigmaM = 0;
+      let sigma = 0;

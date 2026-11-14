@@ -1,0 +1,4 @@
+B ['1 failed | 40 passed (41)']
+C ['6 ⎯⎯⎯⎯⎯⎯⎯', '6 failed | 573 passed | 1 skipped (580)']
+D ['❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms']
+E src/lib/landmarks.ts(130,14): error TS2741: Property 'notes' is missing in type '{ id: string; name: string; l

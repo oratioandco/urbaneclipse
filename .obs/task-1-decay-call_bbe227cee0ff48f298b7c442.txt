@@ -1,0 +1,111 @@
+[Showing lines 154-263 of 263, the last 4084 of 11067 bytes. Whole output: .obs/task-1-2.txt — read the start with sh: sed -n '1,153p' .obs/task-1-2.txt]
+    [48.8, 2.45],
+    [49.0, 3.6], // viewing platform's ring
+    [50.6, 3.6],
+    [50.8, 2.3],
+    [58.6, 2.25],
+    [58.9, 1.5], // the Viktoria
+    [67.0, 0.3],
+  ],
+  notes:
+    'Solid of revolution approximation. Total height 67 m and statue 8.3 m are published; ' +
+    'hall width, column taper and platform height are read from photographs and are the ' +
+    'larger uncertainty.',
+};
+
+/**
+ * Brandenburger Tor, as a solid of revolution standing in for the gate's mass plus the
+ * quadriga above it. Axis at the centre of OSM way 518071791; the gate hall itself is not
+ * round: 34.8 m along its face by 16.6 m deep, and the revolution's 25.8 m diameter is the
+ * compromise between the two. Published height 26 m including the quadriga; OSM's height
+ * tag agrees. Base ground about 34.5 m NHN, approximate.
+ */
+export const BRANDENBURGER_TOR: RevolutionLandmark = {
+  id: 'brandenburger-tor',
+  name: 'Brandenburger Tor',
+  lat: 52.516273,
+  lon: 13.377704,
+  baseOrthometric: 34.5,
+  profile: [
+    [0, 12.9],
+    [20.5, 12.9], // the gate's mass, columns to entablature
+    [21.0, 5.0], // the attic
+    [22.2, 5.0],
+    [22.4, 2.6], // the quadriga's horses, about 5 m wide
+    [26.0, 0.4],
+  ],
+  notes:
+    'Revolution approximation of a rectangular gate: half-way between the facade half-width ' +
+    '(17.4 m) and the half-depth (8.3 m), so hidden/edge verdicts carry about a factor of ' +
+    'two either side of the axis. The quadriga band above 21 m is the shot.',
+};
+
+/**
+ * Radius of a landmark at a given height above its base, linearly interpolated.
+ * Returns 0 at or above the top, and the base radius below the base.
+ */
+export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+  const p = profile;
+  if (p.length === 0) return 0;
+  if (!Number.isFinite(heightAboveBase)) {
+    throw new RangeError(`height must be finite, received ${heightAboveBase}`);
+  }
+  if (heightAboveBase <= p[0][0]) return p[0][1];
+  const top = p[p.length - 1];
+  if (heightAboveBase >= top[0]) return 0;
+
+  for (let i = 1; i < p.length; i++) {
+    const [h1, r1] = p[i];
+    if (heightAboveBase <= h1) {
+      const [h0, r0] = p[i - 1];
+      const span = h1 - h0;
+      if (span <= 0) return r1;
+      return r0 + ((r1 - r0) * (heightAboveBase - h0)) / span;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Radius of a landmark at a given height above its base, linearly interpolated.
+ * Returns 0 at or above the top, and the base radius below the base.
+ */
+export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+  return profileRadius(landmark.profile, heightAboveBase);
+}
+
+/** Total height of the landmark above its base, metres. */
+export function landmarkHeight(landmark: RevolutionLandmark): number {
+  const p = landmark.profile;
+  return p.length === 0 ? 0 : p[p.length - 1][0];
+}
+import proj4 from 'proj4';
+
+/**
+ * Pure CRS transforms for the Berlin LoD2 pipeline. NO Cesium.
+ *
+ * Berlin's LoD2 distribution CRS is EPSG:25833 (ETRS89 / UTM zone 33N), confirmed from the
+ * GDI ATOM feed (gdi.berlin.de/data/a_lod2/atom) and the tile filenames (LoD2_33_*). Verified
+ * via round-trip.
+ * EPSG:31468 (historical DHDN / Gauss-Kruger zone 4) is VERIFY-LIVE: its +towgs84 datum
+ * parameters must be confirmed against an authoritative PROJ reference before use, so the
+ * datum-shift path is intentionally not registered here yet (see research.md VERIFY-LIVE).
+ */
+proj4.defs(
+  'EPSG:25832',
+  '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+);
+proj4.defs(
+  'EPSG:25833',
+  '+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+);
+
+export type Vec3 = [number, number, number];
+
+/** Transform an [x, y, z] coordinate between two CRSes. EPSG:4326 expects [lon, lat].
+ *  The vertical z passes through unchanged (horizontal CRS transform only). */
+export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+  const [x, y, z] = coord;
+  const [outX, outY] = proj4(from, to, [x, y]) as [number, number];
+  return [outX, outY, z];
+}

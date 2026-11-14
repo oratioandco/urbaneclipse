@@ -1,0 +1,25 @@
+{
+  "format": "plaster-void-heightmap",
+  "version": 1,
+  "binary": "berlin-dgm1.bin",
+  "byteLength": 724280,
+  "dtype": "int16",
+  "byteOrder": "little",
+  "scale": 0.1,
+  "offset": 0.0,
+  "nodata": -32768,
+  "width": 953,
+  "height": 380,
+  "rowOrder": "south-to-north",
+  "colOrder": "west-to-east",
+  "index": "row * width + col",
+  "crs": "EPSG:4326",
+  "bbox": {
+    "lonMin": 13.3610662223682src/lib/bodyPosition.ts:21:export type Body = 'sun' | 'moon';
+src/lib/bodyPosition.ts-22-
+src/lib/bodyPosition.ts-23-const AU_KM = 149597870.7;
+src/lib/bodyPosition.ts-24-const RAD = Math.PI / 180;
+src/lib/bodyPosition.ts-25-
+src/lib/bodyPosition.ts-26-/** Days since the J2000.0 epoch. */
+src/lib/bodyPosition.ts-27-function daysSinceJ2000(date: Date): number {
+src/lib/bodyPosition.ts-28-  return date.getTime() / 86400000 - 10957.5;

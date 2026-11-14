@@ -1,0 +1,11 @@
+task/berliner-dom-landmark
+7c43c2d Horizon-gated eclipse windows for a second landmark, flag-gated and not shipped
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+77:function realBerlin(): Heightmap {
+103:describe('groundAltitudeDeg — known answers (independent computation)', () => {
+342: * half-width. Measured independently before writing these expectations: six windows,
+354:  function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {
+46:export function createHeightmap(header: HeightmapHeader, samples: Int16Array): Heightmap {
+87:export function sampleGroundOrthometric(
+132:export function isWithinCoverage(map: Heightmap, lat: number, lon: number): boolean {
+143:export function decodeSamples(buffer: ArrayBuffer): Int16Array {

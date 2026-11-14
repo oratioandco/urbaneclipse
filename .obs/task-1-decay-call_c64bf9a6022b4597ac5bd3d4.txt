@@ -1,0 +1,93 @@
+/**
+ * Area solver — "where AND when do I stand for this shot?" Pure math, NO Cesium.
+ *
+ * THE PROBLEM
+ * -----------
+ * The original solver swept TIME at a FIXED observer position and reported instants
+ * when the body came within a bearing tolerance. What a photographer actually wants is
+ * the inverse: "here is the stretch of bridge / park I can reach, here is the landmark,
+ * find me the best (position, time) pairs for a full / partial / adjacent composition."
+ *
+ * THE REDUCTION THAT MAKES IT CHEAP
+ * ---------------------------------
+ * Brute-forcing a 3-D grid of (lat, lon, t) is enormous and mostly wasted, because
+ * almost every position is nowhere near alignment.
+ *
+ * But at a given instant the body's direction is effectively CONSTANT across a small
+ * search area — moving 1 km shifts the moon's topocentric direction by ~0.00015 deg
+ * (1 km / 384400 km) and the sun's by ~4e-7 deg, both far below the ~0.05 deg tolerance.
+ *
+ * So for each instant there is essentially ONE line on the ground from which the
+ * landmark covers the body: the observer must lie on the bearing opposite the body's
+ * azimuth from the landmark, at whatever distance makes the elevation angle to the
+ * chosen feature equal the body's altitude. That turns a 3-DOF search into a 1-DOF
+ * time sweep plus a direct solve — and it also yields the genuinely useful answer
+ * "your area does not intersect that line; stand HERE instead."
+ *
+ * Distance is solved iteratively against the exact ellipsoidal azAltTo() rather than a
+ * flat-earth formula, because curvature over these ranges is worth ~0.018 deg (a third of
+ * the tolerance budget) and the ground elevation at the solved position feeds back into
+ * the eye height.
+ */
+import { resolveEyeEllipsoidalHeight, orthometricToEllipsoidal } from './elevation.js';
+import { landmarkHeight, type RevolutionLandmark } from './landmarks.js';
+import {
+  azAltTo,
+  buildSilhouette,
+  buildSilhouetteDirections,
+  projectSilhouette,
+  offsetGeodetic,
+  type ObserverGeodetic,
+} from './silhouette.js';
+import {
+  classifyOccultation,
+  angularRadiusDeg,
+  type OccultationKind,
+} from './occultation.js';
+
+export interface LatLon {
+  lat: number;
+  lon: number;
+}
+
+/** Apparent position of the sun/moon at an instant, as seen from the search area. */
+export interface BodySample {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+  /** Distance to the body, km — sets its apparent size. */
+  distanceKm: number;
+  /** Physical radius of the body, km. */
+  radiusKm: number;
+}
+
+/** Supplies ground elevation (DHHN2016 m) at a position; undefined outside coverage. */
+export type GroundProvider = (pos: LatLon) => number | undefined;
+
+export interface SolveOptions {
+  landmark: RevolutionLandmark;
+  /**
+   * Height up the landmark to aim at, metres above its base. The sphere centre and
+   * the antenna give very different shots.
+   */
+  featureHeightAgl: number;
+  /** Photographer's eye h===ELEV===
+67:export function orthometricToEllipsoidal(
+68-  orthometric: number,
+69-  undulation: number = GEOID_UNDULATION_BERLIN,
+70-): number {
+71-  assertFinite(orthometric, 'orthometric height');
+72-  assertFinite(undulation, 'geoid undulation');
+73-  return orthometric + undulation;
+74-}
+75-
+76-/** WGS84 ellipsoidal -> orthometric (DHHN2016) height. H = h - N. */
+77-export function ellipsoidalToOrthometric(
+78-  ellipsoidal: number,
+79-  undulation: number = GEOID_UNDULATION_BERLIN,
+13: * The relation is  h = H + N,  where N is the geoid undulation (~39.5 m in Berlin).
+30: * Berlin geoid undulation (ETRS89/GRS80 geoid height above the ellipsoid), metres.
+36: * This is a tile-wide CONSTANT approximation of the GCG2016/EGG97 geoid; the true
+53: * sampled in the wrong CRS, or one that already had the geoid baked in, would land
+72:  assertFinite(undulation, 'geoid undulation');

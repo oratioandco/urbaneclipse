@@ -1,0 +1,5 @@
+ observer: ObserverGeodetic; landmark: RevolutionLandmark; start: Date; end: Date; stepMinutes: number; bodyAt: (t: Date) => BodySample; wanted?: OccultationKind[]; minAl
+ERROR: exit: exit status 1
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+AttributeError: 'NoneType' object has no attribute 'group'

@@ -1,0 +1,54 @@
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {
+231-  const p = landmark.profile;
+232-  return p.length === 0 ? 0 : p[p.length - 1][0];
+233-}
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+226-  return profileRadius(landmark.profile, heightAboveBase);
+227-}
+228-
+229-/** Total height of the landmark above its base, metres. */
+230-export function landmarkHeight(landmark: RevolutionLandmark): number {
+231-  const p = landmark.profile;
+232-  return p.length === 0 ? 0 : p[p.length - 1][0];
+233-}
+96:export const FERNSEHTURM: RevolutionLandmark = {
+97-  id: 'fernsehturm',
+98-  name: 'Berliner Fernsehturm',
+99-  lat: 52.520815,
+100-  lon: 13.409419,
+101-  baseOrthometric: 34.6,
+102-  profile: [
+103-    [0, 16.0], // foot, 32 m diameter, 20 m hyperbolic cone stump
+104-    [10, 12.0],
+105-    [20, 8.0], // shaft taper begins, 16 m diameter
+106-    [100, 6.77],
+107-    // Evakuierungsbühnen: two open rescue platforms, 1.6 m out around the shaft (188 / 191 m).
+108-    [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7, 5.5],
+109-    [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7, 5.43],
+110-    [196, 5.3], // just below the sphere
+44:  profile: ReadonlyArray<readonly [number, number]>;
+102:  profile: [
+148:  profile: [
+181:  profile: [
+199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+   * Radius is linearly interpolated between samples. The sphere is sampled finely
+   * enough that interpolation error stays far below the angular tolerance.
+   */
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+  notes: string;
+}
+
+/**
+ * Sample a sphere's radius profile, unioned with the surrounding shaft.
+ * r(h) = sqrt(R^2 - (h - centre)^2) over the sphere's vertical span.

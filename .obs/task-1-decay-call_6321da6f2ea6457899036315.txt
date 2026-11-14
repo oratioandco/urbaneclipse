@@ -1,0 +1,1 @@
+export function feasibility( landmark: RevolutionLandmark, body: Pick<BodySample, 'distanceKm' | 'radiusKm'>, observedFromM: number, ): 

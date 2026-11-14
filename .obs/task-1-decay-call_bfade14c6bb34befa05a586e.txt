@@ -1,0 +1,31 @@
+[Showing lines 32-61 of 61, the last 3929 of 22085 bytes. Whole output: .obs/task-1-9.txt — read the start with sh: sed -n '1,31p' .obs/task-1-9.txt]
+136:[[Datei:Berlin Cathedral Church Berliner Dom tunliweb 04.jpg|mini|Blick in die Kuppel mit zentralem Heiliggeistfenster, Mosaiken der Seligpreisungen und Reliefs der Apostelgeschichte an den [[Pendentif]]s]]
+===EN-INFOBOX===
+|construction_cost=11.5&nbsp;million [[German gold mark|marks]] (1905)
+|capacity=
+|length={{convert|114|m}}, shorter since the demolition of the northern memorial hall in 1975
+|width={{convert|74|m}}
+|width_nave=
+|height_max=
+|dome_quantity=
+|dome_height_outer={{convert|115|m}} (until destruction 1944)
+|dome_height_inner=
+|dome_dia_outer=
+|dome_dia_inner=
+|spire_quantity=
+|spire_height=
+|materials=originally brick, since 1905, Silesian [[sandstone]]
+}}
+===EN-TEXT===
+54:|dome_quantity=
+55:|dome_height_outer={{convert|115|m}} (until destruction 1944)
+56:|dome_height_inner=
+57:|dome_dia_outer=
+58:|dome_dia_inner=
+116:[[File:Berliner Dom 1964 organ.jpg|thumb|right|upright|The organ in 1964 – on the floor the rubble of the dome, destroyed in an Allied bombing 1944]]
+118:With no separation of Protestant church and state of [[Kingdom of Prussia|Prussia]], [[Wilhelm II, German Emperor|Wilhelm II]] officiated as the ''[[summus episcopus]]'' (Supreme Governor of the [[Evangelical State Church of Prussia's older Provinces]], as it was named since 1875) and the state paid the complete construction cost of 11.5&nbsp;million [[German gold mark|Marks]]. At {{convert|114|m|ft|0}} long, {{convert|73|m|ft|0}} wide and {{convert|116|m|ft|0}} tall, it was much larger than any of the previous buildings and was considered a Protestant counterweight to [[St. Peter's Basilica]] in Vatican City. On 27 February 1905, the present building was inaugurated.<ref name="Sauer">{{cite AV media |people=Pohl, Michael, Johann S. Bach, Felix Mendelssohn-Bartholdy, Josef Rheinberger, Max Reger, Max Reger, Max Reger, Max Reger, and Max Reger |year=1993 |title=Die Grosse Sauer-Orgel Im Berliner Dom |type=Sound recording |time= |location=Düsseldorf |publisher=Motette |oclc=33188606}}</ref>
+120:In 1940, the blast waves of [[Bombing of Berlin in World War II|Allied bombing]] blew away part of the windows. On 24 May 1944, a bomb of combustible liquids entered the [[roof lantern]] of the dome. The fire could not be extinguished at that unreachable section of the dome. So the lantern burnt and collapsed into the main floor. Between 1949 and 1953, a temporary roof was built to enclose the building. On 9 May 1967 the then still undivided [[Evangelical Church of the Union]] decided a committee for the reconstruction of the ''Supreme Parish and Cathedral Church'', then located in [[East Berlin]].<ref>{{cite news| url=https://www.jsonline.com/story/news/local/milwaukee/2018/05/17/art-ritual-items-retrieved-charred-remains-trinity-church/619302002/| title=Religious artwork, ritual items retrieved from charred remains of Trinity church| newspaper=[[Milwaukee Journal Sentinel]]| first=Annysa| last=Jonnson| date=May 17, 2018| access-date=2018-09-15 |language=en}}{{failed verification|date=June 2023}}</ref> The government of the Eastern [[East Germany|German Democratic Republic]] did not oppose the work of the committee due to the concomitant inflow of [[Deutsche Mark]]s.{{verify source| reason = is this in the previous citation? |date=December 2025}}
+124:In 1980, the [[baptistery]] and wedding church reopened for services. The restoration of the nave began in 1984. On 6 June 1993, the nave was re-inaugurated in an event attended by [[Chancellor of Germany (Federal Republic of Germany)|Federal Chancellor]] [[Helmut Kohl]] and televised nationwide in Germany. There has been discussion to restore the dome and surrounding cupolas to their original appearance, but this has not occurred due to a lack of funds.
+130:File:Catedral, Berlín, Alemania, 2026-05-02, DD 16-18 HDR.jpg|The reconstructed dome, 2026
+471:*[[List of tallest domes]]
+502:[[Category:Church buildings with domes in Germany]]

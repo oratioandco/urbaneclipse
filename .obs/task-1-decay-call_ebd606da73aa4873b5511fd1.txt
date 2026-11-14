@@ -1,0 +1,114 @@
+    'sphere 32 m dia centred 213.78 m; rescue platforms at 188/191 m; Eisteller at ' +
+    '248.7 m; antenna 4 m dia at the base to under 2 m at 368.03 m. LoD2 geometry ' +
+    'measured unusable: no sphere (prism extruded from ground), no shaft taper, ' +
+    'antenna absent (114.5 m short). The Richtfunk skeleton and the red-white antenna ' +
+    'banding are painted in the tower shader, not modelled.',
+};
+
+/**
+ * Siegessäule, from published dimensions and OSM. Total height 67 m, of which the gilded
+ * Viktoria is the top 8.3 m. Axis at the centre of OSM way 718035022 (the base terrace,
+ * about 60 m across, rounded corners); base ground about 44 m NHN, approximate.
+ *
+ * The terrace and square hall (about 20 m across, 12.6 m) are read from photographs; the
+ * column taper and the viewing platform ring (49-50.8 m) are approximate. Heights the
+ * silhouette maths leans on — total 67 m, statue base at 58.7 m — are high-confidence.
+ */
+export const SIEGESSAEULE: RevolutionLandmark = {
+  id: 'siegessaeule',
+  name: 'Siegessäule',
+  lat: 52.514513,
+  lon: 13.350099,
+  baseOrthometric: 44,
+  profile: [
+    [0, 30], // outer terrace
+    [1.1, 30],
+    [1.3, 10.2], // the square hall's colonnade edge, about 20.4 m across
+    [12.6, 10.2],
+    [12.8, 3.0], // column foot
+    [48.8, 2.45],
+    [49.0, 3.6], // viewing platform's ring
+    [50.6, 3.6],
+    [50.8, 2.3],
+    [58.6, 2.25],
+    [58.9, 1.5], // the Viktoria
+    [67.0, 0.3],
+  ],
+  notes:
+    'Solid of revolution approximation. Total height 67 m and statue 8.3 m are published; ' +
+    'hall width, column taper and platform height are read from photographs and are the ' +
+    'larger uncertainty.',
+};
+
+/**
+ * Brandenburger Tor, as a solid of revolution standing in for the gate's mass plus the
+ * quadriga above it. Axis at the centre of OSM way 518071791; the gate hall itself is not
+ * round: 34.8 m along its face by 16.6 m deep, and the revolution's 25.8 m diameter is the
+ * compromise between the two. Published height 26 m including the quadriga; OSM's height
+ * tag agrees. Base ground about 34.5 m NHN, approximate.
+ */
+export const BRANDENBURGER_TOR: RevolutionLandmark = {
+  id: 'brandenburger-tor',
+  name: 'Brandenburger Tor',
+  lat: 52.516273,
+  lon: 13.377704,
+  baseOrthometric: 34.5,
+  profile: [
+    [0, 12.9],
+    [20.5, 12.9], // the gate's mass, columns to entablature
+    [21.0, 5.0], // the attic
+    [22.2, 5.0],
+    [22.4, 2.6], // the quadriga's horses, about 5 m wide
+    [26.0, 0.4],
+  ],
+  notes:
+    'Revolution approximation of a rectangular gate: half-way between the facade half-width ' +
+    '(17.4 m) and the half-depth (8.3 m), so hidden/edge verdicts carry about a factor of ' +
+    'two either side of the axis. The quadriga band above 21 m is the shot.',
+};
+
+/**
+ * Radius of a landmark at a given height above its base, linearly interpolated.
+ * Returns 0 at or above the top, and the base radius below the base.
+ */
+src/lib/silhouette.ts:59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+src/lib/silhouette.ts:69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+src/lib/silhouette.ts:90:export function directionOffsetECEF(
+src/lib/silhouette.ts:122:export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+src/lib/silhouette.ts:127:export function ecefToGeodetic(x: number, y: number, z: number): {
+src/lib/silhouette.ts:156:export function offsetGeodetic(
+src/lib/silhouette.ts:182:export function azAltTo(
+src/lib/silhouette.ts:210:export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+src/lib/silhouette.ts:239:export function buildSilhouette(
+src/lib/silhouette.ts:265:export function buildSilhouetteDirections(
+src/lib/silhouette.ts:314:export function projectSilhouette(
+src/lib/occultation.ts:42:export type OccultationKind = 'full' | 'partial' | 'adjacent' | 'clear';
+src/lib/occultation.ts:69:export function angularRadiusDeg(bodyRadiusKm: number, distanceKm: number): number {
+src/lib/occultation.ts:97:export function maxRangeForFullOccultation(
+src/lib/occultation.ts:121:export function circlePolygonIntersectionArea(r: number, polygon: AngularPoint[]): number {
+src/lib/occultation.ts:228:export function classifyOccultation(
+src/lib/areaSolver.ts:109:export function circleToPolygon(
+src/lib/areaSolver.ts:136:export function isInsideArea(pos: LatLon, area: LatLon[]): boolean {
+src/lib/areaSolver.ts:159:export function solveObserverPosition(
+src/lib/areaSolver.ts:226:export function evaluateCandidate(
+src/lib/areaSolver.ts:298:export function findCompositions(req: SearchRequest): Candidate[] {
+src/lib/areaSolver.ts:374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+src/lib/areaSolver.ts:426:export function classifyAtInstant(req: InstantClassifyRequest, when: Date): FixedCandidate | null {
+src/lib/areaSolver.ts:481:export function feasibility(
+export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+
+  assertFinite(eyeHeight, 'eye height');
+  if (eyeHeight < 0) {
+    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+  }
+
+  let surface: number;
+  if (surfaceOrthometric !== undefined) {
+    assertFinite(surfaceOrthometric, 'surface elevation');
+    surface = surfaceOrthometric;
+  } else if (groundOrthometric !== undefined) {
+85:export function standingPoint(
+103:export const EYE_HEIGHT_M = 1.6;
+157:    return standingPoint(
+163:        eyeHeightM: EYE_HEIGHT_M,

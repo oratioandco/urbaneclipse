@@ -1,0 +1,13 @@
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}

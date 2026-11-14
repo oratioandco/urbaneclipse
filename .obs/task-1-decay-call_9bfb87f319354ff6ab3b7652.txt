@@ -1,0 +1,1 @@
+[' ❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms', ' FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring', ' ❯ tests/unit/domLandmark.test.ts:143:18', ' FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — n

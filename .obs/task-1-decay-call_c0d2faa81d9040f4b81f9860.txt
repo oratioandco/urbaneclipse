@@ -1,0 +1,2 @@
+standingPoint standingPoint( base: Omit< StandingPoint, 'bearingToLandmarkDeg' | 'distanceToLandmarkM' >, la
+bearingDistanceTo bearingDistanceTo(from: LatL

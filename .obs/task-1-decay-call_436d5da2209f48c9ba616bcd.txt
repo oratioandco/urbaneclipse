@@ -1,0 +1,45 @@
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+   * Radius is linearly interpolated between samples. The sphere is sampled finely
+   * enough that interpolation error stays far below the angular tolerance.
+   */
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+  notes: string;
+}
+
+/**
+ * Sample a sphere's radius profile, unioned with the surrounding shaft.
+    [249.8, 2.0], // antenna base, 4 m diameter
+    [327, 1.45], // the 1997 antenna tip starts at 327 m
+    [368.03, 0.9], // antenna tip, just under 2 m diameter
+  ]
+    .slice()
+    .sort((a, b) => a[0] - b[0]) as ReadonlyArray<readonly [number, number]>,
+  notes:
+    'Parametric solid of revolution, from the published dimensions (de.wikipedia, ' +
+    'Berliner Fernsehturm): foot 32 m dia over 20 m; shaft 16 -> 9 m dia to 248.78 m; ' +
+    'sphere 32 m dia centred 213.78 m; rescue platforms at 188/191 m; Eisteller at ' +
+    '248.7 m; antenna 4 m dia at the base to under 2 m at 368.03 m. LoD2 geometry ' +
+    'measured unusable: no sphere (prism extruded from ground), no shaft taper, ' +
+    'antenna absent (114.5 m short). The Richtfunk skeleton and the red-white antenna ' +
+    'banding are painted in the tower shader, not modelled.',
+};
+
+/**
+ * Siegessäule, from published dimensions and OSM. Total height 67 m, of which the gilded
+ * Viktoria is the top 8.3 m. Axis at the centre of OSM way 718035022 (the base terrace,
+ * about 60 m across, rounded corners); base ground about 44 m NHN, approximate.
+30-
+31-== Maße ==
+32:Ursprünglich war der Dom 114&nbsp;m lang, 73&nbsp;m breit, 114&nbsp;m hoch und bot 2100 Sitzplätze.<ref name="D-Kirche">{{ZentralblBauverw |Autor=- |Titel=Der neue Dom in Berlin |Jahr=1905 |Heft=17 |Kommentar=1. Teil |Seiten=105–107, hier S. 107 |zlb=124}}</ref> Aufgrund der abgerissenen Denkmalskirche, der vereinfacht wiederaufgebauten Kuppel und der in die Predigtkirche versetzten Prunk[[sarkophag]]e ist er heute 90&nbsp;m lang, 98&nbsp;m hoch<ref>{{Literatur |Autor=Lars Eisenlöffel |Hrsg=Oberpfarr- und Domkirche zu Berlin |Titel=Der Berliner Dom |Verlag=Deutscher Kunstverlag |Datum=2007 |ISBN=978-3-422-02360-4 |Seiten=36}}</ref> und bietet 1390 Sitzplätze.<ref>2
+114|m}}, shorter since the demolition of the northern memorial hall in 1975
+114|m|ft|0}} long, {{convert|73|m|ft|0}} wide and {{convert|116|m|ft|0}} tall, it was much larger than any of the previous 

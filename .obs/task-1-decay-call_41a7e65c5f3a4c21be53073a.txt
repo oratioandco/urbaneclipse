@@ -1,0 +1,30 @@
+export interface StandingPoint extends LatLon {
+  id: string;
+  /** Deck/platform surface at this point, DHHN2016 orthometric metres. */
+  surfaceOrthometric: number;
+  /** Photographer's eye above the surface, metres. */
+  eyeHeightM: number;
+  /** True when nobody has confirmed the surface value at THIS point of the bridge. */
+  needsSiteCheck: boolean;
+  /**
+   * Provenance of the surface value: dataset, fetch date, CRS/vertical datum, sampling
+   * method and the measured median — including the median REJECTED for the height
+   * field, so the evidence survives without asserting an unconfirmed height.
+   */
+  source: string;
+  /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
+  readonly bearingToLandmarkDeg: number;
+  /** Great-circle ground distance to the landmark, metres. Computed. */
+  rexport function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });

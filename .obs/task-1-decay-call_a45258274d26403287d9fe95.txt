@@ -1,0 +1,207 @@
+    expect(p.coverage).toBeGreaterThan(0);
+    expect(p.coverage).toBeLessThan(1);
+    expect(p.maxDistanceM).toBeLessThan(3000);
+    // Nothing beyond the last known sample may appear in the profile.
+    for (const s of p.samples) expect(s.distanceM).toBeLessThanOrEqual(p.maxDistanceM);
+  });
+
+  it('returns NaN and zero coverage when NO terrain is available, never 0 degrees', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 100, stepM: 50, map: grid(() => -3276.8) });
+    expect(p.coverage).toBe(0);
+    expect(Number.isNaN(p.horizonAltitudeDeg)).toBe(true);
+    expect(p.truncated).toBe(true);
+    expect(p.samples).toHaveLength(0);
+  });
+});
+
+describe('Siegessäule target window — spherical trig, known answers', () => {
+  it('looks almost exactly west from Straße des 17. Juni', () => {
+    // Independent WGS84 Vincenty inverse: 270.069244374 deg. (A mean-sphere
+    // haversine gives 270.069397 — the 1.5e-4 deg difference is the datum, not drift.)
+    expect(azimuthToLandmark(OBS, SIEGESSAEULE)).toBeCloseTo(270.069244, 5);
+  });
+
+  it('puts the 67 m tip about 3.2 deg above the eye at ~1.35 km', () => {
+    expect(landmarkHeight(SIEGESSAEULE)).toBeCloseTo(67, 6);
+    // Independent: base 44 + 67 = 111 m, eye 35.6 m, WGS84 geodesic d = 1351.037460 m
+    // -> 3.189035495 deg. The mean-sphere haversine distance (1346.678 m) is 4.36 m
+    // short on this east-west line at 52.5 deg N, which would overstate this by 0.010 deg.
+    expect(landmarkTipAltitudeDeg(OBS, SIEGESSAEULE)).toBeCloseTo(3.189035495, 6);
+  });
+
+  it('spans the published azimuth/altitude box', () => {
+    const w = targetWindow(OBS, SIEGESSAEULE);
+    expect(w.azimuthDeg).toBeCloseTo(270.069244, 5);
+    // Widest profile radius is the 30 m terrace -> 1.272052783 deg at 1351.037 m.
+    expect(w.azimuthHalfWidthDeg).toBeCloseTo(1.272052783, 6);
+    expect(w.altitudeMinDeg).toBeCloseTo(0.350943598, 6);
+    expect(w.altitudeMaxDeg).toBeCloseTo(3.189035495, 6);
+    expect(w.altitudeMaxDeg).toBeGreaterThan(w.altitudeMinDeg);
+  });
+
+  it('is a much smaller target than the Fernsehturm from the same spot', () => {
+    const column = targetWindow(OBS, SIEGESSAEULE);
+    const tower = targetWindow(OBS, FERNSEHTURM);
+    expect(tower.altitudeMaxDeg).toBeGreaterThan(column.altitudeMaxDeg);
+  });
+});
+
+describe('gateDirection — the disc must clear the terrain AND hit the target', () => {
+  const target = targetWindow(OBS, SIEGESSAEULE);
+  const clearSky = { azimuthDeg: target.azimuthDeg, horizonAltitudeDeg: -0.5, samples: [], horizonDistanceM: 100, maxDistanceM: 1400, coverage: 1, truncated: false };
+
+  it('accepts a setting sun on the column above the skyline', () => {
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, clearSky, 0.25);
+    expect(g.clearsHorizon).toBe(true);
+    expect(g.alignedWithTarget).toBe(true);
+    expect(g.horizonConfident).toBe(true);
+  });
+
+  it('rejects a geometrically perfect alignment that is already below the skyline', () => {
+    const blocked = { ...clearSky, horizonAltitudeDeg: 2.0 };
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, blocked, 0.25);
+    expect(g.alignedWithTarget).toBe(true);
+    expect(g.clearsHorizon).toBe(false);
+  });
+
+    expect(eyeEllipsoidal(OBS)).toBe(
+      resolveEyeEllipsoidalHeight({ groundOrthometric: undefined, surfaceOrthometric: 34, eyeHeight: 1.6 }),
+    );
+  });
+});
+
+/**
+ * The time dimension: real ephemeris, real silhouette, terrain-gated.
+ *
+ * Known answer used here: at the March equinox the sun sets essentially DUE WEST, and
+ * the Siegessäule's axis from Straße des 17. Juni lies at 270.069 deg — so the best
+ * covered window of that week must be the equinox one, within the column's 1.27 deg
+ * half-width. Measured independently before writing these expectations: six windows,
+ * best 2027-03-21 17:14Z at az 270.268 deg, coveredFraction 0.94.
+ */
+describe('enumerateHorizonGatedWindows — flag-gated, terrain-aware', () => {
+  const bodyAt = (t: Date, body: 'sun' | 'moon') => sampleBody(body, t, OBS.lat, OBS.lon);
+  const range = {
+    start: new Date('2027-03-18T00:00:00Z'),
+    end: new Date('2027-03-24T00:00:00Z'),
+    stepMinutes: 2,
+  };
+
+  /** Synthetic Berlin-sized grid, 33.4 m plain, fully covering observer AND column. */
+  function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {
+    const width = 41;
+    const height = 31;
+    const bbox = { lonMin: 13.34, latMin: 52.5, lonMax: 13.38, latMax: 52.53 };
+    const dLon = 0.001;
+    const dLat = 0.001;
+    const header: HeightmapHeader = {
+      format: 'plaster-void-heightmap', version: 1, dtype: 'int16', scale: 0.1, offset: 0,
+      nodata: -32768, width, height, bbox, dLon, dLat,
+    };
+    const samples = new Int16Array(width * height);
+    for (let r = 0; r < height; r++) {
+      for (let c = 0; c < width; c++) {
+        const lat = bbox.latMin + r * dLat;
+        const lon = bbox.lonMin + c * dLon;
+        samples[r * width + c] = Math.round(fill(lat, lon) * 10);
+      }
+    }
+    return createHeightmap(header, samples);
+  }
+
+  const PLAIN = berlinGrid(() => 33.4);
+  // A 60 m ridge ~250-450 m west of the observer: atan((60-35.6)/300) ~ 4.6 deg, well
+  // above the 0.2-1.7 deg the equinox sun reaches on the column.
+  const RIDGED = berlinGrid((_lat, lon) => (lon > 13.3635 && lon < 13.3665 ? 60 : 33.4));
+
+  it('throws while the flag is off, so nothing can ship by accident', () => {
+    expect(() =>
+      enumerateHorizonGatedWindows({ point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range }),
+    ).toThrow(HorizonWindowsDisabledError);
+    expect(() =>
+      enumerateHorizonGatedWindows({ point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, enabled: false }),
+    ).toThrow(/flag-gated/);
+  });
+
+  it('finds the equinox sunset windows on the column when enabled', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    expect(w.length).toBeGreaterThan(3);
+    expect(w.every((x) => x.body === 'sun')).toBe(true);
+    // Chronological, as the calendar needs.
+    for (let i = 1; i < w.length; i++) {
+      expect(w[i]!.peak.getTime()).toBeGreaterThan(w[i - 1]!.peak.getTime());
+    }
+    const best = w.reduce((a, b) => (b.coveredFraction > a.coveredFraction ? b : a));
+    expect(best.coveredFraction).toBeGreaterThan(0.8);
+    // The equinox: 20 or 21 March 2027.
+    expect(best.peak.getUTCDate()).toBeGreaterThanOrEqual(20);
+    expect(best.peak.getUTCDate()).toBeLessThanOrEqual(21);
+    expect(best.peak.getUTCMonth()).toBe(2);
+    // Sunset, i.e. late afternoon UTC in Berlin.
+    expect(best.peak.getUTCHours()).toBeGreaterThanOrEqual(16);
+    expect(best.peak.getUTCHours()).toBeLessThanOrEqual(18);
+    // On the column's azimuth, within its half-width.
+    const target = targetWindow(OBS, SIEGESSAEULE);
+    expect(Math.abs(best.peakAzimuthDeg - target.azimuthDeg)).toBeLessThan(target.azimuthHalfWidthDeg);
+    expect(best.peakAltitudeDeg).toBeGreaterThan(target.altitudeMinDeg - 0.5);
+    expect(best.peakAltitudeDeg).toBeLessThan(target.altitudeMaxDeg);
+  });
+
+  it('reports a fully sampled skyline as confident on complete coverage', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    expect(w.every((x) => x.horizonConfident)).toBe(true);
+    // Flat ground below the eye cannot block a sunset.
+    expect(w.every((x) => x.clearsHorizon)).toBe(true);
+    expect(w.some((x) => x.photographable)).toBe(true);
+  });
+
+  it('REJECTS a perfect alignment that sets behind a ridge — the whole point of the module', () => {
+    const open = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    const blocked = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: RIDGED, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    // Same instants, same geometry: the alignment itself is unchanged ...
+    expect(blocked.length).toBe(open.length);
+    for (let i = 0; i < open.length; i++) {
+      expect(blocked[i]!.peak.getTime()).toBe(open[i]!.peak.getTime());
+      expect(blocked[i]!.coveredFraction).toBeCloseTo(open[i]!.coveredFraction, 9);
+    }
+    // ... but the terrain now hides every one of them.
+    expect(blocked.every((x) => !x.clearsHorizon)).toBe(true);
+    expect(blocked.every((x) => !x.photographable)).toBe(true);
+    expect(blocked[0]!.horizonAltitudeDeg).toBeGreaterThan(2);
+    expect(open[0]!.horizonAltitudeDeg).toBeLessThan(0);
+  });
+
+  it('marks the REAL grid result as not confident, because the column is outside coverage', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: realBerlin(), bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    expect(w.length).toBeGreaterThan(0);
+    expect(w.every((x) => !x.horizonConfident)).toBe(true);
+    // Honest, not silently optimistic: the alignment is still reported.
+    expect(w.some((x) => x.coveredFraction > 0.5)).toBe(true);
+  });
+
+  it('honours the bodies filter', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['moon'], enabled: true,
+    });
+    expect(w.every((x) => x.body === 'moon')).toBe(true);
+  });
+
+  it('requires the whole disc to clear when a radius is supplied', () => {
+    const centre = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true, discRadiusDeg: 0,
+    });
+    const whole = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: RIDGED, bodyAt, ...range, bodies: ['sun'], enabled: true, discRadiusDeg: 0.25,
+    });
+    expect(centre.some((x) => x.clearsHorizon)).toBe(true);
+    expect(whole.every((x) => !x.clearsHorizon)).toBe(true);

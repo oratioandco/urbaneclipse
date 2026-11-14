@@ -1,0 +1,62 @@
+describe('findOccultationsAtPosition over a real window', () => {
+  // THE WINDOW MATTERS, and discovering why was a genuine product finding.
+  //
+  // From this bridge the tower's tip is only ~3.2 deg above the horizon, and the tower
+  // bears ~280 deg. So a sun transit requires the sun to be at azimuth ~280 deg while BELOW
+  // ~3.2 deg altitude — which only happens near the equinoxes. Measured minimum solar
+  // altitude at az 280 deg through 2026: June 20.4 deg, August 4.6 deg (still too high),
+  // September 11th -1.7 deg. A 30-day August window therefore yields ZERO transits, not
+  // because the geometry is broken but because the shot is seasonally impossible then.
+  //
+  // The real windows in 2026 are 4-11 April and 31 August-7 September: a twice-yearly
+  // event, the same phenomenon as Manhattanhenge.
+  const start = new Date(Date.UTC(2026, 7, 25, 0, 0));
+  const end = new Date(Date.UTC(2026, 8, 15, 0, 0));
+
+  it('finds real sun transits behind the tower, and none are full', () => {
+    const hits = findOccultationsAtPosition({
+      observer: OBSERVER,
+      landmark: FERNSEHTURM,
+      start,
+      end,
+      stepMinutes: 2,
+      bodyAt: (t) => sampleBody('sun', t, OBSERVER.lat, OBSERVER.lon),
+      wanted: ['full', 'partial'],
+    });
+
+    // The sun sets in the west-north-west in August, passing behind the tower from
+    // this bridge — so there MUST be transits. A zero result would mean the geometry
+    // chain is broken somewhere.
+function realBerlin(): Heightmap {
+  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
+  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  return createHeightmap(header, decodeSamples(ab));
+}
+
+describe('the feature flag keeps this out of the app', () => {
+  it('is OFF when nothing is set', () => {
+    expect(horizonWindowsEnabled({})).toBe(false);
+    expect(horizonWindowsEnabled(undefined)).toBe(false);
+  });
+
+  it('is OFF for anything that is not an explicit truthy string', () => {
+  const samples = Int16Array.from([100, 200, 300, 500, 600, 700]);
+  return { header, samples };
+}
+
+describe('createHeightmap validation', () => {
+  it('accepts a well-formed pair', () => {
+    const { header, samples } = fixture();
+    expect(() => createHeightmap(header, samples)).not.toThrow();
+  });
+
+  it('rejects a truncated payload rather than sampling garbage', () => {
+    const { header, samples } = fixture();
+    expect(() => createHeightmap(header, samples.slice(0, 4))).toThrow(HeightmapError);
+  });
+
+  it('rejects an unknown format or version', () => {
+    const { header, samples } = fixture();
+17:export interface HeightmapHeader {
+31:export interface Heightmap {

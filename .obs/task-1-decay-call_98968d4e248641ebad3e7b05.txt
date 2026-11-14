@@ -1,0 +1,3 @@
+ampleGroundOrthometric( map: Heightmap, lat: number, lon: number, ): number | undefined
+HM-EXPORTS: export interface HeightmapHeader | export interface Heightmap | export function createHeightmap | export function sampleGroundOrthometric | export function isWithinCoverage | export function decodeSamples
+VT-IMPORTS: import { describe, it, expect } f

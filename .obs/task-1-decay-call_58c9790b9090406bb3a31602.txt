@@ -1,0 +1,8 @@
+ERROR: exit: exit status 1
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;

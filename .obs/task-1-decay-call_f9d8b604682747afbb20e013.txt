@@ -1,0 +1,55 @@
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });
+}
+
+const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
+
+/** Eye height of a standing photographer, metres. */
+export const EYE_HEIGHT_M = 1.6;
+
+const OSM_BRIDGE_SOURCE =
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck heights per node from Berlin ' +
+  'DOM1 (sheet dom1_33_398_5818_2, EPSG:25833, DHHN2016), sampled 2026-11-12: only the ' +
+  'crest nodes inside the curated 48.1-48.3 m mid-span envelope adopt their measured ' +
+  'median; the ramp/flank nodes keep the curated 48.2 m with needsSiteCheck until ' +
+  'surveyed. Each point carries its own source, including the rejected measurement.';
+
+/** The curated mid-span deck record (src/lib/viewpoints.ts), metres DHHN2016. */
+const CURATED_MIDSPAN_M = 48.2;
+
+/**
+103:export const EYE_HEIGHT_M = 1.6;
+export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+
+  assertFinite(eyeHeight, 'eye height');
+  if (eyeHeight < 0) {
+    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+  }
+
+  let surface: number;
+  if (surfaceOrthometric !== undefined) {
+    assertFinite(surfaceOrthometric, 'surface elevation');
+    surface = surfaceOrthometric;
+  } else if (groundOrthometric !== undefined) {
+    assertFinite(groundOrthometric, 'ground elevation');
+    surface = groundOrthometric;
+50:|length={{convert|114|m}}, shorter since the demolition of the northern memorial hall in 1975
+55:|dome_height_outer={{convert|115|m}} (until destruction 1944)
+79:The history of today's ''Supreme Parish and Collegiate Church'' and its community dates back to 1451. In that year Prince-Elector [[Frederick II, Elector of Brandenburg|Frederick II ''Irontooth'']] of [[Margraviate of Brandenburg|Brandenburg]] moved with his residence from [[Brandenburg an der Havel|Brandenburg upon Havel]] to [[Cölln]] (today's [[Fischerinsel|Fishers' Island]], the southern part of Museums Island) into the newly erected [[City Palace, Berlin|City Palace]], which also housed a Catholic chapel. In 1454 Frederick Irontooth, after having returned – via Rome – from his pilgrimage to [[Jerusalem]], elevated the chapel to become a parish church, richly endowing it with relics and altars.<ref>{{cite book |last1=Materna |first1=Ingo |last2=Ribbe |first2=Wolfgang |last3=Baudisch |first3=Rosemarie |date=1995 |title=Geschichte in Daten - Brandenburg |location=München |publisher=Koehler & Amelang |page=68 |isbn=978-3-7338-0188-5}}</ref> [[Pope Nicholas V]] ordered [[Stephan Bodecker]], then Prince-[[Bishop of Brandenburg]], to consecrate the chapel to [[Erasmus of Formiae]].<ref name="Wolfgang Gottschalk 1985, p. 171">{{harvnb|Gottschalk|1985|p=171}}</ref>
+81:On 7 April 1465 – at Frederick Irontooth's request – [[Pope Paul II]] attributed to '''St Erasmus Chapel''' a [[canon law|canon-law]] [[College (canon law)|College]] named ''Stift zu Ehren Unserer Lieben Frauen, des heiligen Kreuzes, St. Petri und Pauli, St. Erasmi und St. Nicolai'' dedicated to [[Mary of Nazareth|{{Not a typo|Mary(am)}} of Nazareth]], the [[Christian cross|Holy Cross]], [[Simon Peter]], [[Paul of Tarsus]], [[Erasmus of Formiae]], and [[Nicholas of Myra]]. A [[collegiate church]] is a church endowed with revenues and earning estates, in order to provide a number of [[Canon (priest)|canons]], called in [[canon law]] a [[College (canon law)|College]], with [[prebend]]s.<ref name="Wolfgang Gottschalk 1985, p. 171" /> In this respect a collegiate church is similar to a cathedral, which is why in colloquial German the term ''cathedral college'' ([[Domstift]]), became the [[synecdoche]] used – pars pro toto – for all canon-law colleges. So the college of St. Erasmus' chapel, called ''Domstift'' in German, bestowed the pertaining church its colloquial naming, ''Domkirche'' (cathedral church). Frederick Irontooth provided the college with estates, sufficient to supply eight canon prebendaries.<ref>{{cite book |last=Hach |first=Arno |date=2002 |orig-year=1933 |title=Alt-berlin Im Spiegel Seiner Kirchen: Rückblicke in Die Versunkene Altstadt; Mit Einem Plan Der Berliner Innenstadt Um 1860 |location=Ammerbuch |publisher=Beggerow |page=21 |isbn=978-3-9361-0300-7}}</ref> On 20 January 1469, Dietrich IV, then Prince-Bishop of Brandenburg, invested eight clergymen, chosen by Frederick Irontooth, as collegiate canons with the prebends.<ref name="Wolfgang Gottschalk 1985, p. 171" />
+86:In 1538, a new western façade with two towers was attached to the collegiate church, which – due to its prior status as a church of a [[Mendicant orders|mendicant order]] – had no tower before. In the next year, Joachim II Hector converted from Catholicism to [[Lutheranism]], as many of his subjects had done earlier. The ''collegiate church'' thus became Lutheran too, like most of the electoral subjects and all the churches in the Electorate. However, Joachim II Hector's ideas of [[Protestant Reformation|Reformation]] were different from the modern ones. After his conversion he enriched the collegiate church with luxuriant furnishings, such as [[parament]]s, [[monstrance]]s, [[relic]]s, [[chasuble]]s, carpets and [[Antependium|antependia]].<ref>{{harvnb|Gottschalk|1985|p=169}}</ref> From 1545 on the electoral family of [[Hohenzollern]] used the church building as their burial place.<ref>{{harvnb|Kühne|Stephani|1986|p=361}}</ref>
+88:In 1608, the year of his accession to the throne, Prince-Elector [[John Sigismund, Elector of Brandenburg|John Sigismund]], then a [[Crypto-Calvinism|crypto-Calvinist]], dissolved the [[College (canon law)|college]] and the church was renamed into '''Supreme Parish Church of Holy Trinity in Cölln'''.<ref name="Elisabeth Stephani 1986, p. 362">{{harvnb|Kühne|Stephani|1986|p=362}}</ref> In 1613, John Sigismund publicly confessed his [[Calvinist]] faith (in Germany usually called [[Continental Reformed church|Reformed Church]]), but waived his privilege to demand the same of his subjects ([[Cuius regio, eius religio]]). So he and his family, except his steadfastly Lutheran wife [[Duchess Anna of Prussia|Anna]], converted, while most of his subjects remained Lutherans. While Berlin's other churches, subject to Lutheran city-council jurisdiction, remained Lutheran, the ''Supreme Parish Church of Holy Trinity'', the Hohenzollern's house church, became Berlin's first, and until 1695, only Calvinist church,<ref>In 1695 Berlin's second Calvinist church was erected, called [[Parochialkirche|Parochial Church]], i.e. parish church, as opposed to the Supreme Parish Church then colloquially called Collegiate of Palace Church.</ref> serving from 1632 on as the parish for all Calvinists in town.<ref>From then on Calvinist immigrants, as from [[Bohemia]], France ([[Huguenots]]), [[United Duchies of Jülich-Cleves-Berg|Juliers-Cleves-Berg]], the [[Netherlands]], Poland, [[Switzerland]], and [[Wallonia]] were very welcome in Berlin and all the Electorate of Brandenburg in order to build up a considerable minority, being religiously a power base of the Hohenzollern.</ref> Being now a Calvinist church, the patronage of the [[Holy Trinity]] was increasingly skipped.
+99:On 6 September 1750, the new baroque Calvinist ''Supreme Parish Church'' was inaugurated, built by Johann Boumann ''the Elder'' in 1747–1750. The electoral tombs were transferred to the new building. The new structure covered a space north of the palace, which is still covered by the present building.<ref name="Elisabeth Stephani 1986, p. 362" />
+103:In celebration of the Union [[Karl Friedrich Schinkel]] remodeled the interior in the same year and in 1820–1822 the exterior of Boumann's church in the [[neoclassical architecture|neoclassicist style]].<ref name="Elisabeth Stephani 1986, p. 362" /> The ''Supreme Parish and Cathedral Church'' faced at its southern façade [[Berlin Palace|Berlin City Palace]], the residence of the [[Hohenzollerns]] (severely damaged in World War II and demolished later by the East German government, later reconstructed as [[Humboldt Forum]]), and the [[Lustgarten]] park at its western front, which is still there.

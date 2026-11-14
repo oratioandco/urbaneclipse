@@ -1,0 +1,18 @@
+way 313670734 Berliner Dom 52.5190822 13.4010942 ['52.5186346', '52.5195378', '13.4003048', '13.4017508']
+/tmp/monbijou.json
+  way 195397553 Nördliche Monbijoubrücke 52.5223406 13.3940796
+  way 195397546 Südliche Monbijoubrücke 52.5218860 13.3936274
+  way 23852032 Nördliche Monbijoubrücke 52.5223419 13.3940736
+/tmp/friedrichs.json
+  way 339201182 Friedrichsbrücke 52.5205529 13.4003017
+  way 4610599 Friedrichsbrücke 52.5204735 13.4001606
+| BAUJAHR          = 1894–1905
+| ABRISS           = 
+| HÖHE             = 98
+| GRUNDFLÄCHE      = 6270
+| LÄNGE            = 90
+
+== Maße ==
+Ursprünglich war der Dom 114&nbsp;m lang, 73&nbsp;m breit, 114&nbsp;m hoch und bot 2100 Sitzplätze.<ref name="D-Kirche">{{ZentralblBauverw |Autor=- |Titel=Der neue Dom in Berlin |Jahr=1905 |Heft=17 |Kommentar=1. Teil |Seiten=105–107, hier S. 107 |zlb=124}}</ref> Aufgrund der abgerissenen Denkmalskirche, der vereinfacht wiederaufgebauten Kuppel und der in die Predigtkirche versetzten Prunk[[sarkophag]]e ist er heute 90&nbsp;m lang, 98&nbsp;m hoch<ref>{{Literatur |Autor=Lars Eisenlöffel |Hrsg=Oberpfarr- und Domkirche zu Berlin |Titel=Der Berliner Dom |Verlag=Deutscher Kunstverlag |Datum=2007 |ISBN=978-3-422-02360-4 |Seiten=36}}</ref> und bietet 1390 Sitzplätze.<ref>{{Internetquelle |url=https://www.berlinerdom.de/termine/sitzplan/ |titel=Sitzplan |hrsg=Berliner Dom |sprache=de |abruf=2018-05-04}}</ref> Die Kuppel hat einen Durchmesser von 33&nbsp;m.<ref>{{structurae |Typ=bauwerke |ID=20014643 |Abruf=2012-10-22}}</ref><!-- Innen oder außen ? --> Mit einer Grundfläche von 6270&nbsp;Quadratmetern ist er die größte evangelische Kirche Deutschlands.<ref name="schueler-lehrer">{{Internetquelle |url=https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/informationen-fuer-schueler-lehrer/ |titel=Informationen für Schüler & Lehrer |hrsg=Berliner Dom |abruf=2021-01-16}}</ref>
+
+{{Anker|Vorgängerbauten}}

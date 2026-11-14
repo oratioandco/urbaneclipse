@@ -1,0 +1,126 @@
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });
+}
+
+const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
+
+/** Eye height of a standing photographer, metres. */
+export const EYE_HEIGHT_M = 1.6;
+
+const OSM_BRIDGE_SOURCE =
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck heights per node from Berlin ' +
+  'DOM1 (sheet dom1_33_398_5818_2, EPSG:25833, DHHN2016), sampled 2026-11-12: only the ' +
+  'crest nodes inside the curated 48.1-48.3 m mid-span envelope adopt their measured ' +
+  'median; the ramp/flank nodes keep the curated 48.2 m with needsSiteCheck until ' +
+  'surveyed. Each point carries its own source, including the rejected measurement.';
+
+/** The curated mid-span deck record (src/lib/viewpoints.ts), metres DHHN2016. */
+const CURATED_MIDSPAN_M = 48.2;
+
+/**
+103:export const EYE_HEIGHT_M = 1.6;
+export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+
+  assertFinite(eyeHeight, 'eye height');
+  if (eyeHeight < 0) {
+    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+  }
+
+  let surface: number;
+  if (surfaceOrthometric !== undefined) {
+    assertFinite(surfaceOrthometric, 'surface elevation');
+    surface = surfaceOrthometric;
+  } else if (groundOrthometric !== undefined) {
+    assertFinite(groundOrthometric, 'ground elevation');
+    surface = groundOrthometric;
+50:|length={{convert|114|m}}, shorter since the demolition of the northern memorial hall in 1975
+55:|dome_height_outer={{convert|115|m}} (until destruction 1944)
+79:The history of today's ''Supreme Parish and Collegiate Church'' and its community dates back to 1451. In that year Prince-Elector [[Frederick II, Elector of Brandenburg|Frederick II ''Irontooth'']] of [[Margraviate of Brandenburg|Brandenburg]] moved with his residence from [[Brandenburg an der Havel|Brandenburg upon Havel]] to [[Cölln]] (today's [[Fischerinsel|Fishers' Island]], the southern part of Museums Island) into the newly erected [[City Palace, Berlin|City Palace]], which also housed a Catholic chapel. In 1454 Frederick Irontooth, after having returned – via Rome – from his pilgrimage to [[Jerusalem]], elevated the chapel to become a parish church, richly endowing it with relics and altars.<ref>{{cite book |last1=Materna |first1=Ingo |last2=Ribbe |first2=Wolfgang |last3=Baudisch |first3=Rosemarie |date=1995 |title=Geschichte in Daten - Brandenburg |location=München |publisher=Koehler & Amelang |page=68 |isbn=978-3-7338-0188-5}}</ref> [[Pope Nicholas V]] ordered [[Stephan Bodecker]], then Prince-[[Bishop of Brandenburg]], to consecrate the chapel to [[Erasmus of Formiae]].<ref name="Wolfgang Gottschalk 1985, p. 171">{{harvnb|Gottschalk|1985|p=171}}</ref>
+81:On 7 April 1465 – at Frederick Irontooth's request – [[Pope Paul II]] attributed to '''St Erasmus Chapel''' a [[canon law|canon-law]] [[College (canon law)|College]] named ''Stift zu Ehren Unserer Lieben Frauen, des heiligen Kreuzes, St. Petri und Pauli, St. Erasmi und St. Nicolai'' dedicated to [[Mary of Nazareth|{{Not a typo|Mary(am)}} of Nazareth]], the [[Christian cross|Holy Cross]], [[Simon Peter]], [[Paul of Tarsus]], [[Erasmus of Formiae]], and [[Nicholas of Myra]]. A [[collegiate church]] is a church endowed with revenues and earning estates, in order to provide a number of [[Canon (priest)|canons]], called in [[canon law]] a [[College (canon law)|College]], with [[prebend]]s.<ref name="Wolfgang Gottschalk 1985, p. 171" /> In this respect a collegiate church is similar to a cathedral, which is why in colloquial German the term ''cathedral college'' ([[Domstift]]), became the [[synecdoche]] used – pars pro toto – for all canon-law colleges. So the college of St. Erasmus' chapel, called ''Domstift'' in German, bestowed the pertaining church its colloquial naming, ''Domkirche'' (cathedral church). Frederick Irontooth provided the college with estates, sufficient to supply eight canon prebendaries.<ref>{{cite book |last=Hach |first=Arno |date=2002 |orig-year=1933 |title=Alt-berlin Im Spiegel Seiner Kirchen: Rückblicke in Die Versunkene Altstadt; Mit Einem Plan Der Berliner Innenstadt Um 1860 |location=Ammerbuch |publisher=Beggerow |page=21 |isbn=978-3-9361-0300-7}}</ref> On 20 January ===MEEUS===
+    expect(p.horizonDistanceM).toBeLessThan(700);
+    // A nearer ridge hides a taller far one: the skyline must not keep rising past it.
+    const last = p.samples[p.samples.length - 1]!;
+    expect(last.altitudeDeg).toBeCloseTo(p.horizonAltitudeDeg, 9);
+  });
+
+  it('rejects a non-positive step or range instead of looping forever', () => {
+    expect(() => sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 100, stepM: 0, map: FLAT })).toThrow(RangeError);
+    expect(() => sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 0, stepM: 10, map: FLAT })).toThrow(RangeError);
+  });
+
+  it('reports a coverage gap rather than inventing ground', () => {
+    // Walk east out of the 21x21 grid: samples past the edge have no data.
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 90, maxDistanceM: 3000, stepM: 100, map: FLAT });
+    expect(p.truncated).toBe(true);
+    expect(p.coverage).toBeGreaterThan(0);
+    expect(p.coverage).toBeLessThan(1);
+    expect(p.maxDistanceM).toBeLessThan(3000);
+    // Nothing beyond the last known sample may appear in the profile.
+    for (const s of p.samples) expect(s.distanceM).toBeLessThanOrEqual(p.maxDistanceM);
+  });
+
+  it('returns NaN and zero coverage when NO terrain is available, never 0 degrees', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 100, stepM: 50, map: grid(() => -3276.8) });
+    expect(p.coverage).toBe(0);
+    expect(Number.isNaN(p.horizonAltitudeDeg)).toBe(true);
+    expect(p.truncated).toBe(true);
+    expect(p.samples).toHaveLength(0);
+  });
+});
+
+describe('Siegessäule target window — spherical trig, known answers', () => {
+  it('looks almost exactly west from Straße des 17. Juni', () => {
+    // Independent WGS84 Vincenty inverse: 270.069244374 deg. (A mean-sphere
+    // haversine gives 270.069397 — the 1.5e-4 deg difference is the datum, not drift.)
+    expect(azimuthToLandmark(OBS, SIEGESSAEULE)).toBeCloseTo(270.069244, 5);
+  });
+
+  it('puts the 67 m tip about 3.2 deg above the eye at ~1.35 km', () => {
+    expect(landmarkHeight(SIEGESSAEULE)).toBeCloseTo(67, 6);
+    // Independent: base 44 + 67 = 111 m, eye 35.6 m, WGS84 geodesic d = 1351.037460 m
+    // -> 3.189035495 deg. The mean-sphere haversine distance (1346.678 m) is 4.36 m
+    // short on this east-west line at 52.5 deg N, which would overstate this by 0.010 deg.
+    expect(landmarkTipAltitudeDeg(OBS, SIEGESSAEULE)).toBeCloseTo(3.189035495, 6);
+  });
+
+  it('spans the published azimuth/altitude box', () => {
+    const w = targetWindow(OBS, SIEGESSAEULE);
+    expect(w.azimuthDeg).toBeCloseTo(270.069244, 5);
+    // Widest profile radius is the 30 m terrace -> 1.272052783 deg at 1351.037 m.
+    expect(w.azimuthHalfWidthDeg).toBeCloseTo(1.272052783, 6);
+    expect(w.altitudeMinDeg).toBeCloseTo(0.350943598, 6);
+    expect(w.altitudeMaxDeg).toBeCloseTo(3.189035495, 6);
+    expect(w.altitudeMaxDeg).toBeGreaterThan(w.altitudeMinDeg);
+  });
+
+  it('is a much smaller target than the Fernsehturm from the same spot', () => {
+    const column = targetWindow(OBS, SIEGESSAEULE);
+    const tower = targetWindow(OBS, FERNSEHTURM);
+    expect(tower.altitudeMaxDeg).toBeGreaterThan(column.altitudeMaxDeg);
+  });
+});
+
+describe('gateDirection — the disc must clear the terrain AND hit the target', () => {
+  const target = targetWindow(OBS, SIEGESSAEULE);
+  const clearSky = { azimuthDeg: target.azimuthDeg, horizonAltitudeDeg: -0.5, samples: [], horizonDistanceM: 100, maxDistanceM: 1400, coverage: 1, truncated: false };
+
+  it('accepts a setting sun on the column above the skyline', () => {
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, clearSky, 0.25);
+    expect(g.clearsHorizon).toBe(true);
+    expect(g.alignedWithTarget).toBe(true);
+    expect(g.horizonConfident).toBe(true);
+  });
+
+  it('rejects a geometrically perfe

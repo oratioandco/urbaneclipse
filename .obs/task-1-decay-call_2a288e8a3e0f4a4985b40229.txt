@@ -1,0 +1,7 @@
+DOM way 313670734 52.5190822 13.4010942 ['52.5186346', '52.5195378', '13.4003048', '13.4017508']
+monbijou way 195397553 Nördliche Monbijoubrücke 52.5223406 13.3940796
+friedrichs way 339201182 Friedrichsbrücke 52.5205529 13.4003017
+dom-de.wiki ['Durchmesser von 33']
+dom-en.wiki ['height=\n', 'height  = 200px\n']
+dom-official.html ['100 Metern hohen Kuppel']
+structurae.html ['height" content="300', 'height:33', 'hei

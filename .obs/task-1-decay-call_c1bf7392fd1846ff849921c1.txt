@@ -1,0 +1,5 @@
+dom groundOrtho 35.26
+fried groundOrtho 30.80
+monb groundOrtho 31.10
+fried bearing 161.846 dist 172.1 apexElevDeg 30.360 domeBaseElev(62m) 20.635 domeHalfWidthDeg(16m) 5.311
+monb bearing 121.676 dist 593.7 apexElevDeg 9.609 domeBaseElev(62m) 6.202 domeHalfWidthDeg(16m) 1.544

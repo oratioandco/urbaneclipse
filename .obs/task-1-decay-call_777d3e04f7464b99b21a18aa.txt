@@ -1,0 +1,42 @@
+/**
+
+/** A landmark modelled as a vertical solid of revolution. */
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+  notes: string;
+}
+
+/**
+function sphereSamples(
+  centreHeight: number,
+  sphereRadius: number,
+  shaftRadiusAt: (h: number) => number,
+  steps = 16,
+): Array<readonly [number, number]> {
+  const out: Array<readonly [number, number]> = [];
+  for (let i = 0; i <= steps; i++) {
+    const h = centreHeight - sphereRadius + (2 * sphereRadius * i) / steps;
+    const dz = h - centreHeight;
+    const r = Math.sqrt(Math.max(0, sphereRadius * sphereRadius - dz * dz));
+    out.push([h, Math.max(r, shaftRadiusAt(h))]);
+  }
+  return out;
+}
+
+/** Shaft taper: 16 m dia flare at the foot -> 8 m radius by 20 m -> 4.5 m at the top. */
+function fernsehturmShaftRadius(h: number): number {
+  if (h <= 0) return 16;
+  if (h < 20) return 16 + ((8 - 16) * h) / 20; // flared foot
+  if (h < 249.8) return 8 + ((4.5 - 8) * (h - 20)) / (248.78 - 20); // concrete shaft to 248.78 m
+  if (h <= 368.03) return 2.0 + ((0.9 - 2.0) * (h - 249.8)) / (368.03 - 249.8); // antenna, 4 m dia at the base
+  return 0;
+}

@@ -1,0 +1,2 @@
+ion discRadiusMetres | export function ecefToGeodetic | export function offsetGeodetic | export function azAltTo | export function toTangentPlane | export function buildSilhouette | export interface SilhouetteDirections | export function buildSilhouetteDirections | export function projectSilhouette
+standingPoint: export function standingPoint( base

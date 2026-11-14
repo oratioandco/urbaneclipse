@@ -1,0 +1,43 @@
+15968753 {'building:part': 'yes', 'height': '24', 'roof:shape': 'hipped'} {'lat': 52.5194531, 'lon': 13.3987873}
+24044997 {'building:part': 'yes', 'height': '75', 'min_height': '50', 'roof:shape': 'dome'} {'lat': 52.5191373, 'lon': 13.401117}
+42349274 {'building:part': 'yes', 'height': '52', 'min_height': '45', 'roof:shape': 'dome'} {'lat': 52.5187378, 'lon': 13.4010032}
+42349275 {'building:part': 'yes', 'height': '52', 'min_height': '45', 'roof:shape': 'dome'} {'lat': 52.5192462, 'lon': 13.4004727}
+230017198 {'building:part': 'yes', 'height': '32', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5188687, 'lon': 13.4007804}
+230017199 {'building:part': 'yes', 'height': '33.5', 'min_height': '28', 'roof:shape': 'gabled'} {'lat': 52.5189675, 'lon': 13.4006776}
+230017201 {'building:part': 'yes', 'height': '32', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5190647, 'lon': 13.4005757}
+230017202 {'building:part': 'yes', 'height': '45', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5192432, 'lon': 13.4004736}
+230017203 {'building:part': 'yes', 'height': '45', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5187386, 'lon': 13.4010033}
+230353888 {'building:part': 'yes', 'height': '15', 'roof:shape': 'gabled'} {'lat': 52.518801, 'lon': 13.4014619}
+230353891 {'building:part': 'yes', 'height': '15', 'roof:shape': 'flat'} {'lat': 52.5189441, 'lon': 13.4015793}
+230353893 {'building:part': 'yes', 'height': '15', 'roof:shape': 'flat'} {'lat': 52.5187989, 'lon': 13.4011843}
+230353895 {'building:part': 'yes', 'height': '17', 'roof:shape': 'flat'} {'lat': 52.5188522, 'lon': 13.4014109}
+438382390 {'building:part': 'yes', 'height': '28', 'roof:shape': 'flat'} {'lat': 52.5190862, 'lon': 13.4010278}
+438396411 {'building:part': 'yes', 'height': '50', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5191399, 'lon': 13.4011142}
+438396412 {'building:part': 'yes', 'height': '32', 'min_height': '28', 'roof:shape': 'gabled'} {'lat': 52.518947, 'lon': 13.4013166}
+438396413 {'building:part': 'yes', 'height': '32', 'min_height': '28', 'roof:shape': 'gabled'} {'lat': 52.5193285, 'lon': 13.4009115}
+438417815 {'building:part': 'yes', 'height': '30.5', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5190243, 'lon': 13.4006231}
+438417816 {'building:part': 'yes', 'height': '30.5', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5189114, 'lon': 13.4007391}
+438417818 {'building:part': 'yes', 'height': '33', 'min_height': '32', 'roof:shape': 'dome'} {'lat': 52.5190648, 'lon': 13.4005754}
+438417819 {'building:part': 'yes', 'height': '33', 'min_height': '32', 'roof:shape': 'dome'} {'lat': 52.5188682, 'lon': 13.4007812}
+438418249 {'building:part': 'yes', 'height': '82', 'min_height': '74', 'roof:shape': 'pyramidal'} {'lat': 52.5191366, 'lon': 13.4011161}
+438455947 {'building:part': 'yes', 'height': '37', 'min_height': '33', 'roof:shape': 'dome'} {'lat': 52.5194669, 'lon': 13.4011872}
+438455948 {'building:part': 'yes', 'height': '33', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5190367, 'lon': 13.4016341}
+438455949 {'building:part': 'yes', 'height': '33', 'min_height': '28', 'roof:shape': 'flat'} {'lat': 52.5194671, 'lon': 13.4011874}
+438455950 {'building:part': 'yes', 'height': '37', 'min_height': '33', 'roof:shape': 'dome'} {'lat': 52.5190361, 'lon': 13.4016369}
+438517032 {'building:part': 'yes', 'height': '25.5', 'min_height': '9', 'roof:shape': 'flat'} {'lat': 52.5188347, 'lon': 13.4007585}
+438517033 {'building:part': 'yes', 'height': '25.5', 'min_height': '9', 'roof:shape': 'flat'} {'lat': 52.5188704, 'lon': 13.4007199}
+438517034 {'building:part': 'yes', 'height': '25.5', 'min_height': '9', 'roof:shape': 'flat'} {'lat': 52.5190669, 'lon': 13.4005147}
+438517035 {'building:part': 'yes', 'height': '25.5', 'min_height': '9', 'roof:shape': 'flat'} {'lat': 52.519033, 'lon': 13.4005503}
+438517037 {'building:part': 'yes', 'height': '17.5', 'roof:shape': 'gabled'} {'lat': 52.5193779, 'lon': 13.4008624}
+438517038 {'building:part': 'yes', 'height': '9', 'roof:shape': 'flat'} {'lat': 52.518853, 'lon': 13.4007397}
+438517039 {'building:part': 'yes', 'height': '9', 'roof:shape': 'flat'} {'lat': 52.5190512, 'lon': 13.4005326}
+438517040 {'building:part': 'yes', 'height': '27.5', 'min_height': '25.5', 'roof:shape': 'flat'} {'lat': 52.5190508, 'lon': 13.4005313}
+438517041 {'building:part': 'yes', 'height': '27.5', 'min_height': '25.5', 'roof:shape': 'flat'} {'lat': 52.5188525, 'lon': 13.4007383}
+438780222 {'building:part': 'yes', 'height': '17', 'roof:shape': 'gabled'} {'lat': 52.5186944, 'lon': 13.400892}
+438780223 {'building:part': 'yes', 'height': '17', 'roof:shape': 'gabled'} {'lat': 52.5192012, 'lon': 13.4003628}
+438780224 {'building:part': 'yes', 'height': '17', 'roof:shape': 'gabled'} {'lat': 52.5186713, 'lon': 13.4010737}
+438780225 {'building:part': 'yes', 'height': '17', 'roof:shape': 'gabled'} {'lat': 52.5193134, 'lon': 13.4004077}
+438780226 {'building:part': 'yes', 'height': '8.75', 'roof:shape': 'gabled'} {'lat': 52.5190412, 'lon': 13.4005112}
+438780227 {'building:part': 'yes', 'height': '8.75', 'roof:shape': 'gabled'} {'lat': 52.5188437, 'lon': 13.4007175}
+942602863 {'building:part': 'yes', 'building:levels': '7', 'roof:shape': 'flat'} {'lat': 52.519621, 'lon': 13.402745}
+1488666798 {'building:part': 'yes'} {'lat': 52.5176056, 'lon': 13.4025859}

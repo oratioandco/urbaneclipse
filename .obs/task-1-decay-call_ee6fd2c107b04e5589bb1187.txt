@@ -1,0 +1,22 @@
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+375-  const {
+376-    observer,
+377-    landmark,
+378-    start,
+379-    end,
+380-    stepMinutes,
+381-    wanted = ['full', 'partial'],
+382-    minAltitudeDeg = 0,
+383-    limit = 200,
+384-  } = req;
+385-
+386-  if (!(stepMinutes > 0)) {
+54:export interface BodySample {
+55-  /** Degrees clockwise from north. */
+56-  az: number;
+57-  /** Degrees above the horizon. */
+58-  alt: number;
+59-  /** Distance to the body, km — sets its apparent size. */
+60-  distanceKm: number;
+61-  /** Physical radius of the body, km. */
+62-  radiusKm: number;

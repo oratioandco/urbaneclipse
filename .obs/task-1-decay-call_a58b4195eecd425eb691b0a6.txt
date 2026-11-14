@@ -1,0 +1,25 @@
+export interface StandingPoint extends LatLon {
+  id: string;
+  /** Deck/platform surface at this point, DHHN2016 orthometric metres. */
+  surfaceOrthometric: number;
+  /** Photographer's eye above the surface, metres. */
+  eyeHeightM: number;
+  /** True when nobody has confirmed the surface value at THIS point of the bridge. */
+  needsSiteCheck: boolean;
+  /**
+  source: string;
+  /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
+  readonly bearingToLandmarkDeg: number;
+  /** Great-circle ground distance to the landmark, metres. Computed. */
+  readonly distanceToLandmarkM: number;
+}
+
+48:export interface LatLon {
+54:export interface BodySample {
+66:export type GroundProvider = (pos: LatLon) => number | undefined;
+68:export interface SolveOptions {
+84:export interface Candidate {
+256:export interface SearchRequest extends SolveOptions {
+332:export interface FixedCandidate {
+342:export interface FixedSearchRequest {
+357:export interface InstantClassifyRequest {

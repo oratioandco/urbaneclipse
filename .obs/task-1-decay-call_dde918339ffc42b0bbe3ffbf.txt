@@ -1,0 +1,33 @@
+182:export function azAltTo(
+183-  observer: ObserverGeodetic,
+184-  targetLat: number,
+185-  targetLon: number,
+186-  targetEllipsoidalHeight: number,
+187-): AzAlt & { rangeM: number } {
+188-  const o = geodeticToECEF(observer.lat, observer.lon, observer.ellipsoidalHeight);
+189-  const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeight);
+190-  const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], observer.lat, observer.lon);
+191-  const [e, n, u] = enu;
+192-  const horiz = Math.hypot(e, n);
+193-  return {
+194-    az: ((Math.atan2(e, n) * DEG) + 360) % 360,
+195-    alt: Math.atan2(u, horiz) * DEG,
+196-    rangeM: Math.hypot(horiz, u),
+42:export type OccultationKind = 'full' | 'partial' | 'adjacent' | 'clear';
+43-
+44-export interface OccultationResult {
+45-  kind: OccultationKind;
+46-  /** Fraction of the disc's AREA hidden by the silhouette, 0..1. */
+47-  coveredFraction: number;
+48-  /**
+--
+228:export function classifyOccultation(
+229-  discRadiusDeg: number,
+230-  silhouette: AngularPoint[],
+231-  opts: { adjacentWithinDeg?: number; fullEpsilon?: number } = {},
+232-): OccultationResult {
+233-  assertFinitePositive(discRadiusDeg, 'disc radius');
+234-
+46:export function createHeightmap(header: HeightmapHeader, samples: Int16Array): Heightmap {
+87:export function sampleGroundOrthometric(
+143:export function decodeSamples(buffer: ArrayBuffer): Int16Array {

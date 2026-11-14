@@ -1,0 +1,34 @@
+13: * The relation is  h = H + N,  where N is the geoid undulation (~39.5 m in Berlin).
+25: * Consumers should treat `resolveEyeEllipsoidalHeight` as the ONLY way to turn a
+30: * Berlin geoid undulation (ETRS89/GRS80 geoid height above the ellipsoid), metres.
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+37: * undulation varies by roughly +/-0.5 m across the Berlin AOI. Replacing it with a
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+69:  undulation: number = GEOID_UNDULATION_BERLIN,
+72:  assertFinite(undulation, 'geoid undulation');
+export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+
+  assertFinite(eyeHeight, 'eye height');
+  if (eyeHeight < 0) {
+    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+  }
+
+  let surface: number;
+  if (surfaceOrthometric !== undefined) {
+    assertFinite(surfaceOrthometric, 'surface elevation');
+    surface = surfaceOrthometric;
+  } else if (groundOrthometric !== undefined) {
+    assertFinite(groundOrthometric, 'ground elevation');
+    surface = groundOrthometric;
+  } else {
+    surface = BERLIN_GROUND_ORTHOMETRIC_FALLBACK;
+  }
+
+  if (surface < BERLIN_GROUND_MIN || surface > BERLIN_GROUND_MAX) {
+    throw new RangeError(
+      `surface elevation ${surface} m is outside the plausible Berlin range ` +
+        `[${BERLIN_GROUND_MIN}, ${BERLIN_GROUND_MAX}] — check the heightmap CRS and ` +
+        `that the geoid undulation has not already been applied to the samples`,
+    );
+  }

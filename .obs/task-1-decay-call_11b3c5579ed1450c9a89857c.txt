@@ -1,0 +1,9 @@
+ProfilePoint=ERR:'NoneType' object has no attribute 'grou
+Re
+volutionLandmark=ERR:no such group
+FT=export const FERNSEHTU
+RM: RevolutionLandmark = { id: 'fernsehturm', name: 'Berline
+r Fernsehturm', lat: 52.520815, lon: 13.409419, baseOrthomet
+ric: 34.6, profile: [ [0, 16.0], [10, 12.0], [20, 8.0], [100
+, 6.77], [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7
+, 5.5], [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7,

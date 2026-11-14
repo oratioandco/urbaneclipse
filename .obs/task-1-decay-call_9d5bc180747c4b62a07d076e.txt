@@ -1,0 +1,3 @@
+332:export interface FixedCandidate {
+342:export interface FixedSearchRequest {
+481:export function feasibility(

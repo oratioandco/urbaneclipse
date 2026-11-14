@@ -1,0 +1,202 @@
+    start,
+    end,
+    stepMinutes,
+    bodyAt,
+    wanted = ['full', 'partial'],
+    limit = 100,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const requireWithinArea = req.requireWithinArea ?? req.area !== undefined;
+  const stepMs = stepMinutes * 60_000;
+  const out: Candidate[] = [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const when = new Date(t);
+    const candidate = evaluateCandidate(when, bodyAt(when), req);
+    if (!candidate) continue;
+    if (!wanted.includes(candidate.kind)) continue;
+    if (requireWithinArea && !candidate.withinArea) continue;
+    out.push(candidate);
+  }
+
+  out.sort((a, b) => score(b) - score(a));
+  return out.slice(0, limit);
+}
+
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
+/**
+ * Sweep time at a FIXED observer position and classify the occultation at each step.
+ *
+ * This is the "I am standing here, when does it happen?" search, as opposed to
+ * findCompositions' "where do I need to stand?". It replaces the original
+ * bearing-tolerance sweep: matching on "body within +/-0.5 deg of the target bearing" only
+ * means "within roughly one lunar diameter", which finds near misses rather than
+ * compositions. Here the real silhouette is built and the disc's covered AREA measured.
+ */
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const candidate = classifyWithDirections(dirs, req, new Date(t));
+    if (candidate) out.push(candidate);
+  }
+
+  out.sort((a, b) => {
+    const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+    const d = rank(b.kind) - rank(a.kind);
+    if (d !== 0) return d;
+    if (b.coveredFraction !== a.coveredFraction) return b.coveredFraction - a.coveredFraction;
+    return a.separationDeg - b.separationDeg;
+  });
+
+  return out.slice(0, limit);
+}
+
+/**
+ * Classify ONE instant at a fixed observer — the sweep's per-step body, callable alone.
+ *
+ * The vantage calendar uses this to refine window peaks past the sweep's stepMinutes:
+ * the eye height.
+ */
+import { resolveEyeEllipsoidalHeight, orthometricToEllipsoidal } from './elevation.js';
+import { landmarkHeight, type RevolutionLandmark } from './landmarks.js';
+import {
+  azAltTo,
+  buildSilhouette,
+  buildSilhouetteDirections,
+  projectSilhouette,
+  offsetGeodetic,
+  type ObserverGeodetic,
+} from './silhouette.js';
+import {
+  classifyOccultation,
+  angularRadiusDeg,
+  type OccultationKind,
+} from './occultation.js';
+
+export interface LatLon {
+  lat: number;
+  lon: number;
+}
+
+/** Apparent position of the sun/moon at an instant, as seen from the search area. */
+export interface BodySample {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+  /** Distance to the body, km — sets its apparent size. */
+  distanceKm: number;
+  /** Physical radius of the body, km. */
+  radiusKm: number;
+}
+
+/** Supplies ground elevation (DHHN2016 m) at a position; undefined outside coverage. */
+export type GroundProvider = (pos: LatLon) => number | undefined;
+
+export interface SolveOptions {
+  landmark: RevolutionLandmark;
+  /**
+   * Height up the landmark to aim at, metres above its base. The sphere centre and
+   * the antenna give very different shots.
+   */
+  featureHeightAgl: number;
+  /** Photographer's eye height above the surface they stand on, metres. */
+  eyeHeight: number;
+  ground: GroundProvider;
+  /** Convex or simple polygon of reachable camera positions. */
+  area?: LatLon[];
+  /** Maximum iterations for the distance solve. */
+  maxIterations?: number;
+}
+
+export interface Candidate {
+  when: Date;
+  /** Where you must stand. */
+  position: LatLon;
+  /** Horizontal distance from the landmark axis, metres. */
+  distanceM: number;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** True when the solved position lies inside the requested area. */
+  withinArea: boolean;
+}
+
+/**
+ * Approximate a circular search area as a polygon.
+ *
+ * "Somewhere within N metres of here" is how a photographer actually thinks about a
+ * reachable area — a stretch of bridge, a park, a block — and it is far easier to place
+ * than a hand-drawn polygon. isInsideArea works on polygons, so the circle is converted
+ * once here rather than special-cased throughout.
+ *
+ * Longitude degrees are scaled by cos(lat) so the shape is a true circle on the ground
+ * rather than an ellipse stretched east-west (at Berlin's latitude that error would be
+ * ~64%).
+ */
+export function circleToPolygon(
+  center: LatLon,

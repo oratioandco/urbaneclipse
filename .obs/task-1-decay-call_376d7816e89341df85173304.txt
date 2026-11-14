@@ -1,0 +1,56 @@
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
+/**
+ * Sweep time at a FIXED observer position and classify the occultation at each step.
+ *
+ * This is the "I am standing here, when does it happen?" search, as opposed to
+ * findCompositions' "where do I need to stand?". It replaces the original
+ * bearing-tolerance sweep: matching on "body within +/-0.5 deg of the target bearing" only
+ * means "within roughly one lunar diameter", which finds near misses rather than
+ * compositions. Here the real silhouette is built and the disc's covered AREA measured.
+ */
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+src/lib/areaSolver.ts:54:export interface BodySample {
+src/lib/areaSolver.ts-55-  /** Degrees clockwise from north. */
+src/lib/areaSolver.ts-56-  az: number;
+src/lib/areaSolver.ts-57-  /** Degrees above the horizon. */
+src/lib/areaSolver.ts-58-  alt: number;
+src/lib/areaSolver.ts-59-  /** Distance to the body, km — sets its apparent size. */
+src/lib/areaSolver.ts-60-  distanceKm: number;
+src/lib/areaSolver.ts-61-  /** Physical radius of the body, km. */
+src/lib/areaSolver.ts-62-  radiusKm: number;
+--
+src/lib/horizonWindows.ts:319:export interface BodySampleLike {
+src/lib/horizonWindows.ts-320-  az: number;
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+375-  const {
+376-    observer,
+377-    landmark,
+378-    start,
+379-    end,
+380-    stepMinutes,
+381-    wanted = ['full', 'partial'],
+382-    minAltitudeDeg = 0,
+383-    limit = 200,
+384-  } = req;

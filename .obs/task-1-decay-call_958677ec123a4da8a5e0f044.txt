@@ -1,0 +1,5 @@
+ minAltitudeDeg?: number; limit?: number; }
+OccultationWindow: MISSING
+BodySample: interface BodySample { az: number; alt: number; distanceKm: number; radiusKm: number; }
+FixedCandidate: interface FixedCandidate { when: Date; kind: OccultationKind; coveredFraction: number; separationDeg: number; bodyAz: number; bodyAlt: number; }
+feasibility: expor

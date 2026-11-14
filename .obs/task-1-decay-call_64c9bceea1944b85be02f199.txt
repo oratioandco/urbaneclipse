@@ -1,0 +1,19 @@
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+77:function realBerlin(): Heightmap {
+354:  function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {
+    expect(eyeEllipsoidal(OBS)).toBe(
+      resolveEyeEllipsoidalHeight({ groundOrthometric: undefined, surfaceOrthometric: 34, eyeHeight: 1.6 }),
+    );
+  });
+});
+
+/**
+ * The time dimension: real ephemeris, real silhouette, terrain-gated.
+ *
+ * Known answer used here: at the March equinox the sun sets essentially DUE WEST, and
+ * the Siegessäule's axis from Straße des 17. Juni lies at 270.069 deg — so the best
+ * covered window of that week must be the equinox one, within the column's 1.27 deg
+ * half-width. Measured independently before writing these expectations: six windows,
+ * best 2027-03-21 17:14Z at az 270.268 deg, coveredFraction 0.94.
+ */
+describe('enumerateHorizonGatedWindows 

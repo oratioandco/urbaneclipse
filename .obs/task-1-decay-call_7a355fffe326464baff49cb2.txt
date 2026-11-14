@@ -1,0 +1,10 @@
+    eyeHeight: 1.5,
+    ground: FLAT_GROUND,
+  };
+
+  /** Synthetic body tracking across the sky so the sweep is deterministic. */
+  const bodyAt = (t: Date): BodySample => {
+    const hours = (t.getTime() - Date.UTC(2026, 7, 1)) / 3_600_000;
+    return moon(240 + hours * 5, 5 + hours * 2);
+  };
+

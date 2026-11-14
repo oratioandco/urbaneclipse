@@ -1,0 +1,24 @@
+/**
+ * Horizon-gated windows for a second landmark (Siegessäule) — known-answer tests.
+ *
+ * The expectations below were computed INDEPENDENTLY (spherical trig / atan2 in a
+ * separate script), not read back out of the implementation, so a sign error or a
+ * missing curvature term cannot pass by agreeing with itself.
+ *
+ * This module is flag-gated and not shipped: the first group proves the flag is OFF
+ * by default, which is what keeps the trial out of the app.
+ */
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import {
+  HORIZON_WINDOWS_FLAG,
+  horizonWindowsEnabled,
+  groundAltitudeDeg,
+  sampleHorizonProfile,
+  azimuthToLandmark,
+  landmarkTipAltitudeDeg,
+  targetWindow,
+  gateDirection,
+  horizonTowardsLandmark,
+  eyeEllipsoidal,
+  enumerateHorizonGatedWindows,

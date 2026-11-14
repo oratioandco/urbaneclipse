@@ -1,0 +1,115 @@
+[Showing lines 208-321 of 321, the last 4039 of 11788 bytes. Whole output: .obs/task-1-1.txt — read the start with sh: sed -n '1,207p' .obs/task-1-1.txt]
+ * it would badly distort high-sun geometry.
+ */
+export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+  const a0 = reference.az * RAD;
+  const h0 = reference.alt * RAD;
+  const a = dir.az * RAD;
+  const h = dir.alt * RAD;
+
+  const dA = a - a0;
+  const cosC = Math.sin(h0) * Math.sin(h) + Math.cos(h0) * Math.cos(h) * Math.cos(dA);
+
+  // Guard the antipode, where the gnomonic projection diverges.
+  if (cosC <= 1e-9) {
+    return { x: Infinity, y: Infinity };
+  }
+
+  return {
+    x: (Math.cos(h) * Math.sin(dA) * DEG) / cosC,
+    y: ((Math.cos(h0) * Math.sin(h) - Math.sin(h0) * Math.cos(h) * Math.cos(dA)) * DEG) / cosC,
+  };
+}
+
+/**
+ * Build the angular silhouette polygon of a solid-of-revolution landmark.
+ *
+ * @param observer  Observer position (ellipsoidal eye height).
+ * @param landmark  The parametric landmark.
+ * @param reference Direction the tangent-plane frame is centred on (the disc centre).
+ * @param steps     Vertical sampling resolution. The default resolves the sphere to
+ *                  well under the composition tolerance.
+ */
+export function buildSilhouette(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  reference: AzAlt,
+  steps = 96,
+): AngularPoint[] {
+  return projectSilhouette(buildSilhouetteDirections(observer, landmark, steps), reference);
+}
+
+/**
+ * The landmark's outline as ABSOLUTE az/alt directions, plus its angular bounds.
+ *
+ * Split out because these depend only on the observer and the landmark — for a fixed
+ * observer they are CONSTANT over a whole time sweep. Computing them once turns the
+ * expensive part (a geodetic azAltTo per vertical sample) into a one-off, leaving only
+ * cheap trig per time step. Over a 30-day 1-minute sweep that is ~4.1 million
+ * azAltTo calls avoided.
+ *
+ * `bounds` additionally allows a sweep to reject instants where the body is nowhere
+ * near the landmark without projecting anything at all.
+ */
+export interface SilhouetteDirections {
+  outline: AzAlt[];
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+}
+
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
+
+  for (let i = 0; i <= steps; i++) {
+    const hAgl = (total * i) / steps;
+    const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
+    const r = radiusAtHeight(landmark, hAgl);
+
+    // Horizontal angular half-width of the limb at this height.
+    const ratio = Math.min(1, r / Math.max(axis.rangeM, 1e-9));
+    const halfWidthDeg = Math.asin(ratio) * DEG;
+
+    // Offset in azimuth. Divide by cos(alt) so that after the tangent-plane
+    // projection's cos(alt) compression the on-sky width is correct.
+    const cosAlt = Math.max(Math.cos(axis.alt * RAD), 1e-9);
+    const dAz = halfWidthDeg / cosAlt;
+
+    left.push({ az: axis.az - dAz, alt: axis.alt });
+    right.push({ az: axis.az + dAz, alt: axis.alt });
+
+    azMin = Math.min(azMin, axis.az - dAz);
+    azMax = Math.max(azMax, axis.az + dAz);
+    altMin = Math.min(altMin, axis.alt);
+    altMax = Math.max(altMax, axis.alt);
+  }
+
+  // Trace up the left limb and back down the right to close the outline.
+  return {
+    outline: [...left, ...right.reverse()],
+    bounds: { azMin, azMax, altMin, altMax },
+  };
+}
+
+/** Project precomputed absolute directions into the disc-centred tangent plane. */
+export function projectSilhouette(
+  dirs: SilhouetteDirections,
+  reference: AzAlt,
+): AngularPoint[] {
+  return dirs.outline
+    .map((d) => toTangentPlane(d, reference))
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+}

@@ -1,0 +1,231 @@
+/**
+ * Standing points of the Lichtenberger Bruecke — the deck-height decision, locked.
+ *
+ * THE DECISION THESE TESTS DEFEND (chosen by the person, ask id 2, key "2")
+ * -----------------------------------------------------------------------
+ * Berlin DOM1 was sampled at all six OSM nodes. Only the two crest nodes measure
+ * inside the curated mid-span envelope 48.1-48.3 m DHHN2016; the four ramp/flank
+ * nodes measure 46.9-47.8 m, which is the real ramp profile (scripts/README.md:
+ * west ramp 46.1 m, east ramp 46.7 m), not a confirmed deck height for the curated
+ * band. So ONLY the crest points adopt an individual value and clear needsSiteCheck;
+ * the ramp points keep the curated 48.2 m and still need an on-site survey.
+ *
+ * The original acceptance criterion asked for six individual heights inside
+ * 48.0-48.5 m. That is NOT satisfiable with the real data, and raising a measured
+ * 46.9 m to 48.0 m would be fabrication. The person chose this reading knowing that
+ * consequence, so the last test below pins the consequence instead of hiding it.
+ */
+import { describe, it, expect } from 'vitest';
+import {
+  LICHTENBERGER_BRUECKE,
+  EYE_HEIGHT_M,
+  CURATED_CREST_ENVELOPE_M,
+  bearingDistanceTo,
+  standingPoint,
+} from '../../src/lib/vantages.js';
+
+const FERNSEHTURM = { lat: 52.520815, lon: 13.409419 };
+
+/** The DOM1 plateau medians measured per node, metres DHHN2016 (three samplings, +-0.1 m). */
+const MEASURED: Record<string, number> = {
+  'nord-west': 47.8,
+  'nord-mitte': 47.7,
+  'nord-knick': 46.9,
+  'sued-west': 47.0,
+  'sued-mitte': 48.2,
+  'sued-ost': 48.1,
+};
+
+/** The DOM1 median of a node; fails loudly if a point is ever added without data. */
+function measured(id: string): number {
+  const m = MEASURED[id];
+  if (m === undefined) throw new Error(`no DOM1 median recorded for ${id}`);
+  return m;
+}
+
+const CURATED_MIDSPAN = 48.2;
+const CREST_IDS = ['sued-mitte', 'sued-ost'];
+const RAMP_IDS = ['nord-west', 'nord-mitte', 'nord-knick', 'sued-west'];
+
+const points = LICHTENBERGER_BRUECKE.points;
+const byId = (id: string) => {
+  const p = points.find((q) => q.id === id);
+  if (!p) throw new Error(`no standing point ${id}`);
+  return p;
+};
+
+describe('Lichtenberger Bruecke standing points', () => {
+  it('carries exactly the six OSM nodes of both carriageway arms', () => {
+    expect(points.map((p) => p.id)).toEqual([
+      'nord-west',
+      'nord-mitte',
+      'nord-knick',
+      'sued-west',
+      'sued-mitte',
+      'sued-ost',
+    ]);
+  });
+
+  it('keeps the curated mid-span envelope as the adoption band', () => {
+    expect(CURATED_CREST_ENVELOPE_M).toEqual([48.1, 48.3]);
+  });
+
+  it('adopts an individual height for exactly the two crest points', () => {
+    const confirmed = points.filter((p) => !p.needsSiteCheck).map((p) => p.id);
+    expect(confirmed.sort()).toEqual([...CREST_IDS].sort());
+    for (const id of CREST_IDS) {
+      const p = byId(id);
+      const [lo, hi] = CURATED_CREST_ENVELOPE_M;
+      expect(p.surfaceOrthometric).toBeGreaterThanOrEqual(lo);
+      expect(p.surfaceOrthometric).toBeLessThanOrEqual(hi);
+      // Adopted means measured: the value IS the DOM1 median, not a rounded guess.
+      expect(p.surfaceOrthometric).toBeCloseTo(measured(id), 6);
+    }
+  });
+
+  it('gives the two crest points genuinely different deck heights', () => {
+    expect(byId('sued-mitte').surfaceOrthometric).not.toBe(byId('sued-ost').surfaceOrthometric);
+    expect(byId('sued-ost').surfaceOrthometric).toBeCloseTo(48.1, 6);
+  });
+
+  it('leaves the four ramp/flank points on the curated flat value, still unsurveyed', () => {
+    for (const id of RAMP_IDS) {
+      const p = byId(id);
+      expect(p.surfaceOrthometric).toBe(CURATED_MIDSPAN);
+      expect(p.needsSiteCheck).toBe(true);
+    }
+  });
+
+  it('keeps mid-span at the curated ~48.2 m', () => {
+    expect(byId('sued-mitte').surfaceOrthometric).toBeCloseTo(48.2, 1);
+    expect(Math.abs(byId('sued-mitte').surfaceOrthometric - 48.2)).toBeLessThan(0.05);
+  });
+
+  it('never raises a measured value to fit a band', () => {
+    for (const p of points) {
+      const median = measured(p.id);
+      // Either the measurement was adopted verbatim, or the curated value is used and
+      // the point is flagged. No point may claim to be higher than what DOM1 measured
+      // while also claiming to be confirmed.
+      if (!p.needsSiteCheck) expect(p.surfaceOrthometric).toBeLessThanOrEqual(median + 1e-9);
+      else expect(p.surfaceOrthometric).toBe(CURATED_MIDSPAN);
+    }
+  });
+
+  it('keeps every deck height physically plausible for this bridge', () => {
+    for (const p of points) {
+      // Deck crest 48.1-48.3 curated; nothing may drift into the DGM1 rail cutting.
+      expect(p.surfaceOrthometric).toBeGreaterThan(45);
+      expect(p.surfaceOrthometric).toBeLessThan(50);
+    }
+====HW-HEAD====
+/**
+ * Horizon-gated windows for a second landmark (Siegessäule) — known-answer tests.
+ *
+ * The expectations below were computed INDEPENDENTLY (spherical trig / atan2 in a
+ * separate script), not read back out of the implementation, so a sign error or a
+ * missing curvature term cannot pass by agreeing with itself.
+ *
+ * This module is flag-gated and not shipped: the first group proves the flag is OFF
+ * by default, which is what keeps the trial out of the app.
+ */
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import {
+  HORIZON_WINDOWS_FLAG,
+  horizonWindowsEnabled,
+  groundAltitudeDeg,
+  sampleHorizonProfile,
+  azimuthToLandmark,
+  landmarkTipAltitudeDeg,
+  targetWindow,
+  gateDirection,
+  horizonTowardsLandmark,
+  eyeEllipsoidal,
+  enumerateHorizonGatedWindows,
+  HorizonWindowsDisabledError,
+} from '../../src/lib/horizonWindows.js';
+import { sampleBody } from '../../src/lib/bodyPosition.js';
+import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+
+/** A standing point on Straße des 17. Juni, east of the column, looking west. */
+const OBS = standingPoint(
+  {
+    id: 'strasse-des-17-juni',
+    lat: 52.5145,
+    lon: 13.37,
+    surfaceOrthometric: 34,
+    eyeHeightM: EYE_HEIGHT_M,
+    needsSiteCheck: true,
+    source: 'Test observer; ground ~33.4 m from the committed DGM1 grid.',
+  },
+  { lat: SIEGESSAEULE.lat, lon: SIEGESSAEULE.lon },
+);
+
+/** Flat synthetic grid, 40.0 m everywhere, ~111 m row spacing, centred on 52.01/13.01. */
+function grid(fill: (row: number, col: number) => number): Heightmap {
+  const width = 21;
+  const height = 21;
+  const header: HeightmapHeader = {
+    format: 'plaster-void-heightmap',
+    version: 1,
+    dtype: 'int16',
+    scale: 0.1,
+    offset: 0,
+    nodata: -32768,
+    width,
+    height,
+    bbox: { lonMin: 13.0, latMin: 52.0, lonMax: 13.02, latMax: 52.02 },
+    dLon: 0.001,
+    dLat: 0.001,
+  };
+  const samples = new Int16Array(width * height);
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) samples[r * width + c] = Math.round(fill(r, c) * 10);
+  }
+  return createHeightmap(header, samples);
+}
+
+const FLAT = grid(() => 40);
+const CENTRE = standingPoint(
+  { id: 'c', lat: 52.01, lon: 13.01, surfaceOrthometric: 40, eyeHeightM: 1.6, needsSiteCheck: true, source: 'fixture' },
+  { lat: 52.02, lon: 13.01 },
+);
+
+function realBerlin(): Heightmap {
+  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
+  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  return createHeightmap(header, decodeSamples(ab));
+}
+
+describe('the feature flag keeps this out of the app', () => {
+  it('is OFF when nothing is set', () => {
+    expect(horizonWindowsEnabled({})).toBe(false);
+    expect(horizonWindowsEnabled(undefined)).toBe(false);
+  });
+
+  it('is OFF for anything that is not an explicit truthy string', () => {
+    for (const v of ['0', 'false', 'off', '', 'yes', 'TRUE']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(false);
+    }
+  });
+
+  it('is ON only for 1 / true / on', () => {
+    for (const v of ['1', 'true', 'on']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(true);
+    }
+  });
+});
+
+describe('groundAltitudeDeg — known answers (independent computation)', () => {
+  it('is level ground slightly BELOW zero because the Earth curves away', () => {
+    // Same height as the eye: only curvature+refraction remain. -(1-k)d^2/(2R).
+    expect(groundAltitudeDeg(41.6, 41.6, 1000)).toBeCloseTo(-0.003912049, 8);
+    expect(groundAltitudeDeg(41.6, 41.6, 2000)).toBeCloseTo(-0.007824098, 8);
+  });
+
+  it('matches atan2 of rise over distance for a 10 m rise at 1 km', () => {

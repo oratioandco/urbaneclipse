@@ -1,0 +1,7 @@
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);

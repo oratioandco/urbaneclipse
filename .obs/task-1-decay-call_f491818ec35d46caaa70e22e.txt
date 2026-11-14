@@ -1,0 +1,53 @@
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const candidate = classifyWithDirections(dirs, req, new Date(t));
+    if (candidate) out.push(candidate);
+  }
+
+  out.sort((a, b) => {
+    const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+    const d = rank(b.kind) - rank(a.kind);
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,
+65-    alt: p.altitude,
+66-    distanceKm: sunDistanceKm(date),
+67-    radiusKm: SUN_RADIUS_KM,
+68-  };
+69-}

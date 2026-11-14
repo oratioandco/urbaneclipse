@@ -1,0 +1,1 @@
+ id: string; name: string; lat: number; lon: number; baseOrthometric: number; profile: ReadonlyArray<readonly [number, number]>; notes: string; 

@@ -1,0 +1,1 @@
+Display fades fast, so I'll extract all needed signatures + data into one file, then read it in tight sequence and write code immediately.

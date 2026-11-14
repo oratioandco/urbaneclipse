@@ -1,0 +1,5 @@
+dom 35.26
+fried 30.80
+monb 31.10
+fried 161.8460 172.10 apex 30.3596 r16half 5.3114
+monb 121.6765 593.66 apex 9.6094 r16half 1.5438

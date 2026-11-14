@@ -1,0 +1,103 @@
+
+ RUN  v4.1.10 /Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom
+
+ ❯ tests/unit/domLandmark.test.ts (10 tests | 3 failed) 3688ms
+     × silhouette spans exactly the dome band — no towers, no nave 5ms
+     × pins transit dates against the independent Meeus ephemeris 636ms
+     × DECEMBER: no transits — proves towers/nave are NOT modeled 393ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — no towers, no nave
+AssertionError: expected 0.9503435410697005 to be greater than 20.131456788996775
+ ❯ tests/unit/domLandmark.test.ts:180:31
+    178|     expect(Math.abs(sil.bounds.altMax - altMax)).toBeLessThan(0.5);
+    179|     // The band FLOOR is the tambour foot: a nave-inclusive model woul…
+    180|     expect(sil.bounds.altMin).toBeGreaterThan(altMin - 0.5);
+       |                               ^
+    181|     expect(sil.bounds.altMin).toBeGreaterThan(15);
+    182|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+TypeError: Cannot read properties of undefined (reading 'getTime')
+ ❯ tests/unit/domLandmark.test.ts:250:44
+    248|       expect(ind.first).not.toBeNull();
+    249|       expect(ind.last).not.toBeNull();
+    250|       const times = hits.map((h) => h.date.getTime());
+       |                                            ^
+    251|       const lo = Math.min(...times);
+    252|       const hi = Math.max(...times);
+ ❯ tests/unit/domLandmark.test.ts:250:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+AssertionError: expected [ Array(200) ] to have a length of +0 but got 200
+
+- Expected
++ Received
+
+- 0
++ 200
+
+ ❯ tests/unit/domLandmark.test.ts:292:18
+    290|       end: new Date(Date.UTC(2027, 0, 10)),
+    291|     });
+    292|     expect(hits).toHaveLength(0);
+       |                  ^
+    293|     let altAtAz = -90;
+    294|     for (let t = Date.UTC(2026, 11, 21); t < Date.UTC(2026, 11, 22); t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+   Start at  14:42:09
+   Duration  9.81s (transform 2.87s, setup 0ms, import 3.01s, tests 3.69s, environment 0ms)
+
+    start,
+    end,
+    stepMinutes,
+    bodyAt,
+    wanted = ['full', 'partial'],
+    limit = 100,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const requireWithinArea = req.requireWithinArea ?? req.area !== undefined;
+  const stepMs = stepMinutes * 60_000;
+  const out: Candidate[] = [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const when = new Date(t);
+    const candidate = evaluateCandidate(when, bodyAt(when), req);
+    if (!candidate) continue;
+    if (!wanted.includes(candidate.kind)) continue;
+    if (requireWithinArea && !candidate.withinArea) continue;
+    out.push(candidate);
+  }
+
+  out.sort((a, b) => score(b) - score(a));
+  return out.slice(0, limit);
+}
+
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {

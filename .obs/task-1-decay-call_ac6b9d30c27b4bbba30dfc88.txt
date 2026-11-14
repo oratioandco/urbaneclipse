@@ -1,0 +1,11 @@
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+42:export type OccultationKind = 'full' | 'partial' | 'adjacent' | 'clear';
+45:  kind: OccultationKind;

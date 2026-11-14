@@ -1,0 +1,90 @@
+287:export function landmarkHeight(landmark: RevolutionLandmark): number {
+288-  const p = landmark.profile;
+289-  return p.length === 0 ? 0 : p[p.length - 1][0];
+290-}
+332:export interface FixedCandidate {
+333-  when: Date;
+334-  kind: OccultationKind;
+335-  coveredFraction: number;
+336-  separationDeg: number;
+338-  bodyAz: number;
+339-  bodyAlt: number;
+340-}
+341-
+342-export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+347-  stepMinutes: number;
+348-  bodyAt: (t: Date) => BodySample;
+350-  wanted?: OccultationKind[];
+352-  minAltitudeDeg?: number;
+355-
+357-export interface InstantClassifyRequest {
+358-  observer: ObserverGeodetic;
+359-  landmark: RevolutionLandmark;
+360-  bodyAt: (t: Date) => BodySample;
+361-  wanted?: OccultationKind[];
+362-  minAltitudeDeg?: number;
+363-}
+364-
+374-export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+375-  const {
+376-    observer,
+ERROR: exit: exit status 1
+265:export function buildSilhouetteDirections(
+266-  observer: ObserverGeodetic,
+267-  landmark: RevolutionLandmark,
+268-  steps = 96,
+269-): SilhouetteDirections {
+270-  const total = landmarkHeight(landmark);
+271-  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+272-  if (total <= 0) return empty;
+273-
+274-  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+275-
+276-  const left: AzAlt[] = [];
+277-  const right: AzAlt[] = [];
+278-  let azMin = Infinity;
+279-  let azMax = -Infinity;
+export interface SilhouetteDirections {
+  outline: AzAlt[];
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+}
+
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeig=====
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  c282:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+283-  return profileRadius(landmark.profile, heightAboveBase);
+284-}
+285-
+286-/** Total height of the landmark above its base, metres. */
+287-export function landmarkHeight(landmark: RevolutionLand

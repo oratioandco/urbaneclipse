@@ -1,0 +1,3 @@
+ LICHTENBERGER_BRUECKE.points; const
+VT-FNS: const FERNSEHTURM | function measured | const m | const CURATED_MIDSPAN | const CREST_IDS | const RAMP_IDS | const points | const byId | const p | const confirmed | const p | const p | const median | const src | const a | const f | const b | const ra
+HW-IMPORTS: import { describe, it, expect } from 'vite

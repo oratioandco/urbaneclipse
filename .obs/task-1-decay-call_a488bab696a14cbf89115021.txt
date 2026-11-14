@@ -1,0 +1,9 @@
+182:  id: 'lichtenberger-bruecke',
+
+85:export function standingPoint(
+86-  base: Omit<
+87-    StandingPoint,
+88-    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+89-  >,
+90-  landmark: LatLon,
+91-): StandingPoint {

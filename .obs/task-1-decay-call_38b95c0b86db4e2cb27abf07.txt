@@ -1,0 +1,49 @@
+    eyeHeight: 1.5,
+    ground: FLAT_GROUND,
+  };
+
+  /** Synthetic body tracking across the sky so the sweep is deterministic. */
+  const bodyAt = (t: Date): BodySample => {
+    const hours = (t.getTime() - Date.UTC(2026, 7, 1)) / 3_600_000;
+    return moon(240 + hours * 5, 5 + hours * 2);
+  };
+
+  it('returns ranked candidates, best first', () => {
+    const res = findCompositions({
+      ...base,
+      start: new Date(Date.UTC(2026, 7, 1, 0, 0)),
+      end: new Date(Date.UTC(2026, 7, 1, 6, 0)),
+      stepMinutes: 30,
+      bodyAt,
+      requireWithinArea: false,
+    });
+
+    expect(res.length).toBeGreaterThan(0);
+    for (let i = 1; i < res.length; i++) {
+      const prev = res[i - 1];
+      const cur = res[i];
+      const rank = (k: string) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+      expect(rank(prev.kind)).toBeGreaterThanOrEqual(rank(cur.kind));
+    }
+  });
+
+  it('filters to the requested composition kinds', () => {
+    const res = findCompositions({
+      ...base,
+      start: new Date(Date.UTC(2026, 7, 1, 0, 0)),
+      end: new Date(Date.UTC(2026, 7, 1, 6, 0)),
+      stepMinutes: 30,
+      bodyAt,
+      wanted: ['adjacent'],
+      requireWithinArea: false,
+    });
+    for (const c of res) expect(c.kind).toBe('adjacent');
+  });
+
+  it('returns nothing when the area excludes every solved position', () => {
+    const elsewhere = [
+      { lat: 40.0, lon: -70.0 },
+      { lat: 40.0, lon: -69.9 },
+      { lat: 40.1, lon: -69.9 },
+      { lat: 40.1, lon: -70.0 },
+   

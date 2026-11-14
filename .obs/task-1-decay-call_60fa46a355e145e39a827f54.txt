@@ -1,0 +1,28 @@
+export interface BodySample {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+  /** Distance to the body, km — sets its apparent size. */
+  distanceKm: number;
+  /** Physical radius of the body, km. */
+  radiusKm: number;
+}
+export function feasibility(
+  landmark: RevolutionLandmark,
+  body: Pick<BodySample, 'distanceKm' | 'radiusKm'>,
+  observedFromM: number,
+): { fullPossible: boolean; maxRangeForFullM: number; landmarkWidthDeg: number } {
+  let widest = 0;
+  const total = landmarkHeight(landmark);
+  for (const [h, r] of landmark.profile) {
+    if (h <= total) widest = Math.max(widest, r * 2);
+  }
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+  const maxRangeForFullM = widest / (2 * Math.tan((discRadius * Math.PI) / 180));
+  return {
+    fullPossible: observedFromM <= maxRangeForFullM,
+    maxRangeForFullM,
+    landmarkWidthDeg: (Math.atan2(widest / 2, observedFromM) * 2 * 180) / Math.PI,
+  };
+}

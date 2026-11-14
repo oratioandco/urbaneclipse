@@ -1,0 +1,35 @@
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
+
+  for (let i = 0; i <= steps; i++) {
+    const hAgl = (total * i) / steps;
+    const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
+    const r = radiusAtHeight(landmark, hAgl);
+
+    // Horizontal angular half-width of the limb at this height.
+    const ratio = Math.min(1, r / Math.max(axis.rangeM, 1e-9));
+    const halfWidthDeg = Math.asin(ratio) * DEG;
+
+    // Offset in azimuth. Divide by cos(alt) so that after the tangent-plane
+    // projection's cos(alt) compression the on-sky width is correct.
+249: * The landmark's outline as ABSOLUTE az/alt directions, plus its angular bounds.
+257: * `bounds` additionally allows a sweep to reject instants where the body is nowhere
+260:export interface SilhouetteDirections {
+262:  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+271:  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+309:    bounds: { azMin, azMax, altMin, altMax },

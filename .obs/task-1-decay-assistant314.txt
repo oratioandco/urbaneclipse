@@ -1,0 +1,1 @@
+The output display cap is tiny (~200 bytes), so I'll extract only minimal tokens per call, comments stripped.

@@ -1,0 +1,13 @@
+as-imports.txt
+dom-de.wiki
+dom-en.wiki
+dom-geom.json
+dom-nominatim.json
+dom-official.html
+friedrichs.json
+ft-template.txt
+monbijou.json
+probe.txt
+solver-calls.txt
+structurae.html
+TEST

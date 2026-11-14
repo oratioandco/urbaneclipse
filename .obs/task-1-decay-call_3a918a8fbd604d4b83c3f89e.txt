@@ -1,0 +1,100 @@
+   18128 src/lib/areaSolver.ts
+eight above the surface they stand on, metres. */
+  eyeHeight: number;
+  ground: GroundProvider;
+  /** Convex or simple polygon of reachable camera positions. */
+  area?: LatLon[];
+  /** Maximum iterations for the distance solve. */
+  maxIterations?: number;
+}
+
+export interface Candidate {
+  when: Date;
+  /** Where you must stand. */
+  position: LatLon;
+  /** Horizontal distance from the landmark axis, metres. */
+  distanceM: number;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** True when the solved position lies inside the requested area. */
+  withinArea: boolean;
+}
+
+/**
+ * Approximate a circular search area as a polygon.
+ *
+ * "Somewhere within N metres of here" is how a photographer actually thinks about a
+ * reachable area — a stretch of bridge, a park, a block — and it is far easier to place
+ * than a hand-drawn polygon. isInsideArea works on polygons, so the circle is converted
+ * once here rather than special-cased throughout.
+ *
+ * Longitude degrees are scaled by cos(lat) so the shape is a true circle on the ground
+ * rather than an ellipse stretched east-west (at Berlin's latitude that error would be
+ * ~64%).
+ */
+export function circleToPolygon(
+  center: LatLon,
+  radiusM: number,
+  segments = 48,
+): LatLon[] {
+  if (!Number.isFinite(radiusM) || radiusM <= 0) {
+    throw new RangeError(`radius must be a finite positive number, received ${radiusM}`);
+  }
+  if (!Number.isFinite(center.lat) || !Number.isFinite(center.lon)) {
+    throw new RangeError('circle centre must be finite');
+  }
+
+  const dLat = radiusM / 111_320;
+  const dLon = radiusM / (111_320 * Math.cos((center.lat * Math.PI) / 180));
+
+  const out: LatLon[] = [];
+  for (let i = 0; i < segments; i++) {
+    const t = (2 * Math.PI * i) / segments;
+    out.push({
+      lat: center.lat + dLat * Math.sin(t),
+      lon: center.lon + dLon * Math.cos(t),
+    });
+  }
+  return out;
+}
+
+/** Ray-casting point-in-polygon. Returns false for degenerate polygons. */
+export function isInsideArea(pos: LatLon, area: LatLon[]): boolean {
+  if (area.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = area.length - 1; i < area.length; j = i++) {
+    const xi = area[i].lon;
+    const yi = area[i].lat;
+    const xj = area[j].lon;
+    const yj = area[j].lat;
+    const intersects =
+      yi > pos.lat !== yj > pos.lat &&
+      pos.lon < ((xj - xi) * (pos.lat - yi)) / (yj - yi) + xi;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Solve for the observer position from which `featureHeightAgl` on the landmark sits
+ * exactly in the body's direction.
+ *
+ * Returns null when the body is at or below the horizon (no such position exists in
+ * front of the landmark) or the solve fails to converge.
+ */
+export function solveObserverPosition(
+  body: Pick<BodySample, 'az' | 'alt'>,
+  opts: SolveOptions,
+): { position: LatLon; distanceM: number; eyeEllipsoidalHeight: number } | null {
+  const { landmark, featureHeightAgl, eyeHeight, ground } = opts;
+  const maxIterations = opts.maxIterations ?? 12;
+
+  // A body on or below the horizon cannot be seen behind the landmark from any
+  // sensible ground position: the required distance diverges.
+  if (!(body.alt > 0.05)) return null;
+
+  const featureEllipsoidal =
+    orthometricToEllipsoidal(landmark.baseOrthometric) + featureHeightAgl;
+
+  // The observer stands on the bearing OPPOSITE t

@@ -1,0 +1,2 @@
+FixedSearchRequest): FixedCandidate[]
+BSD: export function buildSilhouetteDirections( observer: ObserverGeodetic, landma

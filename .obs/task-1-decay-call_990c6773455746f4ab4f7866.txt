@@ -1,0 +1,3 @@
+t function feasibility( landmark: RevolutionLandmark, body: Pick<BodySample, 'distanceKm' | 'radiusKm'>, observedFromM: number, ):
+findOccultationsAtPosition: export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[]
+BSD: export function buildSilhouetteDirections( observer: ObserverGeodetic, landmark: RevolutionLandmark,

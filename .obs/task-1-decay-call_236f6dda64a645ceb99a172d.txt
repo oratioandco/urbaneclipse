@@ -1,0 +1,51 @@
+  lon: 13.409419,
+  baseOrthometric: 34.6,
+  profile: [
+    [0, 16.0], // foot, 32 m diameter, 20 m hyperbolic cone stump
+    [10, 12.0],
+    [20, 8.0], // shaft taper begins, 16 m diameter
+    [100, 6.77],
+    // Evakuierungsbühnen: two open rescue platforms, 1.6 m out around the shaft (188 / 191 m).
+    [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7, 5.5],
+    [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7, 5.43],
+    [196, 5.3], // just below the sphere
+    ...sphereSamples(SPHERE_CENTRE_AGL, SPHERE_RADIUS, fernsehturmShaftRadius),
+    [230.4, 4.62], // the sphere rests on a console at 229 m; shaft resumes
+    [231.2, 5.7], // Richtfunk section: the microwave skeleton reads as a slightly wider drum
+    [247.6, 5.7],
+    [248.7, 6.4], // 'Eisteller', the ice-catching plate at 248.7 m
+    [249.4, 5.4],
+    [249.8, 2.0], // antenna base, 4 m diameter
+    [327, 1.45], // the 1997 antenna tip starts at 327 m
+    [368.03, 0.9], // antenna tip, just under 2 m diameter
+  ]
+    .slice()
+    .sort((a, b) => a[0] - b[0]) as ReadonlyArray<readonly [number, number]>,
+  notes:
+    'Parametric solid of revolution, from the published dimensions (de.wikipedia, ' +
+    'Berliner Fernsehturm): foot 32 m dia over 20 m; shaft 16 -> 9 m dia to 248.78 m; ' +
+    'sphere 32 m dia centred 213.78 m; rescue platforms at 188/191 m; Eisteller at ' +
+    '248.7 m; antenna 4 m dia at the base to under 2 m at 368.03 m. LoD2 geometry ' +
+    'measured unusable: no sphere (prism extruded from ground), no shaft taper, ' +
+    'antenna absent (114.5 m short). The Richtfunk skeleton and the red-white antenna ' +
+    'banding are painted in the tower shader, not modelled.',
+};
+
+/**
+ * Siegessäule, from published dimensions and OSM. Total height 67 m, of which the gilded
+ * Viktoria is the top 8.3 m. Axis at the centre of OSM way 718035022 (the base terrace,
+ * about 60 m across, rounded corners); base ground about 44 m NHN, approximate.
+ *
+ * The terrace and square hall (about 20 m across, 12.6 m) are read from photographs; the
+ * column taper and the viewing platform ring (49-50.8 m) are approximate. Heights the
+ * silhouette maths leans on — total 67 m, statue base at 58.7 m — are high-confidence.
+ */
+export const SIEGESSAEULE: RevolutionLandmark = {
+  id: 'siegessaeule',
+  name: 'Siegessäule',
+  lat: 52.514513,
+  lon: 13.350099,
+  baseOrthometric: 44,
+  profile: [
+    [0, 30], // outer terrace
+    [1.1, 30],

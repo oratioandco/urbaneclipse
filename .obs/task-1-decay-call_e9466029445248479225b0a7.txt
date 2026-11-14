@@ -1,0 +1,1 @@
+{'osm_type': 'way', 'osm_id': 313670734, 'lat': '52.5190822', 'lon': '13.4010942', 'boundingbox': ['52.5186346', '52.5195378', '13.4003048', '13.4017508'], 'category': 'amenity', 'type': 'place_of_worship'}

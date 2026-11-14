@@ -1,0 +1,20 @@
+265:export function buildSilhouetteDirections(
+266-  observer: ObserverGeodetic,
+267-  landmark: RevolutionLandmark,
+268-  steps = 96,
+269-): SilhouetteDirections {
+270-  const total = landmarkHeight(landmark);
+271-  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+272-  if (total <= 0) return empty;
+273-
+274-  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+275-
+276-  const left: AzAlt[] = [];
+ERROR: exit: exit status 1
+39:export function sunDistanceKm(date: Date): number {
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+ERROR: exit: exit status 1
+37:export function positionToENU(azimuth: number, altitude: number): Vec3 {
+50:export function southToNorthAzimuth(az: number): number {
+67:export function enuToECEF(enu: Vec3, lat: number, lon: number): Vec3 {
+99:export function sunDirectionECEF(date: Date, lat: number, lon: number): Vec3 {

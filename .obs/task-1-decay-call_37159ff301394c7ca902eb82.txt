@@ -1,0 +1,72 @@
+export function azAltTo(
+  observer: ObserverGeodetic,
+  targetLat: number,
+  targetLon: number,
+  targetEllipsoidalHeight: number,
+): AzAlt & { rangeM: number } {
+  const o = geodeticToECEF(observer.lat, observer.lon, observer.ellipsoidalHeight);
+  const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeight);
+  const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], observer.lat, observer.lon);
+  const [e, n, u] = enu;
+  const horiz = Math.hypot(e, n);
+  return {
+    az: ((Math.atan2(e, n) * DEG) + 360) % 360,
+    alt: Math.atan2(u, horiz) * DEG,
+    rangeM: Math.hypot(horiz, u),
+  };
+}
+
+/**
+ * Project an az/alt direction into a local tangent-plane angular frame centred on
+ * `reference`, in degrees.
+ *
+ * Uses a gnomonic (tangent-plane) projection about the reference direction, so the
+ * `x` axis is the local great-circle east-ish direction and `y` is toward increasing
+ * altitude. Azimuth differences are compressed by cos(alt), which is essential: near
+ * the zenith a degree of azimuth is far less than a degree on the sky, and ignoring
+ * it would badly distort high-sun geometry.
+332:export interface FixedCandidate {
+333-  when: Date;
+334-  kind: OccultationKind;
+335-  coveredFraction: number;
+336-  separationDeg: number;
+337-  /** Body direction at that instant, for display and framing. */
+338-  bodyAz: number;
+339-  bodyAlt: number;
+340-}
+341-
+342-export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+347-  stepMinutes: number;
+348-  bodyAt: (t: Date) => BodySample;
+103:export const EYE_HEIGHT_M = 1.6;
+163:        eyeHeightM: EYE_HEIGHT_M,
+  it('discriminates inside from outside', () => {
+    expect(isWithinCoverage(map, 52.05, 13.1)).toBe(true);
+    expect(isWithinCoverage(map, 51.0, 13.1)).toBe(false);
+  });
+});
+
+describe('the REAL committed Berlin heightmap', () => {
+  const header = JSON.parse(
+    readFileSync('public/heightmap/berlin-dgm1.json', 'utf8'),
+  ) as HeightmapHeader & { stats: Record<string, number>; byteLength: number };
+  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+  const samples = decodeSamples(
+    buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer,
+  );
+  const map = createHeightmap(header, samples);
+
+  it('header and binary agree', () => {
+    expect(samples.length).toBe(header.width * header.height);
+    expect(buf.byteLength).toBe(header.byteLength);
+  });
+
+  it('covers both the observer and the Fernsehturm', () => {
+    // The build script hard-fails if these fall outside; assert it here too, because
+    // an AOI that misses the observer silently reverts them to the fallback elevation.
+    expect(isWithinCoverage(map, 52.5113, 13.4988)).toBe(true); // Lichtenberger Brücke
+    expect(isWithinCoverage(map, 52.520815, 13.409419)).toBe(true); // Fernsehturm

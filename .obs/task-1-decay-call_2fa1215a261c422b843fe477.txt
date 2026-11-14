@@ -1,0 +1,3 @@
+uantity= |spire_height=
+EN: randenburg-Schwedt, 2006 {{Panorama |image = CatedralBerlin.jpg |height = 200px
+OFF: garten. Mit seiner imposanten Architektur, den vier Türmen, der knapp 100 Metern hohen Kuppel und dem goldenen Kreuz ist er weithin sichtbar

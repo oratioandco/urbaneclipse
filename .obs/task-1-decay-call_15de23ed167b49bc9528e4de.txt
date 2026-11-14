@@ -1,0 +1,16 @@
+ProfilePoint: MISSING
+RevolutionLandmark: interface RevolutionLandmark { id: string; name: string; lat: number
+; lon: number; baseOrthometric: number; profile: ReadonlyArray<[number, number]>; notes: string; }
+FT: MISSING
+
+FixedSearchRequest: interface FixedSearchRequest { observer: ObserverGeodetic; landmark: RevolutionLandmark; 
+start: Date; end: Date; stepMinutes: number; bodyAt: (t: Date) => BodySample; wanted?: OccultationKind[]; minA
+ltitudeDeg?: number; limit?: number; }
+OccultationWindow: MISSING
+BodySample: interface BodySample { az: numbe
+r; alt: number; distanceKm: number; radiusKm: number; }
+feasibility: export function feasibility( landmark: Re
+volutionLandmark, body: Pick<BodySample, 'distanceKm' | 'radiusKm'>, observedFromM: number, ):
+findOccultation
+sAtPosition: export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[]
+BSD: export

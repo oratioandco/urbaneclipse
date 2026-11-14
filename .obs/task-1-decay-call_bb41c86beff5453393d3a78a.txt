@@ -1,0 +1,5 @@
+ERROR: exit: exit status 1
+37:export function positionToENU(azimuth: number, altitude: number): Vec3 {
+50:export function southToNorthAzimuth(az: number): number {
+67:export function enuToECEF(enu: Vec3, lat: number, lon: number): Vec3 {
+99:export function sunDirectionECEF(date: Date, lat: number, lon: number): Vec3 {

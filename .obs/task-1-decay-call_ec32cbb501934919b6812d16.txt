@@ -1,0 +1,12 @@
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+77:function realBerlin(): Heightmap {
+84:describe('the feature flag keeps this out of the app', () => {
+103:describe('groundAltitudeDeg — known answers (independent computation)', () => {
+137:describe('sampleHorizonProfile — skyline semantics', () => {
+211:describe('Siegessäule target window — spherical trig, known answers', () => {
+243:describe('gateDirection — the disc must clear the terrain AND hit the target', () => {
+290:describe('the REAL committed DGM1 grid — the honest limitation', () => {
+328:describe('eye height uses the repo resolver, not a second convention', () => {
+345:describe('enumerateHorizonGatedWindows — flag-gated, terrain-aware', () => {
+354:  function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {
+2026-11-13

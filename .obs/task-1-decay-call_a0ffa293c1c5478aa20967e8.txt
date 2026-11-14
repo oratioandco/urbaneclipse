@@ -1,0 +1,234 @@
+ERROR: exit: exit status 1
+41:export interface ObserverGeodetic {
+49:export interface AzAlt {
+59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+90:export function directionOffsetECEF(
+122:export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+127:export function ecefToGeodetic(x: number, y: number, z: number): {
+156:export function offsetGeodetic(
+182:export function azAltTo(
+210:export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+239:export function buildSilhouette(
+260:export interface SilhouetteDirections {
+265:export function buildSilhouetteDirections(
+314:export function projectSilhouette(
+332:export interface FixedCandidate {
+333-  when: Date;
+334-  kind: OccultationKind;
+335-  coveredFraction: number;
+336-  separationDeg: number;
+337-  /** Body direction at that instant, for display and framing. */
+338-  bodyAz: number;
+339-  bodyAlt: number;
+340-}
+341-
+342-export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+54:export interface BodySample {
+332:export interface FixedCandidate {
+342:export interface FixedSearchRequest {
+357:export interface InstantClassifyRequest {
+374:export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+426:export function classifyAtInstant(req: InstantClassifyRequest, when: Date): FixedCandidate | null {
+434:  req: InstantClassifyRequest,
+    out.push(candidate);
+  }
+
+  out.sort((a, b) => score(b) - score(a));
+  return out.slice(0, limit);
+}
+
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
+/**
+ * Sweep time at a FIXED observer position and classify the occultation at each step.
+ *
+ * This is the "I am standing here, when does it happen?" search, as opposed to
+ * findCompositions' "where do I need to stand?". It replaces the original
+ * bearing-tolerance sweep: matching on "body within +/-0.5 deg of the target bearing" only
+ * means "within roughly one lunar diameter", which finds near misses rather than
+ * compositions. Here the real silhouette is built and the disc's covered AREA measured.
+ */
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+export interface BodySample {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+  /** Distance to the body, km — sets its apparent size. */
+  distanceKm: number;
+  /** Physical radius of the body, km. */
+  radiusKm: number;
+}
+
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+44-  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+45-  ellipsoidalHeight: number;
+46-}
+47-
+48-/** Direction in the observer's horizontal frame. */
+49-export interface AzAlt {
+50-  /** Degrees clockwise from north. */
+51-  az: number;
+52-  /** Degrees above the horizon. */
+53-  alt: number;
+54-}
+55-
+56-type Vec3 = [number, number, number];
+57-
+58-/** Geodetic (deg, deg, ellipsoidal m) -> ECEF metres. */
+59-export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+60-  const sφ = Math.sin(lat * RAD);
+61-  const cφ = Math.cos(lat * RAD);
+22-
+23-const AU_KM = 149597870.7;
+24-const RAD = Math.PI / 180;
+25-
+26-/** Days since the J2000.0 epoch. */
+27-function daysSinceJ2000(date: Date): number {
+28-  return date.getTime() / 86400000 - 10957.5;
+29-}
+30-
+31-/**
+32- * Earth-Sun distance in km.
+33- *
+34- * Standard low-eccentricity series (accurate to ~0.0002 AU, i.e. ~0.0001 deg of angular
+35- * radius — three orders of magnitude below the tolerance that matters here):
+36- *   R = 1.00014 - 0.01671 cos g - 0.00014 cos 2g   [AU]
+37- * with g the Sun's mean anomaly.
+38- */
+39-export function sunDistanceKm(date: Date): number {
+40-  const n = daysSinceJ2000(date);
+41-  const g = (357.529 + 0.98560028 * n) * RAD;
+42-  const au = 1.00014 - 0.01671 * Math.cos(g) - 0.00014 * Math.cos(2 * g);
+43-  return au * AU_KM;
+44-}
+45-
+46-/**
+47- * Body direction + apparent size as seen from a ground position.
+48- *
+49- * Moon distance is topocentric-ish as suncalc reports it; that is adequate here since
+50- * a 1 km observer displacement shifts the moon's direction by ~0.00015 deg.
+51- */
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+
+/**
+ * Berliner Fernsehturm, modelled from published dimensions.
+ *
+ * Axis: EPSG:25833 E 392080.49, N 5820156.85 — the measured centroid of the LoD2
+ * ground ring (+/-1 m), converted to WGS84. Base ground 34.6 m DHHN2016, taken from the
+ * LoD2 GroundSurface so it stays consistent with the rest of the scene rather than
+ * with Wikipedia's 32 m ue. NHN.
+ *
+ * SENSITIVITY at 3953 m (1 deg = 69.0 m, tolerance ~0.05 deg):
+ *   sphere centre height +/-1 m  -> +/-0.014 deg
+ *   axis position       +/-1 m  -> +/-0.014 deg
+ *   antenna base dia    +/-2 m  -> +/-0.015 deg  (the one low-confidence figure)
+ * All comfortably inside tolerance. Only the sphere diameter (32 m) and total height
+ * (368.03 m) need precision, and both are high-confidence published values.
+ */
+export const FERNSEHTURM: RevolutionLandmark = {
+  id: 'fernsehturm',
+  name: 'Berliner Fernsehturm',
+  lat: 52.520815,
+  lon: 13.409419,
+  baseOrthometric: 34.6,
+  profile: [
+    [0, 16.0], // foot, 32 m diameter, 20 m hyperbolic cone stump
+    [10, 12.0],
+    [20, 8.0], // shaft taper begins, 16 m diameter
+    [100, 6.77],
+    // Evakuierungsbühnen: two open rescue platforms, 1.6 m out around the shaft (188 / 191 m).
+    [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7, 5.5],
+    [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7, 5.43],
+    [196, 5.3], // just below the sphere
+    ...sphereSamples(SPHERE_CENTRE_AGL, SPHERE_RADIUS, fernsehturmShaftRadius),
+    [230.4, 4.62], // the sphere rests on a console at 229 m; shaft resumes
+    [231.2, 5.7], // Richtfunk section: the microwave skeleton reads as a slightly wider drum
+    [247.6, 5.7],
+    [248.7, 6.4], // 'Eisteller', the ice-catching plate at 248.7 m
+    [249.4, 5.4],
+    [249.8, 2.0], // antenna base, 4 m diameter
+    [327, 1.45], // the 1997 antenna tip starts at 327 m
+    [368.03, 0.9], // antenna tip, just under 2 m diameter
+  ]
+    .slice()
+    .sort((a, b) => a[0] - b[0]) as ReadonlyArray<readonly [number, number]>,
+  notes:
+    'Parametric solid of revolution, from the published dimensions (de.wikipedia, ' +
+    'Berliner Fernsehturm): foot 32 m dia over 20 m; shaft 16 -> 9 m dia to 248.78 m; ' +
+    'sphere 32 m dia centred 213.78 m; rescue platforms at 188/191 m; Eisteller at ' +
+    '248.7 m; antenna 4 m dia at the base to under 2 m at 368.03 m. LoD2 geometry ' +
+    'measured unusable: no sphere (prism extruded from ground), no shaft taper, ' +
+    'antenna absent (114.5 m short). The Richtfunk skeleton and the red-white antenna ' +
+    'banding are painted in the tower shader, not modelled.',
+};
+
+/**
+ * Siegessäule, from published dimensions and OSM. Total height 67 m, of which the gilded
+ * Viktoria is the top 8.3 m. Axis at the centre of OSM way 718035022 (the base terrace,
+ * about 60 m across, rounded corners); base ground about 44 m NHN, approximate.
+ *
+ * The terrace and square hall (about 20 m across, 12.6 m) are read from photographs; the
+ * column taper and the viewing platform ring (49-50.8 m) are approximate. Heights the
+ * silhouette maths leans on — tot

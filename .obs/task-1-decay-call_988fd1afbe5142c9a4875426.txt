@@ -1,0 +1,6 @@
+93:function cesiumSunAltAz(date: Date): AltAz {
+131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc
+135:function refractionDeg(altDeg: number): number {
+141:function angularSeparationDeg(azA: number, altA: number, azB: number, altB: number): number {
+103:export const EYE_HEIGHT_M = 1.6;
+163:        eyeHeightM: EYE_HEIGHT_M,

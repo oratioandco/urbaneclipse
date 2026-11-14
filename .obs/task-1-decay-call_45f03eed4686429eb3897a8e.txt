@@ -1,0 +1,20 @@
+31:export interface RevolutionLandmark {
+96:export const FERNSEHTURM: RevolutionLandmark = {
+142:export const SIEGESSAEULE: RevolutionLandmark = {
+175:export const BRANDENBURGER_TOR: RevolutionLandmark = {
+199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {
+231-  const p = landmark.profile;
+232-  return p.length === 0 ? 0 : p[p.length - 1][0];
+233-}
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+226-  return profileRadius(landmark.profile, heightAboveBase);
+227-}
+228-
+229-/** Total height of the landmark above its base, metres. */
+230-export function landmarkHeight(landmark: RevolutionLandmark): number {
+231-  const p = landmark.profile;
+232-  return p.length === 0 ? 0 : p[p.length - 1][0];
+233-}

@@ -1,0 +1,65 @@
+yteOffset + buf.byteLength);
+  return createHeightmap(header, decodeSamples(ab));
+}
+
+describe('the feature flag keeps this out of the app', () => {
+  it('is OFF when nothing is set', () => {
+    expect(horizonWindowsEnabled({})).toBe(false);
+    expect(horizonWindowsEnabled(undefined)).toBe(false);
+  });
+
+  it('is OFF for anything that is not an explicit truthy string', () => {
+    for (const v of ['0', 'false', 'off', '', 'yes', 'TRUE']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(false);
+    }
+  });
+
+  it('is ON only for 1 / true / on', () => {
+    for (const v of ['1', 'true', 'on']) {
+      expect(horizonWindowsEnabled({ [HORIZON_WINDOWS_FLAG]: v })).toBe(true);
+    }
+  });
+});
+
+describe('groundAltitudeDeg — known answers (independent computation)', () => {
+  it('is level ground slightly BELOW zero because the Earth curves away', () => {
+    // Same height as the eye: only curvature+refraction remain. -(1-k)d^2/(2R).
+    expect(groundAltitudeDeg(41.6, 41.6, 1000)).toBeCloseTo(-0.003912049, 8);
+    expect(groundAltitudeDeg(41.6, 41.6, 2000)).toBeCloseTo(-0.007824098, 8);
+  });
+
+  it('matches atan2 of rise over distance for a 10 m rise at 1 km', () => {
+    expect(groundAltitudeDeg(51.6, 41.6, 1000)).toBeCloseTo(0.569027037, 8);
+  });
+
+  it('matches a steep near obstruction', () => {
+    expect(groundAltitudeDeg(60, 41.6, 100)).toBeCloseTo(10.425430131, 8);
+    expect(groundAltitudeDeg(100, 41.6, 800)).toBeCloseTo(4.172072831, 8);
+  });
+
+  it('is negative for ground below the eye', () => {
+    expect(groundAltitudeDeg(30, 41.6, 500)).toBeCloseTo(-1.330978645, 8);
+  });
+
+  it('applies refraction: the drop is 0.0683 m at 1 km, not the bare 0.0785 m', () => {
+    const bare = (1000 * 1000) / (2 * 6371000);
+    const withRefraction = -Math.tan((groundAltitudeDeg(41.6, 41.6, 1000) * Math.PI) / 180) * 1000;
+    expect(bare).toBeCloseTo(0.0784806, 6);
+    expect(withRefraction).toBeCloseTo(0.0682781, 6);
+    expect(withRefraction).toBeLessThan(bare);
+  });
+
+  it('is monotone: a higher obstruction is a higher angle at the same distance', () => {
+    expect(groundAltitudeDeg(70, 41.6, 500)).toBeGreaterThan(groundAltitudeDeg(60, 41.6, 500));
+    expect(groundAltitudeDeg(60, 41.6, 500)).toBeGreaterThan(groundAltitudeDeg(60, 41.6, 1500));
+  });
+});
+
+describe('sampleHorizonProfile — skyline semantics', () => {
+  it('on flat ground BELOW the eye nothing obstructs: the skyline tends to 0 from below', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 1000, stepM: 100, map: FLAT });
+    expect(p.samples).toHaveLength(10);
+    // Ground 40 m, eye 41.6 m: rise/d = (-1.6 - drop)/d, so the angle is negative and
+    // RISES toward 0 as d grows. The maximum is therefore the FARTHEST sample — flat
+    // terrain never blocks a sunset, which is exactly what this must report.
+    expect(p.horizonD

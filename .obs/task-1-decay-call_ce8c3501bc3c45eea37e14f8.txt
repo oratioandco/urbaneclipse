@@ -1,0 +1,19 @@
+ERROR: exit: exit status 1
+  /** Distance to the body, km — sets its apparent size. */
+  distanceKm: number;
+  /** Physical radius of the body, km. */
+  radiusKm: number;
+}
+
+/** Supplies ground elevation (DHHN2016 m) at a position; undefined outside coverage. */
+export type GroundProvider = (pos: LatLon) => number | undefined;
+
+export interface SolveOptions {
+  landmark: RevolutionLandmark;
+  /**
+   * Height up the landmark to aim at, metres above its base. The sphere centre and
+   * the antenna give very different shots.
+   */
+  featureHeightAgl: number;
+  /** Photographer's eye height above the surface they stand on, metres. */
+  eyeHeight: number;

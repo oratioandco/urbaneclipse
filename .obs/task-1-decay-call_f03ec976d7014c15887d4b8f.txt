@@ -1,0 +1,1 @@
+{"groundDom":35.26,"groundFried":30.8,"bearing":161.846,"dist":172.1,"apexAlt":30.36,"springAlt68":22.364,"halfWidth15":4.981}

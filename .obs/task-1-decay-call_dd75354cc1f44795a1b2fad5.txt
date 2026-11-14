@@ -1,0 +1,2 @@
+E src/lib/landmarks.ts(130,14): error TS2741: Property 'notes' is missing in type '{ id: string; name: string; l
+       0
