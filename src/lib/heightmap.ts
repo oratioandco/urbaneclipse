@@ -128,6 +128,25 @@ export function sampleGroundOrthometric(
   return bottom + (top - bottom) * tr;
 }
 
+/**
+ * Sample a STACK of grids, finest first: the first grid with a value wins. The horizon
+ * maths pairs the 10 m core grid with the coarser 25 m horizon grid that reaches west
+ * past the Siegessäule to Teufelsberg — inside the core the core answers, beyond it the
+ * horizon grid does, and outside both the result stays undefined.
+ */
+export function sampleGroundStack(
+  maps: Heightmap | readonly Heightmap[],
+  lat: number,
+  lon: number,
+): number | undefined {
+  const list = Array.isArray(maps) ? maps : [maps as Heightmap];
+  for (const map of list) {
+    const v = sampleGroundOrthometric(map, lat, lon);
+    if (v !== undefined) return v;
+  }
+  return undefined;
+}
+
 /** True when a position lies within the heightmap's coverage. */
 export function isWithinCoverage(map: Heightmap, lat: number, lon: number): boolean {
   const { bbox } = map.header;

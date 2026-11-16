@@ -190,7 +190,10 @@ export const FERNSEHTURM: RevolutionLandmark = {
 /**
  * Siegessäule, from published dimensions and OSM. Total height 67 m, of which the gilded
  * Viktoria is the top 8.3 m. Axis at the centre of OSM way 718035022 (the base terrace,
- * about 60 m across, rounded corners); base ground about 44 m NHN, approximate.
+ * about 60 m across, rounded corners). Base 35.2 m NHN from DGM1 (2026-11-16): the 1 m
+ * points read 36.3-36.4 m on the terrace plateau within 20 m of the axis and ~34 m on
+ * the roundabout, so the profile's 1.1 m terrace step stands on ~35.2 m. (Was 44, a
+ * guess 9 m too high: it lifted the whole column ~0.3 deg in the sky from 1.3 km.)
  *
  * The terrace and square hall (about 20 m across, 12.6 m) are read from photographs; the
  * column taper and the viewing platform ring (49-50.8 m) are approximate. Heights the
@@ -201,7 +204,7 @@ export const SIEGESSAEULE: RevolutionLandmark = {
   name: 'Siegessäule',
   lat: 52.514513,
   lon: 13.350099,
-  baseOrthometric: 44,
+  baseOrthometric: 35.2,
   profile: [
     [0, 30], // outer terrace
     [1.1, 30],

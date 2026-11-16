@@ -1,0 +1,83 @@
+{
+  "format": "plaster-void-heightmap",
+  "version": 1,
+  "binary": "berlin-dgm1-horizon.bin",
+  "byteLength": 253080,
+  "dtype": "int16",
+  "byteOrder": "little",
+  "scale": 0.1,
+  "offset": 0.0,
+  "nodata": -32768,
+  "width": 555,
+  "height": 228,
+  "rowOrder": "south-to-north",
+  "colOrder": "west-to-east",
+  "index": "row * width + col",
+  "crs": "EPSG:4326",
+  "bbox": {
+    "lonMin": 13.174076403933698,
+    "latMin": 52.483048945136176,
+    "lonMax": 13.378149682197154,
+    "latMax": 52.53396115273632
+  },
+  "dLon": 0.00036836331816508306,
+  "dLat": 0.00022428285286406086,
+  "approxSpacingMetres": 25.0,
+  "heightUnit": "metre",
+  "heightType": "orthometric",
+  "verticalDatum": "DHHN2016 (normal heights, NHN)",
+  "toEllipsoidal": "h_wgs84 = sample + geoidUndulation.appliedByConvertTile",
+  "geoidUndulation": {
+    "appliedByConvertTile": 39.5,
+    "gcg2016": {
+      "model": "GCG2016 (BKG, via PROJ grid de_bkg_gcg2016)",
+      "min": 39.273,
+      "max": 39.703,
+      "mean": 39.485,
+      "note": "informational -- NOT applied to the samples"
+    }
+  },
+  "stats": {
+    "minHeight": 25.33,
+    "maxHeight": 115.03,
+    "meanHeight": 40.49,
+    "p0_5Height": 29.45,
+    "p99_5Height": 75.27,
+    "nodataCount": 0
+  },
+  "source": {
+    "dataset": "ATKIS(R) DGM1 Berlin (1 m digital terrain model, bare earth)",
+    "provider": "Senatsverwaltung fuer Stadtentwicklung, Bauen und Wohnen Berlin",
+    "endpoint": "https://gdi.berlin.de/data/dgm1/atom",
+    "sourceCrs": "EPSG:25833 (ETRS89 / UTM zone 33N)",
+    "sheets": [
+      "DGM1_376_5816.zip",
+      "DGM1_376_5818.zip",
+      "DGM1_376_5820.zip",
+      "DGM1_378_5816.zip",
+      "DGM1_378_5818.zip",
+      "DGM1_378_5820.zip",
+      "DGM1_380_5816.zip",
+      "DGM1_380_5818.zip",
+      "DGM1_380_5820.zip",
+      "DGM1_382_5816.zip",
+      "DGM1_382_5818.zip",
+      "DGM1_382_5820.zip",
+      "DGM1_384_5816.zip",
+      "DGM1_384_5818.zip",
+      "DGM1_384_5820.zip",
+      "DGM1_386_5816.zip",
+      "DGM1_386_5818.zip",
+      "DGM1_386_5820.zip",
+      "DGM1_388_5816.zip",
+      "DGM1_388_5818.zip",
+      "DGM1_388_5820.zip"
+    ],
+    "license": "Datenlizenz Deutschland - Zero - Version 2.0",
+    "licenseUrl": "https://www.govdata.de/dl-de/zero-2-0",
+    "attribution": "Geoportal Berlin / ATKIS DGM1"
+  },
+  "resampling": "mean of 1 m DGM1 postings in a 25 m box per node",
+  "generatedBy": "scripts/build_heightmap.py",
+  "generatedAt": "2026-11-16T13:59:57Z"
+}

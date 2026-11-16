@@ -74,9 +74,9 @@ const CENTRE = standingPoint(
   { lat: 52.02, lon: 13.01 },
 );
 
-function realBerlin(): Heightmap {
-  const header = JSON.parse(readFileSync('public/heightmap/berlin-dgm1.json', 'utf8')) as HeightmapHeader;
-  const buf = readFileSync('public/heightmap/berlin-dgm1.bin');
+function realBerlin(name = 'berlin-dgm1'): Heightmap {
+  const header = JSON.parse(readFileSync(`public/heightmap/${name}.json`, 'utf8')) as HeightmapHeader;
+  const buf = readFileSync(`public/heightmap/${name}.bin`);
   const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
   return createHeightmap(header, decodeSamples(ab));
 }
@@ -215,12 +215,13 @@ describe('Siegessäule target window — spherical trig, known answers', () => {
     expect(azimuthToLandmark(OBS, SIEGESSAEULE)).toBeCloseTo(270.069244, 5);
   });
 
-  it('puts the 67 m tip about 3.2 deg above the eye at ~1.35 km', () => {
+  it('puts the 67 m tip about 2.8 deg above the eye at ~1.35 km', () => {
     expect(landmarkHeight(SIEGESSAEULE)).toBeCloseTo(67, 6);
-    // Independent: base 44 + 67 = 111 m, eye 35.6 m, WGS84 geodesic d = 1351.037460 m
-    // -> 3.189035495 deg. The mean-sphere haversine distance (1346.678 m) is 4.36 m
+    // Independent: base 35.2 (DGM1 terrace foot) + 67 = 102.2 m, eye 35.6 m, WGS84
+    // geodesic d = 1351.037460 m, drop 0.87 d^2/2R -> 2.816864226 deg. (Same formula
+    // reproduces the old base-44 golden, 3.189035494, to 1e-9.) The mean-sphere haversine distance (1346.678 m) is 4.36 m
     // short on this east-west line at 52.5 deg N, which would overstate this by 0.010 deg.
-    expect(landmarkTipAltitudeDeg(OBS, SIEGESSAEULE)).toBeCloseTo(3.189035495, 6);
+    expect(landmarkTipAltitudeDeg(OBS, SIEGESSAEULE)).toBeCloseTo(2.816864226, 6);
   });
 
   it('spans the published azimuth/altitude box', () => {
@@ -228,8 +229,9 @@ describe('Siegessäule target window — spherical trig, known answers', () => {
     expect(w.azimuthDeg).toBeCloseTo(270.069244, 5);
     // Widest profile radius is the 30 m terrace -> 1.272052783 deg at 1351.037 m.
     expect(w.azimuthHalfWidthDeg).toBeCloseTo(1.272052783, 6);
-    expect(w.altitudeMinDeg).toBeCloseTo(0.350943598, 6);
-    expect(w.altitudeMaxDeg).toBeCloseTo(3.189035495, 6);
+    // Base 35.2 m sits 0.4 m below the 35.6 m eye: just under the eye line.
+    expect(w.altitudeMinDeg).toBeCloseTo(-0.022248815, 6);
+    expect(w.altitudeMaxDeg).toBeCloseTo(2.816864226, 6);
     expect(w.altitudeMaxDeg).toBeGreaterThan(w.altitudeMinDeg);
   });
 
@@ -287,14 +289,15 @@ describe('gateDirection — the disc must clear the terrain AND hit the target',
   });
 });
 
-describe('the REAL committed DGM1 grid — the honest limitation', () => {
+describe('the REAL core DGM1 grid ALONE — the honest limitation', () => {
   it('does not cover the Siegessäule itself, and says so', () => {
     const map = realBerlin();
     const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, map, 25);
-    // The grid starts at lon 13.3611; the column stands at 13.3501 — outside it.
+    // The grid starts at lon 13.3611; the column stands at 13.3501 — outside it, and
+    // the 10 km beyond it even more so: ~0.75 km of an ~11.35 km sightline is known.
     expect(p.truncated).toBe(true);
-    expect(p.coverage).toBeGreaterThan(0.4);
-    expect(p.coverage).toBeLessThan(1);
+    expect(p.coverage).toBeGreaterThan(0.04);
+    expect(p.coverage).toBeLessThan(0.15);
     expect(p.maxDistanceM).toBeLessThan(1200);
     expect(p.samples.length).toBeGreaterThan(10);
   });
@@ -306,10 +309,6 @@ describe('the REAL committed DGM1 grid — the honest limitation', () => {
     expect(p.horizonAltitudeDeg).toBeLessThan(1);
   });
 
-  it('never samples past the landmark, so ground behind it cannot hide it', () => {
-    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, realBerlin(), 25);
-    for (const s of p.samples) expect(s.distanceM).toBeLessThanOrEqual(OBS.distanceToLandmarkM);
-  });
 
   it('marks any window gated on that partial skyline as not confident', () => {
     const horizon = horizonTowardsLandmark(OBS, SIEGESSAEULE, realBerlin(), 25);
@@ -322,6 +321,48 @@ describe('the REAL committed DGM1 grid — the honest limitation', () => {
     expect(p.truncated).toBe(false);
     expect(p.coverage).toBe(1);
     expect(p.samples).toHaveLength(20);
+  });
+});
+
+describe('the REAL core + horizon grid stack — the column and 10 km behind it', () => {
+  const STACK = [realBerlin(), realBerlin('berlin-dgm1-horizon')];
+
+  it('covers the whole sightline: observer, column, and 10 km past it', () => {
+    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, STACK, 25);
+    expect(p.truncated).toBe(false);
+    expect(p.coverage).toBe(1);
+    expect(p.maxDistanceM).toBeGreaterThan(OBS.distanceToLandmarkM + 9_900);
+  });
+
+  it('samples PAST the column, because terrain behind it can hide the disc', () => {
+    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, STACK, 25);
+    expect(p.samples.some((s) => s.distanceM > OBS.distanceToLandmarkM + 5_000)).toBe(true);
+  });
+
+  it('sees Teufelsberg as the skyline in its direction (independent known answer)', () => {
+    // WGS84 geodesic OBS -> summit (52.4977, 13.2413): az 257.976 deg, 8936.6 m. The
+    // 25 m grid reads 113.5-115.1 m there; eye 35.6 m, drop 0.87 d^2/2R ->
+    // 0.4645-0.4747 deg. Bilinear sampling between nodes can land a little lower.
+    const p = sampleHorizonProfile({ point: OBS, azimuthDeg: 257.976, maxDistanceM: 11_000, stepM: 25, map: STACK });
+    expect(p.truncated).toBe(false);
+    expect(p.horizonDistanceM).toBeGreaterThan(8_700);
+    expect(p.horizonDistanceM).toBeLessThan(9_200);
+    expect(p.horizonAltitudeDeg).toBeGreaterThan(0.42);
+    expect(p.horizonAltitudeDeg).toBeLessThan(0.48);
+  });
+
+  it('due west along Straße des 17. Juni the skyline stays under half a degree', () => {
+    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, STACK, 25);
+    expect(p.horizonAltitudeDeg).toBeGreaterThan(-0.5);
+    expect(p.horizonAltitudeDeg).toBeLessThan(0.5);
+  });
+
+  it('makes a window gated on it confident', () => {
+    const target = targetWindow(OBS, SIEGESSAEULE);
+    const horizon = horizonTowardsLandmark(OBS, SIEGESSAEULE, STACK, 25);
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1 }, target, horizon, 0.25);
+    expect(g.horizonConfident).toBe(true);
+    expect(g.clearsHorizon).toBe(true);
   });
 });
 
@@ -352,9 +393,10 @@ describe('enumerateHorizonGatedWindows — flag-gated, terrain-aware', () => {
 
   /** Synthetic Berlin-sized grid, 33.4 m plain, fully covering observer AND column. */
   function berlinGrid(fill: (lat: number, lon: number) => number): Heightmap {
-    const width = 41;
+    // Reaches 13.19, past the default 10 km beyond the column (~13.203).
+    const width = 191;
     const height = 31;
-    const bbox = { lonMin: 13.34, latMin: 52.5, lonMax: 13.38, latMax: 52.53 };
+    const bbox = { lonMin: 13.19, latMin: 52.5, lonMax: 13.38, latMax: 52.53 };
     const dLon = 0.001;
     const dLat = 0.001;
     const header: HeightmapHeader = {
@@ -417,8 +459,12 @@ describe('enumerateHorizonGatedWindows — flag-gated, terrain-aware', () => {
       point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
     });
     expect(w.every((x) => x.horizonConfident)).toBe(true);
-    // Flat ground below the eye cannot block a sunset.
-    expect(w.every((x) => x.clearsHorizon)).toBe(true);
+    // Flat 33.4 m ground under a 35.6 m eye puts the skyline just below the eye line
+    // (about -0.044 deg with curvature). Every window peaking above it clears; with the
+    // column's base on the DGM1 terrace foot (35.2 m) the week also holds a horizon
+    // graze at about -0.1 deg, which the gate must reject — and does.
+    for (const x of w) expect(x.clearsHorizon).toBe(x.peakAltitudeDeg > x.horizonAltitudeDeg);
+    expect(w.filter((x) => x.clearsHorizon).length).toBeGreaterThanOrEqual(4);
     expect(w.some((x) => x.photographable)).toBe(true);
   });
 

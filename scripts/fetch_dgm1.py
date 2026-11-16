@@ -197,50 +197,16 @@ def download(url: str, dest: Path) -> None:
     tmp.replace(dest)
 
 
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument(
-        "--tileset",
-        type=Path,
-        default=Path("public/berlin-core/tileset.json"),
-        help="LoD2 tileset whose tile_<E>_<N>.b3dm children define the AOI",
-    )
-    ap.add_argument("--out", type=Path, default=Path("data/dgm1"), help="output directory")
-    ap.add_argument(
-        "--margin",
-        type=float,
-        default=250.0,
-        help="metres of padding around the AOI / reference points (default 250)",
-    )
-    ap.add_argument("--force", action="store_true", help="re-download even if cached")
-    args = ap.parse_args(argv)
-
-    if not args.tileset.is_file():
-        print(f"[fetch_dgm1] tileset not found: {args.tileset}", file=sys.stderr)
-        return EXIT_USAGE
-
-    e0, e1, n0, n1 = aoi_km_from_tileset(args.tileset)
-    print(f"[fetch_dgm1] LoD2 AOI (EPSG:25833, km): E {e0}-{e1}  N {n0}-{n1}")
-    # NOTE: the LoD2 box is used UNPADDED here on purpose.  Padding it would
-    # push the box a few hundred metres over a 2 km sheet boundary and pull in
-    # a whole extra ~17 MB row/column of DGM1 for a sliver of terrain; the
-    # heightmap builder clamps its grid to whatever coverage exists instead.
-    # --margin only guarantees breathing room around the reference points.
-    box = expand_for_reference_points(
-        (e0 * 1000.0, e1 * 1000.0, n0 * 1000.0, n1 * 1000.0), args.margin
-    )
-    sheets = sheets_for_aoi(box)
-    print(f"[fetch_dgm1] fetch AOI (m): E {box[0]:.0f}..{box[1]:.0f}  N {box[2]:.0f}..{box[3]:.0f}")
-    print(f"[fetch_dgm1] {len(sheets)} DGM1 2km sheet(s): {sheets}")
-
-    args.out.mkdir(parents=True, exist_ok=True)
+def fetch_sheets(sheets: list[tuple[int, int]], out: Path, force: bool) -> int:
+    """Download (or reuse cached, validated) DGM1 sheets into *out*; exit code."""
+    out.mkdir(parents=True, exist_ok=True)
     failures: list[str] = []
     bad: list[str] = []
 
     for e, n in sheets:
         name = f"DGM1_{e}_{n}.zip"
-        dest = args.out / name
-        if dest.is_file() and not args.force:
+        dest = out / name
+        if dest.is_file() and not force:
             if validate_zip(dest):
                 print(f"[fetch_dgm1] cached  {name} ({dest.stat().st_size/1e6:.1f} MB)")
                 continue
@@ -265,8 +231,62 @@ def main(argv: list[str] | None = None) -> int:
     if bad:
         print(f"[fetch_dgm1] {len(bad)} sheet(s) failed validation", file=sys.stderr)
         return EXIT_BAD_PAYLOAD
-    print(f"[fetch_dgm1] done -> {args.out}")
+    print(f"[fetch_dgm1] done -> {out}")
     return EXIT_OK
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument(
+        "--tileset",
+        type=Path,
+        default=Path("public/berlin-core/tileset.json"),
+        help="LoD2 tileset whose tile_<E>_<N>.b3dm children define the AOI",
+    )
+    ap.add_argument("--out", type=Path, default=Path("data/dgm1"), help="output directory")
+    ap.add_argument(
+        "--margin",
+        type=float,
+        default=250.0,
+        help="metres of padding around the AOI / reference points (default 250)",
+    )
+    ap.add_argument("--force", action="store_true", help="re-download even if cached")
+    ap.add_argument(
+        "--bbox-utm",
+        type=float,
+        nargs=4,
+        metavar=("E0", "E1", "N0", "N1"),
+        help="explicit AOI in EPSG:25833 metres instead of the tileset (e.g. the "
+        "horizon grid west of the core: 378000 390000 5816000 5822000)",
+    )
+    args = ap.parse_args(argv)
+
+    if args.bbox_utm:
+        box = tuple(args.bbox_utm)
+        sheets = sheets_for_aoi(box)
+        print(f"[fetch_dgm1] explicit AOI (m): E {box[0]:.0f}..{box[1]:.0f}  N {box[2]:.0f}..{box[3]:.0f}")
+        print(f"[fetch_dgm1] {len(sheets)} DGM1 2km sheet(s): {sheets}")
+        return fetch_sheets(sheets, args.out, args.force)
+
+    if not args.tileset.is_file():
+        print(f"[fetch_dgm1] tileset not found: {args.tileset}", file=sys.stderr)
+        return EXIT_USAGE
+
+    e0, e1, n0, n1 = aoi_km_from_tileset(args.tileset)
+    print(f"[fetch_dgm1] LoD2 AOI (EPSG:25833, km): E {e0}-{e1}  N {n0}-{n1}")
+    # NOTE: the LoD2 box is used UNPADDED here on purpose.  Padding it would
+    # push the box a few hundred metres over a 2 km sheet boundary and pull in
+    # a whole extra ~17 MB row/column of DGM1 for a sliver of terrain; the
+    # heightmap builder clamps its grid to whatever coverage exists instead.
+    # --margin only guarantees breathing room around the reference points.
+    box = expand_for_reference_points(
+        (e0 * 1000.0, e1 * 1000.0, n0 * 1000.0, n1 * 1000.0), args.margin
+    )
+    sheets = sheets_for_aoi(box)
+    print(f"[fetch_dgm1] fetch AOI (m): E {box[0]:.0f}..{box[1]:.0f}  N {box[2]:.0f}..{box[3]:.0f}")
+    print(f"[fetch_dgm1] {len(sheets)} DGM1 2km sheet(s): {sheets}")
+
+    return fetch_sheets(sheets, args.out, args.force)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,10 @@ import { bearingDistanceTo } from './vantages.js';
 import { enumerateVantageWindows } from './vantageWindows.js';
 import type { StandingPoint } from './vantages.js';
 import type { Heightmap } from './heightmap.js';
-import { sampleGroundOrthometric } from './heightmap.js';
+import { sampleGroundStack } from './heightmap.js';
+
+/** A single grid or a finest-first stack of grids (see sampleGroundStack). */
+export type HeightmapStack = Heightmap | readonly Heightmap[];
 
 /**
  * The feature flag. OFF unless explicitly enabled, so nothing ships by accident.
@@ -89,7 +92,7 @@ export interface HorizonRequest {
   maxDistanceM: number;
   /** Spacing between samples, metres. Must be > 0. */
   stepM: number;
-  map: Heightmap;
+  map: HeightmapStack;
 }
 
 /**
@@ -136,7 +139,7 @@ export function sampleHorizonProfile(req: HorizonRequest): HorizonProfile {
   for (let d = stepM; d <= maxDistanceM + 1e-9; d += stepM) {
     requested++;
     const p = offsetGeodetic(point.lat, point.lon, 0, azimuthDeg, d);
-    const ground = sampleGroundOrthometric(map, p.lat, p.lon);
+    const ground = sampleGroundStack(map, p.lat, p.lon);
     if (ground === undefined) {
       gaps = true;
       continue;
@@ -245,20 +248,33 @@ export function gateDirection(
 }
 
 /**
- * Convenience: the horizon towards a landmark, sampled out to the landmark's own
- * distance (never past it — ground behind the target cannot hide it).
+ * How far PAST the target the skyline is sampled by default. Ground behind the column
+ * cannot hide the column, but it can hide the DISC, which is far behind both: from
+ * Straße des 17. Juni the sun sets towards Charlottenburg and Spandau, and Teufelsberg
+ * (115 m) stands ~8 km behind the column a few degrees south of the axis. Beyond ~10 km
+ * the curvature drop (~6.8 m at 10 km with k = 0.13) puts Berlin's flat west under the
+ * eye line, so 10 km is the useful reach.
+ */
+export const DEFAULT_HORIZON_BEYOND_M = 10_000;
+
+/**
+ * Convenience: the skyline towards a landmark, sampled out to the landmark's distance
+ * PLUS `beyondM` — the gate asks whether the disc clears the terrain, and the disc is
+ * behind the target. (Before 2026-11-16 this stopped at the target, which could pass a
+ * sunset that terrain behind the column had already swallowed.)
  */
 export function horizonTowardsLandmark(
   point: StandingPoint,
   landmark: RevolutionLandmark,
-  map: Heightmap,
+  map: HeightmapStack,
   stepM = 25,
+  beyondM = DEFAULT_HORIZON_BEYOND_M,
 ): HorizonProfile {
   const { distanceM } = bearingDistanceTo(point, { lat: landmark.lat, lon: landmark.lon });
   return sampleHorizonProfile({
     point,
     azimuthDeg: azimuthToLandmark(point, landmark),
-    maxDistanceM: distanceM,
+    maxDistanceM: distanceM + beyondM,
     stepM,
     map,
   });
@@ -301,7 +317,7 @@ export interface HorizonGatedVantageWindow {
 export interface HorizonWindowRequest {
   point: StandingPoint;
   landmark: RevolutionLandmark;
-  map: Heightmap;
+  map: HeightmapStack;
   bodyAt: (t: Date, body: 'sun' | 'moon') => BodySampleLike;
   bodies?: Array<'sun' | 'moon'>;
   start: Date;
@@ -309,6 +325,8 @@ export interface HorizonWindowRequest {
   stepMinutes: number;
   /** Terrain sampling spacing along the sightline, metres. Default 25. */
   horizonStepM?: number;
+  /** How far past the target the skyline is sampled, metres. Default 10 km. */
+  horizonBeyondM?: number;
   /** Angular radius of the disc to require fully clear, degrees. Default 0 (centre). */
   discRadiusDeg?: number;
   /** Explicit override; when omitted the module's own flag is consulted. */
@@ -355,10 +373,11 @@ export function enumerateHorizonGatedWindows(
     end,
     stepMinutes,
     horizonStepM = 25,
+    horizonBeyondM = DEFAULT_HORIZON_BEYOND_M,
     discRadiusDeg = 0,
   } = req;
 
-  const horizon = horizonTowardsLandmark(point, landmark, map, horizonStepM);
+  const horizon = horizonTowardsLandmark(point, landmark, map, horizonStepM, horizonBeyondM);
   const target = targetWindow(point, landmark);
 
   const raw = enumerateVantageWindows({

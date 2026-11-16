@@ -344,9 +344,17 @@ def main(argv: list[str] | None = None) -> int:
         metavar="LAT,LON",
         help="print the sampled height at this point (repeatable)",
     )
+    ap.add_argument(
+        "--bbox-utm",
+        type=float,
+        nargs=4,
+        metavar=("E0", "E1", "N0", "N1"),
+        help="explicit AOI in EPSG:25833 metres instead of the tileset + reference "
+        "points (the horizon grid: 378000 390000 5816000 5822000 --spacing 25)",
+    )
     args = ap.parse_args(argv)
 
-    if not args.tileset.is_file():
+    if not args.bbox_utm and not args.tileset.is_file():
         print(f"[heightmap] tileset not found: {args.tileset}", file=sys.stderr)
         return EXIT_USAGE
     sheets = sorted(args.dgm1.glob("DGM1_*.zip"))
@@ -355,8 +363,10 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_USAGE
 
     t0 = time.time()
-    want = expand_for_reference_points(
-        aoi_utm_from_tileset(args.tileset, args.margin), args.margin
+    want = (
+        tuple(args.bbox_utm)
+        if args.bbox_utm
+        else expand_for_reference_points(aoi_utm_from_tileset(args.tileset, args.margin), args.margin)
     )
     have = sheet_extent(sheets)
     # Never sample outside the fetched sheets -- that is the only way this
