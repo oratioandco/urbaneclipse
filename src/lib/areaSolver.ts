@@ -424,9 +424,23 @@ export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandid
  * silhouette degenerate, or the composition not among `wanted`).
  */
 export function classifyAtInstant(req: InstantClassifyRequest, when: Date): FixedCandidate | null {
+  return createInstantClassifier(req)?.classify(when) ?? null;
+}
+
+/**
+ * classifyAtInstant with the silhouette built ONCE, for callers that classify many
+ * instants at one observer (the vantage calendar's gated fine scan and its peak
+ * refinement). Also exposes the silhouette's angular bounds so a caller can gate a
+ * coarse sweep on "could the body be near the landmark in this interval at all".
+ * Returns null when the silhouette is degenerate (nothing can ever be classified).
+ */
+export function createInstantClassifier(req: InstantClassifyRequest): {
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+  classify: (when: Date) => FixedCandidate | null;
+} | null {
   const dirs = buildSilhouetteDirections(req.observer, req.landmark);
   if (dirs.outline.length < 3) return null;
-  return classifyWithDirections(dirs, req, when);
+  return { bounds: dirs.bounds, classify: (when) => classifyWithDirections(dirs, req, when) };
 }
 
 function classifyWithDirections(

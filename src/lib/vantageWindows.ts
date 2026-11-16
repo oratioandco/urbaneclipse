@@ -14,12 +14,7 @@
  * with which band of the structure the disc crosses (spire / sphere / shaft / base) —
  * the difference between "sun setting on the tip" and "sun behind the concrete".
  */
-import {
-  classifyAtInstant,
-  findOccultationsAtPosition,
-  type BodySample,
-  type FixedCandidate,
-} from './areaSolver.js';
+import { createInstantClassifier, type BodySample, type FixedCandidate } from './areaSolver.js';
 import { resolveEyeEllipsoidalHeight } from './elevation.js';
 import { landmarkHeight, type RevolutionLandmark } from './landmarks.js';
 import type { OccultationKind } from './occultation.js';
@@ -51,7 +46,20 @@ export interface WindowScanRequest {
   bodies?: CelestialBody[];
   start: Date;
   end: Date;
+  /**
+   * COARSE gate step. The sweep samples the body every `stepMinutes` only to find the
+   * intervals where it could be near the landmark (azimuth crossing or inside the
+   * silhouette's padded bounds, at a matching altitude); those intervals are then
+   * classified at `fineStepSeconds`. A transit from 6 km lasts ~2-3 min, so the coarse
+   * step alone would miss about half of them — it must never decide detection.
+   */
   stepMinutes: number;
+  /**
+   * Detection resolution inside gated intervals. Default 30 s: a window shorter than
+   * this can be missed, anything longer cannot. Both grids are anchored to the Unix
+   * epoch, NOT to `start`, so the result does not depend on the second you press go.
+   */
+  fineStepSeconds?: number;
   /** Hits closer than this merge into one window. Default 30 min (transits are minutes). */
   gapMinutes?: number;
   /**
@@ -103,9 +111,9 @@ export function bandAtAltitude(altDeg: number, landmark: RevolutionLandmark, poi
  * Enumerate the alignment windows of one standing point over a time range, per body,
  * in chronological order.
  *
- * The sweep runs at `stepMinutes` resolution, so window edges stay quantised to it;
- * set `refinePeaks` for minute-true `peak` instants (golden-section search via
- * classifyAtInstant). Throws through to resolveEyeEllipsoidalHeight on bad surface
+ * Detection runs at `fineStepSeconds` inside intervals gated by a `stepMinutes`
+ * coarse sweep, so window edges are quantised to the fine step; set `refinePeaks`
+ * for second-true `peak` instants (golden-section search on the same classifier). Throws through to resolveEyeEllipsoidalHeight on bad surface
  * data — an unsurveyed deck must not silently scan from the wrong eye height.
  */
 export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[] {
@@ -117,6 +125,7 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
     start,
     end,
     stepMinutes,
+    fineStepSeconds = 30,
     gapMinutes = 30,
     minAltitudeDeg = -1,
     refinePeaks = false,
@@ -126,6 +135,7 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
     lat: point.lat,
     lon: point.lon,
     ellipsoidalHeight: resolveEyeEllipsoidalHeight({
+      groundOrthometric: undefined, // the surveyed deck overrides terrain
       surfaceOrthometric: point.surfaceOrthometric,
       eyeHeight: point.eyeHeightM,
     }),
@@ -133,19 +143,25 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
 
   const windows: VantageWindow[] = [];
   for (const body of bodies) {
-    // limit: a year at coarse resolution cannot exhaust this; we re-sort by time below.
-    const hits = findOccultationsAtPosition({
+    const classifier = createInstantClassifier({
       observer,
       landmark,
-      start,
-      end,
-      stepMinutes,
       bodyAt: (t) => bodyAt(t, body),
       wanted: ['full', 'partial'],
       minAltitudeDeg,
-      limit: Number.MAX_SAFE_INTEGER,
     });
-    hits.sort((a, b) => a.when.getTime() - b.when.getTime());
+    if (!classifier) continue;
+
+    const hits = gatedSweep({
+      classify: classifier.classify,
+      bounds: classifier.bounds,
+      sample: (t) => bodyAt(t, body),
+      startMs: start.getTime(),
+      endMs: end.getTime(),
+      coarseMs: stepMinutes * 60_000,
+      fineMs: fineStepSeconds * 1000,
+      minAltitudeDeg,
+    });
 
     const before = windows.length;
     let current: { list: FixedCandidate[]; last: Date } | null = null;
@@ -162,24 +178,82 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
     if (current) windows.push(finishWindow(current.list, body, landmark, point));
 
     if (refinePeaks) {
-      const classify = (t: Date): FixedCandidate | null =>
-        classifyAtInstant(
-          {
-            observer,
-            landmark,
-            bodyAt: (t2) => bodyAt(t2, body),
-            wanted: ['full', 'partial'],
-            minAltitudeDeg,
-          },
-          t,
-        );
       for (let i = before; i < windows.length; i++) {
-        windows[i] = refineWindowPeak(windows[i]!, classify, landmark, point, stepMinutes);
+        windows[i] = refineWindowPeak(windows[i]!, classifier.classify, landmark, point, fineStepSeconds * 1000);
       }
     }
   }
 
   return windows.sort((a, b) => a.peak.getTime() - b.peak.getTime());
+}
+
+/**
+ * Coarse-gated fine sweep. Samples the body on an epoch-anchored coarse grid; for every
+ * coarse interval in which the body could touch the silhouette's padded bounds, it
+ * classifies the interval on an epoch-anchored fine grid. Returns hits in time order.
+ *
+ * Gate: azimuth relative to the bounds' centre either changes sign across the interval
+ * (a crossing, however fast) or comes within the padded half-width at an endpoint; and
+ * the endpoints' altitude span, padded for curvature of the track within one interval,
+ * overlaps the padded altitude bounds. The padding (2 deg, matching the classifier's own
+ * reject margin, plus 1 deg) is far wider than any disc, so the gate can only add work,
+ * never drop a window the fine grid would find.
+ */
+function gatedSweep(o: {
+  classify: (t: Date) => FixedCandidate | null;
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+  sample: (t: Date) => BodySample;
+  startMs: number;
+  endMs: number;
+  coarseMs: number;
+  fineMs: number;
+  minAltitudeDeg: number;
+}): FixedCandidate[] {
+  const { classify, bounds, sample, startMs, endMs, coarseMs, fineMs, minAltitudeDeg } = o;
+  if (!(coarseMs > 0)) throw new RangeError(`stepMinutes must be positive, received ${coarseMs / 60_000}`);
+  if (!(fineMs > 0)) throw new RangeError(`fineStepSeconds must be positive, received ${fineMs / 1000}`);
+  if (endMs < startMs) throw new RangeError('end must not precede start');
+
+  const PAD_DEG = 3;
+  const azCentre = (bounds.azMin + bounds.azMax) / 2;
+  const azHalf = (bounds.azMax - bounds.azMin) / 2 + PAD_DEG;
+  const altLo = Math.max(bounds.altMin - PAD_DEG, minAltitudeDeg - PAD_DEG);
+  const altHi = bounds.altMax + PAD_DEG;
+  const dAz = (az: number): number => {
+    let d = (az - azCentre) % 360;
+    if (d > 180) d -= 360;
+    if (d <= -180) d += 360;
+    return d;
+  };
+
+  const out: FixedCandidate[] = [];
+  let lastFine = -Infinity; // fine instants already classified (intervals share edges)
+  const scanFine = (fromMs: number, toMs: number): void => {
+    const lo = Math.max(fromMs, startMs);
+    const hi = Math.min(toMs, endMs);
+    for (let t = Math.ceil(lo / fineMs) * fineMs; t <= hi; t += fineMs) {
+      if (t <= lastFine) continue;
+      lastFine = t;
+      const c = classify(new Date(t));
+      if (c) out.push(c);
+    }
+  };
+
+  let tPrev = Math.floor(startMs / coarseMs) * coarseMs;
+  let sPrev = sample(new Date(tPrev));
+  while (tPrev < endMs) {
+    const t = tPrev + coarseMs;
+    const s = sample(new Date(t));
+    const d0 = dAz(sPrev.az);
+    const d1 = dAz(s.az);
+    const crosses = Math.sign(d0) !== Math.sign(d1) && Math.abs(d0) + Math.abs(d1) < 180;
+    const near = Math.abs(d0) <= azHalf || Math.abs(d1) <= azHalf;
+    const altOk = Math.max(sPrev.alt, s.alt) >= altLo && Math.min(sPrev.alt, s.alt) <= altHi;
+    if ((crosses || near) && altOk) scanFine(tPrev, t);
+    tPrev = t;
+    sPrev = s;
+  }
+  return out;
 }
 
 function finishWindow(
@@ -206,7 +280,7 @@ function finishWindow(
 /**
  * Sharpen a scan-quantised window peak to a true coveredFraction maximum.
  *
- * Golden-section search within ±stepMinutes of the coarse peak. The coverage curve of a
+ * Golden-section search within ±one fine step of the scanned peak. The coverage curve of a
  * transit is smooth and single-humped between the sweep's samples, but the classifier
  * returns null (read as 0) at instants with no composition, so the search is guarded:
  * the best REAL candidate seen anywhere — the sweep's own hit included — is what gets
@@ -217,9 +291,8 @@ function refineWindowPeak(
   classify: (t: Date) => FixedCandidate | null,
   landmark: RevolutionLandmark,
   point: StandingPoint,
-  stepMinutes: number,
+  bracketMs: number,
 ): VantageWindow {
-  const bracketMs = stepMinutes * 60_000;
   const PHI = (Math.sqrt(5) - 1) / 2;
 
   let best = { t: win.peak.getTime(), candidate: null as FixedCandidate | null };

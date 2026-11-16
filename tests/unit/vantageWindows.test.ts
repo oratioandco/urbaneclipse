@@ -3,6 +3,8 @@ import { LICHTENBERGER_BRUECKE } from '../../src/lib/vantages.js';
 import { enumerateVantageWindows } from '../../src/lib/vantageWindows.js';
 import { FERNSEHTURM } from '../../src/lib/landmarks.js';
 import { sampleBody } from '../../src/lib/bodyPosition.js';
+import { createInstantClassifier } from '../../src/lib/areaSolver.js';
+import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
 import type { CelestialBody } from '../../src/lib/vantageWindows.js';
 
 /**
@@ -16,7 +18,7 @@ import type { CelestialBody } from '../../src/lib/vantageWindows.js';
  * app's curated default observer (52.5113, 13.4988, deck 48.2 m DHHN2016).
  */
 
-const point = LICHTENBERGER_BRUECKE.points[0];
+const point = LICHTENBERGER_BRUECKE.points[0]!;
 
 const bodyAt = (t: Date, body: CelestialBody) => sampleBody(body, t, point.lat, point.lon);
 
@@ -168,5 +170,67 @@ describe('peak refinement (refinePeaks)', () => {
   it('actually moves at least one peak off the scan grid and gains coverage', () => {
     const improved = refined.filter((w, i) => w.coveredFraction > coarse[i]!.coveredFraction);
     expect(improved.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('detection does not depend on the sweep grid', () => {
+  /**
+   * Regression (2026-11-16): from the 6.1 km bridge a transit lasts ~2-3 min, so the old
+   * 5-min sweep anchored at `start` saw about half of them — and WHICH half depended on
+   * the second the button was pressed (0 of 29 dates stable across 10 start phases).
+   * The coarse step now only gates; detection runs on an epoch-anchored 30 s grid.
+   */
+  const peaksFrom = (offsetMs: number, bodies: CelestialBody[]) => {
+    const start = new Date(Date.UTC(2027, 2, 20) + offsetMs);
+    return enumerateVantageWindows({
+      point,
+      landmark: FERNSEHTURM,
+      bodyAt,
+      bodies,
+      start,
+      end: new Date(Date.UTC(2027, 4, 20)),
+      stepMinutes: 5,
+    }).map((w) => `${w.body} ${w.peak.toISOString()}`);
+  };
+
+  it('returns the identical list whatever second the sweep starts on', () => {
+    const base = peaksFrom(0, ['sun', 'moon']);
+    expect(base.length).toBeGreaterThanOrEqual(8);
+    for (const offset of [37_000, 133_000, 241_000, 299_000]) {
+      expect(peaksFrom(offset, ['sun', 'moon'])).toEqual(base);
+    }
+  });
+
+  it('finds every window an exhaustive 20 s scan finds (sun, spring season)', () => {
+    const start = new Date(Date.UTC(2027, 2, 25));
+    const end = new Date(Date.UTC(2027, 3, 16));
+    const observer = {
+      lat: point.lat,
+      lon: point.lon,
+      ellipsoidalHeight: resolveEyeEllipsoidalHeight({
+        groundOrthometric: undefined,
+        surfaceOrthometric: point.surfaceOrthometric,
+        eyeHeight: point.eyeHeightM,
+      }),
+    };
+    const classifier = createInstantClassifier({
+      observer,
+      landmark: FERNSEHTURM,
+      bodyAt: (t) => bodyAt(t, 'sun'),
+      wanted: ['full', 'partial'],
+      minAltitudeDeg: -1,
+    })!;
+    // Brute force: every 20 s, grouped into days with any hit.
+    const bruteDays = new Set<string>();
+    for (let t = start.getTime(); t <= end.getTime(); t += 20_000) {
+      if (classifier.classify(new Date(t))) bruteDays.add(dayOf(new Date(t)));
+    }
+    const found = new Set(
+      enumerateVantageWindows({ point, landmark: FERNSEHTURM, bodyAt, bodies: ['sun'], start, end, stepMinutes: 5 }).map(
+        (w) => dayOf(w.peak),
+      ),
+    );
+    expect(bruteDays.size).toBeGreaterThanOrEqual(6);
+    expect([...bruteDays].filter((d) => !found.has(d))).toEqual([]);
   });
 });
