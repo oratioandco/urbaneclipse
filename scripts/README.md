@@ -10,7 +10,7 @@ the 3D Tiles the Astro/Cesium app loads.
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install py3dtiles lxml pyproj mapbox-earcut numpy
+./.venv/bin/pip install -r scripts/requirements.txt   # pinned; was: py3dtiles lxml pyproj mapbox-earcut numpy
 ```
 
 ## Usage
