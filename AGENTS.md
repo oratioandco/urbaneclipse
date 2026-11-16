@@ -11,6 +11,18 @@
 3. Tell the user in two or three sentences where things stand and which next step you propose,
    then work.
 
+If something from step 2 is missing on a new machine, fix what you can and ask for the rest:
+
+- **Node or packages:** install Node 22 (`nvm install 22 && nvm use 22`) and run `npm ci` yourself.
+- **`.env` missing:** ask the user to copy the `.env` they saved on 2026-11-16 into the repo root.
+  Never recreate it from guesses and never commit it. Tests and the build run without it; the
+  Cesium token only matters for `/classic` in the browser.
+- **Deploying:** needs the `coolify` CLI logged in and the Hetzner SSH key (for city data). If
+  either is missing, ask the user to set it up (suggest `! <command>` so its output lands in the
+  session); the steps are in the handoff.
+- **Python tools:** `python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt`.
+- **Data in `data/`:** not in git; rebuild only when a task needs it (commands in the handoff).
+
 When you finish a stretch of work, update the handoff (or write a new dated one) so the next
 session can start the same way.
 
