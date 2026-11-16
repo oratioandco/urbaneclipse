@@ -1,0 +1,63 @@
+export interface LatLon {
+  lat: number;
+  lon: number;
+}
+
+/** Apparent position of the sun/moon at an instant, as seen from the search area. */
+export interface BodySample {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+  /** Distance to the body, km — sets its apparent size. */
+  distanceKm: number;
+  /** Physical radius of the body, km. */
+  radiusKm: number;
+}
+
+/** Supplies ground elevation (DHHN2016 m) at a position; undefined outside coverage. */
+export type GroundProvider = (pos: LatLon) => number | undefined;
+
+export interface SolveOptions {
+  landmark: RevolutionLandmark;
+  /**
+   * Height up the landmark to aim at, metres above its base. The sphere centre and
+   * the antenna give very different shots.
+   */
+  featureHeightAgl: number;
+  /** Photographer's eye height above the surface they stand on, metres. */
+  eyeHeight: number;
+  ground: GroundProvider;
+  /** Convex or simple polygon of reachable camera positions. */
+  area?: LatLon[];
+  /** Maximum iterations for the distance solve. */
+  maxIterations?: number;
+}
+
+export interface Candidate {
+  when: Date;
+  /** Where you must stand. */
+  position: LatLon;
+  /** Horizontal distance from the landmark axis, metres. */
+  distanceM: number;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** True when the solved position lies inside the requested area. */
+  withinArea: boolean;
+}
+
+/**
+ * Approximate a circular search area as a polygon.
+ *
+ * "Somewhere within N metres of here" is how a photographer actually thinks about a
+ * reachable area — a stretch of bridge, a park, a block — and it is far easier to place
+ * than a hand-drawn polygon. isInsideArea works on polygons, so the circle is converted
+ * once here rather than special-cased throughout.
+ *
+ * Longitude degrees are scaled by cos(lat) so the shape is a true circle on the ground
+ * rather than an ellipse stretched east-west (at Berlin's latitude that error would be
+ * ~64%).
+ */
+export function circleToPolygon(
+  center: LatLon,

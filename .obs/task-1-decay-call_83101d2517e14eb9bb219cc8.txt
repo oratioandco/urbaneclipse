@@ -1,0 +1,4 @@
+gPoint
+bearingDistanceTo: export function bearingDistanceTo(from: LatLon, to: LatLon):
+SP: MISSING
+EYE: EYE_HEIGHT_M = 1

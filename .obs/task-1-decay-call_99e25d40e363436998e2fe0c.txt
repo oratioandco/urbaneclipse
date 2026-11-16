@@ -1,0 +1,9 @@
+{{convert|114|m}}, shorter since the demolition of the northern memorial hall in 1975
+{{convert|115|m}} (until destruction 1944)
+{{convert|114|m|ft|0}} long, {{convert|73|m|ft|0}} wide and {{convert|116|m|ft|0}} tall, it was much l
+96:export const FERNSEHTURM: RevolutionLandmark = {
+142:export const SIEGESSAEULE: RevolutionLandmark = {
+175:export const BRANDENBURGER_TOR: RevolutionLandmark = {
+199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {

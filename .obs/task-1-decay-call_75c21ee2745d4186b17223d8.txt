@@ -1,0 +1,44 @@
+function classifyWithDirections(
+  dirs: ReturnType<typeof buildSilhouetteDirections>,
+  req: InstantClassifyRequest,
+  when: Date,
+): FixedCandidate | null {
+  const wanted = req.wanted ?? ['full', 'partial'];
+  const minAltitudeDeg = req.minAltitudeDeg ?? 0;
+  const body = req.bodyAt(when);
+
+  // Below the horizon there is nothing to photograph.
+  if (!(body.alt > minAltitudeDeg)) return null;
+
+  // Cheap rejection margin: no disc wider than ~1 deg matters, so anything further than
+  // this from the landmark's angular bounds cannot interact with it. This skips the
+  // projection entirely for the overwhelming majority of instants. Azimuth difference is
+  // wrapped to handle the 0/360 seam.
+  const REJECT_MARGIN_DEG = 2;
+  const { azMin, azMax, altMin, altMax } = dirs.bounds;
+  let dAz = Math.abs(body.az - (azMin + azMax) / 2);
+  if (dAz > 180) dAz = 360 - dAz;
+  if (dAz > (azMax - azMin) / 2 + REJECT_MARGIN_DEG) return null;
+  if (body.alt < altMin - REJECT_MARGIN_DEG || body.alt > altMax + REJECT_MARGIN_DEG) return null;
+
+  const silhouette = projectSilhouette(dirs, { az: body.az, alt: body.alt });
+  if (silhouette.length < 3) return null;
+
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+  const result = classifyOccultation(discRadius, silhouette);
+  if (!wanted.includes(result.kind)) return null;
+
+  return {
+    when,
+    kind: result.kind,
+    coveredFraction: result.coveredFraction,
+    separationDeg: result.separationDeg,
+    bodyAz: body.az,
+    bodyAlt: body.alt,
+  };
+}
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+67:export function orthometricToEllipsoidal(
+69:  undulation: number = GEOID_UNDULATION_BERLIN,
+79:  undulation: number = GEOID_UNDULATION_BERLIN,

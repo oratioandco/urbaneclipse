@@ -1,0 +1,13 @@
+}
+
+/** Project precomputed absolute directions into the disc-centred tangent plane. */
+export function projectSilhouette(
+  dirs: SilhouetteDirections,
+  reference: AzAlt,
+): AngularPoint[] {
+  return dirs.outline
+    .map((d) => toTangentPlane(d, reference))
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+}
+332:export interface FixedCandidate {
+342:export interface FixedSearchRequest {

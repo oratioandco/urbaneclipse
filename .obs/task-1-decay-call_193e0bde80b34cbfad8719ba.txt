@@ -1,0 +1,15 @@
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+file:///Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature/node_modules/rolldown/dist/shared/rolldown-build-CtPvmZgJ.mjs:9
+import { formatWithOptions, styleText } from "node:util";
+                            ^^^^^^^^^
+SyntaxError: The requested module 'node:util' does not provide an export named 'styleText'
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:123:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:189:5)
+    at async Promise.all (index 0)
+    at async ESMLoader.import (node:internal/modules/esm/loader:518:24)
+    at async start (file:///Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature/node_modules/vitest/dist/chunks/cac.DdICfEr1.js:2339:27)
+    at async CAC.run (file:///Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature/node_modules/vitest/dist/chunks/cac.DdICfEr1.js:2318:2)
+
+
+

@@ -1,0 +1,27 @@
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
+
+  for (let i = 0; i <= steps; i++) {
+    const hAgl = (total * i) / steps;
+    const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
+    const r = radiusAtHeight(landmark, hAgl);
+
+    const ratio = Math.min(1, r / Math.max(axis.rangeM, 1e-9));
+    const halfWidthDeg = Math.asin(ratio) * DEG;
+
+  

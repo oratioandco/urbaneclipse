@@ -1,0 +1,39 @@
+{{Infobox Bauwerk
+| NAME             = Berliner Dom
+| BILD             = Berliner Dom vor Sonnenuntergang.jpg
+| BILDBESCHREIBUNG = Berliner Dom, davor der [[Lustgarten (Berlin)|Lustgarten]]
+| ORT              = [[Berlin-Mitte]]
+| BAUMEISTER       = 
+| ARCHITEKT        = [[Julius Raschdorff]]
+| ARCHITEKTIN      = 
+| BAUHERR          = [[Wilhelm II. (Deutsches Reich)|Wilhelm&nbsp;II.]]
+| BAUHERRIN        = 
+| BAUSTIL          = [[Neorenaissance]]
+| BAUJAHR          = 1894–1905
+| ABRISS           = 
+| HÖHE             = 98
+| GRUNDFLÄCHE      = 6270
+| LÄNGE            = 90
+| BREITENGRAD      = 52/31/9/N
+| LÄNGENGRAD       = 13/24/4/E
+| REGION-ISO       = DE-BE
+| GEO-HÖHE         = 
+| KARTE            = 
+| KARTE2           = 
+| KARTE2-TEXT      = 
+===CROSS-AFTER===
+
+Die Schäden waren auf [[Bimetallkorrosion]] zurückzuführen, die bei der Kombination von unterschiedlich edlen Metallen (hier: Kupfer und Stahl) entsteht und zur Korrosion des jeweils unedleren Metalls (hier: Stahl) führt. Dem verwendeten KT-Stahl (korrosionsträger Stahl, [[Cortenstahl]]) wurden in den 1970er Jahren günstigere Materialeigenschaften zugetraut. Aufgrund des Schadensbildes mussten auch andere Dachaufbauten mit vergleichbaren Materialkombinationen auf Schäden untersucht werden, z.&nbsp;B. die Kugeln auf den vier Ecktürmen sowie der kupfergetriebene Figurenschmuck.<ref>[https://www.welt.de/regionales/berlin/article1508448/Streit-um-die-Kuppel-des-Berliner-Doms.html ''Streit um die Kuppel des Berliner Doms''.] Auf ''[[Die Welt|welt.de]]'', 1. Januar 2008, abgerufen am 14. November 2014.</ref>
+
+Die Rekonstruktion des Kuppelkreuzes in der Fassung von 1981 übernahm die Metallbaufirma Breidenbach aus dem oberbayerischen [[Peiting]]. Das neue Kreuz wurde anschließend von Berliner Spezialisten mit 1,5&nbsp;Kilogramm [[Blattgold]] belegt. Am 19.&nbsp;August 2008 wurde es von einem 500-Tonnen-Kran auf die Domkuppel gehoben. Von 1,2&nbsp;Millionen Euro Kosten, die bei den Sanierungsmaßnahmen am Berliner Dom entstanden, entfielen 700.000&nbsp;Euro auf das neue Kuppelkreuz.<ref>[https://www.welt.de/regionales/berlin/article2325297/Das-Kreuz-kroent-jetzt-wieder-den-Berliner-Dom.html ''Das Kreuz krönt jetzt wieder den Berliner Dom''.] In: ''[[Welt Online]]'', 19.&nbsp;August 2008; ''Endlich: Das Kreuz leuchtet über Berlin''. In: ''[[Frankfurter Allgemeine Zeitung|FAZ]]'', 20.&nbsp;August 2008.</ref> Das alte Kuppelkreuz wurde –&nbsp;allerdings ohne die Kuppelkrone&nbsp;– auf den [[Liesenstraße (Berlin)#Friedhöfe an der Liesenstraße|Friedhof der Oberpfa
+===EN===
+50:|length={{convert|114|m}}, shorter since the demolition of the northern memorial hall in 1975
+53:|height_max=
+55:|dome_height_outer={{convert|115|m}} (until destruction 1944)
+56:|dome_height_inner=
+60:|spire_height=
+92:<gallery mode="packed" heights="200">
+105:<gallery mode="packed" heights="180">
+118:With no separation of Protestant church and state of [[Kingdom of Prussia|Prussia]], [[Wilhelm II, German Emperor|Wilhelm II]] officiated as the ''[[summus episcopus]]'' (Supreme Governor of the [[Evangelical State Church of Prussia's older Provinces]], as it was named since 1875) and the state paid the complete construction cost of 11.5&nbsp;million [[German gold mark|Marks]]. At {{convert|114|m|ft|0}} long, {{convert|73|m|ft|0}} wide and {{convert|116|m|ft|0}} tall, it was much larger than any of the previous buildings and was considered a Protestant counterweight to [[St. Peter's Basilica]] in Vatican City. On 27 February 1905, the present building was inaugurated.<ref name="Sauer">{{cite AV media |people=Pohl, Michael, Johann S. Bach, Felix Mendelssohn-Bartholdy, Josef Rheinberger, Max Reger, Max Reger, Max Reger, Max Reger, and Max Reger |year=1993 |title=Die Grosse Sauer-Orgel Im Berliner Dom |type=Sound recording |time= |location=Düsseldorf |publisher=Motette |oclc=33188606}}</ref>
+126:<gallery mode="packed" heights="140">
+140:|height  = 200px

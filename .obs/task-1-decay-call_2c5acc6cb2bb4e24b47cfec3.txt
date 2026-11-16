@@ -1,0 +1,68 @@
+import proj4 from 'proj4';
+
+/**
+ * Pure CRS transforms for the Berlin LoD2 pipeline. NO Cesium.
+ *
+ * Berlin's LoD2 distribution CRS is EPSG:25833 (ETRS89 / UTM zone 33N), confirmed from the
+ * GDI ATOM feed (gdi.berlin.de/data/a_lod2/atom) and the tile filenames (LoD2_33_*). Verified
+ * via round-trip.
+ * EPSG:31468 (historical DHDN / Gauss-Kruger zone 4) is VERIFY-LIVE: its +towgs84 datum
+ * parameters must be confirmed against an authoritative PROJ reference before use, so the
+ * datum-shift path is intentionally not registered here yet (see research.md VERIFY-LIVE).
+ */
+proj4.defs(
+  'EPSG:25832',
+  '+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+);
+proj4.defs(
+  'EPSG:25833',
+  '+proj=utm +zone=33 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+);
+
+export type Vec3 = [number, number, number];
+
+/** Transform an [x, y, z] coordinate between two CRSes. EPSG:4326 expects [lon, lat].
+ *  The vertical z passes through unchanged (horizontal CRS transform only). */
+export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+  const [x, y, z] = coord;
+  const [outX, outY] = proj4(from, to, [x, y]) as [number, number];
+  return [outX, outY, z];
+}
+===SIL-EXPORTS===
+41:export interface ObserverGeodetic {
+49:export interface AzAlt {
+59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+90:export function directionOffsetECEF(
+122:export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+127:export function ecefToGeodetic(x: number, y: number, z: number): {
+156:export function offsetGeodetic(
+182:export function azAltTo(
+210:export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+239:export function buildSilhouette(
+260:export interface SilhouetteDirections {
+265:export function buildSilhouetteDirections(
+314:export function projectSilhouette(
+import { radiusAtHeight, landmarkHeight, type RevolutionLandmark } from './landmarks.js';
+import type { AngularPoint } from './occultation.js';
+
+const DEG = 180 / Math.PI;
+const RAD = Math.PI / 180;
+
+// WGS84
+const A = 6378137.0;
+const F = 1 / 298.257223563;
+const E2 = F * (2 - F);
+
+export interface ObserverGeodetic {
+  lat: number;
+  lon: number;
+  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+  ellipsoidalHeight: number;
+}
+
+/** Direction in the observer's horizontal frame. */
+export interface AzAlt {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */

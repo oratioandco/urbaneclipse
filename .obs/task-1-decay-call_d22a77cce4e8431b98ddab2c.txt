@@ -1,0 +1,2 @@
+s: { azMin: number; azMax: number; altMin: number; altMax: number }
+SIL-EXPORTS: export interface ObserverGeodetic | exp

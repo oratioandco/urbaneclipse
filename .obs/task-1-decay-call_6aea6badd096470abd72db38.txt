@@ -1,0 +1,1 @@
+ observer: ObserverGeodetic; landmark: RevolutionLandmark; start: Date; end: Date; stepMinutes: number; bodyAt: (t: Date) => BodySample; wanted?: Occultati

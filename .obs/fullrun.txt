@@ -1,0 +1,107 @@
+
+ RUN  v4.1.10 /Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom
+
+ ❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms
+     × carries the sourced 33 m dome diameter as its widest ring 430ms
+     × silhouette spans exactly the dome band — no towers, no nave 9ms
+     × finds real transits in BOTH seasonal windows, including full ones 3ms
+     × pins transit dates against the independent Meeus ephemeris 2ms
+     × JUNE: no transits — the sun passes far ABOVE the dome 13ms
+     × DECEMBER: no transits — proves towers/nave are NOT modeled 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring
+AssertionError: expected NaN to be close to 16.5, received difference is NaN, but expected 0.005
+ ❯ tests/unit/domLandmark.test.ts:143:18
+    141|   it('carries the sourced 33 m dome diameter as its widest ring', () =…
+    142|     const maxR = Math.max(...BERLINER_DOM.profile.map((r) => r.r));
+    143|     expect(maxR).toBeCloseTo(16.5, 2);
+       |                  ^
+    144|     const apex = BERLINER_DOM.profile[BERLINER_DOM.profile.length - 1]…
+    145|     expect(apex.r).toBeLessThan(3); // cross tip, not a spire
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — no towers, no nave
+TypeError: sil.map is not a function
+ ❯ tests/unit/domLandmark.test.ts:176:35
+    174|     const altMin = Math.atan2(base + 62 - eye, d) / D2R; // ~20.63 deg…
+    175|     const centre = vincenty.bearingDeg;
+    176|     const azMin = Math.min(...sil.map((s) => s.az));
+       |                                   ^
+    177|     const azMax = Math.max(...sil.map((s) => s.az));
+    178|     const hiAlt = Math.max(...sil.map((s) => s.alt));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > finds real transits in BOTH seasonal windows, including full ones
+TypeError: Cannot read properties of undefined (reading 'lat')
+ ❯ azAltTo src/lib/silhouette.ts:188:37
+    186|   targetEllipsoidalHeight: number,
+    187| ): AzAlt & { rangeM: number } {
+    188|   const o = geodeticToECEF(observer.lat, observer.lon, observer.ellips…
+       |                                     ^
+    189|   const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeig…
+    190|   const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], obser…
+ ❯ buildSilhouetteDirections src/lib/silhouette.ts:285:18
+ ❯ findOccultationsAtPosition src/lib/areaSolver.ts:398:16
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:243:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+TypeError: Cannot read properties of undefined (reading 'lat')
+ ❯ azAltTo src/lib/silhouette.ts:188:37
+    186|   targetEllipsoidalHeight: number,
+    187| ): AzAlt & { rangeM: number } {
+    188|   const o = geodeticToECEF(observer.lat, observer.lon, observer.ellips…
+       |                                     ^
+    189|   const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeig…
+    190|   const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], obser…
+ ❯ buildSilhouetteDirections src/lib/silhouette.ts:285:18
+ ❯ findOccultationsAtPosition src/lib/areaSolver.ts:398:16
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:251:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > JUNE: no transits — the sun passes far ABOVE the dome
+TypeError: Cannot read properties of undefined (reading 'lat')
+ ❯ azAltTo src/lib/silhouette.ts:188:37
+    186|   targetEllipsoidalHeight: number,
+    187| ): AzAlt & { rangeM: number } {
+    188|   const o = geodeticToECEF(observer.lat, observer.lon, observer.ellips…
+       |                                     ^
+    189|   const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeig…
+    190|   const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], obser…
+ ❯ buildSilhouetteDirections src/lib/silhouette.ts:285:18
+ ❯ findOccultationsAtPosition src/lib/areaSolver.ts:398:16
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:276:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+TypeError: Cannot read properties of undefined (reading 'lat')
+ ❯ azAltTo src/lib/silhouette.ts:188:37
+    186|   targetEllipsoidalHeight: number,
+    187| ): AzAlt & { rangeM: number } {
+    188|   const o = geodeticToECEF(observer.lat, observer.lon, observer.ellips…
+       |                                     ^
+    189|   const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeig…
+    190|   const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], obser…
+ ❯ buildSilhouetteDirections src/lib/silhouette.ts:285:18
+ ❯ findOccultationsAtPosition src/lib/areaSolver.ts:398:16
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:293:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed | 40 passed (41)
+      Tests  6 failed | 573 passed | 1 skipped (580)
+   Start at  14:48:50
+   Duration  89.82s (transform 35.52s, setup 0ms, import 84.62s, tests 108.88s, environment 40ms)
+

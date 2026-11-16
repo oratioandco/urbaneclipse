@@ -1,0 +1,142 @@
+ */
+export const CURATED_CREST_ENVELOPE_M: readonly [number, number] = [48.1, 48.3];
+
+/** Dataset provenance shared by every point; the per-node measurement is appended. */
+const DOM1_DATASET_SOURCE =
+  'Deck surface from Berlin DOM1 (1 m digital surface model), sheet dom1_33_398_5818_2 ' +
+  '(DOM1_398_5818.zip, member dom1_33_398_5818_2_be.txt), ' +
+  'https://gdi.berlin.de/data/dom/atom/, fetched 2026-11-12; EPSG:25833 (ETRS89/UTM33N), ' +
+  'heights DHHN2016 orthometric, licence dl-de/zero-2-0. Method: median of the 1 m ' +
+  'postings on the deck plateau around this OSM node; three independent samplings ' +
+  'agreed within 0.1 m. NOT DGM1 (bare earth), which returns the rail cutting (~39-41 m) ' +
+  'under this deck.';
+
+/**
+ * Build the standing points of one carriageway arm from its OSM shape nodes and the
+ * DOM1 median measured at each node.
+ *
+ * The adoption rule is the decision, not a hand-typed table: a median inside the
+ * curated crest envelope becomes the point's deck height and clears needsSiteCheck;
+ * anything outside it is ramp profile, so the point keeps the curated mid-span value
+ * and still needs a site survey. The rejected measurement is recorded either way —
+ * no value is ever raised to fit the band.
+ */
+function pts(list: Array<[id: string, lat: number, lon: number, dom1MedianM: number]>): StandingPoint[] {
+  const [lo, hi] = CURATED_CREST_ENVELOPE_M;
+  return list.map(([id, lat, lon, dom1MedianM]) => {
+    const onCrest = dom1MedianM >= lo && dom1MedianM <= hi;
+    const measured = dom1MedianM.toFixed(1);
+    const source = onCrest
+      ? `${DOM1_DATASET_SOURCE} Measured median ${measured} m lies inside the curated ` +
+        `mid-span envelope ${lo}-${hi} m, so it is adopted as the deck height and ` +
+        'needsSiteCheck is false.'
+      : `${DOM1_DATASET_SOURCE} Measured median ${measured} m lies outside the curated ` +
+        `mid-span envelope ${lo}-${hi} m — the expected ramp profile (scripts/README.md: ` +
+        'west ramp 46.1 m, east ramp 46.7 m) — so it is NOT adopted: this point keeps ' +
+        `the curated mid-span ${CURATED_MIDSPAN_M.toFixed(1)} m and needsSiteCheck stays ` +
+        'true until surveyed on site.';
+    return standingPoint(
+      {
+        id,
+        lat,
+        lon,
+        surfaceOrthometric: onCrest ? dom1MedianM : CURATED_MIDSPAN_M,
+        eyeHeightM: EYE_HEIGHT_M,
+        needsSiteCheck: !onCrest,
+        source,
+      },
+      FERNSEHTURM_POS,
+    );
+  });
+}
+
+/**
+ * The Lichtenberger Bruecke as a set of standing points, west arm -> east arm.
+ *
+ * The bridge curves: bearings run 279.63-280.04 deg, i.e. +-0.2 deg of standing-point
+ * choice — about +-0.35 days of alignment-calendar shift, and the alignment windows
+ * themselves are only 1-2 days wide, so the choice of railing is within the noise but
+ * the choice of BRIDGE END is not. Points are the OSM shape nodes, thinned to
+ * representative positions.
+ */
+export const LICHTENBERGER_BRUECKE: Vantage = {
+  id: 'lichtenberger-bruecke',
+  name: 'Lichtenberger Brücke',
+  landmarkId: 'fernsehturm',
+  points: [
+    // Fourth column: DOM1 plateau median measured at that node, metres DHHN2016.
+    ...pts([
+      ['nord-west', 52.5115685, 13.4983761, 47.8],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9],
+    ]),
+    ...pts([
+      ['sued-west', 52.5112551, 13.4975327, 47.0],
+      ['sued-mitte', 52.5111010, 13.4991829, 48.2],
+      ['sued-ost', 52.5110579, 13.4996359, 48.1],
+    ]),
+  ],
+  notes: OSM_BRIDGE_SOURCE,
+};
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {
+231-  const p = landmark.profile;
+232-  return p.length === 0 ? 0 : p[p.length - 1][0];
+233-}
+38-  projectSilhouette,
+39-  offsetGeodetic,
+40:  type ObserverGeodetic,
+41-} from './silhouette.js';
+42-import {
+43-  classifyOccultation,
+44-  angularRadiusDeg,
+45-  type OccultationKind,
+46-} from './occultation.js';
+47-
+48-export interface LatLon {
+49-  lat: number;
+50-  lon: number;
+51-}
+52-
+53-/** Apparent position of the sun/moon at an instant, as seen from the search area. */
+54-export interface BodySample {
+55-  /** Degrees clockwise from north. */
+--
+195-    eyeEllipsoidal = resolved;
+196-
+197:    const observer: ObserverGeodetic = {
+198-      lat: position.lat,
+199-      lon: position.lon,
+200-      ellipsoidalHeight: eyeEllipsoidal,
+201-    };
+202-    const actual = azAltTo(observer, landmark.lat, landmark.lon, featureEllipsoidal);
+203-
+204-    if (Math.abs(actual.alt - body.alt) < 1e-4) {
+205-      return { position, distanceM: d, eyeEllipsoidalHeight: eyeEllipsoidal };
+206-    }
+207-
+208-    // Elevation falls as distance grows, so scale by the tangent ratio.
+209-    const actualTan = Math.tan((actual.alt * Math.PI) / 180);
+210-    const targetTan = Math.tan(targetAltRad);
+211-    if (!Number.isFinite(actualTan) || actualTan <= 0 || targetTan <= 0) return null;
+212-
+--
+232-  if (!solved) return null;
+233-
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,
+65-    alt: p.altitude,
+66-    distanceKm: sunDistanceKm(date),
+67-    radiusKm: SUN_RADIUS_KM,
+68-  };
+69-}

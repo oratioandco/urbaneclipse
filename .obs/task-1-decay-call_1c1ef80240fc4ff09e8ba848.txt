@@ -1,0 +1,42 @@
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
+
+  for (let i = 0; i <= steps; i++) {
+    const hAgl = (total * i) / steps;
+    const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
+    const r = radiusAtHeight(landmark, hAgl);
+
+    // Horizontal angular half-width of the limb at this height.
+    const ratio = Math.min(1, r / Math.max(axis.rangeM, 1e-9));
+    const halfWidthDeg = Math.asin(ratio) * DEG;
+
+    // Offset in azimuth. Divide by cos(alt) so that after the tangent-plane
+    // projection's cos(alt) compression the on-sky width is correct.
+182:export function azAltTo(
+183-  observer: ObserverGeodetic,
+184-  targetLat: number,
+185-  targetLon: number,
+186-  targetEllipsoidalHeight: number,
+187-): AzAlt & { rangeM: number } {
+188-  const o = geodeticToECEF(observer.lat, observer.lon, observer.ellipsoidalHeight);
+189-  const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeight);
+190-  const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], observer.lat, observer.lon);
+191-  const [e, n, u] = enu;
+192-  const horiz = Math.hypot(e, n);
+193-  return {
+194-    az: ((Math.atan2(e, n) * DEG) + 360) % 360,

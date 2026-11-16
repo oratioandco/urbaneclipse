@@ -1,0 +1,26 @@
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });
+}
+export function bearingDistanceTo(from: LatLon, to: LatLon): {
+  bearingDeg: number;
+  distanceM: number;
+} {
+13: * The relation is  h = H + N,  where N is the geoid undulation (~39.5 m in Berlin).
+30: * Berlin geoid undulation (ETRS89/GRS80 geoid height above the ellipsoid), metres.
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+36: * This is a tile-wide CONSTANT approximation of the GCG2016/EGG97 geoid; the true
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+53: * sampled in the wrong CRS, or one that already had the geoid baked in, would land
+67:export function orthometricToEllipsoidal(
+69:  undulation: number = GEOID_UNDULATION_BERLIN,

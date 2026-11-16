@@ -1,0 +1,3 @@
+ING
+SB: export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample
+SGO: export function sa

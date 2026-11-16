@@ -1,0 +1,20 @@
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+export function feasibility(
+  landmark: RevolutionLandmark,
+  body: Pick<BodySample, 'distanceKm' | 'radiusKm'>,
+  observedFromM: number,
+): { fullPossible: boolean; maxRangeForFullM: number; landmarkWidthDeg: number } {
+  let widest = 0;
+  const total = landmarkHeight(landmark);

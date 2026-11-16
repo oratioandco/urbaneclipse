@@ -1,0 +1,106 @@
+?: number;
+}
+
+/**
+ * Rank candidates.
+ *
+ * REACHABILITY DOMINATES. A merely-good composition you can actually walk to beats a
+ * perfect one you cannot: the whole point of giving the solver an area is to respect
+ * it. Out-of-area candidates are still returned — "nothing inside your area works, but
+ * here is the nearest spot that does" is far more useful than an empty list — they
+ * simply rank below everything reachable.
+ *
+ * Within each group: full first, then by covered fraction; for adjacent framings,
+ * closer to the silhouette is better.
+ */
+function score(c: Candidate): number {
+  let s: number;
+  if (c.kind === 'full') s = 1000;
+  else if (c.kind === 'partial') s = 100 + c.coveredFraction * 100;
+  else if (c.kind === 'adjacent') s = 50 - Math.min(c.separationDeg, 50);
+  else s = 0;
+
+  return c.withinArea ? s + 10_000 : s;
+}
+
+/**
+ * Sweep the time window, solving the required observer position at each step and
+ * classifying the resulting composition.
+ *
+ * Cost is linear in the number of time steps — the position is SOLVED, never searched.
+ */
+export function findCompositions(req: SearchRequest): Candidate[] {
+  const {
+    start,
+    end,
+    stepMinutes,
+    bodyAt,
+    wanted = ['full', 'partial'],
+    limit = 100,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const requireWithinArea = req.requireWithinArea ?? req.area !== undefined;
+  const stepMs = stepMinutes * 60_000;
+  const out: Candidate[] = [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const when = new Date(t);
+    const candidate = evaluateCandidate(when, bodyAt(when), req);
+    if (!candidate) continue;
+    if (!wanted.includes(candidate.kind)) continue;
+    if (requireWithinArea && !candidate.withinArea) continue;
+    out.push(candidate);
+  }
+
+  out.sort((a, b) => score(b) - score(a));
+  return out.slice(0, limit);
+}
+
+export interface FixedCandidate {
+  when: Date;
+  kind: OccultationKind;
+  coveredFraction: number;
+  separationDeg: number;
+  /** Body direction at that instant, for display and framing. */
+  bodyAz: number;
+  bodyAlt: number;
+}
+
+export interface FixedSearchRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Ignore instants with the body at or below this altitude. */
+  minAltitudeDeg?: number;
+  limit?: number;
+}
+
+/** The per-instant part of a fixed-position search, callable one instant at a time. */
+export interface InstantClassifyRequest {
+  observer: ObserverGeodetic;
+  landmark: RevolutionLandmark;
+  bodyAt: (t: Date) => BodySample;
+  wanted?: OccultationKind[];
+  minAltitudeDeg?: number;
+}
+
+/**
+ * Sweep time at a FIXED observer position and classify the occultation at each step.
+ *
+ * This is the "I am standing here, when does it happen?" search, as opposed to
+ * findCompositions' "where do I need to stand?". It replaces the original
+ * bearing-tolerance sweep: matching on "body within +/-0.5 deg of the target bearing" only
+ * means "within roughly one lunar diameter", which finds near misses rather than
+ * compositions. H

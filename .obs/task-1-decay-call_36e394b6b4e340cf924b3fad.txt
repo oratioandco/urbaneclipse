@@ -1,0 +1,18 @@
+182:  id: 'lichtenberger-bruecke',
+===ELEV===
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+48:export const BERLIN_GROUND_ORTHOMETRIC_FALLBACK = 34;
+67:export function orthometricToEllipsoidal(
+69:  undulation: number = GEOID_UNDULATION_BERLIN,
+77:export function ellipsoidalToOrthometric(
+79:  undulation: number = GEOID_UNDULATION_BERLIN,
+86:export interface EyeHeightInput {
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+===DIMS===
+   2 114&nbsp;m 
+   1 98&nbsp;m 
+   1 90&nbsp;m 
+   1 73&nbsp;m 
+   1 50 m 
+   1 33&nbsp;m.

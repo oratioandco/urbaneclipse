@@ -1,0 +1,130 @@
+/**
+ * Adapter from suncalc to the occultation core's BodySample. Pure, NO Cesium.
+ *
+ * The occultation classifier needs the body's DISTANCE, not just its direction,
+ * because apparent size decides full-vs-partial. The moon's perigee-to-apogee swing
+ * moves its angular diameter by ~14% (0.490 deg to 0.559 deg), which is far larger than the
+ * ~0.05 deg composition tolerance.
+ *
+ * suncalc's getMoonPosition reports distance directly. getPosition (sun) does NOT, so
+ * the Earth-Sun distance is computed here from the standard low-eccentricity series.
+ *
+ * ANGLE CONVENTION (verified against the installed suncalc 2.0.1 typings): getPosition
+ * and getMoonPosition return DEGREES, azimuth north-based clockwise (0=N, 90=E, 180=S,
+ * 270=W), altitude refraction-corrected. This differs from the suncalc 1.x convention
+ * (radians, 0=south) that the spec prose assumed.
+ */
+import { getPosition, getMoonPosition } from 'suncalc';
+import { SUN_RADIUS_KM, MOON_RADIUS_KM } from './occultation.js';
+import type { BodySample } from './areaSolver.js';
+
+export type Body = 'sun' | 'moon';
+
+const AU_KM = 149597870.7;
+const RAD = Math.PI / 180;
+
+/** Days since the J2000.0 epoch. */
+function daysSinceJ2000(date: Date): number {
+  return date.getTime() / 86400000 - 10957.5;
+}
+
+/**
+ * Earth-Sun distance in km.
+ *
+ * Standard low-eccentricity series (accurate to ~0.0002 AU, i.e. ~0.0001 deg of angular
+ * radius — three orders of magnitude below the tolerance that matters here):
+ *   R = 1.00014 - 0.01671 cos g - 0.00014 cos 2g   [AU]
+ * with g the Sun's mean anomaly.
+ */
+export function sunDistanceKm(date: Date): number {
+  const n = daysSinceJ2000(date);
+  const g = (357.529 + 0.98560028 * n) * RAD;
+  const au = 1.00014 - 0.01671 * Math.cos(g) - 0.00014 * Math.cos(2 * g);
+  return au * AU_KM;
+}
+
+/**
+ * Body direction + apparent size as seen from a ground position.
+ *
+ * Moon distance is topocentric-ish as suncalc reports it; that is adequate here since
+ * a 1 km observer displacement shifts the moon's direction by ~0.00015 deg.
+ */
+export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+  if (body === 'moon') {
+    const p = getMoonPosition(date, lat, lon);
+    return {
+      az: p.azimuth,
+      alt: p.altitude,
+      distanceKm: p.distance,
+      radiusKm: MOON_RADIUS_KM,
+    };
+  }
+  const p = getPosition(date, lat, lon);
+  return {
+    az: p.azimuth,
+    alt: p.altitude,
+    distanceKm: sunDistanceKm(date),
+    radiusKm: SUN_RADIUS_KM,
+  };
+}
+/**
+ * Vertical-datum core — the single place where the app relates its three height
+ * references. Pure math, NO Cesium (Constitution Principle I).
+ *
+ * THE THREE REFERENCES
+ * --------------------
+ *   H  orthometric  DHHN2016 normal height ("metres above sea level"). What Berlin
+ *                   CityGML LoD2, the DGM1 terrain model, and humans all quote.
+ *   h  ellipsoidal  Height above the WGS84 ellipsoid. What Cesium consumes
+ *                   (Cartesian3.fromDegrees takes ellipsoidal metres).
+ *   eye             Metres above the surface you are physically standing on.
+ *
+ * The relation is  h = H + N,  where N is the geoid undulation (~39.5 m in Berlin).
+ *
+ * THE BUG THIS FIXES
+ * ------------------
+ * scripts/convert_tile.py already lifts building geometry by N, so building bases sit
+ * near 73.5 m ellipsoidal. But the app has no terrain provider and
+ * src/cesium/lineOfSight.ts assumed "ground ~= 0", so an observerHeight of 1.5 was fed
+ * to Cesium as 1.5 m ELLIPSOIDAL — placing the photographer ~72 m below the street,
+ * beneath every building base. Occlusion results computed from that geometry were
+ * unsound even though the scene looked plausible (observer and target were shifted in
+ * the same direction).
+ *
+ * Consumers should treat `resolveEyeEllipsoidalHeight` as the ONLY way to turn a
+ * ground sample plus an eye height into a Cesium height.
+ */
+
+/**
+ * Berlin geoid undulation (ETRS89/GRS80 geoid height above the ellipsoid), metres.
+ *
+ * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+ * scripts/convert_tile.py, which bakes it into the building geometry. A guard test in
+ * tests/unit/elevation.test.ts reads the Python source and asserts the two match.
+ *
+ * This is a tile-wide CONSTANT approximation of the GCG2016/EGG97 geoid; the true
+ * undulation varies by roughly +/-0.5 m across the Berlin AOI. Replacing it with a
+ * sampled grid is a known refinement (research.md VERIFY-LIVE #8).
+ */
+export const GEOID_UNDULATION_BERLIN = 39.5;
+
+/**
+ * Mean ground elevation across the Berlin AOI (DHHN2016 metres), used only when no
+ * terrain sample is available. Berlin is broadly 30-60 m; the centre sits near 34 m.
+ * A fallback exists so a heightmap miss degrades to "slightly wrong" rather than the
+ * catastrophic 72 m error it replaced.
+ */
+export const BERLIN_GROUND_ORTHOMETRIC_FALLBACK = 34;
+
+/**
+ * Plausible orthometric range for the Berlin AOI, metres. Anything outside this is
+ * treated as a data-integrity failure rather than a real elevation: a heightmap
+ * sampled in the wrong CRS, or one that already had the geoid baked in, would land
+ * far outside it. Berlin's true span runs from ~28 m (Spree lowlands) to ~115 m
+ * (Mueggelberge), so this is deliberately generous.
+src/lib/elevation.ts:13: * The relation is  h = H + N,  where N is the geoid undulation (~39.5 m in Berlin).
+src/lib/elevation.ts:30: * Berlin geoid undulation (ETRS89/GRS80 geoid height above the ellipsoid), metres.
+src/lib/elevation.ts:32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+src/lib/elevation.ts:37: * undulation varies by roughly +/-0.5 m across the Berlin AOI. Replacing it with a
+src/lib/elevation.ts:40:export const GEOID_UNDULATION_BERLIN = 39.5;
+src/lib/elevation.ts:69:  undulation: number = GEOID_UNDULATION_BERLIN,

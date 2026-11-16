@@ -1,0 +1,4 @@
+tsc_touched 21
+files ['1 failed | 40 passed (41)']
+tests ['6 ⎯⎯⎯⎯⎯⎯⎯', '6 failed | 573 passed | 1 skipped (580)']
+dom ['❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms']

@@ -1,0 +1,1 @@
+I have enough confirmed structure to build now. FERNSEHTURM shape is `{id, name, lat, lon, baseOrthometric, profile: [h,r][], notes}`. I'll write a generator that reads the persisted OSM/height facts and copies working call-patterns from existing tests, then emits both files in one shot.

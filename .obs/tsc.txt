@@ -1,0 +1,774 @@
+playwright.config.ts(61,27): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+src/components/react/CameraControls.tsx(31,43): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/CameraControls.tsx(60,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(61,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(62,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(63,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(65,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(70,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(71,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(72,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(73,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(77,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(81,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(94,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(99,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(100,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(101,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(102,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(104,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(116,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(117,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(118,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(122,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(123,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(124,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(125,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(127,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(137,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(138,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(139,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(143,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(144,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(145,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(146,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(148,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(149,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(150,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(158,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(159,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(170,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CameraControls.tsx(171,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(106,47): error TS6142: Module './ControlPanel.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/ControlPanel.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(107,31): error TS6142: Module './PlacementControls.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/PlacementControls.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(108,25): error TS6142: Module './PlanningMap.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/PlanningMap.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(109,26): error TS6142: Module './HourTimeline.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/HourTimeline.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(110,26): error TS6142: Module './SolverSearch.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/SolverSearch.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(111,29): error TS6142: Module './VantageCalendar.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/VantageCalendar.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(112,28): error TS6142: Module './CameraControls.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/CameraControls.tsx', but '--jsx' is not set.
+src/components/react/CesiumViewer.tsx(117,41): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/components/react/CesiumViewer.tsx(170,29): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/CesiumViewer.tsx(175,28): error TS2503: Cannot find namespace 'Cesium'.
+src/components/react/CesiumViewer.tsx(242,34): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/components/react/CesiumViewer.tsx(294,5): error TS18048: 'scene.skyBox' is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(295,5): error TS18048: 'scene.skyAtmosphere' is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(296,5): error TS18048: 'scene.sun' is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(297,5): error TS18048: 'scene.moon' is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(460,36): error TS2339: Property 'luminanceAtZenith' does not exist on type 'ImageBasedLighting'.
+src/components/react/CesiumViewer.tsx(615,36): error TS2345: Argument of type '"extrapolated" | "fallback" | "terrain" | "viewpoint"' is not assignable to parameter of type 'SetStateAction<"fallback" | "terrain" | "viewpoint" | undefined>'.
+  Type '"extrapolated"' is not assignable to type 'SetStateAction<"fallback" | "terrain" | "viewpoint" | undefined>'.
+src/components/react/CesiumViewer.tsx(720,41): error TS2532: Object is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(732,45): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/react/CesiumViewer.tsx(790,41): error TS2532: Object is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(807,43): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/components/react/CesiumViewer.tsx(877,40): error TS2339: Property 'luminanceAtZenith' does not exist on type 'ImageBasedLighting'.
+src/components/react/CesiumViewer.tsx(927,54): error TS18048: 'frustum.fov' is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(929,78): error TS18048: 'vfov' is possibly 'undefined'.
+src/components/react/CesiumViewer.tsx(1273,12): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1277,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1278,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1281,35): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1286,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1288,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1294,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1298,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1299,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1303,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1311,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1313,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1315,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1316,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1317,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1318,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1320,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1321,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1323,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1324,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1324,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1325,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1325,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1327,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1336,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1337,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1339,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/CesiumViewer.tsx(1340,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(90,29): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/ControlPanel.tsx(111,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(112,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(113,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(114,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(116,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(123,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(124,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(125,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(126,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(130,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(142,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(143,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(144,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(145,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(147,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(157,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(158,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(159,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(163,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(164,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(165,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(166,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(168,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(178,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(179,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(180,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(184,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(189,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(190,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(191,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(196,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(197,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(201,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(207,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(208,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(222,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(223,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(224,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(225,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(229,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(230,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(231,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(235,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(236,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(248,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(249,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/ControlPanel.tsx(253,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(52,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(57,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(69,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(81,41): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/HourTimeline.tsx(98,32): error TS2345: Argument of type 'SunTimes' is not assignable to parameter of type 'TimesInput'.
+  'string' index signatures are incompatible.
+    Type 'boolean | Date | null | undefined' is not assignable to type 'Date'.
+      Type 'undefined' is not assignable to type 'Date'.
+src/components/react/HourTimeline.tsx(124,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(125,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(126,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(127,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(129,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(135,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(138,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(145,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(147,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(166,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(167,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(170,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(173,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(175,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(176,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/HourTimeline.tsx(185,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(44,34): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/PlacementControls.tsx(78,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(79,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(80,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(81,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(83,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(86,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(87,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(95,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(108,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(109,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(110,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(111,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(113,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(114,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(115,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(118,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(119,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(120,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(125,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(126,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(127,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(129,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(130,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(131,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(137,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(138,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(139,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(141,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(147,45): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(149,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(156,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(157,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(165,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(178,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(179,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(188,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(199,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(200,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(201,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(202,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(204,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(216,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(217,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(218,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(223,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(224,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(230,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(231,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(245,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(246,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(254,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlacementControls.tsx(255,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/PlanningMap.tsx(20,8): error TS2882: Cannot find module or type declarations for side-effect import of 'leaflet/dist/leaflet.css'.
+src/components/react/PlanningMap.tsx(50,28): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/PlanningMap.tsx(208,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(96,41): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/SolverSearch.tsx(314,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(315,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(316,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(317,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(319,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(322,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(323,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(324,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(325,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(327,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(328,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(329,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(331,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(332,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(333,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(335,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(336,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(337,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(339,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(340,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(341,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(345,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(346,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(355,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(367,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(368,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(380,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(381,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(396,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(397,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(406,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(407,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(416,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(423,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(424,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(425,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(427,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(428,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(429,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(435,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(436,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(446,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(447,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(450,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(457,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(458,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(470,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(471,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(472,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(473,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(475,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(480,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(481,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(487,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/SolverSearch.tsx(491,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(147,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(148,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(149,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(150,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(152,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(157,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(158,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(159,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(160,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(161,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(172,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(179,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(180,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(181,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(185,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(186,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(192,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(194,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(195,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(202,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(212,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(213,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(224,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(226,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(231,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(243,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(244,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(252,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(257,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(258,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(267,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(268,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/VantageCalendar.tsx(277,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(16,25): error TS6142: Module './ScaleSlider.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/ScaleSlider.tsx', but '--jsx' is not set.
+src/components/react/daily/AdjustPanel.tsx(26,82): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/AdjustPanel.tsx(43,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(44,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(54,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(57,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(58,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(60,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(71,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(72,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(84,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/AdjustPanel.tsx(93,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(19,34): error TS6142: Module '../CesiumViewer.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/CesiumViewer.tsx', but '--jsx' is not set.
+src/components/react/daily/DailyApp.tsx(20,24): error TS6142: Module './SpotScreen.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/SpotScreen.tsx', but '--jsx' is not set.
+src/components/react/daily/DailyApp.tsx(21,30): error TS6142: Module './StreetSpotScreen.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/StreetSpotScreen.tsx', but '--jsx' is not set.
+src/components/react/daily/DailyApp.tsx(22,25): error TS6142: Module './TodayScreen.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/TodayScreen.tsx', but '--jsx' is not set.
+src/components/react/daily/DailyApp.tsx(39,17): error TS6142: Module '../CesiumViewer.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/CesiumViewer.tsx', but '--jsx' is not set.
+src/components/react/daily/DailyApp.tsx(45,15): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/components/react/daily/DailyApp.tsx(46,16): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
+src/components/react/daily/DailyApp.tsx(102,37): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/DailyApp.tsx(149,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(150,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(152,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(152,31): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(153,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(157,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(164,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/DailyApp.tsx(173,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/LightRibbon.tsx(17,66): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/LightRibbon.tsx(21,10): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/LightRibbon.tsx(25,32): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/LightRibbon.tsx(27,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/LightRibbon.tsx(29,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/LightRibbon.tsx(30,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/MoonGlyph.tsx(9,65): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/MoonGlyph.tsx(11,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/MoonGlyph.tsx(12,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/MoonGlyph.tsx(13,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(32,12): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/ScaleSlider.tsx(34,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(35,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(36,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(37,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(39,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(50,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/ScaleSlider.tsx(52,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(14,34): error TS6142: Module '../CesiumViewer.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/CesiumViewer.tsx', but '--jsx' is not set.
+src/components/react/daily/SpotScreen.tsx(15,25): error TS6142: Module './AdjustPanel.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/AdjustPanel.tsx', but '--jsx' is not set.
+src/components/react/daily/SpotScreen.tsx(16,25): error TS6142: Module './LightRibbon.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/LightRibbon.tsx', but '--jsx' is not set.
+src/components/react/daily/SpotScreen.tsx(17,23): error TS6142: Module './MoonGlyph.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/MoonGlyph.tsx', but '--jsx' is not set.
+src/components/react/daily/SpotScreen.tsx(40,80): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/SpotScreen.tsx(93,17): error TS18048: 'next' is possibly 'undefined'.
+src/components/react/daily/SpotScreen.tsx(94,21): error TS18048: 'next' is possibly 'undefined'.
+src/components/react/daily/SpotScreen.tsx(94,38): error TS18048: 'next' is possibly 'undefined'.
+src/components/react/daily/SpotScreen.tsx(160,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(161,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(165,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(168,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(169,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(170,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(172,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(174,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(175,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(176,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(178,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(179,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(184,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(186,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(187,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(192,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(198,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(199,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(200,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(201,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(212,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(213,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(213,35): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(218,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(219,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(220,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(221,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(223,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(229,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(235,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(243,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(245,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(247,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(248,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(249,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(263,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(266,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(272,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(277,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/SpotScreen.tsx(280,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(9,34): error TS6142: Module '../CesiumViewer.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/CesiumViewer.tsx', but '--jsx' is not set.
+src/components/react/daily/StreetSpotScreen.tsx(10,25): error TS6142: Module './AdjustPanel.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/AdjustPanel.tsx', but '--jsx' is not set.
+src/components/react/daily/StreetSpotScreen.tsx(11,25): error TS6142: Module './LightRibbon.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/LightRibbon.tsx', but '--jsx' is not set.
+src/components/react/daily/StreetSpotScreen.tsx(12,23): error TS6142: Module './MoonGlyph.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/MoonGlyph.tsx', but '--jsx' is not set.
+src/components/react/daily/StreetSpotScreen.tsx(29,86): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/StreetSpotScreen.tsx(77,17): error TS2532: Object is possibly 'undefined'.
+src/components/react/daily/StreetSpotScreen.tsx(78,21): error TS2532: Object is possibly 'undefined'.
+src/components/react/daily/StreetSpotScreen.tsx(78,43): error TS2532: Object is possibly 'undefined'.
+src/components/react/daily/StreetSpotScreen.tsx(106,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(107,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(111,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(114,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(115,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(116,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(118,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(120,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(121,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(122,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(124,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(125,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(130,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(132,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(133,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(138,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(145,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(146,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(147,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(148,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(159,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(160,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(160,35): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(165,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(166,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(167,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(168,41): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(170,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(178,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(188,25): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(188,51): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(189,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(190,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(191,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(201,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(207,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(212,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/StreetSpotScreen.tsx(215,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayMap.tsx(4,8): error TS2882: Cannot find module or type declarations for side-effect import of 'leaflet/dist/leaflet.css'.
+src/components/react/daily/TodayMap.tsx(178,12): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/TodayMap.tsx(325,41): error TS2345: Argument of type 'PathPoint | undefined' is not assignable to parameter of type 'PathPoint'.
+  Type 'undefined' is not assignable to type 'PathPoint'.
+src/components/react/daily/TodayMap.tsx(327,24): error TS2345: Argument of type 'PathPoint | undefined' is not assignable to parameter of type 'PathPoint'.
+  Type 'undefined' is not assignable to type 'PathPoint'.
+src/components/react/daily/TodayMap.tsx(332,40): error TS2345: Argument of type 'PathPoint | undefined' is not assignable to parameter of type 'PathPoint'.
+  Type 'undefined' is not assignable to type 'PathPoint'.
+src/components/react/daily/TodayMap.tsx(468,10): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(35,42): error TS6142: Module './LightRibbon.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/LightRibbon.tsx', but '--jsx' is not set.
+src/components/react/daily/TodayScreen.tsx(36,23): error TS6142: Module './MoonGlyph.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/MoonGlyph.tsx', but '--jsx' is not set.
+src/components/react/daily/TodayScreen.tsx(37,22): error TS6142: Module './TodayMap.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/daily/TodayMap.tsx', but '--jsx' is not set.
+src/components/react/daily/TodayScreen.tsx(81,81): error TS2503: Cannot find namespace 'JSX'.
+src/components/react/daily/TodayScreen.tsx(217,5): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(218,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(239,7): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(240,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(247,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(248,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(249,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(250,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(251,24): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(253,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(254,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(255,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(256,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(257,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(258,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(259,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(261,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(271,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(275,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(279,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(280,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(281,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(282,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(284,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(285,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(287,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(293,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(295,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(306,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(313,38): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(313,69): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(319,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(321,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(323,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(331,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(333,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(341,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(342,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(343,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(358,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(360,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(365,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(369,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(370,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(375,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(376,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(377,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(387,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(391,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(397,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(398,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(399,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(400,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(401,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(404,23): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(412,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(418,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(419,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(420,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(421,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(427,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(430,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(431,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(432,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(433,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(442,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(444,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(450,38): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(450,69): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(451,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(452,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(453,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(458,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(461,40): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(465,9): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(466,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(468,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(471,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(478,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(479,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(480,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(481,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(482,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(491,13): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(492,15): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(495,33): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(497,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(500,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(507,40): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(507,71): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(508,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(509,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(510,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(511,21): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(519,17): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(521,19): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/TodayScreen.tsx(529,11): error TS17004: Cannot use JSX unless the '--jsx' flag is provided.
+src/components/react/daily/useBuildingCheck.ts(3,31): error TS6142: Module '../CesiumViewer.js' was resolved to '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/components/react/CesiumViewer.tsx', but '--jsx' is not set.
+src/components/react/daily/useBuildingCheck.ts(33,41): error TS2532: Object is possibly 'undefined'.
+src/components/react/daily/useBuildingCheck.ts(33,59): error TS2532: Object is possibly 'undefined'.
+src/components/react/daily/useBuildingCheck.ts(34,46): error TS2532: Object is possibly 'undefined'.
+src/lib/areaSolver.ts(140,16): error TS2532: Object is possibly 'undefined'.
+src/lib/areaSolver.ts(141,16): error TS2532: Object is possibly 'undefined'.
+src/lib/areaSolver.ts(142,16): error TS2532: Object is possibly 'undefined'.
+src/lib/areaSolver.ts(143,16): error TS2532: Object is possibly 'undefined'.
+src/lib/berlinTime.ts(48,12): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(48,23): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(48,36): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(48,47): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(48,58): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(48,72): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(60,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(60,32): error TS18048: 'mo' is possibly 'undefined'.
+src/lib/berlinTime.ts(83,28): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/lib/berlinTime.ts(83,31): error TS18048: 'mo' is possibly 'undefined'.
+src/lib/berlinTime.ts(83,39): error TS18048: 'da' is possibly 'undefined'.
+src/lib/dailyPaths.ts(105,24): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(216,40): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(216,65): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(217,11): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(217,33): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(217,48): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(218,44): error TS2532: Object is possibly 'undefined'.
+src/lib/dailyPaths.ts(376,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/lib/heightmap.ts(75,10): error TS18048: 'v' is possibly 'undefined'.
+src/lib/landmarks.ts(130,14): error TS2741: Property 'notes' is missing in type '{ id: string; name: string; lat: number; lon: number; baseOrthometric: number; profile: [number, number][]; }' but required in type 'RevolutionLandmark'.
+src/lib/landmarks.ts(262,26): error TS2532: Object is possibly 'undefined'.
+src/lib/landmarks.ts(262,42): error TS2532: Object is possibly 'undefined'.
+src/lib/landmarks.ts(264,26): error TS18048: 'top' is possibly 'undefined'.
+src/lib/landmarks.ts(267,11): error TS2488: Type 'readonly [number, number] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/lib/landmarks.ts(269,13): error TS2488: Type 'readonly [number, number] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/lib/landmarks.ts(289,31): error TS2532: Object is possibly 'undefined'.
+src/lib/occultation.ts(132,31): error TS2345: Argument of type 'AngularPoint | undefined' is not assignable to parameter of type 'AngularPoint'.
+  Type 'undefined' is not assignable to type 'AngularPoint'.
+src/lib/occultation.ts(167,9): error TS18048: 't1' is possibly 'undefined'.
+src/lib/occultation.ts(167,15): error TS18048: 't0' is possibly 'undefined'.
+src/lib/occultation.ts(169,41): error TS18048: 't0' is possibly 'undefined'.
+src/lib/occultation.ts(169,59): error TS18048: 't0' is possibly 'undefined'.
+src/lib/occultation.ts(170,41): error TS18048: 't1' is possibly 'undefined'.
+src/lib/occultation.ts(170,59): error TS18048: 't1' is possibly 'undefined'.
+src/lib/occultation.ts(174,17): error TS18048: 't0' is possibly 'undefined'.
+src/lib/occultation.ts(174,22): error TS18048: 't1' is possibly 'undefined'.
+src/lib/occultation.ts(203,16): error TS18048: 'b' is possibly 'undefined'.
+src/lib/occultation.ts(203,22): error TS18048: 'a' is possibly 'undefined'.
+src/lib/occultation.ts(204,16): error TS18048: 'b' is possibly 'undefined'.
+src/lib/occultation.ts(204,22): error TS18048: 'a' is possibly 'undefined'.
+src/lib/occultation.ts(208,37): error TS18048: 'a' is possibly 'undefined'.
+src/lib/occultation.ts(208,48): error TS18048: 'a' is possibly 'undefined'.
+src/lib/occultation.ts(210,16): error TS18048: 'a' is possibly 'undefined'.
+src/lib/occultation.ts(211,16): error TS18048: 'a' is possibly 'undefined'.
+src/lib/skyPalette.ts(185,14): error TS2532: Object is possibly 'undefined'.
+src/lib/skyPalette.ts(185,34): error TS2532: Object is possibly 'undefined'.
+src/lib/skyPalette.ts(186,14): error TS2532: Object is possibly 'undefined'.
+src/lib/skyPalette.ts(186,48): error TS2532: Object is possibly 'undefined'.
+src/lib/skyPalette.ts(190,16): error TS18048: 'a' is possibly 'undefined'.
+src/lib/skyPalette.ts(190,32): error TS18048: 'b' is possibly 'undefined'.
+src/lib/skyPalette.ts(191,26): error TS18048: 'a' is possibly 'undefined'.
+src/lib/skyPalette.ts(191,37): error TS18048: 'b' is possibly 'undefined'.
+src/lib/skyPalette.ts(191,55): error TS18048: 'a' is possibly 'undefined'.
+src/lib/skyPalette.ts(191,65): error TS18048: 'b' is possibly 'undefined'.
+src/lib/skyPalette.ts(191,73): error TS18048: 'a' is possibly 'undefined'.
+src/lib/skyPalette.ts(194,10): error TS2532: Object is possibly 'undefined'.
+src/lib/vantageWindows.ts(128,52): error TS2741: Property 'groundOrthometric' is missing in type '{ surfaceOrthometric: number; eyeHeight: number; }' but required in type 'EyeHeightInput'.
+src/lib/vantageWindows.ts(193,31): error TS18048: 'best' is possibly 'undefined'.
+src/lib/vantageWindows.ts(197,12): error TS2532: Object is possibly 'undefined'.
+src/lib/vantageWindows.ts(198,10): error TS2532: Object is possibly 'undefined'.
+src/lib/vantageWindows.ts(199,11): error TS18048: 'best' is possibly 'undefined'.
+src/lib/vantageWindows.ts(200,11): error TS18048: 'best' is possibly 'undefined'.
+src/lib/vantageWindows.ts(201,22): error TS18048: 'best' is possibly 'undefined'.
+src/lib/vantageWindows.ts(202,26): error TS18048: 'best' is possibly 'undefined'.
+src/lib/viewshed.ts(39,21): error TS18048: 'byte' is possibly 'undefined'.
+src/lib/viewshed.ts(41,16): error TS18048: 'byte' is possibly 'undefined'.
+src/workers/solver.worker.ts(44,21): error TS2304: Cannot find name 'DedicatedWorkerGlobalScope'.
+tests/e2e/us5-solver.spec.ts(38,42): error TS2339: Property 'url' does not exist on type 'URL'.
+tests/e2e/us5-solver.spec.ts(44,7): error TS2578: Unused '@ts-expect-error' directive.
+tests/unit/areaSolver.test.ts(209,19): error TS18048: 'prev' is possibly 'undefined'.
+tests/unit/areaSolver.test.ts(209,59): error TS18048: 'cur' is possibly 'undefined'.
+tests/unit/areaSolver.test.ts(351,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/areaSolver.test.ts(351,28): error TS2532: Object is possibly 'undefined'.
+tests/unit/areaSolver.test.ts(351,42): error TS2532: Object is possibly 'undefined'.
+tests/unit/areaSolver.test.ts(351,56): error TS2532: Object is possibly 'undefined'.
+tests/unit/blossom.test.ts(2,1): error TS2578: Unused '@ts-expect-error' directive.
+tests/unit/blossom.test.ts(13,8): error TS7016: Could not find a declaration file for module '../../src/miniature/blossom.js'. '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/miniature/blossom.js' implicitly has an 'any' type.
+tests/unit/blossom.test.ts(85,34): error TS2532: Object is possibly 'undefined'.
+tests/unit/blossom.test.ts(86,31): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(61,45): error TS18048: 'p' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(62,18): error TS18048: 'p' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(63,19): error TS18048: 'p' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(108,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(108,46): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(131,21): error TS18048: 'a' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(131,41): error TS18048: 'b' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(132,12): error TS18048: 'a' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(132,25): error TS18048: 'b' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(171,18): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(171,18): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(171,46): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(208,35): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(208,54): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(209,35): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(258,19): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(258,47): error TS2532: Object is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(259,39): error TS18048: 'point' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(265,73): error TS18048: 'point' is possibly 'undefined'.
+tests/unit/dailyPaths.test.ts(265,84): error TS18048: 'point' is possibly 'undefined'.
+tests/unit/domLandmark.test.ts(142,64): error TS2339: Property 'r' does not exist on type 'readonly [number, number]'.
+tests/unit/domLandmark.test.ts(145,17): error TS2339: Property 'r' does not exist on type 'readonly [number, number]'.
+tests/unit/domLandmark.test.ts(176,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(176,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(177,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(177,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(178,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(178,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(179,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(179,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(209,7): error TS2353: Object literal may only specify known properties, and 'position' does not exist in type 'FixedSearchRequest'.
+tests/unit/domLandmark.test.ts(255,39): error TS2339: Property 'date' does not exist on type 'FixedCandidate'.
+tests/unit/domLandmark.test.ts(264,39): error TS2339: Property 'date' does not exist on type 'FixedCandidate'.
+tests/unit/domLandmark.test.ts(265,35): error TS2339: Property 'date' does not exist on type 'FixedCandidate'.
+tests/unit/elevation.test.ts(21,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/heightmap.test.ts(10,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/horizonWindows.test.ts(12,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/lightPhases.test.ts(29,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(30,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(31,51): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(31,71): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(78,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(79,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(80,51): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(80,87): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(85,11): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(85,30): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(85,57): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(85,86): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(92,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(92,27): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(93,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/lightPhases.test.ts(94,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/log.test.ts(30,17): error TS2532: Object is possibly 'undefined'.
+tests/unit/mapBodyLook.test.ts(8,74): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number | bigint'.
+  Type 'undefined' is not assignable to type 'number | bigint'.
+tests/unit/miniature.test.ts(10,80): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+tests/unit/miniature.test.ts(300,32): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+tests/unit/miniature.test.ts(301,32): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+tests/unit/miniature.test.ts(309,51): error TS7016: Could not find a declaration file for module '../../src/miniature/quality.js'. '/Users/ttreppmann/Developer/StudioProjects/urbaneclipse-miniature-dom/src/miniature/quality.js' implicitly has an 'any' type.
+tests/unit/moonPhase.test.ts(1,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/moonPhase.test.ts(2,22): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/moonPhase.test.ts(101,36): error TS2304: Cannot find name '__dirname'.
+tests/unit/occultation.test.ts(191,51): error TS2532: Object is possibly 'undefined'.
+tests/unit/shotWeather.test.ts(2,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/shotWeather.test.ts(3,22): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/shotWeather.test.ts(20,33): error TS2339: Property 'dirname' does not exist on type 'ImportMeta'.
+tests/unit/skyPalette.test.ts(76,53): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number | bigint'.
+  Type 'undefined' is not assignable to type 'number | bigint'.
+tests/unit/solver.test.ts(124,67): error TS2345: Argument of type 'undefined' is not assignable to parameter of type 'number'.
+tests/unit/ssr-graph-guard.test.ts(2,55): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/ssr-graph-guard.test.ts(3,22): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/ssr-graph-guard.test.ts(5,18): error TS2304: Cannot find name '__dirname'.
+tests/unit/streets.test.ts(1,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/streets.test.ts(2,22): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/streets.test.ts(15,21): error TS2304: Cannot find name '__dirname'.
+tests/unit/streets.test.ts(48,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/streets.test.ts(49,12): error TS2532: Object is possibly 'undefined'.
+tests/unit/streets.test.ts(93,24): error TS2345: Argument of type 'StreetView | undefined' is not assignable to parameter of type 'Pick<StreetView, "bearingDeg" | "from" | "skylineDeg" | "toleranceDeg">'.
+  Type 'undefined' is not assignable to type 'Pick<StreetView, "bearingDeg" | "from" | "skylineDeg" | "toleranceDeg">'.
+tests/unit/streets.test.ts(101,37): error TS2345: Argument of type 'StreetView | undefined' is not assignable to parameter of type 'Pick<StreetView, "bearingDeg" | "from" | "skylineDeg" | "toleranceDeg">'.
+  Type 'undefined' is not assignable to type 'Pick<StreetView, "bearingDeg" | "from" | "skylineDeg" | "toleranceDeg">'.
+tests/unit/streets.test.ts(104,45): error TS2532: Object is possibly 'undefined'.
+tests/unit/streets.test.ts(104,62): error TS18048: 'view' is possibly 'undefined'.
+tests/unit/streets.test.ts(104,77): error TS18048: 'view' is possibly 'undefined'.
+tests/unit/streets.test.ts(105,26): error TS2345: Argument of type 'StreetView | undefined' is not assignable to parameter of type 'Pick<StreetView, "bearingDeg" | "skylineDeg" | "toleranceDeg">'.
+  Type 'undefined' is not assignable to type 'Pick<StreetView, "bearingDeg" | "skylineDeg" | "toleranceDeg">'.
+tests/unit/streets.test.ts(106,25): error TS2532: Object is possibly 'undefined'.
+tests/unit/streets.test.ts(106,57): error TS2532: Object is possibly 'undefined'.
+tests/unit/studioEnvironment.test.ts(2,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/studioEnvironment.test.ts(3,31): error TS2591: Cannot find name 'node:url'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/studioEnvironment.test.ts(4,34): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/sun-agreement.test.ts(158,27): error TS2532: Object is possibly 'undefined'.
+tests/unit/terrainTile.test.ts(10,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/timeline.test.ts(2,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/timeline.test.ts(3,31): error TS2591: Cannot find name 'node:url'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/timeline.test.ts(4,18): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/urbanEclipse.integration.test.ts(163,14): error TS2532: Object is possibly 'undefined'.
+tests/unit/urbanEclipse.integration.test.ts(163,66): error TS2532: Object is possibly 'undefined'.
+tests/unit/vantageWindows.test.ts(21,70): error TS18048: 'point' is possibly 'undefined'.
+tests/unit/vantageWindows.test.ts(21,81): error TS18048: 'point' is possibly 'undefined'.
+tests/unit/vantageWindows.test.ts(32,5): error TS2322: Type 'StandingPoint | undefined' is not assignable to type 'StandingPoint'.
+  Type 'undefined' is not assignable to type 'StandingPoint'.
+tests/unit/vantageWindows.test.ts(101,7): error TS2322: Type 'StandingPoint | undefined' is not assignable to type 'StandingPoint'.
+  Type 'undefined' is not assignable to type 'StandingPoint'.
+tests/unit/viewshed.test.ts(1,30): error TS2591: Cannot find name 'node:fs'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/viewshed.test.ts(2,22): error TS2591: Cannot find name 'node:path'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/unit/viewshed.test.ts(49,20): error TS2304: Cannot find name '__dirname'.

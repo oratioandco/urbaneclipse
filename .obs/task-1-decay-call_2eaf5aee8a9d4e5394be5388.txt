@@ -1,0 +1,2 @@
+sKm: number; }
+feasibility: export function feasibility( landmark: RevolutionLandmark, body: Pick<BodySample, 'distanceK

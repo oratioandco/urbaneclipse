@@ -1,0 +1,18 @@
+export function bearingDistanceTo(from: LatLon, to: LatLon): {
+  bearingDeg: number;
+  distanceM: number;
+} {
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });
+}

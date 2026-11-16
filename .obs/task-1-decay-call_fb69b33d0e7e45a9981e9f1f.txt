@@ -1,0 +1,28 @@
+ERROR: exit: exit status 1
+54:const LAT = 52.5106;
+55:const LON = 13.4652;
+57:const DEG = 180 / Math.PI;
+58:const RAD = Math.PI / 180;
+61:const AGREEMENT_TOLERANCE_DEG = 0.5;
+68:const DRIFT_CEILING_DEG = 0.42;
+71:const SAMPLES: ReadonlyArray<readonly [string, Date]> = [
+93:function cesiumSunAltAz(date: Date): AltAz {
+94:  const jd = Cesium.JulianDate.fromDate(date);
+96:  const inertial = Cesium.Simon1994PlanetaryPositions.computeSunPositionInEarthInertialFrame(
+110:  const fixed = Cesium.Matrix3.multiplyByVector(toFixed, inertial, new Cesium.Cartesian3());
+113:  const origin = Cesium.Cartographic.toCartesian(Cesium.Cartographic.fromDegrees(LON, LAT, 0));
+114:  const fixedFromEnu = Cesium.Transforms.eastNorthUpToFixedFrame(
+119:  const enuFromFixed = Cesium.Matrix4.inverseTransformation(fixedFromEnu, new Cesium.Matrix4());
+120:  const enu = Cesium.Matrix4.multiplyByPoint(enuFromFixed, fixed, new Cesium.Cartesian3());
+121:  const u = Cesium.Cartesian3.normalize(enu, new Cesium.Cartesian3());
+131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc
+135:function refractionDeg(altDeg: number): number {
+136:  const h = Math.max(altDeg, 0) * RAD;
+141:function angularSeparationDeg(azA: number, altA: number, azB: number, altB: number): number {
+142:  const unit = (az: number, alt: number): [number, number, number] => [
+147:  const a = unit(azA, altA);
+148:  const b = unit(azB, altB);
+149:  const dot = Math.min(1, Math.max(-1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+164:      const c = cesiumSunAltAz(date);
+sed: 1: ",+45p
+": invalid command code ,

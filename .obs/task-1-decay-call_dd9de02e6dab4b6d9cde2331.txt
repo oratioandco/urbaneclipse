@@ -1,0 +1,46 @@
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+78-  return {
+79-    bearingDeg: (bearingDeg + 360) % 360,
+80-    distanceM: Math.hypot(enu[0], enu[1]),
+81-  };
+82-}
+83-
+84-/** Build a standing point, computing bearing/distance to the landmark from coordinates. */
+85-export function standingPoint(
+86-  base: Omit<
+87-    StandingPoint,
+88-    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+89-  >,
+90-  landmark: LatLon,
+91-): StandingPoint {
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+86:export interface EyeHeightInput {
+87-  /**
+88-   * Ground elevation at the location in DHHN2016 metres, as sampled from the DGM1
+89-   * heightmap. `undefined` when no sample is available (outside the AOI, or the
+90-   * heightmap failed to load) — the Berlin mean is substituted.
+91-   */
+92-  groundOrthometric: number | undefined;
+93-  /**
+94-   * Explicit elevation of the surface actually being stood on, DHHN2016 metres.
+95-   * Overrides `groundOrthometric` when present.
+96-   *

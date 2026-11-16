@@ -1,0 +1,37 @@
+342:export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+347-  stepMinutes: number;
+348-  bodyAt: (t: Date) => BodySample;
+350-  wanted?: OccultationKind[];
+352-  minAltitudeDeg?: number;
+353-  limit?: number;
+354-}
+355-
+357-export interface InstantClassifyRequest {
+358-  observer: ObserverGeodetic;
+359-  landmark: RevolutionLandmark;
+360-  bodyAt: (t: Date) => BodySample;
+361-  wanted?: OccultationKind[];
+362-  minAltitudeDeg?: number;
+363-}
+364-
+332:export interface FixedCandidate {
+333-  when: Date;
+334-  kind: OccultationKind;
+335-  coveredFraction: number;
+336-  separationDeg: number;
+338-  bodyAz: number;
+339-  bodyAlt: number;
+340-}
+341-
+342-export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+347-  stepMinutes: number;
+348-  bodyAt: (t: Date) => BodySample;
+350-  wanted?: OccultationKind[];

@@ -1,0 +1,776 @@
+{{Infobox Bauwerk
+| NAME             = Berliner Dom
+| BILD             = Berliner Dom vor Sonnenuntergang.jpg
+| BILDBESCHREIBUNG = Berliner Dom, davor der [[Lustgarten (Berlin)|Lustgarten]]
+| ORT              = [[Berlin-Mitte]]
+| BAUMEISTER       = 
+| ARCHITEKT        = [[Julius Raschdorff]]
+| ARCHITEKTIN      = 
+| BAUHERR          = [[Wilhelm II. (Deutsches Reich)|Wilhelm&nbsp;II.]]
+| BAUHERRIN        = 
+| BAUSTIL          = [[Neorenaissance]]
+| BAUJAHR          = 1894–1905
+| ABRISS           = 
+| HÖHE             = 98
+| GRUNDFLÄCHE      = 6270
+| LÄNGE            = 90
+| BREITENGRAD      = 52/31/9/N
+| LÄNGENGRAD       = 13/24/4/E
+| REGION-ISO       = DE-BE
+| GEO-HÖHE         = 
+| KARTE            = 
+| KARTE2           = 
+| KARTE2-TEXT      = 
+| BESONDERHEITEN   = <nowiki />
+* [[Kuppel]]n und [[Laterne (Architektur)|Laternen]] verändert
+* Denkmalskirche und Unterfahrt abgerissen
+}}
+
+Der '''Berliner Dom''' (offiziell: ''Oberpfarr- und Domkirche zu Berlin'')<ref>{{Internetquelle |url=https://www.berlinerdom.de/impressum/ |titel=Impressum |hrsg=Berliner Dom |abruf=2021-01-16}}</ref> ist eine [[Evangelische Kirche in Deutschland|evangelische]] [[Kirche (Bauwerk)|Kirche]] am [[Lustgarten (Berlin)|Lustgarten]] auf der [[Museumsinsel (Berlin)|Museumsinsel]] in [[Berlin-Mitte]]. Der [[Neorenaissance]]&shy;bau wurde 1894–1905 im Auftrag von [[Wilhelm II. (Deutsches Reich) |Wilhelm&nbsp;II.]] nach Entwurf von [[Julius Carl Raschdorff|Julius Raschdorff]] errichtet. Er ist die größte evangelische Kirche [[Deutschland]]s und eine der bedeutendsten [[Liste von Grabstätten europäischer Monarchen|dynastischen Grabstätten]] Europas. Neben [[Gottesdienst]]en wird er auch für [[Staatsakt (Veranstaltung)|Staatsakte]], [[Konzert (Veranstaltung)|Konzerte]] und andere Veranstaltungen genutzt. Seit dem Abriss der nördlichen [[#Denkmalskirche|Denkmalskirche]] während der [[Deutsche Demokratische Republik|SED-Diktatur]] 1975 besteht der Berliner Dom aus der zentralen Predigtkirche, der südlichen Tauf- und Traukirche sowie der [[#Hohenzollerngruft|Hohenzollerngruft]]. Während des [[Zweiter Weltkrieg|Zweiten Weltkriegs]] 1944 schwer beschädigt, wurde das Äußere bis 1984 verändert und das Innere bis 2002 originalgetreu wiederaufgebaut. Über eine [[Rekonstruktion (Architektur)|Rekonstruktion]] der Denkmalskirche wird diskutiert.
+
+== Maße ==
+Ursprünglich war der Dom 114&nbsp;m lang, 73&nbsp;m breit, 114&nbsp;m hoch und bot 2100 Sitzplätze.<ref name="D-Kirche">{{ZentralblBauverw |Autor=- |Titel=Der neue Dom in Berlin |Jahr=1905 |Heft=17 |Kommentar=1. Teil |Seiten=105–107, hier S. 107 |zlb=124}}</ref> Aufgrund der abgerissenen Denkmalskirche, der vereinfacht wiederaufgebauten Kuppel und der in die Predigtkirche versetzten Prunk[[sarkophag]]e ist er heute 90&nbsp;m lang, 98&nbsp;m hoch<ref>{{Literatur |Autor=Lars Eisenlöffel |Hrsg=Oberpfarr- und Domkirche zu Berlin |Titel=Der Berliner Dom |Verlag=Deutscher Kunstverlag |Datum=2007 |ISBN=978-3-422-02360-4 |Seiten=36}}</ref> und bietet 1390 Sitzplätze.<ref>{{Internetquelle |url=https://www.berlinerdom.de/termine/sitzplan/ |titel=Sitzplan |hrsg=Berliner Dom |sprache=de |abruf=2018-05-04}}</ref> Die Kuppel hat einen Durchmesser von 33&nbsp;m.<ref>{{structurae |Typ=bauwerke |ID=20014643 |Abruf=2012-10-22}}</ref><!-- Innen oder außen ? --> Mit einer Grundfläche von 6270&nbsp;Quadratmetern ist er die größte evangelische Kirche Deutschlands.<ref name="schueler-lehrer">{{Internetquelle |url=https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/informationen-fuer-schueler-lehrer/ |titel=Informationen für Schüler & Lehrer |hrsg=Berliner Dom |abruf=2021-01-16}}</ref>
+
+{{Anker|Vorgängerbauten}}
+== Geschichte ==
+
+=== Erster Dom (1536–1747) ===
+{{Hauptartikel|Berliner Dom (1536–1747)}}
+
+Die Geschichte eines [[Dom (Bauwerk)|Doms]] auf der [[Spreeinsel]] reicht bis ins 15.&nbsp;Jahrhundert zurück. Im gerade fertiggestellten [[Berliner Stadtschloss|Schloss]] wurde 1450 die Erasmus-Kapelle als [[Hofkirche]] [[Kirchweihe|geweiht]]. Das bei ihr angesiedelte [[Kollegiatstift Cölln|Kollegiatstift]] wurde 1465 von [[Papst]] [[Paul&nbsp;II.]] bestätigt.
+
+Nachdem [[Joachim II. (Brandenburg)|Joachim&nbsp;II.]] im Jahr 1535 Kurfürst geworden war, ließ er die südlich des Schlosses gelegene [[Berliner Dom (1536–1747)|Dominikanerkirche]] zur neuen Hofkirche umbauen. Die [[mittelalter]]liche [[Backstein]]kirche der Dominikaner im [[Gotik|gotischen]] Stil wurde ausgebaut, reich ausgestattet, es wurden fürstliche Begräbnisstätten eingerichtet und ein Glockengeläut installiert. Der neue Dom wurde 1536 geweiht. Im Jahr 1539 trat Joachim&nbsp;II. zum [[Martin Luther|lutherischen]] Glauben über: Aus dem katholischen Dom wurde ein evangelischer Dom. 1608 wurde auch das Domkapitel aufgelöst, der Dom wurde zur obersten Pfarrkirche [[Alt-Kölln|Köllns]].
+
+Der Übertritt des Kurfürsten [[Johann Sigismund (Brandenburg)|Johann Sigismund]] und seines Hofes zum [[Reformierte Kirchen|reformierten Bekenntnis]] am Weihnachtstag 1613<ref>Nach [[Gregorianischer Kalender|gregorianischem Kalender]] am 4. Januar 1614.</ref> im Dom und seine folgende Umgestaltung im reformierten Sinn hatten Konflikte mit den [[Landstände|Ständen]] und der [[Evangelisch-lutherische Kirchen|lutherischen Kirche]] der [[Kurmark]] zur Folge. Sie entluden sich im April 1615 in [[Alt-Berlin|Berlin]] und Kölln seitens der Einwohner im sogenannten [[Berliner Tumult]] mit schweren Ausschreitungen und Plünderungen der Wohnhäuser der [[Calvinismus|calvinistischen]] Hofgeistlichen.<ref>[[Michael Beintker]]: ''Vom Bekenntniswechsel Johann Sigismunds bis zum Edikt von Potsdam''. In: [[Günter Wirth (Publizist)|Günter Wirth]] (Hrsg.): ''Beiträge zur Berliner Kirchengeschichte''. Union, Berlin 1987, ISBN 978-3-372-00087-8, S.&nbsp;44–62, hier S.&nbsp;44–48</ref>
+
+=== Zweiter Dom (1747–1894) ===
+Da die Backsteinkirche in den folgenden Jahrhunderten baufällig geworden war, ließ [[Friedrich II. (Preußen)|Friedrich&nbsp;II.]] zwischen 1747 und 1750 einen [[barock]]en Neubau am Lustgarten, dem heutigen Standort des Doms, errichten und nach der Überführung der kurfürstlichen Särge in den Neubau den alten Dom abreißen. Architekten dieses am 6.&nbsp;September 1750 eingeweihten Neubaus waren der aus den [[Niederlande]]n stammende [[Jan Bouman|Johann Boumann]], der eine sehr nüchterne Konzeption des Barocks hatte, sowie [[Georg Wenzeslaus von Knobelsdorff]].<ref>{{Webarchiv|url=https://luise-berlin.de/kalender/tag/sep06.htm#Swa4625 |wayback=20121028080626 |text=''6. September'' (Jahr 1750). |archiv-bot=2026-08-04 01:18:57 InternetArchiveBot }} In: ''Tagesfakten'' des [[Luisenstädtischer Bildungsverein|Luisenstädtischen Bildungsvereins]]</ref>
+
+Zu Anfang des 19.&nbsp;Jahrhunderts gestaltete [[Karl Friedrich Schinkel]] den Dom in einer schlichten Variante des damals modernen [[Klassizismus]] um, das Innere in den Jahren 1816/1817, das äußere Erscheinungsbild in den Jahren 1820/1821.<ref>Otto Friedrich Gruppe: ''Karl Friedrich Schinkel und der neue Berliner Dom''. C. G. Lüderitz, Berlin 1848; [https://digital.zlb.de/viewer/image/15475085/7/ zlb.de]</ref> Leitender Bauingenieur (Regierungsbaukondukteur) beim Umbau war der Schinkelschüler und spätere [[Mecklenburg-Strelitz]]er Hofbaumeister [[Friedrich Wilhelm Buttel]].
+
+Während des 19.&nbsp;Jahrhunderts wurde diskutiert, ob der bestehende bescheidene Schinkel-Dom, der ein Umbau der unter Friedrich dem Großen errichteten barocken Domkirche war, den Repräsentationsansprüchen der Monarchie noch länger gewachsen sei. Auf Betreiben von König [[Friedrich Wilhelm&nbsp;IV.]] wurde beschlossen, eine neue, prunkvollere Domkirche zu bauen, die als zweitürmige [[Basilika (Bautyp)|Basilika]] mit einem dreischiffigen Langhaus nach [[italien]]ischem Vorbild errichtet werden sollte. Die Entwürfe lieferte [[Friedrich August Stüler]], ein Schüler Schinkels. Mit ersten Bauarbeiten wurde begonnen. Die Grundmauern mit den sich abzeichnenden [[Apsis|Apsiden]] wurden in der [[Spree]] errichtet. Ebenso wurden neben dem Dom bereits die hohen Mauern der geplanten königlichen Begräbnisstätte und Hohenzollern-Grablege, des von König Friedrich Wilhelm&nbsp;IV. sogenannten ''[[Campo Santo (Berlin)|Campo Santo]]'', errichtet. Das an dieser Stelle befindliche königliche [[Waschhaus (Berlin)|Waschhaus]] war zuvor abgerissen worden. Die [[Deutsche Revolution 1848/1849|Revolution von 1848]] unterbrach die Bauarbeiten zunächst. In der folgenden [[Reaktionsära]] ließ das öffentliche Interesse am Basilika-Projekt zugunsten eines Kuppelbau-Projektes nach. Hinzu kam, dass der Hof 1854 durch die Fertigstellung der Schlosskapelle in der Schlosskuppel eine neue, prachtvolle Hofkirche bekam. Inzwischen bestimmte in Preußen das [[Preußisches Abgeordnetenhaus|Abgeordnetenhaus]] über den [[Staatshaushalt]]. Dessen Mehrheit war unwillig, die ambitionierten Bauprojekte des Königs zu finanzieren. Damit waren die Bauarbeiten im Jahr 1848 für Jahrzehnte zum Erliegen gekommen.
+
+<gallery class="center">
+  Dom Berlin Miniatur 057.jpg|Modell des barocken Doms von Boumann und Knobelsdorff
+  Dom Berlin Miniatur.jpg|Modell des klassizistischen Doms von Schinkel
+  1825 Hasenpflug Domkirche Berlin anagoria.JPG|''Der alte Berliner Dom'', Gemälde von [[Carl Hasenpflug]], 1825
+  Im alten berliner dom.jpg|''Im alten Berliner Dom'', Gemälde von [[Eduard Gaertner]], 1824
+  M Alter Dom Berlin 1892.jpg|Klassizistischer Dom vor dem Abriss, 1892
+  Die Gartenlaube (1893) b 308.jpg|Der Berliner Domthurm vor und nach der Sprengung. Aus: ''[[Die Gartenlaube]]'', 1893
+  Dom Berlin Miniatur 070.jpg|Modell des Entwurfs der zweitürmigen Basilika von Stüler, von 1843
+</gallery>
+
+=== Domneubau (1894–1905) ===
+[[Datei:Dom Berlin 1900.jpg|mini|links|Berliner Dom auf einer Postkarte um 1900, davor der [[Lustgarten (Berlin)|Lustgarten]]]]
+[[Datei:141227 Berliner Dom.jpg|mini|Westfassade bei Nacht, Zustand seit dem vereinfachten Wiederaufbau]]
+
+Nach der [[Deutsche Reichsgründung|Reichsgründung]] erneuerte sich der Ruf nach einem repräsentativen Gotteshaus, das sich mit den großen Kirchen der Welt messen konnte und zugleich die evangelischen Vorgängerkirchen eindrucksvoll ersetzen sollte. 1885 legte der Architekt [[Julius Raschdorff|Julius Carl Raschdorff]], Professor an der [[Technische Universität Berlin|Technischen Hochschule Charlottenburg]], Pläne für einen Neubau vor. Aber erst [[Wilhelm II. (Deutsches Reich)|Wilhelm&nbsp;II.]] veranlasste in seiner Eigenschaft als König und ''[[Landesherrliches Kirchenregiment|Summus Episcopus]]'' in [[Königreich Preußen|Preußen]] den Abriss des Schinkel-Doms und den Bau eines neuen Doms nach Raschdorffs Plänen, die von einer „[[barock]] beeinflussten italienischen [[Hochrenaissance]]“<ref>{{Internetquelle |url=https://www.berlin.de/sehenswuerdigkeiten/3559744-3558930-berliner-dom.html |titel=Berliner Dom |sprache=de |abruf=2025-04-19}}</ref> geprägt sind. Damit ist der Berliner Dom der [[Neorenaissance]] zuzuordnen, einer Stilrichtung des [[Historismus]].
+
+Die [[Grundsteinlegung]] dieses Baus erfolgte am 17. Juni 1894, mit der Zielstellung, das Bauwerk im Jahr 1900 einweihen zu können. Bauverzögerungen führten jedoch dazu, dass dies erst am 27.&nbsp;Februar 1905 erfolgen konnte.<ref>{{Webarchiv|url=http://fes.imageware.de/fes/web/index.html?open=VW22050&page=9 |wayback=20210509133946 |text=''Der neue Dom''. |archiv-bot=2026-08-04 01:18:57 InternetArchiveBot }} In: ''[[Vorwärts (Deutschland)|Vorwärts]]'', 28.&nbsp;Februar 1905, S.&nbsp;10, abgerufen am 5.&nbsp;Januar 2020.</ref>
+
+Für den Domneubau zeichnete eine Dombauverwaltung unter Leitung des Architekten Julius Raschdorff (seit dem 2.&nbsp;Juli 1892 Dombaumeister) verantwortlich. Diese Bauverwaltung bestand aus zwei Abteilungen, einer ersten Abteilung für die Erstellung der Bau- und Ausführungspläne und die Überwachung der Baumodelle sowie einer zweiten Abteilung für die tatsächliche Bauausführung und deren Beaufsichtigung sowie das Rechnungswesen (mit Aufmaß und Abrechnung in nicht einfacher Komplexität). Die erste Abteilung, der auch künstlerische Planungen oblagen, stand Julius Raschdorffs Sohn Otto vor, wobei Wilhelm&nbsp;II. während der gesamten Bauzeit Einfluss auf die Gestaltung des Doms ausübte. So änderte der Maler [[Anton von Werner]] seine Entwürfe für die Ausgestaltung der Kuppel-Mosaikfelder, die Mosaikbilder der Evangelisten und Fenstergestaltungen in der Apsis der Domkirche nach Wilhelms persönlichen Wünschen. Für die Leitung der zweiten Abteilung Baudurchführung durch die Dombauverwaltung zeichnete Baurat [[Julius Kleinau]] verantwortlich,<ref>P. M.: ''Julius Kleinau †''. In: ''[[Zentralblatt der Bauverwaltung]]'', 11. September 1907, S.&nbsp;492</ref> dem der spätere Dombaumeister Bernhard Hoffmann assistierte und den in der Bauführung bis 1896 der Architekt [[Moritz Korn]] unterstützte.<ref>[https://www.berlinerdom.de/fileadmin/user_upload/01_Startseite-Home/Mediathek/Formulare_und_Dokumente/Domarchiv_Berlin_-__Findbuch_Bestand_26.pdf Findbuch Bestand Dombauverwaltung.] (PDF; 344&nbsp;kB) berlinerdom.de; abgerufen am 14. April 2020.</ref>
+
+Für die statische Berechnung und den Entwurf der Stahlkonstruktion der Kuppel zeichnete [[Heinrich Müller-Breslau (Bauingenieur, 1851)|Heinrich Müller-Breslau]] verantwortlich.<ref>[[Karl-Eugen Kurrer]]: ''The History of the Theory of Structures. Searching for Equilibrium''. Ernst & Sohn, Berlin, ISBN 978-3-433-03229-9, S.&nbsp;527.</ref>
+
+Der Hauptaltar aus dem Vorgängerbau, geschaffen 1850 von Friedrich August Stüler, fand im Neubau seinen Platz. Das Altarbild der Tauf- und Traukirche wurde 1821 von [[Carl Joseph Begas]] gestaltet.
+
+In der Hohenzollerngruft erhielt der Sarkophag von [[Friedrich III. (Deutsches Reich)|Kaiser Friedrich&nbsp;III.]], der nach dessen Tod im [[Friedenskirche (Potsdam)|Mausoleum in Potsdam]] gestanden hatte, hier seinen neuen Platz. Zu diesem Anlass fertigte [[Reinhold Begas]] im Auftrag von Kaiser Wilhelm&nbsp;II. einen neuen Sarkophag aus griechischem Marmor, der im November 1905 fertiggestellt wurde.<ref>''Der Sarkophag des Kaisers Friedrich''. In: ''[[Berliner Tageblatt]]'', 14. August 1905; [http://zefys.staatsbibliothek-berlin.de/index.php?id=dfg-viewer&set%5Bimage%5D=4&set%5Bzoom%5D=default&set%5Bdebug%5D=0&set%5Bdouble%5D=0&set%5Bmets%5D=http%3A%2F%2Fcontent.staatsbibliothek-berlin.de%2Fzefys%2FSNP27646518-19050814-1-0-0-0.xml ZEFYS]</ref>
+
+Der Dom wurde bereits frühzeitig mit [[Elektrizität|elektrischer]] Beleuchtung ausgestattet, die anfangs aus [[Kohlebogenlampe|Bogen-]] und [[Nernstlampe]]n bestand. Zudem wurde das Gebläse der Orgel mit Motorkraft bewegt, das Läutewerk ebenfalls und 1905 gab es schon einen elektrischen Personenaufzug.<ref>''Die Elektrizität im Berliner Dom''. In: ''[[Berliner Volkszeitung]]'', 17. August 1905; [https://dfg-viewer.de/show?tx_dlf%5Bdouble%5D=0&tx_dlf%5Bid%5D=https%3A%2F%2Fcontent.staatsbibliothek-berlin.de%2Fzefys%2FSNP27971740-19050817-0-0-0-0.xml&tx_dlf%5Bpage%5D=3&cHash=89f72dd9bf8e012dd6904aea8af6fcab ZEFYS]</ref>
+
+=== Zerstörungen und Wiederaufbau ===
+Im [[Zweiter Weltkrieg|Zweiten Weltkrieg]] erlitt der Dom zunehmend größere Schäden. Zunächst wurden bei einem [[Luftangriffe der Alliierten auf Berlin|alliierten Luftangriff]] auf die benachbarte Burgstraße sämtliche Altarfenster zerstört, in den Kuppeln der Ecktürme kam es zu größeren Rissen. Später, bei einem der stärksten Luftangriffe auf Berlin am 24.&nbsp;Mai 1944, traf es die Kuppel mit ihrer [[Laterne (Architektur)|Laterne]] schwer. Ein Kanister, gefüllt mit [[Brandbombe|Flüssigbrandstoff]], setzte die mit Torf als Isolierung ausgekleidete Holzverschalung unter der Kupfereindeckung in Brand.<ref>Zitat: Svenja Pelzel. In: ''Sehenswert! / Berliner Dom, Teil 2'' (Produktion von TV Berlin), 10. Januar 2020; [https://www.youtube.com/watch?v=fBqf33ZVA5E youtube.com]</ref> Die anrückenden Löschtruppen konnten den Brandherd nicht erreichen. Daraufhin stürzte die Kuppellaterne senkrecht in die Predigtkirche hinab und durchschlug mit ihrem enormen Gewicht den Boden, aus dem sie nun herausragte. Dabei hatte sie große Teile der darunterliegenden [[#Hohenzollerngruft|Hohenzollerngruft]] beschädigt. Es ist überliefert, dass Domorganist Fritz Heitmann auch noch bei offener Kuppel auf der Orgel, die vor den herabfallenden Trümmern geschützt war, gespielt haben soll.<ref>In den 1990er Jahren im Dom für 3,50&nbsp;[[Deutsche Mark|Mark]] erhältliche Orgelführer-Broschüre</ref> Daneben beschädigte der Angriff die Denkmalskirche und erneut die vier Türme. Nach dem Krieg galt der Dom als zu 25 Prozent zerstört.<ref>[https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/ddr-zeit-und-wiederaufbau/ ''DDR-Zeit und Wiederaufbau''.] Website des Berliner Doms.</ref> Am Orgelwerk richteten Diebe später große Schäden an. Sie stahlen rund ein Drittel der Pfeifen und rissen Leitungen der pneumatischen Traktur heraus, um das Metall zu verkaufen.
+
+Nachdem die Predigtkirche unbenutzbar geworden war, hatte sich die [[#Domgemeinde und heutige Funktion|Domgemeinde]] erstmals zu Pfingsten 1944 in einem eigens dazu unter der Denkmalskirche abgetrennten Teil der Hohenzollerngruft versammelt. Umgebaut zur ''Domgruftkirche'' diente er, von einer Unterbrechung von Frühjahr bis September 1945 abgesehen, und seit 1946 mit der Schuke-Orgel ausgestattet, den Gottesdiensten der Domgemeinde. Bis zu seinem Abschied 1960 predigte hier der Oberdomprediger [[Bruno Doehring]] jeden Sonntag vor rund eintausend Gläubigen. Im Jahr 1971 nach notdürftiger Wiederherstellung der Tauf- und Traukirche geschlossen, wurde die verkleinerte Domgruftkirche noch einmal in den Jahren 1975–1980 während der Restaurierungsarbeiten in der Tauf- und Traukirche benutzt.
+
+Die innere Kuppel war mit all ihrem Schmuck erhalten geblieben, doch nun klaffte ein großes Loch in der Mitte der Predigtkirche. Schon durch Staub und Trümmer schwer geschädigt, erlitt sie weitere Schäden durch Wettereinflüsse, ebenso die Kuppel[[mosaik]]en. Um das Dominnere zu schützen, kam daher nur eine schnellstmögliche Schließung der Kuppel in Frage. Die [[Berliner Stadtverordnetenversammlung#Nachkriegszeit|Stadtverordnetenversammlung]] beschloss deshalb 1948 eine Soforthilfe, doch konnten die notwendigen Arbeiten erst 1953 abgeschlossen werden. Die Gruft wurde nicht renoviert und war in diesen Jahren der Öffentlichkeit auch nicht zugängig.
+
+Nach Notreparaturen war der Dom bis auf die Denkmals- und die Predigtkirche wieder nutzbar. Er diente von 1945 bis zum Beginn der Wiederherstellung im Jahr 1975 der [[Theologische Fakultät|Theologischen Fakultät]] der [[Humboldt-Universität zu Berlin|Humboldt-Universität]] und der theologischen Zweigbibliothek der [[Universitätsbibliothek der Humboldt-Universität zu Berlin|Universitätsbibliothek]] als Sitz.<ref>Gerlinde Strohmeier-Wiederanders: ''Geschichte-Ästhetik-Religion. Zum Bildprogramm des Berliner Doms''. In: Tilman Beyrich (Hrsg.): ''Unerwartete Theologie. Festschrift für Bernd Hildebrandt''. Lit, Münster 2005, ISBN 978-3-8258-8811-4, S. 257.</ref>
+
+Nach längeren Diskussionen über die Gestaltung des [[Ost-Berlin]]er Stadtzentrums, in denen mehrmals der Abriss des Doms oder seine Umnutzung in veränderter Form zur Debatte stand, entschloss sich die [[Deutsche Demokratische Republik|DDR]]-Regierung im Jahr 1975 zum Wiederaufbau des Doms.<ref>[https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/ddr-zeit-und-wiederaufbau ''DDR-Zeit und Wiederaufbau''.] berlinerdom.de</ref> Grundsätzlich sollten die am [[Schloßplatz (Berlin)|Marx-Engels-Platz]] inzwischen errichteten Staatsbauten [[Palast der Republik]] mit der [[Volkskammer]], das [[Staatsratsgebäude]] und das [[Ministerium für Auswärtige Angelegenheiten der DDR|Außenministerium der DDR]] in ihrer Wirkung nicht durch ein vollständig restauriertes Zeugnis des Kaiserreichs beeinträchtigt werden.<ref>Karl-Heinz Klingenburg: ''Der Berliner Dom. Bauten, Ideen und Projekte vom 15. Jahrhundert bis zur Gegenwart''. Union, Berlin 1987, ISBN 3-372-00113-3, S. 213 f.</ref>
+
+Daher ließ sie die beschädigte ''Denkmalskirche'' an der Nordseite sowie die unversehrt gebliebene Unterfahrt am Südwestturm abreißen. Die [[Kuppel|Hauptkuppel]] und die vier Turmabschlüsse erhielten nicht ihre ursprüngliche Form, sondern wurden stark vereinfacht sowie um jeweils 16&nbsp;Meter in der Höhe reduziert. Besonders auffällig war die Entfernung sämtlicher [[Laterne (Architektur)|Abschlusslaternen]] und ein völlig neues Kuppelkreuz. Ferner wurden bei der Beseitigung der Denkmalskirche das von [[Reinhold Begas]] geschaffene marmorne [[Otto von Bismarck|Bismarck]]-[[Epitaph]] zerstört<ref>Bauarbeiter retteten den Kopf vor der Zertrümmerung. Siehe dazu Ester Sophia Sünderhauf (Hrsg.): ''Begas. Monumente für das Kaiserreich. Eine Ausstellung zum 100.&nbsp;Todestag von Reinhold Begas (1831–1911)'', Sandstein Verlag, Dresden 2010, S.&nbsp;274, 334, mit Abbildungen S.&nbsp;275, 334.</ref> und die Prunksarkophage der Hohenzollern in die nun verkleinerte Gruftkirche verlegt. 204 Fassadenelemente der Denkmalskirche konnten in ein Depot in [[Ahrensfelde]] verbracht werden, wo sie bis heute liegen.<ref>{{Literatur |Autor=Anne Golling |Titel=Ahrensfelde: Die Spur der Domsteine |Sammelwerk=[[Berliner Kurier]] |Datum= |Online=https://www.berliner-kurier.de/berlin/kiez---stadt/ahrensfelde-die-spur-der-domsteine-22647722 |Abruf=2018-04-21}}</ref> 1983 waren diese Arbeiten so weit fortgeschritten, dass bis 1993 die aufwendige [[Rekonstruktion (Architektur)|Rekonstruktion]] der Innenräume durchgeführt wurde. Sowohl das kaiserliche Treppenhaus als auch die zentrale ''Predigtkirche'' wurden nach Raschdorffs Originalplänen wiederhergestellt. Weiterhin erhielt das Südportal die bronzene ''[[Versöhnungstür]]'' von [[Siegfried Krepp]]. Anschließend folgten der Einbau der farbigen Chorfenster sowie die Restaurierung der Kuppelmosaiken, deren letztes Teilstück 2002 feierlich enthüllt wurde. In diesen Zusammenhang gehörte auch die umfassende Reinigung der [[#Sauer-Orgel von 1905|Sauer-Orgel]].
+
+Die Kosten für den Wiederaufbau des Berliner Doms waren laut dem damaligen Mitakteur [[Manfred Stolpe]] auf ursprünglich 45 Millionen [[Valutamark]] veranschlagt, die die [[Evangelische Kirche Deutschlands]] (EKD) und die [[Bundesregierung (Deutschland)|Bundesregierung]] in Höhe von 45 Millionen [[Deutsche Mark|DM]] bezahlten.<ref>Manfred Stolpe: [https://web.archive.org/web/20230208211609/https://stk.brandenburg.de/reden/2000/0204.htm ''Die Evangelischen Kirchen in der DDR und der Wiederaufbau des Doms''], Vortrag des Ministerpräsidenten  beim 3. Dom-Kolloquium in Berlin am 4. Februar 2000; archivierter Weblink, abgerufen am 7. November 2023</ref> Diese Summe hat [[Ludwig Geißel]], Verhandlungsführer im Auftrag der [[EKD]], bestätigt.
+
+Auch hatte die [[Regierung der DDR]] im Oktober 1974 einen jährlichen Zuschuss von 200.000 [[DDR-Mark]] für den Unterhalt des Berliner Doms zugesagt, damit wurde eine Bedingung der Vertragspartner erfüllt. Zuvor gab es angeblich die DDR-Forderung, dass es Verhandlungen über [[Kirchenbauprogramme in der DDR]] nur gebe bei gleichzeitigen Verhandlungen über den Wiederaufbau des Berliner Doms.
+
+Im Jahr 1976 kam es zur Nachtragszahlung zu den bereits bezahlten Baukosten von 45 Millionen DM in Höhe von 20,5 Millionen DM, in Summe nun 65,5 Millionen DM.<ref>[[Ludwig Geißel]]: ''Unterhändler der Menschlichkeit – Erinnerungen''. Mit Begleitwort von [[Manfred Stolpe]]. Stuttgart 1991, ISBN 3-7918-1984-4, S. 392, 382, 408, 422.</ref>
+
+Die tatsächlichen Kosten für den Wiederaufbau des Berliner Doms bis zur Fertigstellung 1993 betrugen 150 Millionen DM und wurden ebenfalls von den beiden genannten Geldgebern beglichen.<ref>Heike Schmoll: ''Über die Köpfe der ostdeutschen Brüder hinweg – Wegen der Restaurierung des Berliner Doms gab es schwere Verstimmungen zwischen EKD und DDR-Kirche''. In: ''[[Frankfurter Allgemeine Zeitung|FAZ]]'', 13. Februar 1993. Siehe dazu auch: [[Gerhard Besier]]: ''Kirche in Ost und West und ihr Verhältnis zum SED-Regime am Beispiel des Wiederaufbaus des Berliner Doms – Eine Analyse des Kirchenhistorikers Prof. Dr. Gerhard Besier (Heidelberg) zum Zusammenwirken zwischen EKD, Bund der Evangelischen Kirchen in der DDR und der DDR-Regierung beim größten evangelischen Kirchenbauprojekt in der Nachkriegszeit.'' Hrsg.: Informationsdienst der Evangelischen Allianz e.&nbsp;V. (Idea). Wetzlar 1993; 16 S.</ref> Der Wiederaufbau war damit das größte evangelische Kirchenbauprojekt auf deutschem Boden in der [[Nachkriegszeit in Deutschland|Nachkriegszeit]] und zugleich die langjährigste und umfangreichste Sakralbau-Kooperation zwischen der Bundesrepublik Deutschland und der DDR.
+
+Im März 2019 wurde bekannt, dass die Fassade durch die Einflüsse von Ruß, Regen und Abgasen bröckelt und bis 2023 für 1,6&nbsp;Millionen Euro saniert werden muss. Hierfür wurde eine Spendenaktion gestartet.<ref>{{Internetquelle |url=https://www.evangelisch.de/inhalte/155617/25-03-2019/berliner-dom-broeckelt-denkmalschutzstiftung-und-gemeinde-starten-spendenkampagne |titel=Berliner Dom bröckelt |werk=evangelisch.de |sprache=de |abruf=2019-03-26}}</ref>
+
+Die Sanierung der Hohenzollerngruft wurde am 1. März 2026 abgeschlossen.<ref>{{Internetquelle |url=https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/hohenzollerngruft/ |titel=Hohenzollerngruft {{!}} Berliner Dom |abruf=2026-03-02}}</ref>
+
+<gallery class="center">
+  Berliner Dom Aufriss.jpg|Aufriss der Westfassade mit hervorspringender Denkmalskirche (links) und Unterfahrt (rechts)
+  Berliner-Dom-1905-Grundriss.jpg|Grundriss des Hauptgeschosses mit Denkmalskirche (links), Predigtkirche (Mitte), Tauf- und Traukirche (rechts)
+  Berliner Dom Schlossbrücke um 1900.png|Berliner Dom und [[Schloßbrücke (Berlin-Mitte)|Schlossbrücke]], um 1900
+  Berliner Dom Friedrichsbrücke um 1900.png|Berliner Dom mit Denkmalskirche, davor die [[Friedrichsbrücke]], im Hintergrund das [[Berliner Schloss|Schloss]], um 1900
+  Berliner Dom seen from James Simon Park.jpg|Ähnliche Perspektive im Jahr 2019, der Dom ohne Denkmalskirche
+  Bundesarchiv Bild 146-2008-0281, Berlin, Berliner Dom.jpg|Ansicht des Berliner Doms von Südosten, um 1900
+  Bundesarchiv B 145 Bild-P016610, Berlin, Blick vom Schloß auf den Dom.jpg|Blick vom Schloss auf den Dom, 1939
+  Fotothek df pk 0000145 029.jpg|Dom mit schweren Kriegsschäden, 1945
+  Bundesarchiv Bild 183-41736-0007, Berlin, Dom.jpg|Dom mit provisorischer Kuppel, 1956
+  Bundesarchiv Bild 183-1982-0113-301, Berlin, Dom.jpg|Dom nach Abschluss des Wiederaufbaus, links der [[Palast der Republik]], 1982
+  Bundesarchiv Bild 183-1987-0806-024, Berlin, Palast der Republik, Berliner Dom.jpg|Blick vom [[Zeughaus Berlin|Zeughaus]] auf den Dom, [[Berliner Fernsehturm|Fernsehturm]] und Palast der Republik, 1987
+</gallery>
+
+== Kuppeln ==
+=== Historische Kuppeln ===
+Die Demontage des Kuppelkreuzes beflügelte eine Diskussion darüber, ob die fünf Kuppellaternen, wie sie vor dem Krieg das Bauwerk zierten, wieder aufgesetzt werden sollten. Kritiker des Kuppelkreuzes aus [[Deutsche Demokratische Republik|DDR]]-Zeiten bemängeln insbesondere, dass die ursprünglich umgesetzten Proportionen des Bauwerks mit der reduzierten Lösung nur unzureichend wiedergegeben werden. Entsprechend setzte sich insbesondere der Evangelische Kirchenbauverein für eine Rekonstruktion des Urzustandes ein und erhielt hierfür auch Unterstützung von der [[Gesellschaft Historisches Berlin]]. Im Streit hierüber wurden die Kritiker jedoch von der Domgemeinde abgewiesen, die diesem Ansinnen ablehnend gegenüberstand.<ref>[https://www.welt.de/regionales/berlin/article1508448/Streit-um-die-Kuppel-des-Berliner-Doms.html ''Streit um die Kuppel des Berliner Doms''.] In: ''[[Welt Online]]'', 1. Januar 2008</ref> Erschwerend für eine Rekonstruktion wirkt sich auch der Umstand aus, dass der derzeitige Zustand unter [[Denkmalschutz]] gestellt wurde. Die historische Kuppelkonstruktion des Unterbaus hingegen wurde 2007 für die Auszeichnung als [[Historisches Wahrzeichen der Ingenieurbaukunst in Deutschland]] nominiert.
+
+=== Kuppelkreuz ===
+[[Datei:Berliner Dom Kuppelkreuz.jpg|mini|hochkant|Demontiertes Kuppelkreuz neben dem Dom, 2006]]
+
+Anfang Dezember 2006 wurde die 1981 im Zuge des Wiederaufbaus auf die Domkuppel gesetzte Laternenbekrönung abgenommen. Das Dombaubüro hatte [[Baustatik|Statiker]] eingeschaltet, nachdem im August 2006 Rostschäden unter der vergoldeten Kupferblechverkleidung entdeckt worden waren. In den Gutachten wurde festgestellt, dass die Standfestigkeit des 12,5&nbsp;Tonnen schweren und 15&nbsp;Meter hohen Kuppelkreuzes bei Stürmen nicht mehr gewährleistet sei.<ref>[https://www.morgenpost.de/printarchiv/bezirke/article103024967/Berliner-Dom-Kuppelkreuz-wird-auf-Schaeden-untersucht.html ''Berliner Dom: Kuppelkreuz wird auf Schäden untersucht''.] In: ''[[Berliner Morgenpost]]'', 7. Dezember 2006, abgerufen am 14. November 2014.</ref> Da die Konstruktion aus hohlen Stahlformen von innen und außen vollständig zerfressen war, konnte sie nicht restauriert werden.
+
+Die Schäden waren auf [[Bimetallkorrosion]] zurückzuführen, die bei der Kombination von unterschiedlich edlen Metallen (hier: Kupfer und Stahl) entsteht und zur Korrosion des jeweils unedleren Metalls (hier: Stahl) führt. Dem verwendeten KT-Stahl (korrosionsträger Stahl, [[Cortenstahl]]) wurden in den 1970er Jahren günstigere Materialeigenschaften zugetraut. Aufgrund des Schadensbildes mussten auch andere Dachaufbauten mit vergleichbaren Materialkombinationen auf Schäden untersucht werden, z.&nbsp;B. die Kugeln auf den vier Ecktürmen sowie der kupfergetriebene Figurenschmuck.<ref>[https://www.welt.de/regionales/berlin/article1508448/Streit-um-die-Kuppel-des-Berliner-Doms.html ''Streit um die Kuppel des Berliner Doms''.] Auf ''[[Die Welt|welt.de]]'', 1. Januar 2008, abgerufen am 14. November 2014.</ref>
+
+Die Rekonstruktion des Kuppelkreuzes in der Fassung von 1981 übernahm die Metallbaufirma Breidenbach aus dem oberbayerischen [[Peiting]]. Das neue Kreuz wurde anschließend von Berliner Spezialisten mit 1,5&nbsp;Kilogramm [[Blattgold]] belegt. Am 19.&nbsp;August 2008 wurde es von einem 500-Tonnen-Kran auf die Domkuppel gehoben. Von 1,2&nbsp;Millionen Euro Kosten, die bei den Sanierungsmaßnahmen am Berliner Dom entstanden, entfielen 700.000&nbsp;Euro auf das neue Kuppelkreuz.<ref>[https://www.welt.de/regionales/berlin/article2325297/Das-Kreuz-kroent-jetzt-wieder-den-Berliner-Dom.html ''Das Kreuz krönt jetzt wieder den Berliner Dom''.] In: ''[[Welt Online]]'', 19.&nbsp;August 2008; ''Endlich: Das Kreuz leuchtet über Berlin''. In: ''[[Frankfurter Allgemeine Zeitung|FAZ]]'', 20.&nbsp;August 2008.</ref> Das alte Kuppelkreuz wurde –&nbsp;allerdings ohne die Kuppelkrone&nbsp;– auf den [[Liesenstraße (Berlin)#Friedhöfe an der Liesenstraße|Friedhof der Oberpfarr- und Domkirche]] an der Liesenstraße umgesetzt.
+
+Rund um die Kuppel zieht sich ein Kranz, auf dem in regelmäßigen Abständen 20 kupferne Engelsfiguren thronen. Diese wurden anlässlich der Reparaturen 1978–1981 von der [[Kunstschmiede Berlin]] aufgearbeitet, auch zu Teilen komplett erneuert. In 50 m Höhe zieht sich eine für die Öffentlichkeit zugängliche Aussichtsplattform rund um den [[Tambour (Architektur)|Tambour]] und bietet einen 360 °-Blick auf Berlin.<ref>{{Internetquelle |url=https://www.youtube.com/watch?v=koCEQFv-bew |titel=Sehenswert! – Berliner Dom (Teil 3) |werk=youtube |sprache=de |abruf=2022-03-13}}</ref>
+
+== Ausstattung ==
+[[Datei:Berlin Cathedral Church Berliner Dom tunliweb 04.jpg|mini|Blick in die Kuppel mit zentralem Heiliggeistfenster, Mosaiken der Seligpreisungen und Reliefs der Apostelgeschichte an den [[Pendentif]]s]]
+[[Datei:Berliner Dom 002.jpg|mini|Blick in die Predigtkirche]]
+[[Datei:.00 1039 Berliner Dom, Altar.jpg|mini|Der Altar]]
+[[Datei:Kaiserliches Treppenhaus.JPG|mini|Originalgetreu wiederaufgebautes Treppenhaus mit Gemälden [[Albert Hertel]]s]]
+[[Datei:Exterior of Berlin Cathedral 05.jpg|mini|Das Eingangsportal]]
+
+Im Zentrum der Kuppel befindet sich ein Rundfenster, das die [[Heiliger Geist|Heiliggeist]]<nowiki />taube im Strahlenkranz zeigt. Darunter sind acht großformatige Mosaiken zu sehen, die die [[Seligpreisung]]en der [[Bergpredigt]] darstellen. Geschaffen wurden sie von [[Anton von Werner]], von dem auch die Mosaiken der vier Evangelisten in den Nischen der Gewölbepfeiler stammen. Die Altarraumfenster, die Geburt Jesu, Kreuzigung und Auferstehung sowie Engel mit den Symbolen von Tod, Glaube, Liebe und Hoffnung darstellen, wurden ebenfalls von ihm geschaffen. Auf den [[Gesims]]en der Halbsäulen im Kirchenraum stehen an der Altarseite jeweils vier Meter hohe Sandsteinstatuen der vier Reformatoren [[Johannes Calvin|Calvin]], [[Martin Luther|Luther]], [[Philipp Melanchthon|Melanchthon]] und [[Huldrych Zwingli|Zwingli]], auf der gegenüberliegenden Seite, um die Kaiserloge, die der vier weltlichen Herrscher [[Albrecht (Preußen)|Albrecht von Preußen]], [[Joachim II. (Brandenburg)|Joachim&nbsp;II.]], [[Friedrich III. (Sachsen)|Friedrich der Weise]] und [[Philipp I. (Hessen)|Philipp der Großmütige]], die Förderer der Reformation waren. Die Auswahl der Figuren erfolgte bis zum Dezember 1902, mit der Herstellung der Skulpturen wurden die Bildhauer [[Friedrich Pfannschmidt]], [[Gerhard Janensch]], [[Alexander Calandrelli]], [[Harro Magnussen]], [[Karl Begas]], [[Walter Schott]] und [[Max Baumbach]] beauftragt.<ref>[http://zefys.staatsbibliothek-berlin.de/index.php?id=dfg-viewer&set%5Bimage%5D=6&set%5Bzoom%5D=default&set%5Bdebug%5D=0&set%5Bdouble%5D=0&set%5Bmets%5D=http%3A%2F%2Fcontent.staatsbibliothek-berlin.de%2Fzefys%2FSNP27112366-19021206-1-0-0-0.xml ''Die Standfiguren im neuen Dom'' (unter Lokales, vierter Anstrich).] In: ''[[Vossische Zeitung|Königlich privilegierte Berlinische Zeitung]]'', 6. Dezember 1902.</ref>
+
+Jeweils zwischen zwei Figuren über den [[Konche (Architektur)|konchenartigen]] Nischen zeigen vier Flachreliefs von [[Otto Lessing]] Szenen aus der [[Apostelgeschichte des Lukas|Apostelgeschichte]] (Steinigung des [[Stephanus]], Bekehrung des [[Paulus von Rom|Paulus]], [[Simon Petrus|Petrus]] in [[Athen]], Heilung eines Lahmen).<ref name="Kunstverlag">{{Literatur |Autor=Lars Eisenlöffel |Titel=Der Berliner Dom |Verlag=Deutscher Kunstverlag |Seiten=44, 59, 49}}</ref>
+
+Unter der Orgelempore sind barocke Prunksarkophage für den Großen Kurfürsten [[Friedrich Wilhelm (Brandenburg)|Friedrich Wilhelm]] und seine zweite Gemahlin [[Dorothea Sophie von Schleswig-Holstein-Sonderburg-Glücksburg|Dorothea]] aufgestellt sowie ein bronzenes Tischgrabmal für Kurfürst [[Johann Cicero]] und ein Grabdenkmal für [[Friedrich III. (Deutsches Reich)|Friedrich&nbsp;III.]] Unter der Südempore befinden sich [[Prunksarkophage des Königspaares (Berliner Dom)|zwei vergoldete Prunksärge]] für König [[Friedrich I. (Preußen)|Friedrich&nbsp;I.]] und [[Sophie Charlotte von Hannover|Sophie Charlotte]]. Diese wurden von [[Andreas Schlüter (Architekt)|Andreas Schlüter]] geschaffen. Schlüter entwarf auch das Adlerpult von 1701 vor dem Altarraum. Das vergoldete Original dieses Lesepults befindet sich im Dommuseum.
+
+Der Altartisch aus weißem Marmor und gelblichem [[Onyx (Mineral)|Onyx]], von [[Friedrich August Stüler]] geschaffen, stellt eine Mischung aus lutherischem Blockaltar und reformiertem Tischaltar dar und verbildlicht damit den Zusammenschluss der beiden Kirchen zur [[Unierte Kirchen (evangelisch)|Unierten Kirche]] in Preußen.<ref name="Kunstverlag" /> Hinter dem Altar hat die Chorschranke des alten Doms als Altarwand Aufstellung gefunden. Sie besteht aus vergoldeter Bronze und ist mit Nachbildungen der [[Apostel]]<nowiki />figuren des Nürnberger [[Sebaldusgrab]]es bestückt.
+
+Im Bereich des Hauptaltars stehen zwei Boden[[kandelaber]] aus vergoldetem Eisen. Sie wurden, wie die Apostel-Chorschranke von [[Karl Friedrich Schinkel]] (noch für den Vorgängerbau), entworfen. Plastisch ausgearbeitet wurden sie von dem Berliner Bildhauer [[Theodor Kalide]] (für die Aufstellung im Berliner Dom von Raschdorff wurde der Leuchter aufgestockt und mit historistischen Ergänzungen versehen).
+
+Der Entwurf für die aus Eichenholz geschnitzte Kanzel stammt von [[Otto Raschdorff]], dem Sohn des Dombaumeisters, der auch den Orgelprospekt entwarf.<ref name="Kunstverlag" /> Über der Orgel zeigen [[Kartusche (Kunst)|Kartuschenbilder]] [[Jesus Christus]] als Weltenrichter in einer Engelsglorie. Die [[Stuck]]<nowiki />kartuschen über den anderen [[Empore]]n waren ebenfalls für Bilder gedacht, sind aber aus Kostengründen schmucklos geblieben.
+
+Für feierliche Anlässe besitzt der Berliner Dom ein [[Vortragekreuz]] des bayerischen Künstlers [[Helmut Ulrich (Maler)|Helmut Ulrich]]. Das Kreuz besteht aus Rosenquarz, Bergkristall sowie gelbem Aragonit. Da Vortragekreuze in evangelischen Gemeinden, oft zur Abgrenzung zur katholischen [[Liturgie]], eine Seltenheit geworden sind, stellt dieses Kreuz eine Besonderheit des Berliner Doms dar.<ref>{{Literatur |Autor= |Titel=Die Macht des Raumes im Kreuz verkörpert |Sammelwerk=Augsburger Allgemeine |Online=https://www.augsburger-allgemeine.de/augsburg/Die-Macht-des-Raumes-im-Kreuz-verkoerpert-id5200411.html |Abruf=2017-05-26}}</ref><ref>{{Internetquelle |url=http://www.berlinerdom.de/component/option,com_docman/task,doc_view/gid,525/Itemid,86/lang,de/ |titel=Kirchliche Nachrichten – Berliner Dom |werk=berlinerdom.de |archiv-url=https://web.archive.org/web/20180202071524/http://www.berlinerdom.de/component/option,com_docman/task,doc_view/gid,525/Itemid,86/lang,de/ |archiv-datum=2018-02-02 |abruf=2017-05-26}}</ref>
+
+Die prächtigste Empore der Kirche ist die Kaiserloge. An deren Brüstung ist ein Wappen mit [[Reichsadler]] angebracht, das von einer [[Krone]] mit Kreuz bekrönt wird und so die Verbindung von Kirche und Staat darstellt.
+
+[[Datei:CatedralBerlin.jpg|mini|hochkant=2.5|zentriert|Inneres der Predigtkirche mit Orgel, Kanzel und Altar bei Nacht]]
+
+Im Hauptraum wurden um 1903 acht Statuen von Fürsten in Auftrag gegeben, von acht verschiedenen Bildhauern ausgeführt, die sich um die [[Reformation]] verdient gemacht hatten.<ref>[http://zefys.staatsbibliothek-berlin.de/index.php?id=dfg-viewer&set%5Bimage%5D=3&set%5Bzoom%5D=default&set%5Bdebug%5D=0&set%5Bdouble%5D=0&set%5Bmets%5D=http%3A%2F%2Fcontent.staatsbibliothek-berlin.de%2Fzefys%2FSNP27646518-19021015-1-0-0-0.xml Kurzinfo über die in Stuck auszuführenden Statuen von 8 deutschen Fürsten.] In: ''[[Berliner Tageblatt]]'', 15. Oktober 1902.</ref>
+
+== Orgeln ==
+[[Datei:Berlin-14-110.jpg|mini|[[Wilhelm Sauer (Orgelbauer)|Sauer]]-Orgel]]
+
+=== Sauer-Orgel von 1905 ===
+[[Datei:Berlin, Dom, Sauer-Orgel, Werkaufteilung.png|mini|Skizze der Werkaufteilung innerhalb der Orgel]]
+
+Die [[Orgel]] in der Predigtkirche stammt aus der Orgelbauwerkstatt [[Wilhelm Sauer (Orgelbauer)|Sauer]], der [[Orgelprospekt]] von dem Bildhauer [[Richard Moest]]. Das Instrument wurde zeitgleich mit dem Dom entworfen und realisiert.<ref>Vgl. auch die Darstellung auf der Website des [http://www.berlinerdom.de/content/view/31/113/lang,de/ Berliner Doms]</ref> Das [[Rückpositiv]] ist vom dritten [[Manual (Musik)|Manual]] aus anspielbar.
+
+Die Technik entspricht dem Stand von 1905 und wurde zuletzt im Jahr 2006 grundlegend saniert. 1932 wurde das Rückpositiv durch Domorganist [[Fritz Heitmann]] neu [[Disposition (Orgel)|disponiert]], für die Mensuration dabei zeichnete [[Hans Henny Jahnn]] verantwortlich.<ref>Richard Voge, Elisabeth Heitmann: ''Fritz Heitmann – Das Leben eines deutschen Organisten''. Merseburger, Berlin 1963</ref> Bei der Restaurierung 1988–1993 durch die Erbauerfirma wurde die Orgel auf den Stand von 1905 zurückgeführt, jedoch mit einem leistungsstärkeren Gebläse und somit ausreichender Windstabilität auch bei vollem Spiel ausgestattet.<ref>{{Internetquelle |url=https://www.sauerorgelbau.de/die-grosse-sauerorgel-im-berliner-dom/ |titel=Die große Sauerorgel im Berliner Dom |werk=W.Sauer Orgelbau Frankfurt (Oder) GmbH |abruf=2022-01-30}}</ref>
+
+Mit ihren 7269 [[Orgelpfeife|Pfeifen]] (113 [[Register (Orgel)|Register]], vier Manuale und [[Pedal (Orgel)|Pedal]]) ist sie die größte [[Traktur#Pneumatisch|vollpneumatische]] [[Orgel#Romantik|hochromantische Orgel]] und war seinerzeit die größte Domorgel in Deutschland. Die Disposition lautet wie folgt:
+
+{| class="toptextcells" style="border-collapse:collapse;" cellspacing="0" cellpadding="10"
+|-
+|
+{|
+|colspan="3"| '''I. Manual''' C–a<sup>3</sup>
+----
+|-
+| {{0}}1. || Prinzipal || 16′
+|-
+| {{0}}2. || Majorbass || 16′
+|-
+| {{0}}3. || Prinzipal || {{0}}8′
+|-
+| {{0}}4. || Doppelflöte || {{0}}8′
+|-
+| {{0}}5. || Prinzipal amabile || {{0}}8′
+|-
+| {{0}}6. || Flûte&nbsp;harmonique || {{0}}8′
+|-
+| {{0}}7. || Viola di Gamba || {{0}}8′
+|-
+| {{0}}8. || Bordun || {{0}}8′
+|-
+| {{0}}9. || Gemshorn || {{0}}8′
+|-
+| 10. || Quintatön || {{0}}8′
+|-
+| 11. || Harmonika || {{0}}8′
+|-
+| 12. || Gedacktquinte || {{0}}{{Bruch|5|1|3}}′
+|-
+| 13. || Oktave || {{0}}4′
+|-
+| 14. || Flûte octaviante || {{0}}4′
+|-
+| 15. || Fugara || {{0}}4′
+|-
+| 16. || Rohrflöte || {{0}}4′
+|-
+| 17. || Oktave || {{0}}2′
+|-
+| 18. || Rauschquinte II ||{{0}}{{Bruch|2|2|3}}′
+|-
+| 19. || Grosscymbel III ||{{0}}{{Bruch|3|1|5}}′
+|-
+|20.
+|Scharff III–V
+|{{0}}2′
+|-
+|21.
+|Kornett III–IV
+|{{0}}{{Bruch|2|2|3}}′
+|-
+| 22. || Bombarde || 16′
+|-
+| 23. || Trompete || {{0}}8′
+|-
+| 24. || Clairon || {{0}}4′
+|}
+|
+{|
+|-
+|colspan="3"| '''II. Manual''' C–a<sup>3</sup>
+----
+|-
+| 25. || Prinzipal || 16′
+|-
+| 26. || Quintatön || 16′
+|-
+| 27. || Prinzipal || {{0}}8′
+|-
+| 28. || Doppelflöte || {{0}}8′
+|-
+| 29. || Geigenprinzipal || {{0}}8′
+|-
+| 30. || Spitzflöte || {{0}}8′
+|-
+| 31. || Salicional || {{0}}8′
+|-
+| 32. || Soloflöte || {{0}}8′
+|-
+| 33. || Dulciana || {{0}}8′
+|-
+| 34. || Rohrflöte || {{0}}8′
+|-
+| 35. || Oktave || {{0}}4′
+|-
+| 36. || Spitzflöte || {{0}}4′
+|-
+| 37. || Salicional || {{0}}4
+|-
+| 38. || Flauto Dolce || {{0}}4′
+|-
+| 39. || Quinte || {{0}}{{Bruch|2|2|3}}′
+|-
+| 40. || Piccolo || {{0}}2′
+|-
+| 41. || Mixtur IV ||{{0}}2′
+|-
+| 42. || Cymbel III ||{{0}}2′
+|-
+| 43. || Kornett III ||{{0}}{{Bruch|2|2|3}}′
+|-
+| 44. || Tuba || {{0}}8′
+|-
+| 45. || Klarinette || {{0}}8′
+|}
+|
+{|
+|-
+|colspan="3"| '''III. Manual''' <small> (Schwellwerk)</small> C–a<sup>3</sup>
+----
+|-
+| 46. || Salicional || 16′
+|-
+| 47. || Bordun || 16′
+|-
+| 48. || Prinzipal || {{0}}8′
+|-
+| 49. || Hohlflöte || {{0}}8′
+|-
+| 50. || Gemshorn || {{0}}8′
+|-
+| 51. || Schalmei || {{0}}8′
+|-
+| 52. || Konzertflöte || {{0}}8′
+|-
+| 53. || Dolce || {{0}}8′
+|-
+| 54. || Gedeckt || {{0}}8′
+|-
+| 55. || Unda maris || {{0}}8′
+|-
+| 56. || Oktave || {{0}}4′
+|-
+| 57. || Gemshorn || {{0}}4′
+|-
+| 58. || Quintatön || {{0}}4′
+|-
+| 59. || Traversflöte || {{0}}4′
+|-
+| 60. || Nasard || {{0}}{{Bruch|2|2|3}}′
+|-
+| 61. || Waldflöte || {{0}}2′
+|-
+| 62. || Terz || {{0}}{{Bruch|1|3|5}}′
+|-
+| 63. || Mixtur III ||{{0}}2′
+|-
+| 64. || Trompete || {{0}}8′
+|-
+| 65. || Cor anglais || {{0}}8′
+|-
+| || ''[[Tremulant]]'' ||
+|-
+| || ''Glockenspiel'' ||
+|}
+<br />
+{|
+|-
+|colspan="3"| '''III Rückpositiv''' C–a<sup>3</sup>
+----
+|-
+| 66. || Flötenprinzipal || 8′
+|-
+| 67. || Flöte || 8′
+|-
+| 68. || Gedackt || 8′
+|-
+| 69. || Dulciana || 8′
+|-
+| 70. || Zartflöte || 4′
+|}
+|
+{|
+|-
+|colspan="3"| '''IV. Manual''' <small>(Schwellwerk)</small> C–a<sup>3</sup>
+----
+|-
+| 71. || Lieblich Gedackt || 16′
+|-
+| 72. || Prinzipal || {{0}}8′
+|-
+| 73. || Traversflöte || {{0}}8′
+|-
+| 74. || Spitzflöte || {{0}}8′
+|-
+| 75. || Lieblich Gedackt || {{0}}8′
+|-
+| 76. || Quintatön || {{0}}8′
+|-
+| 77. || Aeoline || {{0}}8′
+|-
+| 78. || Voix céleste || {{0}}8′
+|-
+| 79. || Prestant || {{0}}4′
+|-
+| 80. || Fernflöte || {{0}}4′
+|-
+| 81. || Violine || {{0}}4′
+|-
+| 82. || Gemshornquinte || {{0}}{{Bruch|2|2|3}}′
+|-
+| 83. || Flautino || {{0}}2′
+|-
+|84.
+|Harmonia aetheria III
+|{{0}}{{Bruch|2|2|3}}′
+|-
+| 85. || Trompete || {{0}}8′
+|-
+| 86. || Oboe || {{0}}8′
+|-
+| 87. || Vox Humana || {{0}}8′
+|-
+| || ''Tremolo zu Vox humana'' ||
+|-
+| || ''Tremulant'' ||
+|}
+|
+{|
+|-
+|colspan="3"| '''Pedal''' C–f<sup>1</sup>
+----
+|-
+| {{0}}88. || Prinzipal || 32′
+|-
+| {{0}}89. || Untersatz || 32′
+|-
+| {{0}}90. || Prinzipal || 16′
+|-
+| {{0}}91. || Offenbass || 16′
+|-
+| {{0}}92. || Violon || 16′
+|-
+| {{0}}93. || Subbass || 16′
+|-
+| {{0}}94. || Gemshorn || 16′
+|-
+| {{0}}95. || Lieblich Gedackt || 16′
+|-
+| {{0}}96. || Quintbass || {{Bruch|10|2|3}}′
+|-
+| {{0}}97. || Prinzipal || {{0}}8′
+|-
+| {{0}}98. ||Flötenbass || {{0}}8′
+|-
+| {{0}}99. || Violoncello || {{0}}8′
+|-
+| 100. || Gedackt || {{0}}8′
+|-
+| 101. || Dulciana || {{0}}8′
+|-
+| 102. || Quinte || {{0}}{{Bruch|5|1|3}}′
+|-
+| 103. || Oktave || {{0}}4′
+|-
+| 104. || Terz || {{0}}{{Bruch|3|1|5}}′
+|-
+| 105. || Quinte || {{0}}{{Bruch|2|2|3}}′
+|-
+| 106. || Septime || {{0}}{{Bruch|2|2|7}}′
+|-
+| 107. || Oktave || {{0}}2′
+|-
+| 108. || Mixtur III ||
+|-
+| 109. || Contraposaune || 32′
+|-
+| 110. || Posaune || 16′
+|-
+| 111. || Fagott || 16′
+|-
+| 112. || Trompete || {{0}}8′
+|-
+| 113. || Clairon || {{0}}4′
+|}
+|}
+
+Die Nummerierung entspricht nicht der Reihenfolge am Instrument.
+* ''[[Koppel (Orgel)|Koppeln]]:'' II/I, III/I, IV/I, Super I/I, III/II, IV/II, Super II/II, IV/III, I/P, II/P, III/P, IV/P.
+* ''[[Spielhilfen]]:'' [[Registercrescendo]], 3 freie [[Kombination (Orgel)|Kombinationen]], Mezzoforte, Forte, Tutti, Rohrwerke, Piano-Pedal, [[Schwellwerk|Jalousieschweller]] III.&nbsp;Manual, Jalousieschweller IV.&nbsp;Manual, Jalousieschweller Vox humana, Handregister ab, Rückpositiv ab.
+
+=== Schuke-Orgel von 1946 ===
+[[Datei:Berlin, Dom, Tauf- und Traukapelle, Schuke-Orgel (1).jpg|mini|Schuke-Orgel]]
+
+In der Tauf- und Traukirche befindet sich eine [[Alexander Schuke Potsdam Orgelbau|Schuke-Orgel]] aus dem Jahr 1946, die ursprünglich in der Domgruftkirche aufgestellt war.<ref>{{Internetquelle |url=https://organindex.de/index.php?title=Berlin,_Dom_(Tauf-_und_Traukirche) |titel=Berlin, Dom (Tauf- und Traukirche) – Organ index, die freie Orgeldatenbank |abruf=2023-02-09}}</ref>
+
+{| class="toptextcells" style="border-collapse:collapse;" cellspacing="0" cellpadding="10"
+|-
+|
+{|
+|-
+|colspan="3"| '''I Hauptwerk''' C–f<sup>3</sup>
+----
+|-
+| 1. || Rohrflöte || 8′
+|-
+| 2. || Quintadena || 8
+|-
+| 3. || Prinzipal || 4′
+|-
+| 4. || Waldflöte || 2′
+|-
+| 5. || Mixtur IV || {{Bruch|1|1|3}}′
+|}
+|
+{|
+|-
+|colspan="3"| '''II Hinterwerk''' C–f<sup>3</sup>
+----
+|-
+| {{0}}6. || Gedackt || 8′
+|-
+| {{0}}7. || Nachthorn || 4′
+|-
+| {{0}}8. || Prinzipal || 2′
+|-
+| {{0}}9. || Quinte || {{Bruch|1|1|3}}′
+|-
+| 10. || Sesquialter II ||
+|-
+| 11. || Scharff III || 1′
+|-
+| 12. || Oboe || 8′
+|}
+|
+{|
+|-
+|colspan="3"| '''Pedal''' C–f<sup>1</sup>
+----
+|-
+| 13. || Subbass || 16′
+|-
+| 14. || Oktave || {{0}}8′
+|-
+| 15. || Pommer || {{0}}4′
+|-
+| 16. || Posaune || 16′
+|}
+|}
+* ''[[Koppel (Orgel)|Koppeln]]:'' II/I, I/P, II/P.
+
+== Zitate ==
+{{Zitat
+ |Text=Wir können dankbar sein all jenen, die die Entscheidung zu seinem Wiederaufbau ermöglicht und mitgetragen haben. Es waren Deutsche aus Ost und West, es waren Kirchen und Regierungen unterschiedlicher politischer Systeme, und es waren viele einzelne, die in der umstrittenen Ruine in der Mitte Berlins eine nationale Herausforderung erkannten, sich ihrer angenommen und sie schließlich auf gute Weise gelöst haben.
+ |Autor=[[Manfred Stolpe]]
+ |Quelle=Vortrag im Februar 2000; Mitakteur in den späten Jahren der DDR beim Wiederaufbau des Berliner Doms
+ |ref=<ref>Manfred Stolpe: [https://web.archive.org/web/20230208211609/https://stk.brandenburg.de/reden/2000/0204.htm ''Die Evangelischen Kirchen in der DDR und der Wiederaufbau des Doms''.] Vortrag des Ministerpräsidenten beim 3. Dom-Kolloquium in Berlin am 4. Februar 2000; archivierter Weblink, abgerufen am 7. November 2023</ref>}}
+{{Zitat
+ |Text=Es ist höchst überflüssig, hineinzugehen, denn auch innen verletzt dieses Riesengefüge aus eitel Quantität, Material und schlecht angewandter Gelehrsamkeit jedes religiöse und menschliche Gefühl. […] Vielleicht kommt einmal die Zeit, in der man dieses Gebäude und manches andere so kurzentschlossen abreißt, wie man es jetzt mit hässlich gewordenen Privathäusern tut.
+ |Autor=[[Franz Hessel]]
+ |Quelle=''Spazieren in Berlin'', 1929}}
+
+== Organisten ==
+* 1714–?: {{0|000}}Gottlieb Hayne<ref>{{Internetquelle |url=https://www.bach-digital.de/receive/BachDigitalPerson_agent_00002653 |titel=Bach digital – Hayne, Gottlieb |sprache=de |abruf=2025-04-05}}</ref>
+* 1764–?: {{0|000}}Christian Friedrich Schale<ref>{{Internetquelle |url=https://www.orgelschaetze.de/Komponisten-_-S.htm |titel=Orgelschaetze.de – Komponisten – S |sprache=de |abruf=2025-04-05}}</ref>
+* 1813–?: {{0|000}}[[Ludwig Hellwig (Musiker)|Ludwig Hellwig]]
+* 1839–1857: [[Eduard Grell]]
+* 1857–?: {{0|000}}Hermann Küster<ref>{{Internetquelle |autor=Deutsche Biographie |url=https://www.deutsche-biographie.de/sfz46814.html#adbcontent |titel=Küster, Hermann – Deutsche Biographie |sprache=de |abruf=2025-04-05}}</ref>
+* 1910–1916: [[Bernhard Heinrich Irrgang]]
+* 1916–1931: [[Walter Fischer (Organist)|Walter Fischer]]
+* 1932–1953: [[Fritz Heitmann]]
+* 1954–1982: [[Ute Spering-Fischer]]
+* 1983–2004: Michael Pohl
+* seit 2005: {{0|-9}}[[Andreas Sieling]]
+
+== Glocken ==
+[[Datei:Berliner Dom - Glocken.jpg|mini|Glocken im Nordwestturm]]
+
+Im Nordwestturm hängt ein dreistimmiges Bronzegeläut. Die [[Glocke]]n hängen in einem dreifeldrigen Stahlstuhl (große Glocke in der Mitte). Die kleine Glocke hängt am Holzjoch, die übrigen an Stahljochen.<ref>Vgl. auch eine [https://www.youtube.com/watch?v=0jzgK-w9Xaw Videoaufnahme der Glocken.] YouTube.</ref>
+
+Die schwerste Glocke heißt ''Neue Wilsnacker Glocke''. Als Zier trägt sie den [[Jesus Christus|Gekreuzigten]] und den Auferstandenen. Sie ersetzte die Glocke der [[Wunderblutkirche (Bad Wilsnack)|Wilsnacker Wunderblutkirche]] aus dem Jahr 1471, die sich seit 1552 in den Vorgängerbauten des Berliner Doms befunden hatte. Sie war 1921 durch einen Sprung unbrauchbar geworden, wurde repariert und kam, 1928 erneut gesprungen, nach Lauchhammer. Dort rettete sie 1930 in letzter Stunde das [[Märkisches Museum (Berlin)|Märkische Museum]] vor dem Einschmelzen und stellte sie 1935 in der ''Kirchenhalle'' des Museums auf.<ref>Dazu [[Walter Stengel]] in der ''Chronik des Märkischen Museums der Stadt Berlin''. In: Eckart Hennig, [[Werner Vogel (Archivar)|Werner Vogel]] (Hrsg.): ''Jahrbuch für brandenburgische Landesgeschichte''. 30. Band, Landesgeschichtliche Vereinigung für die Mark Brandenburg e.&nbsp;V. (gegr. 1884). Berlin 1979, S.&nbsp;7–51, hier S.&nbsp;31. Zur Geschichte der alten Glocke siehe Renate Veigel: ''Die Kirchen- und Rathausglocken im Stadtmuseum Berlin.'' In: Reiner Güntzer (Hrsg.): ''Jahrbuch Stiftung Stadtmuseum Berlin.'' Band&nbsp;VI, 2000. Henschel Verlag, Berlin 2001, ISBN 3-89487-375-2, S.&nbsp;93–101 (Generaldirektor des Stadtmuseums Berlin).</ref>
+{{Absatz}}
+
+{| class="wikitable" style="text-align:center"
+|- style="background:#DDDDDD; vertical-align:top;"
+! Nr.
+! Glocke
+! Guss&shy;jahr
+! Gießer, Gussort
+! Gewicht
+! [[Schlagton|Schlag&shy;ton]]
+! Anmerkungen
+|-
+| 1 || '''Neue Wilsnacker Glocke'''|| 1929 ||[[Kunst- und Glockengießerei Lauchhammer|Glockengießerei Lauchhammer]] || 3000 kg || h° ||
+|-
+| 2 || '''Brandenburger Glocke''' || 1913 || Glockengießerei [[M & O Ohlsson]] ([[Lübeck]]) || 2128 kg || d' || Findet zum täglichen Betzeitläuten Gebrauch.
+|-
+| 3 || '''[[Osterburg (Altmark)|Osterburger]] Glocke'''|| 1532 ||[[Hinrik van Kampen]] || 1752 kg || e' || Glockenzier:<br>[[Mondsichelmadonna|Mutter Gottes auf der Mondsichel]]
+|}
+
+== Denkmalskirche ==
+
+=== Beschreibung ===
+Die [[apsis]]<nowiki />förmige ''Denkmalskirche'' im Norden des Doms enthielt die Prunksarkophage der [[Hohenzollern]] und den Zugang zur gleichnamigen [[#Hohenzollerngruft|Gruft]]. Sie war 24&nbsp;Meter lang, 24&nbsp;Meter breit und 21&nbsp;Meter hoch.<ref name="D-Kirche" /> Das Gebäude war „keine Grablege und kein Mausoleum, sondern ein reiner Memorialraum, als Schwellenraum zwischen Predigtkirche und Grablege konzipiert. In einem erweiterten Sinne trat die Denkmalskirche als Aufstellungsort bedeutender Kunstwerke bereits als Museum in Erscheinung.“<ref>{{Literatur |Autor=Peter Stephan, Sonja Tubbesing |Hrsg=Markus Tubbesing |Titel=Denkmalpflege und Entwurf – Die Denkmalskirche auf der Spreeinsel Berlin |Verlag=DOM publishers |Ort=Berlin |Datum=2020 |ISBN=978-3-86922-002-4 |Seiten=64}}</ref> Ein hoher [[Sockelgeschoss|Sockel]] mit Fenstern, das Hauptgeschoss mit [[Risalit]]en sowie eine niedrige [[Attika (Architektur)|Attika]] mit Kuppel gliederten den Bau. Mächtige [[Säule]]n und [[Pilaster]], ein kräftiges [[Gebälk]] sowie sich abwechselnde Dreiecks- und Segment[[giebel]] hoben das Hauptgeschoss besonders hervor. Außerdem schmückten Rahmen, Fenster und Skulpturennischen die Fassade. Von Norden her wirkte die Denkmalskirche ähnlich wie das [[Pantheon (Rom)|Pantheon]] in Rom, an dem Raschdorff sich bei der Planung orientierte.
+
+Ein eigenes [[Portal (Architektur)|Portal]] am Nordwestturm führte ins Innere der Denkmalskirche, das aus einem Vorraum, dem großen Hauptraum mit den fünf [[Kapelle (Kirchenbau)|Kapellen]] sowie einem Treppenraum zur ''Hohenzollerngruft'' am Nordostturm bestand. Hohe Säulen mit einem breiten Gebälk, auf dem ein stuckverziertes [[Tonnengewölbe]] mit runder [[Opaion|Lichtöffnung]] ruhte, beherrschten den Hauptraum. [[Bogen (Architektur)|Rundbögen]] verbanden ihn mit den Kapellen, die niedrige Pilaster und schlichte [[Kreuzgratgewölbe]] schmückten. Darin standen von links nach rechts die Prunksarkophage von König [[Friedrich I. (Preußen)|Friedrich&nbsp;I.]] und Königin [[Sophie Charlotte von Hannover|Sophie Charlotte]], Kaiser [[Friedrich III. (Deutsches Reich)|Friedrich&nbsp;III.]], dem Großen Kurfürsten [[Friedrich Wilhelm (Brandenburg)|Friedrich Wilhelm]] und Kurfürstin [[Dorothea Sophie von Schleswig-Holstein-Sonderburg-Glücksburg|Dorothea]] sowie Kurfürst [[Johann Cicero]]. In der Bodenmitte des Hauptraums, von dem aus auch eine Tür zur ''Predigtkirche'' führte, lag die Gruftöffnung zum Herablassen von Sarkophagen ins Untergeschoss. Zudem befanden sich das [[Otto von Bismarck|Bismarck]]-Grabdenkmal von [[Reinhold Begas]] sowie die Skulpturen ''Kreuzabnahme Christi'' von [[Michel Lock|Michael Lock]] und ''Osterengel am Grabe'' von [[Emil Graf von Schlitz genannt von Görtz|Emil Graf von Görtz]] im Inneren der Denkmalskirche.
+
+<gallery class="center">
+  Berliner-Dom-1905.jpg|Außenansicht der Denkmalskirche, davor die [[Friedrichsbrücke]]
+  Denkmalskirche im Berliner Dom um 1900 (1).jpg|Innenansicht mit Gruftöffnung
+  Denkmalskirche im Berliner Dom um 1900 (2).jpg|Kapellen mit Prunksarkophagen
+  Denkmalskirche im Berliner Dom um 1900 (3).jpg|Skulpturen am Zugang zur Hohenzollerngruft
+  Dom Berlin Gruft 116.jpg|Erhalten gebliebene Skulptur, ''Osterengel am Grabe''
+  Hohenzollern Crypt sculpture of Calvary.JPG|Erhalten gebliebene Skulptur, ''Kreuzabnahme Christi'' von Michael Lock, heute
+  Reinhold Begas-Bismarck-Sarkophag im Dom zu Berlin.jpg|Bismarck-Grabdenkmal von [[Reinhold Begas]] im Vorraum
+</gallery>
+
+=== Abriss ===
+Im Zusammenhang mit der angestrebten Reduzierung der äußerlichen Wirkung des Doms bei seinem Wiederaufbau beschloss die [[Ministerrat der Deutschen Demokratischen Republik|Regierung der DDR]], die Denkmalskirche und die Unterfahrt abzureißen. Die Denkmalskirche wurde am 30. Oktober 1975 [[Sprengung|gesprengt]]. Dadurch verlor der Dom einen wesentlichen Bestandteil, die Sarkophagsammlung der Hohenzollernfamilie, ihren Ausstellungsraum und die Hohenzollerngruft ihren Zugang. Die Bismarck-Statue wurde zerschlagen. Bauarbeiter konnten jedoch den Kopf vor der Zertrümmerung retten.<ref>Ester Sophia Sünderhauf (Hrsg.): ''Begas. Monumente für das Kaiserreich, eine Ausstellung zum 100. Todestag von Reinhold Begas (1831–1911)'', Sandstein Verlag, Dresden 2010, S.&nbsp;274, 334, mit Abbildungen S.&nbsp;275, 334.</ref> Die Skulpturen ''Osterengel am Grabe'' sowie die ''Kreuzabnahme Christi'' konnten ebenso gerettet werden und befinden sich heute in der Gruft. 204 Fassadenteile wurden geborgen, die seitdem in einem Waldstück in [[Ahrensfelde]] liegen. Weitere rund 230 Fassadenteile werden seit 1997 in einem Depot außerhalb Berlins verwahrt.<ref name="Z-Leben">Maritta Tkalec: [https://www.berliner-zeitung.de/berlin/zweites-leben-fuer-die-denkmalskirche-ein-wiederaufbau-scheint-moeglich-31787414 ''Ein zweites Leben für die Denkmalskirche.''] In: ''[[Berliner Zeitung]]'', 24.–26. Dezember 2018.</ref>
+
+=== Diskussion um Wiederaufbau ===
+Im Zusammenhang mit dem Umbau der Hohenzollerngruft wird über einen Wiederaufbau der Denkmalskirche diskutiert, den unter anderem der Dombauverein fordert.<ref>{{Internetquelle |autor=Ulrich Athmer |url=http://www.berliner-dombau-verein.de/verein/ziele.php |titel=Berliner Dombau Verein - Ziele des Vereins |archiv-url=https://web.archive.org/web/20180505210014/http://www.berliner-dombau-verein.de/verein/ziele.php |archiv-datum=2018-05-05 |abruf=2018-05-05}}</ref> Laut dem Vereinsvorsitzenden [[Horst Winkelmann]] bliebe der Dom ohne die Denkmalskirche ein Torso. Darüber hinaus schaffe eine [[Rekonstruktion (Architektur)|Rekonstruktion]] Platz für die würdige Aufstellung der wertvollen Prunksarkophage. Außerdem bekäme die Hohenzollerngruft ihren ursprünglichen großzügigen Zugang über die Denkmalskirche zurück. Laut dem Denkmalpfleger Peter Goralczyk könnten die hervorragenden Kunstwerke des Berliner Doms nur in der Denkmalskirche einen „angemessenen und für die Öffentlichkeit zugänglichen Aufstellungsort“ bekommen. Ein Wiederaufbau würde die „Darstellung von Geschichte in der Stadt außerordentlich bereichern“ und eine Brücke zwischen den [[Museen in Berlin|Museen]] und prägenden [[Liste Berliner Sakralbauten|Kirchenbauten]] entstehen lassen. Laut der Dombaumeisterin [[Charlotte Hopf]] befinden sich in der Plansammlung des Domarchivs fast 500 Originalzeichnungen der Denkmalskirche. Sie sei der „am umfangreichsten zeichnerisch überlieferte Gebäudeteil“ nach der Predigtkirche. Es handle sich vor allem um [[Grundriss]]e und [[Schnitt (Darstellung)|Schnitte]], aber auch Außen-, Innen- und Detailansichten.<ref>''Die Denkmalskirche des Berliner Domes''. In: ''Zeitschrift des Berliner Dombau-Vereins e.&nbsp;V.'' Sonderausgabe 2016.</ref>
+
+Auch der ehemalige Dombaumeister [[Rüdiger Hoth]] fordert, dass die Denkmalskirche „wieder aufgebaut wird“ und die Prunksarkophage „wie früher würdig präsentiert werden“. Das Fehlen des Gebäudeteils an der Nordseite sei ein „Makel“. Doch beim Thema [[Hohenzollern]] „winken alle ab“, während in Italien mit dem Erbe der [[Medici]] „viel sorgsamer umgegangen wird“.<ref>{{Literatur |Autor=Katja Schnitzler |Titel=„Am liebsten hätten sie alle Kreuze verschwinden lassen“ |Sammelwerk=[[Süddeutsche Zeitung]] |Datum=2013-06-06 |Online=https://www.sueddeutsche.de/reise/restaurierung-des-berliner-doms-am-liebsten-haetten-sie-alle-kreuze-verschwinden-lassen-1.1689478}}</ref>
+
+Ende Dezember 2018 berichtete die ''[[Berliner Zeitung]]'', dass das große Besucherinteresse an der Hohenzollerngruft neue Bewegung in die Diskussion um einen Wiederaufbau der Denkmalskirche gebracht habe. Neben dem [[Wiederaufbau des Berliner Schlosses|Aufbau des Stadtschlosses]] und dem Ausbau der [[Museumsinsel (Berlin)|Museumsinsel]] lege auch die Tatsache, dass sich der ursprüngliche Gruftzugang in der Denkmalskirche befand, eine Rekonstruktion dieses Gebäudeteils nahe. Hundert Jahre nach dem Ende der Monarchie sollten alle Beteiligten „befreit von der Hohenzollernlast“ eine Diskussion um die Nutzung der Denkmalskirche führen. Die Feiern im November hätten gezeigt, dass die Öffentlichkeit „auch für diesen Teil der deutschen Geschichte“ bereit sei. Die Domarchitektin [[Sonja Tubbesing]] bezeichnet die Überreste der Denkmalskirche als einen „einzigartigen Schatz, den es zu heben gilt, schon aus Respekt vor der Geschichte unserer Baukultur“. Im Fall einer [[Rekonstruktion (Architektur)|Rekonstruktion]] ließen sich Einzelteile wiederverwenden, aus dem Schandfleck am Dom könne „in naher Zukunft wieder ein Schmuckstück entstehen“. Es gehe dabei nicht um die Schaffung einer Gedenkstätte für die Hohenzollern, sondern um die Einrichtung einer [[Küster]]<nowiki />wohnung, eines [[Gemeindezentrum (Religion)|Gemeinderaums]] oder eines [[Museum]]s zu diesem Thema. Die Projektleiterin des Gruftumbaus, [[Claudia Kruschel]], schlägt ebenfalls eine „museologische Nutzung“ der wiederaufgebauten Denkmalskirche vor. Bevor damit begonnen werden könne, müsse jedoch erst der Umbau der Hohenzollerngruft abgeschlossen werden, betont die Pressesprecherin des Doms, [[Svenja Pelzel]]. Darüber hinaus liege die Entscheidung beim Domkirchenkollegium, das einem Wiederaufbau der Denkmalskirche bereits 2011 grundsätzlich zugestimmt, aber noch offene Fragen zur Nutzung, Architektur und Finanzierung habe. In diesem Zusammenhang hoffe die Domverwaltung auf Unterstützung durch den Bund, das Land Berlin und private Spender.<ref name="Z-Leben" />
+
+== Hohenzollerngruft ==
+
+=== Beschreibung ===
+[[Datei:BerlinerDomFotoThalerTamas5.jpg|mini|Zugang zur Hohenzollerngruft im Untergeschoss]]
+[[Datei:BerlinerDomFotoThalerTamas4.jpg|mini|Sarkophage der Hohenzollern in der Gruft]]
+
+Die fast das gesamte Untergeschoss des Berliner Doms einnehmende ''Hohenzollerngruft'' ist die wichtigste [[Liste von Grabstätten europäischer Monarchen|dynastische Grabstätte]] Deutschlands. Sie zählt neben den Grüften der österreichischen Kaiser in der [[Kaisergruft|Wiener Kapuzinerkirche]], der französischen Könige in der [[Kathedrale von Saint-Denis]] bei Paris und der spanischen Könige im [[Real Sitio de San Lorenzo de El Escorial|Kloster von El Escorial]] bei Madrid zu den bedeutendsten [[Liste von Grabstätten europäischer Monarchen|dynastischen Grabstätten]] Europas.<ref>{{Internetquelle |url=https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/hohenzollerngruft/ |titel=Hohenzollerngruft |hrsg=Berliner Dom |sprache=de |abruf=2018-04-28}}</ref>  In ihr fanden insgesamt 94&nbsp;Mitglieder des [[Hohenzollern|Hauses Hohenzollern]] vom Ende des 16. bis Anfang des 20.&nbsp;Jahrhunderts ihre letzte Ruhe. Dazu gehören auch [[Kurfürst]]en und [[König]]e, die die Geschichte [[Mark Brandenburg|Brandenburgs]] und [[Königreich Preußen|Preußens]] maßgeblich prägten.
+
+Gemeinsam mit den Prunksarkophagen, die ursprünglich weiträumig in der Denkmalskirche standen und seit deren Abriss 1975 beengt in der Predigtkirche stehen, zeugen die Särge von 500&nbsp;Jahren europäischer Grabkultur. Neben teils aufwändigen Stein- und Metallsarkophagen, die alle Kunststile ab der [[Gotik|Spätgotik]] vertreten, enthält die Hohenzollerngruft auch besonders seltene Holzsärge, die mit Textilien wie [[Samt]] oder [[Brokat]] bespannt sind. Während des [[Zweiter Weltkrieg|Zweiten Weltkriegs]] beschädigten Bombentreffer die Gruft schwer und zerstörten einige Särge fast vollständig. Seit der Wiedereröffnung am 20.&nbsp;November 1999<ref>[[Tagesschau (ARD)]], 20. November 1999.</ref> verzeichnet die Hohenzollerngruft rund 720.000 Besucher im Jahr.<ref>{{Internetquelle |url=https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/hohenzollerngruft/ |titel=Hohenzollerngruft |hrsg=Berliner Dom |abruf=2018-05-04}}</ref>
+
+Bis Anfang 2026 wurde die Hohenzollerngruft saniert, auch um den Anforderungen eines modernen Besucherbetriebs mit barrierefreier Infrastruktur zu entsprechen. Die Kosten wurden im Vorfeld mit rund 18,6&nbsp;Millionen Euro beziffert.
+Im Zuge der Sanierung erhält die Hohenzollerngruft außerdem die ursprüngliche Sargaufstellung zurück.<ref>[https://www.berlinerdom.de/besuchen-wissen/ueber-den-dom/hohenzollerngruft/ Hohenzollerngruft.] berlinerdom.de</ref><ref>{{Internetquelle |url=https://www.evangelisch.de/inhalte/165538/02-02-2020/hohenzollerngruft-im-berliner-dom-wird-saniert |titel=Hohenzollerngruft im Berliner Dom wird saniert |werk=evangelisch.de |abruf=2020-02-03}}</ref>
+
+Die oben genannten Prunksarkophage in der Predigtkirche sind als [[Kenotaph]]e König Friedrich&nbsp;I. und Königin Sophie Charlotte, Kaiser Friedrich&nbsp;III., Kurfürst Johann Cicero, Kurfürst Friedrich Wilhelm&nbsp;I. und Kurfürstin Dorothea gewidmet.<ref>{{Literatur |Autor=Lars Eisenlöffel |Titel=Der Berliner Dom |Seiten=77}}</ref> Bis auf die verschollenen Gebeine von Kurfürst [[Johann Cicero]], dessen [[Grabmal]] das älteste des Doms ist,<ref>[https://www.diegeschichteberlins.de/geschichteberlins/berlin-abc/stichworteag/529-domgruft.html ''Domgruft.''] diegeschichteberlins.de; abgerufen am 14. November 2014.</ref> befinden sich ihre sterblichen Überreste in Steinsarkophagen mit hölzernen Innensärgen in der Hohenzollerngruft.
+
+[[Datei:Dom Berlin Kurfürst Johann Cicero.jpg|mini|Ältestes Grabmal des Berliner Doms – das Tischgrab [[Johann Cicero]]s von [[Peter Vischer der Ältere|Peter Vischer]] und [[Hans Vischer|Sohn]], um 1530 im [[Kloster Lehnin]] aufgestellt]]
+[[Datei:Dom Berlin Gruft 115.jpg|mini|Der Sarkophag des Markgrafen [[Philipp Wilhelm (Brandenburg-Schwedt)|Philipp Wilhelm von Brandenburg-Schwedt]]]]
+
+=== Grabstätten ===
+In der Hohenzollerngruft sind u.&nbsp;a. folgende Personen bestattet (in chronologischer und familiärer Reihenfolge):
+: <small>(Anmerkung: Die Nummerierung entspricht der an den Särgen angebrachten)</small>
+* Nr. 3: Kurfürst [[Johann Georg (Brandenburg)|Johann]] (1525–1598) ⚭ Nr.&nbsp;4: [[Elisabeth von Anhalt (1563–1607)|Elisabeth von Anhalt]] (1563–1607), Tochter [[Joachim Ernst (Anhalt)|Joachim Ernsts von Anhalt]]
+* Nr. 2: [[Elisabeth Magdalene von Brandenburg]] (1537–1595), Tochter von Kurfürst [[Joachim II. (Brandenburg)|Joachim&nbsp;II.]], (der älteste Sarg der Hohenzollerngruft)
+* Nr. 5: Kurfürst [[Joachim Friedrich (Brandenburg)|Joachim Friedrich]] (1546–1608) ⚭ Erste Ehe: Nr. 6: [[Katharina von Brandenburg-Küstrin]] (1549–1602), Tochter [[Johann von Küstrin|Johanns von Brandenburg-Küstrin]]
+** Nr. 8: Kurfürst [[Johann Sigismund (Brandenburg)|Johann Sigismund]] (1572–1620)
+*** Nr. 15: [[Joachim Sigismund von Brandenburg]] (1603–1625)
+*** Nr. 16: Albrecht Christian (1609–1609)
+** Nr. 9: [[August von Brandenburg]] (1580–1601)
+** Nr. 10: [[Albert Friedrich von Brandenburg]] (1582–1600)
+** Nr. 12: [[Joachim von Brandenburg]] (1583–1600)
+** Nr. 13: [[Ernst (Brandenburg)|Ernst]] (1583–1613)
+* Kurfürst Joachim Friedrich ⚭ Zweite Ehe: Nr.&nbsp;7: [[Eleonore von Preußen]] (1583–1607), Tochter [[Albrecht Friedrich (Preußen)|Albrecht Friedrichs von Preußen]]
+* Nr. 18: Catharina Sophia (1594–1665), Tochter [[Friedrich IV. (Pfalz)|Friedrichs IV. von der Pfalz]]
+* Nr. 17: [[Elisabeth Charlotte von der Pfalz (1597–1660)|Elisabeth Charlotte von der Pfalz]] (1597–1660), Ehefrau von Kurfürst [[Georg Wilhelm (Brandenburg)|Georg Wilhelm]], Tochter von Kurfürst [[Friedrich IV. (Pfalz)|Friedrich&nbsp;IV. von der Pfalz]]
+* Nr. 14: [[Anna Sophia von Brandenburg|Anna Sophia]] (1598–1659)
+* Nr. 20: Georg (1613–1614)
+* Nr. 11: Albrecht (1614–1620)
+* Nr. 21: Catharina Sibylla (1615–1615)
+* Nr. 22: [[Ernst (Brandenburg-Jägerndorf)|Ernst]] (1617–1642)
+* Nr. A: Kurfürst [[Friedrich Wilhelm (Brandenburg)|Friedrich Wilhelm]] (1620–1688) ⚭ Erste Ehe: Nr. 24: [[Luise Henriette von Oranien]] (1627–1667), Tochter von [[Friedrich Heinrich (Oranien)]]
+** Nr. 28: Wilhelm Heinrich (1648–1649)
+** Nr. 47: [[Karl Emil von Brandenburg]] (1655–1674)
+** Nr. D: König [[Friedrich I. (Preußen)|Friedrich&nbsp;I. in Preußen]] (1657–1713) ⚭ Erste Ehe: Nr. 45: [[Elisabeth Henriette von Hessen-Kassel]] (1661–1683), Tochter von Landgraf [[Wilhelm VI. (Hessen-Kassel)|Wilhelm&nbsp;VI. von Hessen-Kassel]]
+** König Friedrich&nbsp;I. ⚭ Zweite Ehe: Nr.&nbsp;C: [[Sophie Charlotte von Hannover]] (1668–1705), Tochter [[Ernst August (Hannover)|Ernst Augusts, des Kurfürst von Hannover]]
+*** Nr. 48: Friedrich August (1685–1686)
+** Nr. 26: Heinrich (1664–1664)
+** Nr. 27: Amalia (1664–1665)
+** Nr. 30: [[Ludwig von Brandenburg]] (1666–1687)
+* Kurfürst Friedrich Wilhelm ⚭ Zweite Ehe: Nr.&nbsp;B: [[Dorothea Sophie von Schleswig-Holstein-Sonderburg-Glücksburg]] (1636–1689), Tochter von [[Philipp (Schleswig-Holstein-Sonderburg-Glücksburg)]] (1584–1663)
+** Nr. 31: [[Philipp Wilhelm (Brandenburg-Schwedt)|Philipp Wilhelm von Brandenburg-Schwedt]] (1669–1711)
+** Nr. 91: [[Albrecht Friedrich von Brandenburg-Schwedt]] (1672–1731) ⚭ Marie Dorothea von Kurland (1684–1743), Tochter von Herzog [[Friedrich&nbsp;II. Kasimir Kettler]] von Kurland
+*** Nr. 92: Friedrich (1704–1707)
+*** Nr. 39: [[Karl Friedrich Albrecht von Brandenburg-Schwedt]] (1705–1762)
+*** Nr. 38: Louise (1709–1726)
+*** Nr. 40: [[Friedrich von Brandenburg-Schwedt]] (1710–1741)
+*** Nr. 94: [[Friedrich Wilhelm von Brandenburg-Schwedt]] (1714–1744)
+** Nr. 34: [[Karl Philipp von Brandenburg-Schwedt]] (1673–1695)
+** Nr. 95: [[Christian Ludwig von Brandenburg-Schwedt]] (1677–1734)
+** Nr. 29: Dorothea (1675–1676)
+* Nr. 11: Johann Sigismund (1624–1624)
+* Nr. 49: [[Sophie Dorothea von Hannover]] (1687–1757), Ehefrau König [[Friedrich Wilhelm I. (Preußen)|Friedrich Wilhelms&nbsp;I. in Preußen]], Tochter König [[Georg I. (Großbritannien)|Georgs&nbsp;I. von Großbritannien]]
+** Nr. 50: Friedrich Ludwig (1707–1708)
+** Nr. 51: Friedrich Wilhelm (1710–1711)
+** Nr. 53: Charlotte Albertine (1713–1714)
+** Nr. 58: [[August Wilhelm von Preußen (1722–1758)]] ⚭ Nr.&nbsp;59: [[Luise Amalie von Braunschweig-Wolfenbüttel]] (1722–1780), Tochter [[Ferdinand Albrecht II. (Braunschweig-Wolfenbüttel)|Ferdinand Albrechts&nbsp;II. von Braunschweig]]
+*** Nr. 61: König [[Friedrich Wilhelm II. (Preußen)|Friedrich Wilhelm&nbsp;II. von Preußen]] (1744–1797) ⚭ Nr.&nbsp;62: [[Friederike von Hessen-Darmstadt (1751–1805)|Friederike von Hessen-Darmstadt]] (1751–1805), Tochter Landgraf [[Ludwig IX. (Hessen-Darmstadt)|Ludwigs&nbsp;IX. von Hessen-Darmstadt]]
+**** Nr. 64: Wilhelmine (1772–1773)
+**** Nr. 65: [[Friedrich Ludwig Karl von Preußen]] (1773–1796), gen. Louis
+***** Nr. 66: Friedrich Wilhelm Karl Georg (1795–1798)
+**** Nr. 63: (Sohn) (1777)
+**** Nr. 88: [[Heinrich von Preußen (1781–1846)|Karl Heinrich von Preußen]] (1781–1846), Großmeister der preußischen Johanniter
+**** Nr. 87: [[Wilhelm von Preußen (1783–1851)|Wilhelm von Preußen]] (1783–1851) ⚭ Nr.&nbsp;84: [[Maria Anna Amalie von Hessen-Homburg]] (1785–1846), Tochter Landgraf [[Friedrich V. (Hessen-Homburg)|Friedrichs&nbsp;V. von Hessen-Homburg]]
+***** Nr. 79: Wilhelm (1811–1813)
+***** Nr. 89: [[Adalbert von Preußen (1811–1873)|Adalbert von Preußen]] (1811–1873)
+***** Nr. 74: Thassilo (1813–1814)
+***** Nr. 86: [[Waldemar von Preußen (1817–1849)|Waldemar von Preußen]] (1817–1849)
+*** Nr. 56: [[Heinrich von Preußen (1747–1767)|Heinrich von Preußen]] (1747–1767)
+*** Nr. 60: Georg Karl Emil (1758–1759)
+** Nr. 55: [[Amalie von Preußen|Anna Amalie von Preußen]] (1723–1787)
+** Nr. 67: [[Ferdinand von Preußen]] (1730–1813) ⚭ Nr.&nbsp;68: [[Anna Elisabeth Luise von Brandenburg-Schwedt]] (1738–1820), Tochter von [[Friedrich Wilhelm (Brandenburg-Schwedt)|Friedrich Wilhelm von Brandenburg-Schwedt]] (1700–1771)
+*** Nr. 71: Friederike Elisabeth Dorothea Henriette Amalie (1761–1773)
+*** Nr. 70: Friedrich Heinrich Emil Carl (1769–1773)
+*** Nr. 72: Ludwig (1771–1790)
+*** Nr. 73: [[Louis Ferdinand von Preußen (1772–1806)|Louis Ferdinand Prinz von Preußen]] (1772–1806)
+*** Nr. 69: Friedrich Paul Heinrich August (1776–1776)
+*** Nr. 75: [[August von Preußen (1779–1843)|August von Preußen]] (1779–1843)
+* Nr. 32: Friederike von Brandenburg-Schwedt (1700–1701)
+* Nr. 33: Georg Wilhelm von Brandenburg-Schwedt (1704–1704)
+* Nr. 54: [[Elisabeth Christine von Braunschweig-Wolfenbüttel-Bevern|Elisabeth Christine von Braunschweig-Bevern]] (1715–1797), Ehefrau von König [[Friedrich II. (Preußen)|Friedrich&nbsp;II.]], Tochter Herzog [[Ferdinand Albrecht II. (Braunschweig-Wolfenbüttel)|Ferdinand Albrechts&nbsp;II. von Braunschweig]]
+* Nr. 52: Ludwig (1717–1719)
+* Nr. 57: [[Wilhelmine von Hessen-Kassel]] (1726–1808), Ehefrau [[Heinrich von Preußen (1726–1802)|Heinrichs Prinzen von Preußen]], Tochter Landgraf Maximilians von Hessen-Kassel
+* Nr. 81: [[Philippine von Brandenburg-Schwedt]] (1745–1800), Ehefrau Landgraf [[Friedrich II. (Hessen-Kassel)|Friedrichas&nbsp;II. von Hessen-Kassel]], Tochter von Friedrich Wilhelm von Brandenburg-Schwedt (1700–1771)
+* Nr. 76: Namenlose Prinzessin (1794), Tochter König [[Friedrich Wilhelm III. (Preußen)|Friedrich Wilhelms&nbsp;III. von Preußen]]
+* Nr. 77: Friederike (1799–1800), Tochter von König Friedrich Wilhelm&nbsp;III. von Preußen
+* Nr. 78: Ferdinand (1804–1806), Sohn von König Friedrich Wilhelm&nbsp;III. von Preußen
+* Nr. 83: Namenloser Prinz (1806), Sohn von Prinz [[Wilhelm I. (Niederlande)|Wilhelm von Oranien]]
+* Nr. 82: Friedrich Wilhelm Ferdinand von Hessen-Kassel (1806–1806), Sohn von Landgraf [[Wilhelm II. (Hessen-Kassel)|Wilhelm von Hessen-Kassel]]
+* Nr. 80: Namenloser Prinz (1832), Sohn von Prinz [[Albrecht von Preußen (1809–1872)|Albrecht von Preußen]]
+* Nr. 88: Anna (1858–1858), Tochter von Prinz [[Friedrich Karl von Preußen (1828–1885)|Friedrich Karl von Preußen]]
+* Nr. 93: unbekannt
+
+== Domgemeinde und heutige Funktion ==
+[[Datei:Berlin Aussichten vom Dom asv2023-02 img05.jpg|mini|Aussicht von der Kuppel]]
+
+Die ''Gemeinde der Oberpfarr- und Domkirche zu Berlin'' ist eine rund 1800<ref name="Bingener_FAZ">Reinhard Bingener: ''Leuchtturm der Sendungsbewussten'', In: ''[[Frankfurter Allgemeine Zeitung|FAZ]]'', 29. Oktober 2020</ref> Mitglieder umfassende und seit Jahren wachsende [[Personalgemeinde]]. Sie gehört zum [[Kirchenkreis Berlin Stadtmitte]] im Sprengel Berlin der [[Evangelische Kirche Berlin-Brandenburg-schlesische Oberlausitz|Evangelischen Kirche Berlin-Brandenburg-schlesische Oberlausitz]]. Eine Sonderstellung innerhalb dieser Landeskirche hat die Domgemeinde durch ihre enge Bindung an die [[Union Evangelischer Kirchen]] (UEK), die für sie verschiedene sonst der Landeskirche zustehende Funktionen übernimmt. Dies ergibt sich aus der Rolle der UEK als Rechtsnachfolgerin der [[Evangelische Kirche der altpreußischen Union|Evangelischen Kirche der altpreußischen Union]].<ref>{{Internetquelle |url=https://www.berlinerdom.de/mediathek/formulare/?tx_reintdownloadmanager_dmlist%5Bdownloaduid%5D=14458&cHash=ea0bb5139cbb58bacd8fdc6ed8732e37 |titel=Ordnung der Oberpfarr- und Domkirche zu Berlin |werk=Website der Domgemeinde |datum=2020 |sprache=de |abruf=2024-07-13}}</ref><ref>Zu einem älteren Stand der des Rechtsstatus vgl. ''Rechtsverhältnisse am Berliner Dom.'' In: [[Axel von Campenhausen]], Christoph Thiele (Hrsg.): ''Göttinger Gutachten&nbsp;II: Kirchenrechtliche Gutachten in den Jahren 1990–2000.'' Mohr-Siebeck, Tübingen 2001, S.&nbsp;241–261 (=&nbsp;''Jus Ecclesiasticum&nbsp;– Beiträge zum evangelischen Kirchenrecht und zum Staatskirchenrecht'', 69, {{ISSN|0449-4393}})</ref>
+
+Dem „Domkirchenkollegium“ als Leitungsgremium der Domgemeinde gehören neben acht von der Gemeinde gewählten Domkirchenräten und den [[Domprediger]]n auch vier entsandte stimmberechtigte Mitglieder an: Je ein Vertreter der [[Bundesregierung (Deutschland)|Bundesregierung]] und des [[Senat von Berlin|Senats von Berlin]] werden auf deren Vorschlag vom Präsidium der UEK gewählt, das Amt der UEK und die Landeskirche entsenden je einen weiteren Vertreter. Vorsitzende des Gremiums ist seit 2023 Katharina Berner.<ref>{{Internetquelle |url=https://www.berlinerdom.de/gottesdienst-glaube/unsere-gemeinde/domkirchenkollegium/ |titel=Domkirchenkollegium |werk=berlinerdom.de |abruf=2023-12-24}}</ref> Die beiden Pfarrstellen der Gemeinde werden wegen der Bedeutung des Doms über die Grenzen der Landeskirche hinaus deutschlandweit ausgeschrieben. Amtierende Domprediger sind Stefan Scholpp (seit 2023, Geschäftsführender Domprediger) und Christiane Münker (seit 2024).<ref name="Options">{{Internetquelle |url=http://www.berlinerdom.de/component/option,com_peoplebook/Itemid,57/lang,de/ |titel=Kontakt |werk=berlinerdom.de |abruf=2017-04-15}}</ref>
+
+Nach den Zerstörungen des Zweiten Weltkriegs fanden Gottesdienste und Andachten in der Denkmalskirche und ab 1980 in der wiederhergestellten Tauf- und Traukirche statt. Seit 1993 gibt es wieder tägliche Gottesdienste in der Predigtkirche.
+
+Im Berliner Dom fanden die [[Staatsakt (Veranstaltung)|Staatstrauerakte]] für die ehemaligen [[Bundespräsident (Deutschland)|Bundespräsidenten]] [[Johannes Rau]] (Februar 2006), [[Richard von Weizsäcker]] (Februar 2015), [[Roman Herzog]] (Januar 2017) und [[Horst Köhler]] (Februar 2025) und für den ehemaligen [[Präsident des Deutschen Bundestages|Präsidenten des Deutschen Bundestages]] [[Wolfgang Schäuble]] (Januar 2024), ein [[Ökumenische Bewegung|ökumenischer]] Dankgottesdienst zum 50.&nbsp;Jahrestag der [[Römische Verträge|Römischen Verträge]] (März 2007) sowie die offizielle Trauerfeier für die drei in [[Afghanistan]] getöteten deutschen Personenschützer (August 2007) statt.
+
+Die Finanzen der Domgemeinde stammen nur zu 4 % aus Kirchensteuern. Mehr als 80 % werden aus Eintrittsgeldern zum Dom erwirtschaftet, die während der [[COVID-19-Pandemie in Berlin|Corona-Krise]] des Jahres 2020 zurückgingen, was zu einigen Spannungen und Zerwürfnissen in der Leitung über die richtige Leitung der Domgemeinde führte.<ref name="Bingener_FAZ" />
+
+== Siehe auch ==
+* [[Berliner Domkantorei]]
+* [[Staats- und Domchor Berlin]]
+* [[Liste der Berliner Hof- und Domprediger]]
+* [[Liste der Kulturdenkmale in Berlin-Mitte/Alt-Kölln]]
+* [[Kirchensprengung]]
+
+== Literatur ==
+* ''Die Bau- und Kunstdenkmale in der DDR, Hauptstadt Berlin.'' Band&nbsp;I. Hrsg. vom Institut für Denkmalpflege, bearbeitet von einem Kollektiv der Abteilung Forschung (Ingrid Bartmann-Kompa, Horst Büttner, Horst Drescher, [[Joachim K. M. Fait|Joachim Fait]], Marina Flügge, Gerda Herrmann, Ilse Schröder, Helmut Spielmann, Christa Stepansky, [[Heinrich Trost (Kunsthistoriker)|Heinrich Trost]]), Gesamtredaktion Heinrich Trost. 2. Auflage. Berlin 1984, S.&nbsp;91–109.
+* {{Literatur |Autor=Armin Boyens |Titel=„Den Gegner irgendwo festhalten“: „Transfergeschäfte“ der Evangelischen Kirche in Deutschland mit der DDR-Regierung 1957–1990. |Sammelwerk=Kirchliche Zeitgeschichte |Band=Vol. 6 |Nummer=2 |Verlag=Vandenhoeck & Ruprecht |Datum=1993 |Seiten=379–426 |Kommentar=Mit zahlreichen Aussagen zum Berliner Dom}}
+* Dieter Brozat: ''Der Berliner Dom und die Hohenzollerngruft.'' Haude und Spener, Berlin 1985, ISBN 3-7759-0271-6.
+* Thomas Buske: ''Der Berliner Dom als ikonographisches Gesamtkunstwerk.'' Helms, Schwerin 2000, ISBN 3-931185-80-X ([https://evangelischer-kirchenbauverein.de/hefte/heft-08/ vangelischer-kirchenbauverein.de]).
+* [[Laurenz Demps]]: ''Der Berliner Dom.'' Berlin-Edition, Berlin 1999, ISBN 3-8148-0009-5 (''Berliner Ansichten'', S.&nbsp;10).
+* [[Helmut Engel (Kunsthistoriker)|Helmut Engel]], [[Wilhelm Hüffmeier]] (Hrsg.): ''Der Berliner Dom – Zur Geschichte und Gegenwart der Oberpfarr- und Domkirche zu Berlin.'' Jovis, Berlin 2001, ISBN 3-931321-67-3.
+* Helmut Engel (Hrsg.): ''Die Gruft der Hohenzollern im Berliner Dom.'' Jovis, Berlin 2005, ISBN 3-936314-37-3.
+* Heinz Hoffmann: ''Die Versöhnungstür von Siegfried Krepp am Südportal des Berliner Domes.'' Hentrich & Hentrich, Berlin 2005, ISBN 3-938485-11-6.
+* Charlotte Hopf: ''Der Berliner Dom. Sein Wiederaufbau durch Staat und Kirche im geteilten Deutschland.'' Lukas Verlag, Berlin 2024, ISBN 978-3-86732-458-8.
+* Rüdiger Hoth: ''Berliner Dom. Geschichte und Gegenwart.'' Deutscher Kunstverlag, München 1995 (''[[Große Baudenkmäler]];'' S.&nbsp;416).
+* Karl-Heinz Klingenburg: ''Der Berliner Dom. Bauten, Ideen und Projekte vom 15.&nbsp;Jahrhundert bis zur Gegenwart.'' Koehler & Amelang, Berlin 1992, ISBN 3-7338-0155-5.
+* Detlef Plöse (Hrsg.): ''Der Berliner Dom. Geschichte und Gegenwart der Oberpfarr- und Domkirche zu Berlin.'' Jovis, Berlin 2001, ISBN 3-931321-67-3.
+* Julius Schneider: ''Die Geschichte des Berliner Doms. Von der Domstiftung im 15.&nbsp;Jahrhundert bis zum Wiederaufbau im 20.&nbsp;Jahrhundert.'' Verlag für Wiss. und Bildung, Berlin 1993, ISBN 3-86135-002-5.
+* Jochen Schröder: ''Die Baugestalt und das Raumprogramm des Berliner Doms als Spiegel der Ansprüche und Funktionen des Bauherrn Kaiser Wilhelms&nbsp;II.'' Marburg, Univ., Diss., 2002 ([https://archiv.ub.uni-marburg.de/diss/z2003/0099/ Digitale Ausgabe]).
+* Jochen Schröder: ''Berliner Dom. Ein Denkmal der geeinten evangelischen Kirche in Deutschland.'' Johannes Herrmann J&J-Verlag, Wettenberg 2005, ISBN 3-937983-02-3.
+* Burkhard Staudinger (Hrsg.): ''Der Berliner Dom. Das Gotteshaus am Lustgarten.'' Publicon Verlag, Berlin 2006, ISBN 3-927418-32-3.
+* Hansjürgen Vahldiek, [[Harald Zimmermann (Historiker)|Harald Zimmermann]]: ''Die Grablegungen im Dom zu Berlin – eine komplizierte Geschichte.'' In: ''[[Jahrbuch des Vereins für die Geschichte Berlins]].'' <!--Jahr?--> S.&nbsp;39–50.<ref>{{Internetquelle |autor=Hansjürgen Vahldiek |url=https://www.hansjuergen.vahldiek.info/3073/die-grablegungen-im-dom-zu-berlin-eine-komplizierte-geschichte-2/ |titel=Die Grablegungen im Dom zu Berlin&nbsp;– eine komplizierte Geschichte |abruf=2020-04-19}}</ref>
+* {{Gartenlaube |Wikisource=Die Sprengung des Domthurms zu Berlin |Autor= |Heft=18 |Jahr=1893 |Seite=308}}
+
+== Weblinks ==
+{{Commonscat|Berlin Cathedral|Berliner Dom|audio=1|video=1}}
+* [https://www.berlinerdom.de/ berlinerdom.de] mit [https://www.berlinerdom.de/besuchen-wissen/service/360-virtueller-domrundgang/ virtuellem Rundgang]
+* {{LDLBerlin|09030066|ja}}
+* {{DNB-Portal|4194498-7}}
+* [https://www.berliner-dombau-verein.de/der-berliner-dom/ ''Die Geschichte des Berliner Doms''.] Berliner Dombau-Verein.
+* {{archINFORM|projekte|7849}}
+* {{structurae |Typ=bauwerke |ID=20014643}}
+* [[Manfred Stolpe]]: [https://stk.brandenburg.de/reden/2000/0204.htm „Die Evangelischen Kirchen in der DDR und der Wiederaufbau des Doms“, Vortrag des Ministerpräsidenten beim 3. Dom-Kolloquium in Berlin am 4. Februar 2000], abgerufen am 26. Juni 2023
+* {{Internetquelle |autor=[[Holger Zürch]] |url=https://www.l-iz.de/allgemein/2023/06/sonntagskirche-83-verlorene-denkmalskirche-des-berliner-doms-540738 |titel=Sonntagskirche № 83: Die verlorene Denkmalskirche des Berliner Doms |werk=[[Leipziger Internet Zeitung]] |datum=2023-06-18 |abruf=2023-06-19}}
+
+== Anmerkungen und Belege ==
+<references responsive />
+
+{{NaviBlock
+|Navigationsleiste Museumsinsel (Berlin)
+|Navigationsleiste Berliner Schloßplatz
+|Navigationsleiste Kirchen im Kirchenkreis Berlin Stadtmitte
+}}
+
+{{Normdaten|TYP=g|GND=4194498-7|LCCN=n81107094|VIAF=234646226}}
+
+[[Kategorie:Kirchengebäude in Berlin]]
+[[Kategorie:Kirchengebäude des Evangelischen Kirchenkreises Berlin Stadtmitte|Dom]]
+[[Kategorie:Baudenkmal in Berlin]]
+[[Kategorie:Neorenaissancebauwerk in Berlin]]
+[[Kategorie:Neobarockes Bauwerk in Berlin]]
+[[Kategorie:Kirchengebäude des Historismus|Berlin Dom]]
+[[Kategorie:Architektur (Preußen)]]
+[[Kategorie:Erbaut 1905]]
+[[Kategorie:Disposition einer Orgel|Berlin, Berliner Dom]]
+[[Kategorie:Museumsinsel (Berlin)]]
+[[Kategorie:Berlin-Mitte]]
+[[Kategorie:Kirchengebäude (uniert)|Berlin Domkirche]]
+[[Kategorie:Grablege der Hohenzollern]]
+[[Kategorie:Kuppelkirche|Berlin, Berliner Dom]]
+[[Kategorie:Schloßplatz (Berlin)]]
+[[Kategorie:Bauwerk von Julius Carl Raschdorff]]
+[[Kategorie:Grabmal in Berlin]]
+[[Kategorie:Bauwerk aus Sandstein]]
+[[Kategorie:Aussichtspunkt in Berlin]]
+[[Kategorie:Kirchengebäude in Europa]]
+[[Kategorie:Hofkirche]]

@@ -1,0 +1,83 @@
+  name: string;
+  /** landmarks.ts id of the aligned structure. */
+  landmarkId: string;
+  points: StandingPoint[];
+  notes: string;
+}
+
+/**
+ * Initial bearing (degrees true) and ground distance (metres) between two geodetic
+ * positions, via the repo's standard ECEF -> ENU path — the same convention the
+ * silhouette builder uses, so solver targets and these bearings cannot drift apart.
+ */
+export function bearingDistanceTo(from: LatLon, to: LatLon): {
+  bearingDeg: number;
+  distanceM: number;
+} {
+  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+  // surface-level positions (h=0 on both ends).
+  const a = geodeticToECEF(from.lat, from.lon, 0);
+  const b = geodeticToECEF(to.lat, to.lon, 0);
+  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const enu = ecefToENU(d, from.lat, from.lon);
+  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+  return {
+    bearingDeg: (bearingDeg + 360) % 360,
+    distanceM: Math.hypot(enu[0], enu[1]),
+  };
+}
+
+/** Build a standing point, computing bearing/distance to the landmark from coordinates. */
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });
+}
+
+const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
+
+/** Eye height of a standing photographer, metres. */
+export const EYE_HEIGHT_M = 1.6;
+
+const OSM_BRIDGE_SOURCE =
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck heights per node from Berlin ' +
+  'DOM1 (sheet dom1_33_398_5818_2, EPSG:25833, DHHN2016), sampled 2026-11-12: only the ' +
+  'crest nodes inside the curated 48.1-48.3 m mid-span envelope adopt their measured ' +
+  'median; the ramp/flank nodes keep the curated 48.2 m with needsSiteCheck until ' +
+  'surveyed. Each point carries its own source, including the rejected measurement.';
+ * WHERE THE DATA COMES FROM
+ * -------------------------
+ * Polyline: OSM way 1335772137 (two carriageway arms, fetched 2026-11-12). Deck
+ * elevation: Berlin DOM1 (1 m surface model, sheet dom1_33_398_5818_2, EPSG:25833,
+ * DHHN2016), sampled per node on 2026-11-12. Only crest nodes whose measured median
+ * falls inside the curated mid-span envelope 48.1-48.3 m adopt their own value. The
+ * ramp/flank nodes measure 46.9-47.8 m — the real ramp profile (scripts/README.md:
+ * west ramp 46.1 m, east ramp 46.7 m), but not a confirmed deck height for the
+ * curated band, so they keep the curated 48.2 m with needsSiteCheck until surveyed.
+ * Every measurement is kept in the point's `source`; none is raised to fit a band.
+ * Bearings and distances are COMPUTED here from coordinates (ellipsoidal ECEF ->
+ * ENU), never hand-entered.
+ *
+ * DATUM TRAP: public/heightmap/berlin-dgm1.bin is DGM1 = bare earth. Under this deck
+ * it returns the rail cutting (~39-41 m), not the deck. Deck surface needs DOM1.
+ */
+import { geodeticToECEF, ecefToENU } from './silhouette.js';
+import type { LatLon } from './areaSolver.js';
+
+export interface StandingPoint extends LatLon {
+  id: string;
+  /** Deck/platform surface at this point, DHHN2016 orthometric metres. */
+  surfaceOrthometric: number;
+  /** Photographer's eye above the surface, metres. */
+  eyeHeightM: number;
+  /** True when nobody has confirmed the surface value at THIS point of the bridge. */
+  needsSiteCheck: boolean;

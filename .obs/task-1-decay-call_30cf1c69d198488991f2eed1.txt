@@ -1,0 +1,46 @@
+export const BERLINER_DOM: RevolutionLandmark = {
+  id: 'berliner-dom',
+  name: 'Berliner Dom',
+  lat: 52.5190822,
+  lon: 13.4010942,
+  baseOrthometric: 35.26,
+  profile: [
+    [62, 16.5], // tambour foot (assumed band; diameter sourced: 33 m)
+    [68, 16.5], // dome springing (assumed height)
+    [71, 16.22], // hemisphere r(h) = sqrt(16.5^2 - (h-68)^2)
+    [74, 15.37],
+    [77, 13.83],
+    [80, 11.32],
+    [82, 8.73],
+    [84, 4.03],
+    [84.5, 2.6], // dome crown -> lantern (assumed radius)
+    [93, 2.6], // lantern top
+    [95, 1.2], // cross taper
+    [96.5, 0.6],
+    [98, 0.2], // apex: CURRENT building height (de.wiki), not 114/115 m
+  ],
+};
+
+40:   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+44:  profile: ReadonlyArray<readonly [number, number]>;
+50: * Sample a sphere's radius profile, unioned with the surrounding shaft.
+111: *   no footprint geometry was available, so the profile below is an explicit
+136:  profile: [
+159:  profile: [
+205:  profile: [
+238:  profile: [
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+   * Radius is linearly interpolated between samples. The sphere is sampled finely
+   * enough that interpolation error stays far below the angular tolerance.
+   */
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */

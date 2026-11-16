@@ -1,0 +1,24 @@
+27:const FERNSEHTURM = { lat: 52.520815, lon: 13.409419 };
+30:const MEASURED: Record<string, number> = {
+40:function measured(id: string): number {
+41:  const m = MEASURED[id];
+46:const CURATED_MIDSPAN = 48.2;
+47:const CREST_IDS = ['sued-mitte', 'sued-ost'];
+48:const RAMP_IDS = ['nord-west', 'nord-mitte', 'nord-knick', 'sued-west'];
+50:const points = LICHTENBERGER_BRUECKE.points;
+51:const byId = (id: string) => {
+52:  const p = points.find((q) => q.id === id);
+74:    const confirmed = points.filter((p) => !p.needsSiteCheck).map((p) => p.id);
+76:    for (const id of CREST_IDS) {
+77:      const p = byId(id);
+78:      const [lo, hi] = CURATED_CREST_ENVELOPE_M;
+92:    for (const id of RAMP_IDS) {
+93:      const p = byId(id);
+105:    for (const p of points) {
+106:      const median = measured(p.id);
+93:function cesiumSunAltAz(date: Date): AltAz {
+131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc
+135:function refractionDeg(altDeg: number): number {
+141:function angularSeparationDeg(azA: number, altA: number, azB: number, altB: number): number {
+169:      const suncalcGeometricAlt = s.altitude - refractionDeg(c.alt);
+188:    // would vary with season and solar altitude.

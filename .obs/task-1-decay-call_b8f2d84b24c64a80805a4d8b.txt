@@ -1,0 +1,3 @@
+182:  id: 'lichtenberger-bruecke',
+7c43c2d Horizon-gated eclipse windows for a second landmark, flag-gated and not shipped
+9b6c942 Deck heights: adopt DOM1 only inside the curated crest envelope

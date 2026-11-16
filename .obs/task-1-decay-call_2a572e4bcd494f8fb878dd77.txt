@@ -1,0 +1,45 @@
+  const az = azDeg * RAD;
+  const alt = altDeg * RAD;
+
+  // ENU unit vector for an az/alt direction (azimuth clockwise from north).
+  const e = Math.cos(alt) * Math.sin(az);
+  const n = Math.cos(alt) * Math.cos(az);
+  const u = Math.sin(alt);
+
+  const sφ = Math.sin(observer.lat * RAD);
+  const cφ = Math.cos(observer.lat * RAD);
+  const sλ = Math.sin(observer.lon * RAD);
+  const cλ = Math.cos(observer.lon * RAD);
+
+  // ENU -> ECEF rotation (transpose of ecefToENU).
+  const dx = (-sλ * e - sφ * cλ * n + cφ * cλ * u) * distanceM;
+  const dy = (cλ * e - sφ * sλ * n + cφ * sλ * u) * distanceM;
+  const dz = (cφ * n + sφ * u) * distanceM;
+
+  const o = geodeticToECEF(observer.lat, observer.lon, observer.ellipsoidalHeight);
+  return [o[0] + dx, o[1] + dy, o[2] + dz];
+}
+
+/**
+ * Physical radius, metres, that a disc placed at `distanceM` must have to subtend
+ * `angularRadiusDeg` from the observer.
+ */
+export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+  return distanceM * Math.tan(angularRadiusDeg * RAD);
+}
+
+/** ECEF metres -> geodetic (deg, deg, ellipsoidal m), via Bowring's method. */
+export function ecefToGeodetic(x: number, y: number, z: number): {
+  lat: number;
+  lon: number;
+  height: number;
+} {
+  const B = A * (1 - F);
+  const ep2 = (A * A - B * B) / (B * B);
+  const p = Math.hypot(x, y);
+  const th = Math.atan2(z * A, p * B);
+  const lat = Math.atan2(
+    z + ep2 * B * Math.sin(th) ** 3,
+    p - E2 * A * Math.cos(th) ** 3,
+  );
+  const N = A / Math.sqrt(1 - E2 * Math.sin(lat) ** 2);

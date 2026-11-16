@@ -1,0 +1,3 @@
+tests/unit/horizonWindows.test.ts:103:describe('groundAltitudeDeg — known answers (independent computation)', () => {
+tests/unit/horizonWindows.test.ts:342: * half-width. Measured independently before writing these expectations: six windows,
+tests/unit/sun-agreement.test.ts:131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc

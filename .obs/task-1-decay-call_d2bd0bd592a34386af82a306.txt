@@ -1,0 +1,22 @@
+33:export interface StandingPoint extends LatLon {
+53:export interface Vantage {
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+85:export function standingPoint(
+103:export const EYE_HEIGHT_M = 1.6;
+121:export const CURATED_CREST_ENVELOPE_M: readonly [number, number] = [48.1, 48.3];
+181:export const LICHTENBERGER_BRUECKE: Vantage = {
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+export function bearingDistanceTo(from: LatLon, to: LatLon): {
+  bearingDeg: number;
+  distanceM: number;
+} {
+  const a = geodeticToECEF(from.lat, from.lon, 0);
+  const b = geodeticToECEF(to

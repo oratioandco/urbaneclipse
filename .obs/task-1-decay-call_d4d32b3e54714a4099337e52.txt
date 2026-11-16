@@ -1,0 +1,16 @@
+On branch task/berliner-dom-landmark
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.obs/
+	.research/
+	node_modules
+
+nothing added to commit but untracked files present (use "git add" to track)
+task/berliner-dom-landmark
+     233 src/lib/landmarks.ts
+     289 tests/unit/vantages.test.ts
+     472 tests/unit/horizonWindows.test.ts
+     267 src/lib/occultation.ts
+      30 src/lib/coords.ts
+     199 src/lib/vantages.ts
+    1490 total

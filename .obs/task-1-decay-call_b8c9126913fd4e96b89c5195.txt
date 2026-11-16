@@ -1,0 +1,55 @@
+/** The spec's ratification threshold for Strategy B (research.md VERIFY-LIVE #2). */
+const AGREEMENT_TOLERANCE_DEG = 0.5;
+
+/**
+ * Guard on the systematic precession offset. Set above the measured ~0.37 deg but
+ * below the 0.5 deg gate, so the slow drift is caught with runway to spare rather
+ * than at the moment it breaks the product.
+ */
+const DRIFT_CEILING_DEG = 0.42;
+
+/** >= 4 seasonal datetimes, plus low-altitude and off-noon cases. */
+const SAMPLES: ReadonlyArray<readonly [string, Date]> = [
+  ['winter (near local noon)', new Date(Date.UTC(2026, 0, 15, 11, 0, 0))],
+  ['spring (near local noon)', new Date(Date.UTC(2026, 3, 15, 10, 0, 0))],
+  ['summer (near local noon)', new Date(Date.UTC(2026, 6, 15, 11, 0, 0))],
+  ['autumn (near local noon)', new Date(Date.UTC(2026, 9, 15, 11, 0, 0))],
+  ['summer morning (low sun)', new Date(Date.UTC(2026, 6, 15, 4, 0, 0))],
+  ['summer evening (low sun)', new Date(Date.UTC(2026, 6, 15, 18, 0, 0))],
+];
+
+interface AltAz {
+  /** Degrees above the horizon (geometric — no refraction correction). */
+  alt: number;
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Which reference-frame transform Cesium actually used. */
+  frame: 'icrf' | 'teme';
+}
+
+/**
+ * Sun alt/az at the observer, derived from Cesium's OWN ephemeris — the same
+ * `Simon1994PlanetaryPositions` source that lights the scene and casts shadows.
+ */
+function cesiumSunAltAz(date: Date): AltAz {
+  const jd = Cesium.JulianDate.fromDate(date);
+
+  const inertial = Cesium.Simon1994PlanetaryPositions.computeSunPositionInEarthInertialFrame(
+    jd,
+    new Cesium.Cartesian3(),
+  );
+
+  // Mirrors Cesium's own runtime behaviour: prefer ICRF, fall back to TEME when
+  // EOP data has not been (or cannot be) loaded.
+  let toFixed = Cesium.Transforms.computeIcrfToFixedMatrix(jd, new Cesium.Matrix3());
+  let frame: 'icrf' | 'teme' = 'icrf';
+  if (!Cesium.defined(toFixed)) {
+    toFixed = Cesium.Transforms.computeTemeToPseudoFixedMatrix(jd, new Cesium.Matrix3());
+    frame = 'teme';
+  }
+
+  const fixed = Cesium.Matrix3.multiplyByVector(toFixed, inertial, new Cesium.Cartesian3());
+2: * T040 — Cesium-vs-suncalc sun-position agreement test (research.md VERIFY-LIVE #2).
+10: * predicts alignments using `suncalc`.
+30: * MEASURED RESULT (cesium 1.143, suncalc 2.0.1, Berlin)
+51:import { getPosition } from 'suncalc';

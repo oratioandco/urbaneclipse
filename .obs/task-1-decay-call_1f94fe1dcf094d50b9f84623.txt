@@ -1,0 +1,26 @@
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+44-  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+45-  ellipsoidalHeight: number;
+46-}
+47-
+48-/** Direction in the observer's horizontal frame. */
+49-export interface AzAlt {
+50-  /** Degrees clockwise from north. */
+51-  az: number;
+52-  /** Degrees above the horizon. */
+53-  alt: number;
+265:export function buildSilhouetteDirections(
+266-  observer: ObserverGeodetic,
+267-  landmark: RevolutionLandmark,
+268-  steps = 96,
+269-): SilhouetteDirections {
+270-  const total = landmarkHeight(landmark);
+271-  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+272-  if (total <= 0) return empty;
+273-
+274-  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+275-
+276-  const left: AzAlt[] = [];
+277-  const right: AzAlt[] = [];

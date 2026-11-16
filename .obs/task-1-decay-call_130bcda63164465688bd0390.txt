@@ -1,0 +1,32 @@
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  c282:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+283-  return profileRadius(landmark.profile, heightAboveBase);
+284-}
+285-
+286-/** Total height of the landmark above its base, metres. */
+287-export function landmarkHeight(landmark: RevolutionLandmark): number {
+288-  const p = landmark.profile;
+289-  return p.length === 0 ? 0 : p[p.length - 1][0];
+290-}

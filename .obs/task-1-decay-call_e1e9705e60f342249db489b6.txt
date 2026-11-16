@@ -1,0 +1,14 @@
+ProfilePoint=ERR:'NoneType' object has no attribute 'grou
+RevolutionLandmark=ERR:no such group
+FT=export const FERNSEHTURM: RevolutionLandmark = { id: 'fer
+nsehturm', name: 'Berliner Fernsehturm', lat: 52.520815, lon
+: 13.409419, baseOrthometric: 34.6, profile: [ [0, 16.0], [1
+0, 12.0], [20, 8.0], [100, 6.77], [187.4, 5.48], [187.8, 7.0
+8], [188.4, 7.08], [188.7, 5.5], [190.4, 5.43], [190.8, 7.03
+], [191.4, 7.03], [191.7, 5.43], [196, 5.3], ...sphereSample
+s(SPHERE_CENTRE_AGL, SP
+FixedSearchRequest=ERR:no such group
+OccultationWindow=ERR:'NoneType' object has no attribute 'gr
+ou
+BodySample=ERR:no such group
+feasibility=export function feasibility( landmark: Revolutio

@@ -1,0 +1,17 @@
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+   * Radius is linearly interpolated between samples. The sphere is sampled finely
+   * enough that interpolation error stays far below the angular tolerance.
+   */
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+  notes: string;
+}

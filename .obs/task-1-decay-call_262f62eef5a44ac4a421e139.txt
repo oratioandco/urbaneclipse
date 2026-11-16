@@ -1,0 +1,100 @@
+[Showing lines 144-242 of 242, the last 4048 of 11317 bytes. Whole output: .obs/task-1-6.txt — read the start with sh: sed -n '1,143p' .obs/task-1-6.txt]
+ * curated band, so they keep the curated 48.2 m with needsSiteCheck until surveyed.
+ * Every measurement is kept in the point's `source`; none is raised to fit a band.
+ * Bearings and distances are COMPUTED here from coordinates (ellipsoidal ECEF ->
+ * ENU), never hand-entered.
+ *
+ * DATUM TRAP: public/heightmap/berlin-dgm1.bin is DGM1 = bare earth. Under this deck
+ * it returns the rail cutting (~39-41 m), not the deck. Deck surface needs DOM1.
+ */
+import { geodeticToECEF, ecefToENU } from './silhouette.js';
+import type { LatLon } from './areaSolver.js';
+
+export interface StandingPoint extends LatLon {
+  id: string;
+  /** Deck/platform surface at this point, DHHN2016 orthometric metres. */
+  surfaceOrthometric: number;
+  /** Photographer's eye above the surface, metres. */
+  eyeHeightM: number;
+  /** True when nobody has confirmed the surface value at THIS point of the bridge. */
+  needsSiteCheck: boolean;
+  /**
+   * Provenance of the surface value: dataset, fetch date, CRS/vertical datum, sampling
+   * method and the measured median — including the median REJECTED for the height
+   * field, so the evidence survives without asserting an unconfirmed height.
+   */
+  source: string;
+  /** Initial bearing from this point to the landmark, degrees true. Computed, not stored. */
+  readonly bearingToLandmarkDeg: number;
+  /** Great-circle ground distance to the landmark, metres. Computed. */
+  readonly distanceToLandmarkM: number;
+}
+
+export interface Vantage {
+  id: string;
+  name: string;
+  /** landmarks.ts id of the aligned structure. */
+  landmarkId: string;
+  points: StandingPoint[];
+  notes: string;
+}
+
+/**
+ * Initial bearing (degrees true) and ground distance (metres) between two geodetic
+ * positions, via the repo's standard ECEF -> ENU path — the same convention the
+ * silhouette builder uses, so solver targets and these bearings cannot drift apart.
+ */
+export function bearingDistanceTo(from: LatLon, to: LatLon): {
+  bearingDeg: number;
+  distanceM: number;
+} {
+  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+  // surface-level positions (h=0 on both ends).
+  const a = geodeticToECEF(from.lat, from.lon, 0);
+  const b = geodeticToECEF(to.lat, to.lon, 0);
+  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const enu = ecefToENU(d, from.lat, from.lon);
+  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+  return {
+    bearingDeg: (bearingDeg + 360) % 360,
+    distanceM: Math.hypot(enu[0], enu[1]),
+  };
+}
+
+/** Build a standing point, computing bearing/distance to the landmark from coordinates. */
+export function standingPoint(
+  base: Omit<
+    StandingPoint,
+    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+  >,
+  landmark: LatLon,
+): StandingPoint {
+  const { bearingDeg, distanceM } = bearingDistanceTo(base, landmark);
+  return Object.freeze({
+    ...base,
+    bearingToLandmarkDeg: bearingDeg,
+    distanceToLandmarkM: distanceM,
+  });
+}
+
+const FERNSEHTURM_POS: LatLon = { lat: 52.520815, lon: 13.409419 };
+
+/** Eye height of a standing photographer, metres. */
+export const EYE_HEIGHT_M = 1.6;
+
+const OSM_BRIDGE_SOURCE =
+  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck heights per node from Berlin ' +
+  'DOM1 (sheet dom1_33_398_5818_2, EPSG:25833, DHHN2016), sampled 2026-11-12: only the ' +
+  'crest nodes inside the curated 48.1-48.3 m mid-span envelope adopt their measured ' +
+  'median; the ramp/flank nodes keep the curated 48.2 m with needsSiteCheck until ' +
+  'surveyed. Each point carries its own source, including the rejected measurement.';
+
+/** The curated mid-span deck record (src/lib/viewpoints.ts), metres DHHN2016. */
+const CURATED_MIDSPAN_M = 48.2;
+
+/**
+ * The curated mid-span crest envelope, metres DHHN2016 (p05-p95 of the DOM1 crest,
+ * src/lib/viewpoints.ts). DOM1 is trusted for the deck ONLY inside this band: a node
+ * measuring within it is on the confirmed crest, a node below it is on the ramp, where
+ * the surface model does not establish a deck height for this bridge.
+ */

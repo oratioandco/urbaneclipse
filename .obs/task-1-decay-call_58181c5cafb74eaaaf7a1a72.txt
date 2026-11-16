@@ -1,0 +1,12 @@
+ERROR: exit: exit status 1
+54:export interface BodySample {
+55-  /** Degrees clockwise from north. */
+56-  az: number;
+57-  /** Degrees above the horizon. */
+58-  alt: number;
+59-  /** Distance to the body, km — sets its apparent size. */
+60-  distanceKm: number;
+61-  /** Physical radius of the body, km. */
+62-  radiusKm: number;
+63-}
+64-

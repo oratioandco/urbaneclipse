@@ -1,0 +1,95 @@
+he body's azimuth, measured from the
+  // landmark: looking back along that bearing puts the landmark in front of the body.
+  const bearingFromLandmark = (body.az + 180) % 360;
+
+  const targetAltRad = (body.alt * Math.PI) / 180;
+
+  // Flat-earth first guess; the loop corrects for curvature and terrain.
+  let groundGuess = ground({ lat: landmark.lat, lon: landmark.lon }) ?? landmark.baseOrthometric;
+  let eyeEllipsoidal = orthometricToEllipsoidal(groundGuess) + eyeHeight;
+  let d = Math.max(1, (featureEllipsoidal - eyeEllipsoidal) / Math.tan(targetAltRad));
+
+  let position: LatLon = { lat: landmark.lat, lon: landmark.lon };
+
+  for (let i = 0; i < maxIterations; i++) {
+    const p = offsetGeodetic(landmark.lat, landmark.lon, 0, bearingFromLandmark, d);
+    position = { lat: p.lat, lon: p.lon };
+
+    const g = ground(position);
+    const resolved = resolveEyeEllipsoidalHeight({
+      groundOrthometric: g,
+      eyeHeight,
+    });
+    eyeEllipsoidal = resolved;
+
+    const observer: ObserverGeodetic = {
+      lat: position.lat,
+      lon: position.lon,
+      ellipsoidalHeight: eyeEllipsoidal,
+    };
+    const actual = azAltTo(observer, landmark.lat, landmark.lon, featureEllipsoidal);
+
+    if (Math.abs(actual.alt - body.alt) < 1e-4) {
+      return { position, distanceM: d, eyeEllipsoidalHeight: eyeEllipsoidal };
+    }
+
+    // Elevation falls as distance grows, so scale by the tangent ratio.
+    const actualTan = Math.tan((actual.alt * Math.PI) / 180);
+    const targetTan = Math.tan(targetAltRad);
+    if (!Number.isFinite(actualTan) || actualTan <= 0 || targetTan <= 0) return null;
+
+    const next = d * (actualTan / targetTan);
+    if (!Number.isFinite(next) || next <= 0) return null;
+    // Damp the step so terrain feedback cannot make the iteration oscillate.
+    d = d + 0.7 * (next - d);
+  }
+
+  return { position, distanceM: d, eyeEllipsoidalHeight: eyeEllipsoidal };
+}
+
+/**
+ * Evaluate the actual composition at a solved position — the exact silhouette
+ * classification, not just the alignment that produced the position.
+ */
+export function evaluateCandidate(
+  when: Date,
+  body: BodySample,
+  opts: SolveOptions,
+): Candidate | null {
+  const solved = solveObserverPosition(body, opts);
+  if (!solved) return null;
+
+  const observer: ObserverGeodetic = {
+    lat: solved.position.lat,
+    lon: solved.position.lon,
+    ellipsoidalHeight: solved.eyeEllipsoidalHeight,
+  };
+
+  const reference = { az: body.az, alt: body.alt };
+  const silhouette = buildSilhouette(observer, opts.landmark, reference);
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+  const result = classifyOccultation(discRadius, silhouette);
+
+  return {
+    when,
+    position: solved.position,
+    distanceM: solved.distanceM,
+    kind: result.kind,
+    coveredFraction: result.coveredFraction,
+    separationDeg: result.separationDeg,
+    withinArea: opts.area ? isInsideArea(solved.position, opts.area) : true,
+  };
+}
+
+export interface SearchRequest extends SolveOptions {
+  start: Date;
+  end: Date;
+  stepMinutes: number;
+  /** Positions of the body over time. */
+  bodyAt: (t: Date) => BodySample;
+  /** Which compositions to keep. Defaults to full and partial. */
+  wanted?: OccultationKind[];
+  /** Keep only candidates inside the area. Defaults to true when an area is given. */
+  requireWithinArea?: boolean;
+  /** Cap on returned candidates, best first. */
+  limit

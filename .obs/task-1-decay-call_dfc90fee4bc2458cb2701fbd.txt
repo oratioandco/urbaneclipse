@@ -1,0 +1,9 @@
+src/lib/elevation.ts:40:export const GEOID_UNDULATION_BERLIN = 39.5;
+src/lib/elevation.ts:60:function assertFinite(v: number, what: string): void {
+src/lib/elevation.ts:67:export function orthometricToEllipsoidal(
+src/lib/elevation.ts:77:export function ellipsoidalToOrthometric(
+src/lib/elevation.ts:117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+tests/unit/vantages.test.ts:40:function measured(id: string): number {
+39:export function sunDistanceKm(date: Date): number {
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+{'format': 'plaster-void-heightmap', 'version': 1, 'binary': 'berlin-dgm1.bin', 'byteLength': 724280, 'dtype': 'int16', 'byteOrder': 'little', 'scale': 0.1, 'offset': 0.0, 'nodata': -32768, 'width': 953, 'height': 380, 'rowOrder': 'south-to-north', 'colOrder': 'west-to-east', 'index': 'row * width + col', 'crs': 'EPSG:4326', 'dLon': 0.00014757258826554657, 'dLat': 8.98883410481109e-05, 'approxSpacingMetres': 10.0, 'heightUnit': 'metre', 'heightType': 'orthometric', 'verticalDatum': 'DHHN2016 (normal heights, NHN)', 'toEllipsoidal': 'h_wgs84 = sample + geoidUndulation.appliedByConvertTile', 'resampling': 'mean of 1 m DGM1 postings in a 10 m box per node', 'generatedBy': 'scripts/build_heightmap.py', 'generatedAt': '2026-07-22T05:10:12Z'}

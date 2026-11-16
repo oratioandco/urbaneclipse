@@ -1,0 +1,39 @@
+ * choice — about +-0.35 days of alignment-calendar shift, and the alignment windows
+ * themselves are only 1-2 days wide, so the choice of railing is within the noise but
+ * the choice of BRIDGE END is not. Points are the OSM shape nodes, thinned to
+ * representative positions.
+ */
+export const LICHTENBERGER_BRUECKE: Vantage = {
+  id: 'lichtenberger-bruecke',
+  name: 'Lichtenberger Brücke',
+  landmarkId: 'fernsehturm',
+  points: [
+    // Fourth column: DOM1 plateau median measured at that node, metres DHHN2016.
+    ...pts([
+      ['nord-west', 52.5115685, 13.4983761, 47.8],
+      ['nord-mitte', 52.5115358, 13.4982790, 47.7],
+      ['nord-knick', 52.5112931, 13.4975595, 46.9],
+    ]),
+    ...pts([
+      ['sued-west', 52.5112551, 13.4975327, 47.0],
+      ['sued-mitte', 52.5111010, 13.4991829, 48.2],
+      ['sued-ost', 52.5110579, 13.4996359, 48.1],
+    ]),
+  ],
+  notes: OSM_BRIDGE_SOURCE,
+};
+103:export const EYE_HEIGHT_M = 1.6;
+163:        eyeHeightM: EYE_HEIGHT_M,
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,

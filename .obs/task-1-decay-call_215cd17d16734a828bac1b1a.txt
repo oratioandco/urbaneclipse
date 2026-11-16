@@ -1,0 +1,47 @@
+    expect(p.horizonDistanceM).toBeLessThan(700);
+    // A nearer ridge hides a taller far one: the skyline must not keep rising past it.
+    const last = p.samples[p.samples.length - 1]!;
+    expect(last.altitudeDeg).toBeCloseTo(p.horizonAltitudeDeg, 9);
+  });
+
+  it('rejects a non-positive step or range instead of looping forever', () => {
+    expect(() => sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 100, stepM: 0, map: FLAT })).toThrow(RangeError);
+    expect(() => sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 0, stepM: 10, map: FLAT })).toThrow(RangeError);
+  });
+
+  it('reports a coverage gap rather than inventing ground', () => {
+    // Walk east out of the 21x21 grid: samples past the edge have no data.
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 90, maxDistanceM: 3000, stepM: 100, map: FLAT });
+    expect(p.truncated).toBe(true);
+    expect(p.coverage).toBeGreaterThan(0);
+    expect(p.coverage).toBeLessThan(1);
+    expect(p.maxDistanceM).toBeLessThan(3000);
+    // Nothing beyond the last known sample may appear in the profile.
+    for (const s of p.samples) expect(s.distanceM).toBeLessThanOrEqual(p.maxDistanceM);
+  });
+
+  it('returns NaN and zero coverage when NO terrain is available, never 0 degrees', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 100, stepM: 50, map: grid(() => -3276.8) });
+    expect(p.coverage).toBe(0);
+    expect(Number.isNaN(p.horizonAltitudeDeg)).toBe(true);
+    expect(p.truncated).toBe(true);
+    expect(p.samples).toHaveLength(0);
+  });
+});
+
+describe('Siegessäule target window — spherical trig, known answers', () => {
+  it('looks almost exactly west from Straße des 17. Juni', () => {
+    // Independent WGS84 Vincenty inverse: 270.069244374 deg. (A mean-sphere
+    // haversine gives 270.069397 — the 1.5e-4 deg difference is the datum, not drift.)
+    expect(azimuthToLandmark(OBS, SIEGESSAEULE)).toBeCloseTo(270.069244, 5);
+  });
+
+  it('puts the 67 m tip about 3.2 deg above the eye at ~1.35 km', () => {
+    expect(landmarkHeight(SIEGESSAEULE)).toBeCloseTo(67, 6);
+    // Independent: base 44 + 67 = 111 m, eye 35.6 m, WGS84 geodesic d = 1351.037460 m
+    // -> 3.189035495 deg. The mean-sphere haversine distance (1346.678 m) is 4.36 m
+    // short on this east-west line at 52.5 deg N, which would overstate this by 0.010 deg.
+    expect(landmarkTipAltitudeDeg(OBS, SIEGESSAEULE)).toBeCloseTo(3.189035495, 6);
+  });
+
+  it('spa

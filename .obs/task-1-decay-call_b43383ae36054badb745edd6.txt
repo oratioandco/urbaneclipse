@@ -1,0 +1,98 @@
+/**
+ * Parametric landmark models — pure data + math, NO Cesium.
+ *
+ * WHY THESE EXIST (measured, not assumed)
+ * ---------------------------------------
+ * The Berlin LoD2 building data CANNOT represent the Fernsehturm well enough to plan
+ * an urban eclipse. Measured directly from the shipped tile_392_5820.b3dm geometry:
+ *
+ *   - The sphere is NOT modelled. Its 36.12 m plan outline is extruded as a straight
+ *     vertical prism from the ground up — the radius is constant to 4 significant
+ *     figures across 216 vertical metres (a sphere would vary as sqrt(r^2 - dz^2)).
+ *   - The tapered shaft is NOT modelled: a constant 18 m cylinder.
+ *   - The antenna mast is ABSENT. The model tops out at 288.11 m DHHN2016; the real
+ *     tip is ~402.6 m. 114.5 m missing.
+ *
+ * That is LoD2 working as specified (footprint-faithful, generalised roof, no curved
+ * or varying-section walls) — it is simply the wrong tool for this target.
+ *
+ * Consequences at the 3953 m range from Lichtenberger Bruecke, where 1 deg = 69.0 m:
+ * silhouette half-width errors of +0.127 deg to +0.184 deg below the sphere — 3-4x the
+ * ~0.05 deg composition tolerance. The LoD2 model claims a 0.52 deg-wide obstacle (the
+ * disc's own width) where the real shaft is 0.16-0.27 deg wide, so it would report
+ * "fully behind the tower" for a disc that actually straddles the shaft with open sky
+ * on both sides. Above 253.5 m AGL it reports clear sky through the real antenna.
+ *
+ * So the tower is modelled analytically here instead, as a solid of revolution.
+ * Surrounding LoD2 city geometry remains fine for foreground occlusion.
+ */
+
+/** A landmark modelled as a vertical solid of revolution. */
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+   * Radius is linearly interpolated between samples. The sphere is sampled finely
+   * enough that interpolation error stays far below the angular tolerance.
+   */
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+  notes: string;
+}
+
+/**
+ * Sample a sphere's radius profile, unioned with the surrounding shaft.
+ * r(h) = sqrt(R^2 - (h - centre)^2) over the sphere's vertical span.
+ */
+function sphereSamples(
+  centreHeight: number,
+  sphereRadius: number,
+  shaftRadiusAt: (h: number) => number,
+  steps = 16,
+): Array<readonly [number, number]> {
+  const out: Array<readonly [number, number]> = [];
+  for (let i = 0; i <= steps; i++) {
+    const h = centreHeight - sphereRadius + (2 * sphereRadius * i) / steps;
+    const dz = h - centreHeight;
+    const r = Math.sqrt(Math.max(0, sphereRadius * sphereRadius - dz * dz));
+    out.push([h, Math.max(r, shaftRadiusAt(h))]);
+  }
+  return out;
+}
+
+/** Shaft taper: 16 m dia flare at the foot -> 8 m radius by 20 m -> 4.5 m at the top. */
+function fernsehturmShaftRadius(h: number): number {
+  if (h <= 0) return 16;
+  if (h < 20) return 16 + ((8 - 16) * h) / 20; // flared foot
+  if (h < 249.8) return 8 + ((4.5 - 8) * (h - 20)) / (248.78 - 20); // concrete shaft to 248.78 m
+  if (h <= 368.03) return 2.0 + ((0.9 - 2.0) * (h - 249.8)) / (368.03 - 249.8); // antenna, 4 m dia at the base
+  return 0;
+}
+
+const SPHERE_CENTRE_AGL = 213.78;
+const SPHERE_RADIUS = 16; // 32 m diameter
+
+/**
+ * Berliner Fernsehturm, modelled from published dimensions.
+ *
+ * Axis: EPSG:25833 E 392080.49, N 5820156.85 — the measured centroid of the LoD2
+ * ground ring (+/-1 m), converted to WGS84. Base ground 34.6 m DHHN2016, taken from the
+ * LoD2 GroundSurface so it stays consistent with the rest of the scene rather than
+ * with Wikipedia's 32 m ue. NHN.
+ *
+ * SENSITIVITY at 3953 m (1 deg = 69.0 m, tolerance ~0.05 deg):
+ *   sphere centre height +/-1 m  -> +/-0.014 deg
+ *   axis position       +/-1 m  -> +/-0.014 deg
+ *   antenna base dia    +/-2 m  -> +/-0.015 deg  (the one low-confidence figure)
+ * All comfortably inside tolerance. Only the sphere diameter (32 m) and total height
+ * (368.03 m) need precision, and both are high-confidence published values.
+ */
+199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+230:export function landmarkHeight(landmark: RevolutionLandmark): number {

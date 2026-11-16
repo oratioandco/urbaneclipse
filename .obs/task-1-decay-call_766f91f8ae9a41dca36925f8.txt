@@ -1,0 +1,21 @@
+41:export interface ObserverGeodetic {
+49:export interface AzAlt {
+59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {
+90:export function directionOffsetECEF(
+122:export function discRadiusMetres(angularRadiusDeg: number, distanceM: number): number {
+127:export function ecefToGeodetic(x: number, y: number, z: number): {
+156:export function offsetGeodetic(
+182:export function azAltTo(
+210:export function toTangentPlane(dir: AzAlt, reference: AzAlt): AngularPoint {
+239:export function buildSilhouette(
+260:export interface SilhouetteDirections {
+265:export function buildSilhouetteDirections(
+314:export function projectSilhouette(
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };

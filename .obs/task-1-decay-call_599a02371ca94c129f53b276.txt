@@ -1,0 +1,12 @@
+22
+v19.0.0
+v20.19.2
+v22.22.2
+node
+node.js
+node@25
+nodejs
+/usr/local/bin/node
+/usr/local/bin/node
+/Users/ttreppmann/.nvm/versions/node/v20.19.2/bin/node
+/opt/homebrew/bin/node

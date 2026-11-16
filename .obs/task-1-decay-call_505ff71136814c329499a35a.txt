@@ -1,0 +1,26 @@
+    expect(eyeEllipsoidal(OBS)).toBe(
+      resolveEyeEllipsoidalHeight({ groundOrthometric: undefined, surfaceOrthometric: 34, eyeHeight: 1.6 }),
+    );
+  });
+});
+
+/**
+ * The time dimension: real ephemeris, real silhouette, terrain-gated.
+ *
+ * Known answer used here: at the March equinox the sun sets essentially DUE WEST, and
+ * the Siegessäule's axis from Straße des 17. Juni lies at 270.069 deg — so the best
+ * covered window of that week must be the equinox one, within the column's 1.27 deg
+ * half-width. Measured independently before writing these expectations: six windows,
+ * best 2027-03-21 17:14Z at az 270.268 deg, coveredFraction 0.94.
+ */
+describe('enumerateHorizonGatedWindows — flag-gated, terrain-aware', () => {
+  const bodyAt = (t: Date, body: 'sun' | 'moon') => sampleBody(body, t, OBS.lat, OBS.lon);
+  const range = {
+    start: new Date('2027-03-18T00:00:00Z'),
+    end: new Date('2027-03-24T00:00:00Z'),
+    stepMinutes: 2,
+  };
+
+tests/unit/sun-agreement.test.ts:131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc
+tests/unit/vantageWindows.test.ts:9: * Golden tests against an INDEPENDENT ephemeris run (Meeus low-precision solar +
+tests/unit/vantageWindows.test.ts:119:   * Reference ephemeris (Meeus, parallax-corrected) gives FOUR moon-disc-on-spire

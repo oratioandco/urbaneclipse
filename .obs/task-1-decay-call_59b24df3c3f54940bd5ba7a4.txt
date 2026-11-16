@@ -1,0 +1,75 @@
+export const BERLINER_DOM: RevolutionLandmark = {
+  id: 'berliner-dom',
+  name: 'Berliner Dom',
+  lat: 52.5190822,
+  lon: 13.4010942,
+  baseOrthometric: 35.26,
+  profile: [
+    [62, 16.5], // tambour foot (assumed band; diameter sourced: 33 m)
+    [68, 16.5], // dome springing (assumed height)
+    [71, 16.22], // hemisphere r(h) = sqrt(16.5^2 - (h-68)^2)
+    [74, 15.37],
+    [77, 13.83],
+    [80, 11.32],
+    [82, 8.73],
+    [84, 4.03],
+    [84.5, 2.6], // dome crown -> lantern (assumed radius)
+    [93, 2.6], // lantern top
+    [95, 1.2], // cross taper
+    [96.5, 0.6],
+    [98, 0.2], // apex: CURRENT building height (de.wiki), not 114/115 m
+  ],
+};
+31:export interface RevolutionLandmark {
+32-  id: string;
+33-  name: string;
+35-  lat: number;
+36-  lon: number;
+38-  baseOrthometric: number;
+44-  profile: ReadonlyArray<readonly [number, number]>;
+46-  notes: string;
+47-}
+
+
+[job 1 · running 7s]31:export interface RevolutionLandmark {
+32-  id: string;
+33-  name: string;
+34-  /** Axis position, WGS84 degrees. */
+35-  lat: number;
+36-  lon: number;
+37-  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+38-  baseOrthometric: number;
+39-  /**
+40-   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+41-   * Radius is linearly interpolated between samples. The sphere is sampled finely
+42-   * enough that interpolation error stays far below the angular tolerance.
+43-   */
+44-  profile: ReadonlyArray<readonly [number, number]>;
+45-  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+46-  notes: string;
+47-}
+48-
+49-/**
+50- * Sample a sphere's radius profile, unioned with the surrounding shaft.
+51- * r(h) = sqrt(R^2 - (h - centre)^2) over the sphere's vertical span.
+9: * they are excluded from the profile. The December negative control below proves
+125:    const p = BERLINER_DOM.profile;
+142:    const maxR = Math.max(...BERLINER_DOM.profile.map((r) => r.r));
+144:    const apex = BERLINER_DOM.profile[BERLINER_DOM.profile.length - 1]!;
+5:     × carries the sourced 33 m dome diameter as its widest ring 12ms
+6:     × silhouette spans exactly the dome band — no towers, no nave 3ms
+7:     × finds real transits in BOTH seasonal windows, including full ones 2ms
+8:     × pins transit dates against the independent Meeus ephemeris 2ms
+9:     × JUNE: no transits — the sun passes far ABOVE the dome 11ms
+10:     × DECEMBER: no transits — proves towers/nave are NOT modeled 2ms
+14: FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring
+26: FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — no towers, no nave
+38: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > finds real transits in BOTH seasonal windows, including full ones
+54: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+70: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > JUNE: no transits — the sun passes far ABOVE the dome
+86: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+
+
+[job 1 · running 16s]
+
+[job 1 · running 28s]

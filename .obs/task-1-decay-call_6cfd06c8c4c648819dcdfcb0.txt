@@ -1,0 +1,1 @@
+['export interface RevolutionLandmark {', 'export const FERNSEHTURM: RevolutionLandmark = {', 'export const SIEGESSAEULE: RevolutionLandmark = {', 'export 

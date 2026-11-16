@@ -1,0 +1,82 @@
+[Showing lines 392-472 of 472, the last 4047 of 22148 bytes. Whole output: .obs/task-1-4.txt — read the start with sh: sed -n '1,391p' .obs/task-1-4.txt]
+    });
+    expect(w.length).toBeGreaterThan(3);
+    expect(w.every((x) => x.body === 'sun')).toBe(true);
+    // Chronological, as the calendar needs.
+    for (let i = 1; i < w.length; i++) {
+      expect(w[i]!.peak.getTime()).toBeGreaterThan(w[i - 1]!.peak.getTime());
+    }
+    const best = w.reduce((a, b) => (b.coveredFraction > a.coveredFraction ? b : a));
+    expect(best.coveredFraction).toBeGreaterThan(0.8);
+    // The equinox: 20 or 21 March 2027.
+    expect(best.peak.getUTCDate()).toBeGreaterThanOrEqual(20);
+    expect(best.peak.getUTCDate()).toBeLessThanOrEqual(21);
+    expect(best.peak.getUTCMonth()).toBe(2);
+    // Sunset, i.e. late afternoon UTC in Berlin.
+    expect(best.peak.getUTCHours()).toBeGreaterThanOrEqual(16);
+    expect(best.peak.getUTCHours()).toBeLessThanOrEqual(18);
+    // On the column's azimuth, within its half-width.
+    const target = targetWindow(OBS, SIEGESSAEULE);
+    expect(Math.abs(best.peakAzimuthDeg - target.azimuthDeg)).toBeLessThan(target.azimuthHalfWidthDeg);
+    expect(best.peakAltitudeDeg).toBeGreaterThan(target.altitudeMinDeg - 0.5);
+    expect(best.peakAltitudeDeg).toBeLessThan(target.altitudeMaxDeg);
+  });
+
+  it('reports a fully sampled skyline as confident on complete coverage', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    expect(w.every((x) => x.horizonConfident)).toBe(true);
+    // Flat ground below the eye cannot block a sunset.
+    expect(w.every((x) => x.clearsHorizon)).toBe(true);
+    expect(w.some((x) => x.photographable)).toBe(true);
+  });
+
+  it('REJECTS a perfect alignment that sets behind a ridge — the whole point of the module', () => {
+    const open = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    const blocked = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: RIDGED, bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    // Same instants, same geometry: the alignment itself is unchanged ...
+    expect(blocked.length).toBe(open.length);
+    for (let i = 0; i < open.length; i++) {
+      expect(blocked[i]!.peak.getTime()).toBe(open[i]!.peak.getTime());
+      expect(blocked[i]!.coveredFraction).toBeCloseTo(open[i]!.coveredFraction, 9);
+    }
+    // ... but the terrain now hides every one of them.
+    expect(blocked.every((x) => !x.clearsHorizon)).toBe(true);
+    expect(blocked.every((x) => !x.photographable)).toBe(true);
+    expect(blocked[0]!.horizonAltitudeDeg).toBeGreaterThan(2);
+    expect(open[0]!.horizonAltitudeDeg).toBeLessThan(0);
+  });
+
+  it('marks the REAL grid result as not confident, because the column is outside coverage', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: realBerlin(), bodyAt, ...range, bodies: ['sun'], enabled: true,
+    });
+    expect(w.length).toBeGreaterThan(0);
+    expect(w.every((x) => !x.horizonConfident)).toBe(true);
+    // Honest, not silently optimistic: the alignment is still reported.
+    expect(w.some((x) => x.coveredFraction > 0.5)).toBe(true);
+  });
+
+  it('honours the bodies filter', () => {
+    const w = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['moon'], enabled: true,
+    });
+    expect(w.every((x) => x.body === 'moon')).toBe(true);
+  });
+
+  it('requires the whole disc to clear when a radius is supplied', () => {
+    const centre = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true, discRadiusDeg: 0,
+    });
+    const whole = enumerateHorizonGatedWindows({
+      point: OBS, landmark: SIEGESSAEULE, map: RIDGED, bodyAt, ...range, bodies: ['sun'], enabled: true, discRadiusDeg: 0.25,
+    });
+    expect(centre.some((x) => x.clearsHorizon)).toBe(true);
+    expect(whole.every((x) => !x.clearsHorizon)).toBe(true);
+  });
+});

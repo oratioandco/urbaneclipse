@@ -1,0 +1,45 @@
+  190|   const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], obser…
+ ❯ buildSilhouetteDirections src/lib/silhouette.ts:285:18
+ ❯ findOccultationsAtPosition src/lib/areaSolver.ts:398:16
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:276:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+TypeError: Cannot read properties of undefined (reading 'lat')
+ ❯ azAltTo src/lib/silhouette.ts:188:37
+    186|   targetEllipsoidalHeight: number,
+    187| ): AzAlt & { rangeM: number } {
+    188|   const o = geodeticToECEF(observer.lat, observer.lon, observer.ellips…
+       |                                     ^
+    189|   const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeig…
+    190|   const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], obser…
+ ❯ buildSilhouetteDirections src/lib/silhouette.ts:285:18
+ ❯ findOccultationsAtPosition src/lib/areaSolver.ts:398:16
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:293:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 4 passed (10)
+   Start at  14:44:46
+   Duration  4.87s (transform 2.17s, setup 0ms, import 2.43s, tests 48ms, environment 0ms)
+
+31:export interface RevolutionLandmark {
+32-  id: string;
+33-  name: string;
+35-  lat: number;
+36-  lon: number;
+38-  baseOrthometric: number;
+130:export const BERLINER_DOM: RevolutionLandmark = {
+131-  id: 'berliner-dom',
+132-  name: 'Berliner Dom',
+133-  lat: 52.5190822,
+134-  lon: 13.4010942,
+135-  baseOrthometric: 35.26,
+136-  profile: [
+137-    [62, 16.5], // tambour foot (assumed band; diameter sourced: 33 m)
+138-    [68, 16.5], // dome springing (assumed height)

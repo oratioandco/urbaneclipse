@@ -1,0 +1,37 @@
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,
+65-    alt: p.altitude,
+66-    distanceKm: sunDistanceKm(date),
+67-    radiusKm: SUN_RADIUS_KM,
+68-  };
+69-}
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+78-  return {
+79-    bearingDeg: (bearingDeg + 360) % 360,
+80-    distanceM: Math.hypot(enu[0], enu[1]),
+81-  };
+82-}
+83-
+84-/** Build a standing point, computing bearing/distance to the landmark from coordinates. */
+85-export function standingPoint(

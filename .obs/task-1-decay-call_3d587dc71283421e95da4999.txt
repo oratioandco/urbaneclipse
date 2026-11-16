@@ -1,0 +1,19 @@
+export function feasibility(
+  landmark: RevolutionLandmark,
+  body: Pick<BodySample, 'distanceKm' | 'radiusKm'>,
+  observedFromM: number,
+): { fullPossible: boolean; maxRangeForFullM: number; landmarkWidthDeg: number } {
+  let widest = 0;
+  const total = landmarkHeight(landmark);
+  for (const [h, r] of landmark.profile) {
+    if (h <= total) widest = Math.max(widest, r * 2);
+  }
+  const discRadius = angularRadiusDeg(body.radiusKm, body.distanceKm);
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+118-  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+119-
+120-  assertFinite(eyeHeight, 'eye height');
+121-  if (eyeHeight < 0) {
+122-    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+123-  }
+124-

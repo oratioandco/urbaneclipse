@@ -1,0 +1,20 @@
+109- * Resolve a Cesium-ready ellipsoidal height for the observer's eye.
+110- *
+111- *   h = (surfaceOrthometric ?? groundOrthometric ?? fallback) + N + eyeHeight
+112- *
+113- * Throws on non-finite input, a negative eye height, or a ground elevation outside
+114- * the plausible Berlin range — all of which indicate upstream data corruption that
+115- * must not be allowed to reach the scene silently (FR-013).
+116- */
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+118-  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+119-
+120-  assertFinite(eyeHeight, 'eye height');
+121-  if (eyeHeight < 0) {
+122-    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+123-  }
+124-
+125-  let surface: number;
+32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+69:  undulation: number = GEOID_UNDULATION_BERLIN,

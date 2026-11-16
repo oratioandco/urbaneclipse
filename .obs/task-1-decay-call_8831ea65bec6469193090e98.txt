@@ -1,0 +1,2 @@
+st'; import { readFileSync } from 'node:fs'; import { import { sampleBody } from '../../src/lib/bodyPosition.js'; import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js'; import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landma
+HW-FNS: const OBS | function grid | const

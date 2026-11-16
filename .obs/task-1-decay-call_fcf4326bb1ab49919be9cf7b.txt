@@ -1,0 +1,39 @@
+ * silhouette half-width errors of +0.127 deg to +0.184 deg below the sphere — 3-4x the
+ * ~0.05 deg composition tolerance. The LoD2 model claims a 0.52 deg-wide obstacle (the
+ * disc's own width) where the real shaft is 0.16-0.27 deg wide, so it would report
+ * "fully behind the tower" for a disc that actually straddles the shaft with open sky
+ * on both sides. Above 253.5 m AGL it reports clear sky through the real antenna.
+ *
+ * So the tower is modelled analytically here instead, as a solid of revolution.
+ * Surrounding LoD2 city geometry remains fine for foreground occlusion.
+ */
+
+/** A landmark modelled as a vertical solid of revolution. */
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+   * Radius is linearly interpolated between samples. The sphere is sampled finely
+   * enough that interpolation error stays far below the angular tolerance.
+   */
+  profile: ReadonlyArray<readonly [number, number]>;
+  /** Provenance and confidence, so downstream accuracy claims stay honest. */
+  notes: string;
+}
+
+/**
+ * Sample a sphere's radius profile, unioned with the surrounding shaft.
+ * r(h) = sqrt(R^2 - (h - centre)^2) over the sphere's vertical span.
+ */
+function sphereSamples(
+  centreHeight: number,
+  sphereRadius: number,
+  shaftRadiusAt: (h: number) => number,
+  steps = 16,
+): Array<readonly [number, number]> {

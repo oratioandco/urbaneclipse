@@ -1,0 +1,44 @@
+4: ❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 48ms
+5:     × carries the sourced 33 m dome diameter as its widest ring 12ms
+6:     × silhouette spans exactly the dome band — no towers, no nave 3ms
+7:     × finds real transits in BOTH seasonal windows, including full ones 2ms
+8:     × pins transit dates against the independent Meeus ephemeris 2ms
+9:     × JUNE: no transits — the sun passes far ABOVE the dome 11ms
+10:     × DECEMBER: no transits — proves towers/nave are NOT modeled 2ms
+12:⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+14: FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring
+26: FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — no towers, no nave
+38: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > finds real transits in BOTH seasonal windows, including full ones
+54: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+15:AssertionError: expected NaN to be close to 16.5, received difference is NaN, but expected 0.005
+31:export interface RevolutionLandmark {
+32-  id: string;
+33-  name: string;
+35-  lat: number;
+36-  lon: number;
+38-  baseOrthometric: number;
+44-  profile: ReadonlyArray<readonly [number, number]>;
+export const BERLINER_DOM: RevolutionLandmark = {
+  id: 'berliner-dom',
+  name: 'Berliner Dom',
+  lat: 52.5190822,
+  lon: 13.4010942,
+  baseOrthometric: 35.26,
+  profile: [
+    [62, 16.5], // tambour foot (assumed band; diameter sourced: 33 m)
+    [68, 16.5], // dome springing (assumed height)
+    [71, 16.22], // hemisphere r(h) = sqrt(16.5^2 - (h-68)^2)
+    [74, 15.37],
+    [77, 13.83],
+    [80, 11.32],
+    [82, 8.73],
+    [84, 4.03],
+    [84.5, 2.6], // dome crown -> lantern (assumed radius)
+    [93, 2.6], // lantern top
+    [95, 1.2], // cross taper
+    [96.5, 0.6],
+    [98, 0.2], // apex: CURRENT building height (de.wiki), not 114/115 m
+  ],
+
+
+[job 1 · running 2s]

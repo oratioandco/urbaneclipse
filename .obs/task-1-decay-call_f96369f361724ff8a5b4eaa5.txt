@@ -1,0 +1,41 @@
+v22.22.2
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+TypeError: Cannot read properties of undefined (reading 'getTime')
+ ❯ tests/unit/domLandmark.test.ts:250:44
+    248|       expect(ind.first).not.toBeNull();
+    249|       expect(ind.last).not.toBeNull();
+    250|       const times = hits.map((h) => h.date.getTime());
+       |                                            ^
+    251|       const lo = Math.min(...times);
+    252|       const hi = Math.max(...times);
+ ❯ tests/unit/domLandmark.test.ts:250:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+AssertionError: expected [ Array(200) ] to have a length of +0 but got 200
+
+- Expected
++ Received
+
+- 0
++ 200
+
+ ❯ tests/unit/domLandmark.test.ts:292:18
+    290|       end: new Date(Date.UTC(2027, 0, 10)),
+    291|     });
+    292|     expect(hits).toHaveLength(0);
+       |                  ^
+    293|     let altAtAz = -90;
+    294|     for (let t = Date.UTC(2026, 11, 21); t < Date.UTC(2026, 11, 22); t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+   Start at  14:41:19
+   Duration  7.54s (transform 2.02s, setup 0ms, import 2.11s, tests 2.26s, environment 0ms)
+

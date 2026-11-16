@@ -1,0 +1,22 @@
+53:export interface Vantage {
+54-  id: string;
+55-  name: string;
+56-  /** landmarks.ts id of the aligned structure. */
+57-  landmarkId: string;
+58-  points: StandingPoint[];
+59-  notes: string;
+60-}
+61-
+62-/**
+63- * Initial bearing (degrees true) and ground distance (metres) between two geodetic
+64- * positions, via the repo's standard ECEF -> ENU path — the same convention the
+65- * silhouette builder uses, so solver targets and these bearings cannot drift apart.
+--
+103:export const EYE_HEIGHT_M = 1.6;
+104-
+105-const OSM_BRIDGE_SOURCE =
+106-  'Polyline OSM way 1335772137 (fetched 2026-11-12). Deck heights per node from Berlin ' +
+107-  'DOM1 (sheet dom1_33_398_5818_2, EPSG:25833, DHHN2016), sampled 2026-11-12: only the ' +
+108-  'crest nodes inside the curated 48.1-48.3 m mid-span envelope adopt their measured ' +
+109-  'median; the ramp/flank nodes keep the curated 48.2 m with needsSiteCheck until ' +
+110-  'surveyed. Each point carries its own source, includin

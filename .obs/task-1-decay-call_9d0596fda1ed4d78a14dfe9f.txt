@@ -1,0 +1,6 @@
+82:      expect(p.surfaceOrthometric).toBeCloseTo(measured(id), 6);
+88:    expect(byId('sued-ost').surfaceOrthometric).toBeCloseTo(48.1, 6);
+100:    expect(byId('sued-mitte').surfaceOrthometric).toBeCloseTo(48.2, 1);
+184:  it('agrees with an independent Vincenty inverse on WGS84 to 0.001 deg / 0.01 m', () => {
+185:    // Genuinely independent of the repo's ECEF -> ENU path: Vincenty's inverse geodesic
+260:  it('is independent of the deck height, so the height decision cannot move a bearing', () => {

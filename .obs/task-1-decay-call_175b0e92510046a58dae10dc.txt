@@ -1,0 +1,21 @@
+32:98&nbsp;m hoch<ref>{{Literatur |Autor=Lars Eisenlöffel |Hrsg=Oberpfarr- und Domkirc
+82:Ecktürme kam es zu größeren Rissen
+82:Türme
+129:Ecktürmen sowie der kupfergetriebene Figurenschmuck
+419:98. ||Flötenbass || {{0}}8′
+614:98) ⚭ Nr
+627:98–1659)
+661:98)
+==EN==
+54:dome_quantity=
+55:dome_height_outer={{convert|115|m}} (until destruction 1944)
+56:dome_height_inner=
+57:dome_dia_outer=
+58:dome_dia_inner=
+86:towers was attached to the collegiate church, which – due to its prior status as a church of a [[Mendicant orders|mendicant order]] – had no tower
+90:towers
+95:towers
+116:dome, destroyed in an Allied bombing 1944]]
+120:dome
+==DGM==
+{'format': 'plaster-void-heightmap', 'version': 1, 'binary': 'berlin-dgm1.bin', 'byteLength': 724280, 'dtype': 'int16', 'byteOrder': 'little', 'scale': 0.1, 'offset': 0.0, 'nodata': -32768, 'width': 953, 'height': 380, 'rowOrder': 'south-to-north', 'colOrder': 'west-to-east', 'index': 'row * width + col', 'crs': 'EPSG:4326', 'dLon': 0.00014757258826554657, 'dLat': 8.98883410481109e-05, 'approxSpacingMetres': 10.0, 'heightUnit': 'metre', 'heightType': 'orthometric', 'verticalDatum': 'DHHN2016 (normal heights, NHN)', 'toEllipsoidal': 'h_wgs84 = sample + geoidUndulation.appliedByConvertTile', 'resampling': 'mean of 1 m DGM1 postings in a 10 m box per node', 'generatedBy': 'scripts/build_heightmap.py', 'generatedAt': '2026-07-22T05:10:12Z'}

@@ -1,0 +1,75 @@
+  it('agrees with an independent Vincenty inverse on WGS84 to 0.001 deg / 0.01 m', () => {
+    // Genuinely independent of the repo's ECEF -> ENU path: Vincenty's inverse geodesic
+    // on the same ellipsoid. The only residual is chord-vs-geodesic tangent, ~1e-5 deg
+    // over 6 km, hence the 0.001 deg bound.
+    const a = 6378137;
+    const f = 1 / 298.257223563;
+    const b = a * (1 - f);
+    const rad = Math.PI / 180;
+    for (const p of points) {
+      const U1 = Math.atan((1 - f) * Math.tan(p.lat * rad));
+      const U2 = Math.atan((1 - f) * Math.tan(FERNSEHTURM.lat * rad));
+      const L = (FERNSEHTURM.lon - p.lon) * rad;
+      let lambda = L;
+      let sinSigma = 0;
+      let cosSigma = 0;
+      let cos2SigmaM = 0;
+      let sigma = 0;
+      let sinAlpha = 0;
+      for (let i = 0; i < 200; i++) {
+        const sinL = Math.sin(lambda);
+        const cosL = Math.cos(lambda);
+        sinSigma = Math.hypot(
+          Math.cos(U2) * sinL,
+          Math.cos(U1) * Math.sin(U2) - Math.sin(U1) * Math.cos(U2) * cosL,
+        );
+        cosSigma = Math.sin(U1) * Math.sin(U2) + Math.cos(U1) * Math.cos(U2) * cosL;
+        sigma = Math.atan2(sinSigma, cosSigma);
+        sinAlpha = (Math.cos(U1) * Math.cos(U2) * sinL) / sinSigma;
+        cos2SigmaM = cosSigma - (2 * Math.sin(U1) * Math.sin(U2)) / (1 - sinAlpha * sinAlpha);
+        const C = (f / 16) * (1 - sinAlpha * sinAlpha) * (4 + f * (4 - 3 * (1 - sinAlpha * sinAlpha)));
+        const next =
+          L +
+          (1 - C) * f * sinAlpha *
+            (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+        if (Math.abs(next - lambda) < 1e-13) { lambda = next; break; }
+        lambda = next;
+      }
+      const azimuth =
+        (Math.atan2(
+          Math.cos(U2) * Math.sin(lambda),
+          Math.cos(U1) * Math.sin(U2) - Math.sin(U1) * Math.cos(U2) * Math.cos(lambda),
+        ) / rad + 360) % 360;
+      // cos^2(alpha) of the geodesic azimuth at the equator — NOT cos^2(sigma).
+      const uSq = (1 - sinAlpha * sinAlpha) * ((a * a - b * b) / (b * b));
+      const A = 1 + (uSq / 16384) * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+      const B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+      const dSigma =
+        B * sinSigma *
+        (cos2SigmaM + (B / 4) *
+          (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) -
+            (B / 6) * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+      const geodesicM = b * A * (sigma - dSigma);
+      expect(Math.abs(p.bearingToLandmarkDeg - azimuth)).toBeLessThan(0.001);
+      // ENU horizontal distance is the chord projection; over 6 km it is within 1 cm.
+      expect(Math.abs(p.distanceToLandmarkM - geodesicM)).toBeLessThan(0.01);
+    }
+  });
+
+  it('sits in the bridge bearing/distance corridor (spherical sanity check)', () => {
+    const rad = Math.PI / 180;
+    for (const p of points) {
+      const dLon = (FERNSEHTURM.lon - p.lon) * rad;
+      const y = Math.sin(dLon) * Math.cos(FERNSEHTURM.lat * rad);
+      const x =
+        Math.cos(p.lat * rad) * Math.sin(FERNSEHTURM.lat * rad) -
+        Math.sin(p.lat * rad) * Math.cos(FERNSEHTURM.lat * rad) * Math.cos(dLon);
+      const spherical = (Math.atan2(y, x) / rad + 360) % 360;
+      // Sphere vs ellipsoid differs by ~0.024 deg here — a datum difference, not drift.
+      expect(Math.abs(p.bearingToLandmarkDeg - spherical)).toBeLessThan(0.05);
+      expect(p.bearingToLandmarkDeg).toBeGreaterThan(279);
+      expect(p.bearingToLandmarkDeg).toBeLessThan(281);
+      expect(p.distanceToLandmarkM).toBeGreaterThan(6000);
+      expect(p.distanceToLandmarkM).toBeLessThan(6300);
+    }
+  });

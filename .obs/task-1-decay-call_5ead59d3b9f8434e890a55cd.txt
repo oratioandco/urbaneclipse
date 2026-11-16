@@ -1,0 +1,15 @@
+export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+  if (body === 'moon') {
+    const p = getMoonPosition(date, lat, lon);
+    return {
+      az: p.azimuth,
+      alt: p.altitude,
+      distanceKm: p.distance,
+      radiusKm: MOON_RADIUS_KM,
+    };
+481:export function feasibility(
+482-  landmark: RevolutionLandmark,
+483-  body: Pick<BodySample, 'distanceKm' | 'radiusKm'>,
+484-  observedFromM: number,
+485-): { fullPossible: boolean; maxRangeForFullM: number; landmarkWidthDeg: number } {
+486-  let widest = 0;

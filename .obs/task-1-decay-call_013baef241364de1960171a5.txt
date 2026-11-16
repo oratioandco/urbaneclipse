@@ -1,0 +1,15 @@
+7:    "strict": true,
+8:    "noUncheckedIndexedAccess": true,
+6:  "scripts": {
+7-    "dev": "astro dev",
+8-    "build": "astro build",
+9-    "preview": "astro preview",
+10-    "test": "vitest run",
+11-    "test:watch": "vitest",
+12-    "test:e2e": "playwright test",
+13-    "test:e2e:ui": "playwright test --ui"
+14-  },
+15-  "dependencies": {
+16-    "@astrojs/react": "^6.0.1",
+17-    "@nanostores/react": "^1.1.0",
+18-    "@tailwindcss/vite": "^4.3.3",

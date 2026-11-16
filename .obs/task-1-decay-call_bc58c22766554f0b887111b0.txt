@@ -1,0 +1,30 @@
+182:  id: 'lichtenberger-bruecke',
+
+85:export function standingPoint(
+86-  base: Omit<
+87-    StandingPoint,
+88-    'bearingToLandmarkDeg' | 'distanceToLandmarkM'
+89-  >,
+90-  landmark: LatLon,
+91-): StandingPoint {
+task/berliner-dom-landmark
+?? .obs/
+?? .research/
+?? node_modules
+    [0, 15],
+    [68, 15],
+    [71, 14.7],
+    [74, 13.75],
+    [77, 12],
+    [80, 9],
+    [82, 5.39],
+    [83, 2.6],
+    [93, 2.6],
+    [95, 1.2],
+    [96, 0.5],
+    [98, 0.2],
+26:export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+src/lib/vantages.ts:103:export const EYE_HEIGHT_M = 1.6;
+src/lib/elevation.ts:32: * MUST stay numerically identical to `GEOID_UNDULATION_BERLIN` in
+src/lib/elevation.ts:40:export const GEOID_UNDULATION_BERLIN = 39.5;
+src/lib/elevation.ts:69:  undulation: number = GEOID_UNDULATION_BERLIN,

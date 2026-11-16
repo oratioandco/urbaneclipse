@@ -1,0 +1,1 @@
+/tmp is volatile between calls — I must persist everything in the workspace and do read+write in single calls. Checking what survived, then building.

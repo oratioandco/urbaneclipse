@@ -1,0 +1,11 @@
+143:    // terrain never blocks a sunset, which is exactly what this must report.
+247:  it('accepts a setting sun on the column above the skyline', () => {
+339: * Known answer used here: at the March equinox the sun sets essentially DUE WEST, and
+346:  const bodyAt = (t: Date, body: 'sun' | 'moon') => sampleBody(body, t, OBS.lat, OBS.lon);
+377:  // above the 0.2-1.7 deg the equinox sun reaches on the column.
+389:  it('finds the equinox sunset windows on the column when enabled', () => {
+391:      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+394:    expect(w.every((x) => x.body === 'sun')).toBe(true);
+405:    // Sunset, i.e. late afternoon UTC in Berlin.
+417:      point: OBS, landmark: SIEGESSAEULE, map: PLAIN, bodyAt, ...range, bodies: ['sun'], enabled: true,
+420:    // Flat ground belo

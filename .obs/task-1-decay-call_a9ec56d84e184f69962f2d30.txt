@@ -1,0 +1,62 @@
+    expect(points.map((p) => p.id)).toEqual([
+      'nord-west',
+      'nord-mitte',
+      'nord-knick',
+      'sued-west',
+      'sued-mitte',
+      'sued-ost',
+    ]);
+  });
+
+  it('keeps the curated mid-span envelope as the adoption band', () => {
+    expect(CURATED_CREST_ENVELOPE_M).toEqual([48.1, 48.3]);
+  });
+
+  it('adopts an individual height for exactly the two crest points', () => {
+    const confirmed = points.filter((p) => !p.needsSiteCheck).map((p) => p.id);
+    expect(confirmed.sort()).toEqual([...CREST_IDS].sort());
+    for (const id of CREST_IDS) {
+      const p = byId(id);
+      const [lo, hi] = CURATED_CREST_ENVELOPE_M;
+      expect(p.surfaceOrthometric).toBeGreaterThanOrEqual(lo);
+      expect(p.surfaceOrthometric).toBeLessThanOrEqual(hi);
+      // Adopted means measured: the value IS the DOM1 median, not a rounded guess.
+      expect(p.surfaceOrthometric).toBeCloseTo(measured(id), 6);
+    }
+  });
+
+  it('gives the two crest points genuinely different deck heights', () => {
+    expect(byId('sued-mitte').surfaceOrthometric).not.toBe(byId('sued-ost').surfaceOrthometric);
+    expect(byId('sued-ost').surfaceOrthometric).toBeCloseTo(48.1, 6);
+  });
+
+  it('leaves the four ramp/flank points on the curated flat value, still unsurveyed', () => {
+    for (const id of RAMP_IDS) {
+      const p = byId(id);
+      expect(p.surfaceOrthometric).toBe(CURATED_MIDSPAN);
+      expect(p.needsSiteCheck).toBe(true);
+    }
+  });
+
+  it('keeps mid-span at the curated ~48.2 m', () => {
+    expect(byId('sued-mitte').surfaceOrthometric).toBeCloseTo(48.2, 1);
+    expect(Math.abs(byId('sued-mitte').surfaceOrthometric - 48.2)).toBeLessThan(0.05);
+  });
+
+  it('never raises a measured value to fit a band', () => {
+    for (const p of points) {
+      const median = measured(p.id);
+      // Either the measurement was adopted verbatim, or the curated value is used and
+      // the point is flagged. No point may claim to be higher than what DOM1 measured
+      // while also claiming to be confirmed.
+      if (!p.needsSiteCheck) expect(p.surfaceOrthometric).toBeLessThanOrEqual(median + 1e-9);
+      else expect(p.surfaceOrthometric).toBe(CURATED_MIDSPAN);
+    }
+  });
+
+  it('keeps every deck height physically plausible for this bridge', () => {
+    for (const p of points) {
+      // Deck crest 48.1-48.3 curated; nothing may drift into the DGM1 rail cutting.
+      expect(p.surfaceOrthometric).toBeGreaterThan(45);
+      expect(p.surfaceOrthometric).toBeLessThan(50);
+    }

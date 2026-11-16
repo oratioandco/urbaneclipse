@@ -1,0 +1,38 @@
+54:export interface BodySample {
+55-  /** Degrees clockwise from north. */
+56-  az: number;
+57-  /** Degrees above the horizon. */
+58-  alt: number;
+59-  /** Distance to the body, km — sets its apparent size. */
+60-  distanceKm: number;
+61-  /** Physical radius of the body, km. */
+62-  radiusKm: number;
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+42:export type OccultationKind = 'full' | 'partial' | 'adjacent' | 'clear';
+228:export function classifyOccultation(

@@ -1,0 +1,31 @@
+287:export function landmarkHeight(landmark: RevolutionLandmark): number {
+288-  const p = landmark.profile;
+289-  return p.length === 0 ? 0 : p[p.length - 1][0];
+290-}
+31:export interface RevolutionLandmark {
+32-  id: string;
+33-  name: string;
+35-  lat: number;
+36-  lon: number;
+38-  baseOrthometric: number;
+44-  profile: ReadonlyArray<readonly [number, number]>;
+46-  notes: string;
+47-}
+342:export interface FixedSearchRequest {
+343-  observer: ObserverGeodetic;
+344-  landmark: RevolutionLandmark;
+345-  start: Date;
+346-  end: Date;
+347-  stepMinutes: number;
+348-  bodyAt: (t: Date) => BodySample;
+350-  wanted?: OccultationKind[];
+352-  minAltitudeDeg?: number;
+353-  limit?: number;
+354-}
+355-
+357-export interface InstantClassifyRequest {
+358-  observer: ObserverGeodetic;
+359-  landmark: RevolutionLandmark;
+360-  bodyAt: (t: Date) => BodySample;
+361-  wanted?: OccultationKind[];
+362-  

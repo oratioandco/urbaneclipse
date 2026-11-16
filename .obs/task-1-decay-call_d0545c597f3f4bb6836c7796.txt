@@ -1,0 +1,2 @@
+rk: RevolutionLandmark, steps = 96, ): SilhouetteDirections
+SD: interface SilhouetteDirections { outline: AzAlt[]; bound

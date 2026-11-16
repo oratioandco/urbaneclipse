@@ -1,0 +1,5 @@
+tsc lines: 21
+src/lib/landmarks.ts(130,14): error TS2741: Property 'notes' is missing in type '{ id: string; name: string; lat: number; lon: number; baseOrthometric
+['Test Files  1 failed | 40 passed (41)']
+['Tests 6 ⎯⎯⎯⎯⎯⎯⎯', 'Tests  6 failed | 573 passed | 1 skipped (580)']
+['❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms', 'FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome']

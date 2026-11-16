@@ -1,0 +1,13 @@
+total 696
+drwxr-xr-x@ 13 ttreppmann  staff     416 Nov 13 13:47 .
+drwxr-xr-x@ 31 ttreppmann  staff     992 Nov 13 13:45 ..
+-rw-r--r--@  1 ttreppmann  staff     320 Nov 13 13:47 as-imports.txt
+-rw-r--r--@  1 ttreppmann  staff   84716 Nov 13 13:45 dom-de.wiki
+-rw-r--r--@  1 ttreppmann  staff   30210 Nov 13 13:45 dom-en.wiki
+-rw-r--r--@  1 ttreppmann  staff     156 Nov 13 13:45 dom-geom.json
+-rw-r--r--@  1 ttreppmann  staff    3103 Nov 13 13:45 dom-nominatim.json
+-rw-r--r--@  1 ttreppmann  staff  116809 Nov 13 13:45 dom-official.html
+-rw-r--r--@  1 ttreppmann  staff     994 Nov 13 13:45 friedrichs.json
+-rw-r--r--@  1 ttreppmann  staff    1801 Nov 13 13:47 ft-template.txt
+-rw-r--r--@  1 ttreppmann  staff    1527 Nov 13 13:45 monbijou.json
+TEST

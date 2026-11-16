@@ -1,0 +1,22 @@
+ = BERLINER_DOM.profile[BERLINER_DOM.profile.length - 1]!;
+5:     × carries the sourced 33 m dome diameter as its widest ring 12ms
+6:     × silhouette spans exactly the dome band — no towers, no nave 3ms
+7:     × finds real transits in BOTH seasonal windows, including full ones 2ms
+8:     × pins transit dates against the independent Meeus ephemeris 2ms
+9:     × JUNE: no transits — the sun passes far ABOVE the dome 11ms
+10:     × DECEMBER: no transits — proves towers/nave are NOT modeled 2ms
+14: FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring
+26: FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — no towers, no nave
+38: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > finds real transits in BOTH seasonal windows, including full ones
+54: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+70: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > JUNE: no transits — the sun passes far ABOVE the dome
+86: FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+
+
+[job 1 · running 16s]
+
+[job 1 · running 28s]spring first 2026-02-10T10:00:00.000Z last 2026-03-07T10:00:00.000Z fullSamples 184
+autumn first 2026-10-06T09:35:00.000Z last 2026-11-04T09:55:00.000Z fullSamples 200
+
+
+[job 1 · running 34s]

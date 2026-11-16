@@ -1,0 +1,1 @@
+OSM geometry captured — dome/drum/lantern parts are tagged. Now the exact repo signatures, test patterns, and height sources.

@@ -1,0 +1,14 @@
+export const FERNSEHTURM: RevolutionLandmark = {
+  id: 'fernsehturm',
+  name: 'Berliner Fernsehturm',
+  lat: 52.520815,
+  lon: 13.409419,
+  baseOrthometric: 34.6,
+  profile: [
+    [0, 16.0], // foot, 32 m diameter, 20 m hyperbolic cone stump
+    [10, 12.0],
+    [20, 8.0], // shaft taper begins, 16 m diameter
+    [100, 6.77],
+    // Evakuierungsbühnen: two open rescue platforms, 1.6 m out around the shaft (188 / 191 m).
+    [187.4, 5.48], [187.8, 7.08], [188.4, 7.08], [188.7, 5.5],
+    [190.4, 5.43], [190.8, 7.03], [191.4, 7.03], [191.7, 5.43],

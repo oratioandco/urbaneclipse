@@ -1,0 +1,110 @@
+[Showing lines 279-387 of 387, the last 4069 of 15233 bytes. Whole output: .obs/task-1-1.txt — read the start with sh: sed -n '1,278p' .obs/task-1-1.txt]
+ *
+ * The original acceptance criterion asked for six individual heights inside
+ * 48.0-48.5 m. That is NOT satisfiable with the real data, and raising a measured
+ * 46.9 m to 48.0 m would be fabrication. The person chose this reading knowing that
+ * consequence, so the last test below pins the consequence instead of hiding it.
+ */
+import { describe, it, expect } from 'vitest';
+import {
+  LICHTENBERGER_BRUECKE,
+  EYE_HEIGHT_M,
+  CURATED_CREST_ENVELOPE_M,
+  bearingDistanceTo,
+  standingPoint,
+} from '../../src/lib/vantages.js';
+
+const FERNSEHTURM = { lat: 52.520815, lon: 13.409419 };
+
+/** The DOM1 plateau medians measured per node, metres DHHN2016 (three samplings, +-0.1 m). */
+const MEASURED: Record<string, number> = {
+  'nord-west': 47.8,
+  'nord-mitte': 47.7,
+  'nord-knick': 46.9,
+  'sued-west': 47.0,
+  'sued-mitte': 48.2,
+  'sued-ost': 48.1,
+};
+
+/** The DOM1 median of a node; fails loudly if a point is ever added without data. */
+function measured(id: string): number {
+  const m = MEASURED[id];
+  if (m === undefined) throw new Error(`no DOM1 median recorded for ${id}`);
+  return m;
+}
+
+const CURATED_MIDSPAN = 48.2;
+const CREST_IDS = ['sued-mitte', 'sued-ost'];
+const RAMP_IDS = ['nord-west', 'nord-mitte', 'nord-knick', 'sued-west'];
+
+const points = LICHTENBERGER_BRUECKE.points;
+const byId = (id: string) => {
+  const p = points.find((q) => q.id === id);
+  if (!p) throw new Error(`no standing point ${id}`);
+  return p;
+};
+
+describe('Lichtenberger Bruecke standing points', () => {
+  it('carries exactly the six OSM nodes of both carriageway arms', () => {
+    expect(points.map((p) => p.id)).toEqual([
+      'nord-west',
+      'nord-mitte',
+      'nord-knick',
+      'sued-west',
+      'sued-mitte',
+      'sued-ost',
+    ]);
+  });
+
+  it('keeps the curated mid-span envelope as the adoption band', () => {
+    expect(CURATED_CREST_ENVELOPE_M).toEqual([48.1, 48.3]);
+  });
+
+  it('adopts an individual height for exactly the two crest points', () => {
+    const confirmed = points.filter((p) => !p.needsSiteCheck).map((p) => p.id);
+    expect(confirmed.sort()).toEqual([...CREST_IDS].sort());
+    for (const id of CREST_IDS) {
+      const p = byId(id);
+      const [lo, hi] = CURATED_CREST_ENVELOPE_M;
+      expect(p.surfaceOrthometric).toBeGreaterThanOrEqual(lo);
+      expect(p.surfaceOrthometric).toBeLessThanOrEqual(hi);
+      // Adopted means measured: the value IS the DOM1 median, not a rounded guess.
+      expect(p.surfaceOrthometric).toBeCloseTo(measured(id), 6);
+    }
+  });
+
+  it('gives the two crest points genuinely different deck heights', () => {
+    expect(byId('sued-mitte').surfaceOrthometric).not.toBe(byId('sued-ost').surfaceOrthometric);
+    expect(byId('sued-ost').surfaceOrthometric).toBeCloseTo(48.1, 6);
+  });
+
+  it('leaves the four ramp/flank points on the curated flat value, still unsurveyed', () => {
+    for (const id of RAMP_IDS) {
+      const p = byId(id);
+      expect(p.surfaceOrthometric).toBe(CURATED_MIDSPAN);
+      expect(p.needsSiteCheck).toBe(true);
+    }
+  });
+
+  it('keeps mid-span at the curated ~48.2 m', () => {
+    expect(byId('sued-mitte').surfaceOrthometric).toBeCloseTo(48.2, 1);
+    expect(Math.abs(byId('sued-mitte').surfaceOrthometric - 48.2)).toBeLessThan(0.05);
+  });
+
+  it('never raises a measured value to fit a band', () => {
+    for (const p of points) {
+      const median = measured(p.id);
+      // Either the measurement was adopted verbatim, or the curated value is used and
+      // the point is flagged. No point may claim to be higher than what DOM1 measured
+      // while also claiming to be confirmed.
+      if (!p.needsSiteCheck) expect(p.surfaceOrthometric).toBeLessThanOrEqual(median + 1e-9);
+      else expect(p.surfaceOrthometric).toBe(CURATED_MIDSPAN);
+    }
+  });
+
+  it('keeps every deck height physically plausible for this bridge', () => {
+    for (const p of points) {
+      // Deck crest 48.1-48.3 curated; nothing may drift into the DGM1 rail cutting.
+      expect(p.surfaceOrthometric).toBeGreaterThan(45);
+      expect(p.surfaceOrthometric).toBeLessThan(50);
+    }

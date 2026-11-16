@@ -1,0 +1,17 @@
+ERROR: exit: exit status 1
+NOM way 313670734 Berliner Dom 52.5190822 13.4010942 ['52.5186346', '52.5195378', '13.4003048', '13.4017508']
+monbijou.json way 195397553 Nördliche Monbijoubrücke 52.5223406 13.3940796
+monbijou.json way 195397546 Südliche Monbijoubrücke 52.5218860 13.3936274
+friedrichs.json way 339201182 Friedrichsbrücke 52.5205529 13.4003017
+friedrichs.json way 4610599 Friedrichsbrücke 52.5204735 13.4001606
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)

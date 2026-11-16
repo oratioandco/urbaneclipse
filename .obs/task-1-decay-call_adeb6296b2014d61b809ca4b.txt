@@ -1,0 +1,17 @@
+/**
+ * Area solver — "where AND when do I stand for this shot?" Pure math, NO Cesium.
+ *
+ * THE PROBLEM
+ * -----------
+ * The original solver swept TIME at a FIXED observer position and reported instants
+ * when the body came within a bearing tolerance. What a photographer actually wants is
+ * the inverse: "here is the stretch of bridge / park I can reach, here is the landmark,
+ * find me the best (position, time) pairs for a full / partial / adjacent composition."
+ *
+ * THE REDUCTION THAT MAKES IT CHEAP
+ * ---------------------------------
+ * Brute-forcing a 3-D grid of (lat, lon, t) is enormous and mostly wasted, because
+ * almost every position is nowhere near alignment.
+ *
+ * But at a given instant the body's direction is effectively CONSTANT across a small
+ * search area — moving 1 km shifts the moon's topocentric direction by ~0

@@ -1,0 +1,57 @@
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+44-  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+45-  ellipsoidalHeight: number;
+46-}
+47-
+48-/** Direction in the observer's horizontal frame. */
+49-export interface AzAlt {
+50-  /** Degrees clockwise from north. */
+51-  az: number;
+52-  /** Degrees above the horizon. */
+53-  alt: number;
+54-}
+55-
+56-type Vec3 = [number, number, number];
+57-
+58-/** Geodetic (deg, deg, ellipsoidal m) -> ECEF metres. */
+59-export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+60-  const sφ = Math.sin(lat * RAD);
+61-  const cφ = Math.cos(lat * RAD);
+22-
+23-const AU_KM = 149597870.7;
+24-const RAD = Math.PI / 180;
+25-
+26-/** Days since the J2000.0 epoch. */
+27-function daysSinceJ2000(date: Date): number {
+28-  return date.getTime() / 86400000 - 10957.5;
+29-}
+30-
+31-/**
+32- * Earth-Sun distance in km.
+33- *
+34- * Standard low-eccentricity series (accurate to ~0.0002 AU, i.e. ~0.0001 deg of angular
+35- * radius — three orders of magnitude below the tolerance that matters here):
+36- *   R = 1.00014 - 0.01671 cos g - 0.00014 cos 2g   [AU]
+37- * with g the Sun's mean anomaly.
+38- */
+39-export function sunDistanceKm(date: Date): number {
+40-  const n = daysSinceJ2000(date);
+41-  const g = (357.529 + 0.98560028 * n) * RAD;
+42-  const au = 1.00014 - 0.01671 * Math.cos(g) - 0.00014 * Math.cos(2 * g);
+43-  return au * AU_KM;
+44-}
+45-
+46-/**
+47- * Body direction + apparent size as seen from a ground position.
+48- *
+49- * Moon distance is topocentric-ish as suncalc reports it; that is adequate here since
+50- * a 1 km observer displacement shifts the moon's direction by ~0.00015 deg.
+51- */
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,

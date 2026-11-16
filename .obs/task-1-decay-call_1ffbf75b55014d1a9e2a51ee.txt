@@ -1,0 +1,48 @@
+22:export type Vec3 = [number, number, number];
+26:export function transformCoord(from: string, to: string, coord: Vec3): Vec3 {
+41:export interface ObserverGeodetic {
+91:  observer: ObserverGeodetic,
+183:  observer: ObserverGeodetic,
+240:  observer: ObserverGeodetic,
+245:  return projectSilhouette(buildSilhouetteDirections(observer, landmark, steps), reference);
+265:export function buildSilhouetteDirections(
+export interface ObserverGeodetic {
+  lat: number;
+  lon: number;
+  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+  ellipsoidalHeight: number;
+}
+
+/** Direction in the observer's horizontal frame. */
+export interface AzAlt {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+}
+
+type Vec3 = [number, number, number];
+
+/** Geodetic (deg, deg, ellipsoidal m) -> ECEF metres. */
+export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+  const sφ = Math.sin(lat * RAD);
+  const cφ = Math.cos(lat * RAD);
+  const sλ = Math.sin(lon * RAD);
+  const cλ = Math.cos(lon * RAD);
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;

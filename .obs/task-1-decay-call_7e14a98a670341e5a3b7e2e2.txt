@@ -1,0 +1,10 @@
+const OBS = standingPoint(
+  {
+    id: 'strasse-des-17-juni',
+    lat: 52.5145,
+    lon: 13.37,
+    surfaceOrthometric: 34,
+    eyeHeightM: EYE_HEIGHT_M,
+    needsSiteCheck: true,
+    source: 'Test observer; ground ~33.4 m from the committed DGM1 grid.',
+  },

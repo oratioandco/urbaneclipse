@@ -1,0 +1,41 @@
+114x114" href="/typo3conf/ext/berliner_dom_typo3_extension/Resources/Public/Img/Fav
+114x114.png">
+Metern hohen Kuppel und dem goldenen Kreuz ist er weithin sichtba
+===
+export function sampleGroundOrthometric(
+  map: Heightmap,
+  lat: number,
+  lon: number,
+): number | undefined {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return undefined;
+
+  const { bbox, dLon, dLat } = map.header;
+  if (lon < bbox.lonMin || lon > bbox.lonMax || lat < bbox.latMin || lat > bbox.latMax) {
+    return undefined;
+  }
+
+  // Row order is south-to-north and column order west-to-east (see the header).
+  const fc = (lon - bbox.lonMin) / dLon;
+  const fr = (lat - bbox.latMin) / dLat;
+
+  // Clamp the interpolation CELL (not the position) so that a point exactly on the
+  // north or east edge still has four valid corners. Without this, fr == height - 1
+  // selects a row that does not exist and the whole sample is lost — silently turning
+  // the entire top and right boundary into a coverage miss.
+  const { width, height } = map.header;
+  const c0 = Math.min(Math.max(Math.floor(fc), 0), Math.max(width - 2, 0));
+  const r0 = Math.min(Math.max(Math.floor(fr), 0), Math.max(height - 2, 0));
+  const tc = fc - c0;
+  const tr = fr - r0;
+
+  const v00 = rawAt(map, c0, r0);
+  const v10 = rawAt(map, c0 + 1, r0);
+  const v01 = rawAt(map, c0, r0 + 1);
+  const v11 = rawAt(map, c0 + 1, r0 + 1);
+
+10:import { readFileSync } from 'node:fs';
+12:  createHeightmap,
+15:  decodeSamples,
+40:describe('createHeightmap validation', () => {
+43:    expect(() => createHeightmap(header, samples)).not.toThrow();
+48:    expect(() => createHeightmap(header, samples.slice(0, 4))).toThrow(HeightmapError);

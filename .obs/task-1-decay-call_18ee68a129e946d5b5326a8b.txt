@@ -1,0 +1,46 @@
+ construction cost of 11.5&nbsp;million [[German gold mark|Marks]]. At {{convert|114|m|ft|0}} long, {{convert|73|m|ft|0}} wide and {{convert|116|m|ft|0}} tall, it was much larger than any of the previous buildings and was cons
+40:export const GEOID_UNDULATION_BERLIN = 39.5;
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+67:export function bearingDistanceTo(from: LatLon, to: LatLon): {
+68-  bearingDeg: number;
+69-  distanceM: number;
+70-} {
+71-  // Eye heights differ by metres; the bearing impact is <0.001 deg, so compare
+72-  // surface-level positions (h=0 on both ends).
+73-  const a = geodeticToECEF(from.lat, from.lon, 0);
+74-  const b = geodeticToECEF(to.lat, to.lon, 0);
+75-  const d: [number, number, number] = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+76-  const enu = ecefToENU(d, from.lat, from.lon);
+77-  const bearingDeg = (Math.atan2(enu[0], enu[1]) * 180) / Math.PI;
+78-  return {
+79-    bearingDeg: (bearingDeg + 360) % 360,
+80-    distanceM: Math.hypot(enu[0], enu[1]),
+81-  };
+/** A landmark modelled as a vertical solid of revolution. */
+export interface RevolutionLandmark {
+  id: string;
+  name: string;
+  /** Axis position, WGS84 degrees. */
+  lat: number;
+  lon: number;
+  /** Ground elevation at the axis, DHHN2016 orthometric metres. */
+  baseOrthometric: number;
+  /**
+   * Radius profile as (heightAboveBase, radius) pairs in metres, ascending by height.
+ * Brandenburger Tor, as a solid of revolution standing in for the gate's mass plus the
+ * quadriga above it. Axis at the centre of OSM way 518071791; the gate hall itself is not
+ * round: 34.8 m along its face by 16.6 m deep, and the revolution's 25.8 m diameter is the
+ * compromise between the two. Published height 26 m including the quadriga; OSM's height
+ * tag agrees. Base ground about 34.5 m NHN, approximate.
+ */
+export const BRANDENBURGER_TOR: RevolutionLandmark = {
+  id: 'brandenburger-tor',

@@ -1,0 +1,9 @@
+82:Ecktürme kam es zu größeren Rissen
+82:Türme
+129:Ecktürmen sowie der kupfergetriebene Figurenschmuck
+==EN==
+86:towers was attached to the collegiate church, which – due to its prior status as a church of a [[Mendicant orders|mendicant order]] – ha
+90:towers
+95:towers
+==OFFICIAL-CONTEXT==
+grep: maximum repetition exceeds 255

@@ -1,0 +1,136 @@
+/**
+ * Adapter from suncalc to the occultation core's BodySample. Pure, NO Cesium.
+ *
+ * The occultation classifier needs the body's DISTANCE, not just its direction,
+ * because apparent size decides full-vs-partial. The moon's perigee-to-apogee swing
+ * moves its angular diameter by ~14% (0.490 deg to 0.559 deg), which is far larger than the
+ * ~0.05 deg composition tolerance.
+ *
+ * suncalc's getMoonPosition reports distance directly. getPosition (sun) does NOT, so
+ * the Earth-Sun distance is computed here from the standard low-eccentricity series.
+ *
+ * ANGLE CONVENTION (verified against the installed suncalc 2.0.1 typings): getPosition
+ * and getMoonPosition return DEGREES, azimuth north-based clockwise (0=N, 90=E, 180=S,
+ * 270=W), altitude refraction-corrected. This differs from the suncalc 1.x convention
+ * (radians, 0=south) that the spec prose assumed.
+ */
+import { getPosition, getMoonPosition } from 'suncalc';
+import { SUN_RADIUS_KM, MOON_RADIUS_KM } from './occultation.js';
+import type { BodySample } from './areaSolver.js';
+
+export type Body = 'sun' | 'moon';
+
+const AU_KM = 149597870.7;
+const RAD = Math.PI / 180;
+
+/** Days since the J2000.0 epoch. */
+function daysSinceJ2000(date: Date): number {
+  return date.getTime() / 86400000 - 10957.5;
+}
+
+/**
+ * Earth-Sun distance in km.
+ *
+ * Standard low-eccentricity series (accurate to ~0.0002 AU, i.e. ~0.0001 deg of angular
+ * radius — three orders of magnitude below the tolerance that matters here):
+ *   R = 1.00014 - 0.01671 cos g - 0.00014 cos 2g   [AU]
+ * with g the Sun's mean anomaly.
+ */
+export function sunDistanceKm(date: Date): number {
+  const n = daysSinceJ2000(date);
+  const g = (357.529 + 0.98560028 * n) * RAD;
+  const au = 1.00014 - 0.01671 * Math.cos(g) - 0.00014 * Math.cos(2 * g);
+  return au * AU_KM;
+}
+
+/**
+ * Body direction + apparent size as seen from a ground position.
+ *
+ * Moon distance is topocentric-ish as suncalc reports it; that is adequate here since
+ * a 1 km observer displacement shifts the moon's direction by ~0.00015 deg.
+ */
+export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+  if (body === 'moon') {
+    const p = getMoonPosition(date, lat, lon);
+    return {
+      az: p.azimuth,
+      alt: p.altitude,
+      distanceKm: p.distance,
+      radiusKm: MOON_RADIUS_KM,
+    };
+  }
+  const p = getPosition(date, lat, lon);
+  return {
+    az: p.azimuth,
+    alt: p.altitude,
+    distanceKm: sunDistanceKm(date),
+    radiusKm: SUN_RADIUS_KM,
+  };
+}
+export function findOccultationsAtPosition(req: FixedSearchRequest): FixedCandidate[] {
+  const {
+    observer,
+    landmark,
+    start,
+    end,
+    stepMinutes,
+    wanted = ['full', 'partial'],
+    minAltitudeDeg = 0,
+    limit = 200,
+  } = req;
+
+  if (!(stepMinutes > 0)) {
+    throw new RangeError(`stepMinutes must be positive, received ${stepMinutes}`);
+  }
+  if (end.getTime() < start.getTime()) {
+    throw new RangeError('end must not precede start');
+  }
+
+  const stepMs = stepMinutes * 60_000;
+  const out: FixedCandidate[] = [];
+
+  // The observer is FIXED, so the landmark's absolute outline is constant across the
+  // whole sweep — compute the geodetic part once instead of per step.
+  const dirs = buildSilhouetteDirections(observer, landmark);
+  if (dirs.outline.length < 3) return [];
+
+  for (let t = start.getTime(); t <= end.getTime(); t += stepMs) {
+    const candidate = classifyWithDirections(dirs, req, new Date(t));
+    if (candidate) out.push(candidate);
+  }
+
+  out.sort((a, b) => {
+    const rank = (k: OccultationKind) => (k === 'full' ? 2 : k === 'partial' ? 1 : 0);
+    const d = rank(b.kind) - rank(a.kind);
+    if (d !== 0) return d;
+    if (b.coveredFraction !== a.coveredFraction) return b.coveredFraction - a.coveredFraction;
+    return a.separationDeg - b.separationDeg;
+  });
+
+  return out.slice(0, limit);
+}
+
+/**
+ * Classify ONE instant at a fixed observer — the sweep's per-step body, callable alone.
+ *
+ * The vantage calendar uses this to refine window peaks past the sweep's stepMinutes:
+ * a golden-section search over a window's bracket evaluates only a few dozen instants,
+ * and each needs the same projection + classification the sweep applies. Returns null
+ * when there is nothing to photograph at this instant (below the altitude floor,
+ * silhouette degenerate, or the composition not among `wanted`).
+ */
+export function classifyAtInstant(req: InstantClassifyRequest, when: Date): FixedCandidate | null {
+  const dirs = buildSilhouetteDirections(req.observer, req.landmark);
+  if (dirs.outline.length < 3) return null;
+  return classifyWithDirections(dirs, req, when);
+}
+
+function classifyWithDirections(
+  dirs: ReturnType<typeof buildSilhouetteDirections>,
+  req: InstantClassifyRequest,
+  when: Date,
+): FixedCandidate | null {
+  const wanted = req.wanted ?? ['full', 'partial'];
+  const minAltitudeDeg = req.minAltitudeDeg ?? 0;
+  const body = req.bodyAt(when);
+

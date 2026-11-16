@@ -1,0 +1,30 @@
+11:import { describe, it, expect } from 'vitest';
+12:import { readFileSync } from 'node:fs';
+13:import {
+27:import { sampleBody } from '../../src/lib/bodyPosition.js';
+28:import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+29:import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+30:import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+31:import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+34:const OBS = standingPoint(
+48:function grid(fill: (row: number, col: number) => number): Heightmap {
+71:const FLAT = grid(() => 40);
+72:const CENTRE = standingPoint(
+77:function realBerlin(): Heightmap {
+84:describe('the feature flag keeps this out of the app', () => {
+85:  it('is OFF when nothing is set', () => {
+90:  it('is OFF for anything that is not an explicit truthy string', () => {
+96:  it('is ON only for 1 / true / on', () => {
+103:describe('groundAltitudeDeg — known answers (independent computation)', () => {
+104:  it('is level ground slightly BELOW zero because the Earth curves away', () => {
+110:  it('matches atan2 of rise over distance for a 10 m rise at 1 km', () => {
+114:  it('matches a steep near obstruction', () => {
+119:  it('is negative for ground below the eye', () => {
+123:  it('applies refraction: the drop is 0.0683 m at 1 km, not the bare 0.0785 m', () => {
+131:  it('is monotone: a higher obstruction is a higher angle at the same distance', () => {
+137:describe('sampleHorizonProfile — skyline semantics', () => {
+138:  it('on flat ground BELOW the eye nothing obstructs: the skyline tends to 0 from below', () => {
+153:  it('on flat ground ABOVE the eye the NEAREST sample wins, since angle falls with distance', () => {
+166:  it('returns the RUNNING MAXIMUM, never a decreasing skyline', () => {
+173:  it('finds a ridge north of the observer and reports where it is', () => {
+186:  it('rejects a non-positive step or range instead of looping forever', () => {

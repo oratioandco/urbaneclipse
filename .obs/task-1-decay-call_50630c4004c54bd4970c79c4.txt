@@ -1,0 +1,24 @@
+/**
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import {
+  HORIZON_WINDOWS_FLAG,
+  horizonWindowsEnabled,
+  groundAltitudeDeg,
+  sampleHorizonProfile,
+  azimuthToLandmark,
+  landmarkTipAltitudeDeg,
+  targetWindow,
+  gateDirection,
+  horizonTowardsLandmark,
+  eyeEllipsoidal,
+  enumerateHorizonGatedWindows,
+  HorizonWindowsDisabledError,
+} from '../../src/lib/horizonWindows.js';
+import { sampleBody } from '../../src/lib/bodyPosition.js';
+import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+
+/** A standing point on Straße des 17. Juni, 337: * The time dimension: real ephemeris, real silhouette, terrain-gated.

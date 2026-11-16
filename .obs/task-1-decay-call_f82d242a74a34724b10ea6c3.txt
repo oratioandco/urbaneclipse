@@ -1,0 +1,1 @@
+standingPoint( base: Omit< StandingPoint, 'bearingToLandmarkDeg' | 'distanceToLandmarkM' >, landmark: LatLon, ): Standin

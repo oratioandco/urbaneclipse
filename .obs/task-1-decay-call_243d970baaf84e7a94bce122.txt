@@ -1,0 +1,3 @@
+ERROR: exit: exit status 1
+src/lib/silhouette.ts:59:export function geodeticToECEF(lat: number, lon: number, h: number): Vec3 {
+src/lib/silhouette.ts:69:export function ecefToENU(d: Vec3, originLat: number, originLon: number): Vec3 {

@@ -1,0 +1,116 @@
+/**
+ * Horizon-gated windows for a second landmark (Siegessäule) — known-answer tests.
+ *
+ * The expectations below were computed INDEPENDENTLY (spherical trig / atan2 in a
+ * separate script), not read back out of the implementation, so a sign error or a
+ * missing curvature term cannot pass by agreeing with itself.
+ *
+ * This module is flag-gated and not shipped: the first group proves the flag is OFF
+ * by default, which is what keeps the trial out of the app.
+ */
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import {
+  HORIZON_WINDOWS_FLAG,
+  horizonWindowsEnabled,
+  groundAltitudeDeg,
+  sampleHorizonProfile,
+  azimuthToLandmark,
+  landmarkTipAltitudeDeg,
+  targetWindow,
+  gateDirection,
+  horizonTowardsLandmark,
+  eyeEllipsoidal,
+  enumerateHorizonGatedWindows,
+  HorizonWindowsDisabledError,
+} from '../../src/lib/horizonWindows.js';
+import { sampleBody } from '../../src/lib/bodyPosition.js';
+import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
+import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
+import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
+
+/** A standing point on Straße des 17. Juni, east of the column, looking west. */
+const OBS = standingPoint(
+  {
+    id: 'strasse-des-17-juni',
+    lat: 52.5145,
+    lon: 13.37,
+    surfaceOrthometric: 34,
+    eyeHeightM: EYE_HEIGHT_M,
+    needsSiteCheck: true,
+    source: 'Test observer; ground ~33.4 m from the committed DGM1 grid.',
+  },
+  { lat: SIEGESSAEULE.lat, lon: SIEGESSAEULE.lon },
+);
+
+/** Flat synthetic grid, 40.0 m everywhere, ~111 m row spacing, centred on 52.01/13.01. */
+function grid(fill: (row: number, col: number) => number): Heightmap {
+  const width = 21;
+  const height = 21;
+  const header: HeightmapHeader = {
+    format: 'plaster-void-heightmap',
+    version: 1,
+    dtype: 'int16',
+    scale: 0.1,
+    offset: 0,
+    nodata: -32768,
+    width,
+    height,
+    bbox: { lonMin: 13.0, latMin: 52.0, lonMax: 13.02, latMax: 52.02 },
+    dLon: 0.001,
+    dLat: 0.001,
+  };
+  const samples = new Int16Array(width * height);
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) samples[r * width + c] = Math.round(fill(r, c) * 10);
+  }
+  return createHeightmap(header, samples);
+}
+
+const FLAT = grid(() => 40);
+const CENTRE = standingPoint(
+  { id: 'c', lat: 52.01, lon: 13.01, surfaceOrthometric: 40, eyeHeightM: 1.6, needsSiteCheck: true, source: 'fix===SUNAGREE===
+ERROR: exit: exit status 1
+54:const LAT = 52.5106;
+55:const LON = 13.4652;
+57:const DEG = 180 / Math.PI;
+58:const RAD = Math.PI / 180;
+61:const AGREEMENT_TOLERANCE_DEG = 0.5;
+68:const DRIFT_CEILING_DEG = 0.42;
+71:const SAMPLES: ReadonlyArray<readonly [string, Date]> = [
+93:function cesiumSunAltAz(date: Date): AltAz {
+94:  const jd = Cesium.JulianDate.fromDate(date);
+96:  const inertial = Cesium.Simon1994PlanetaryPositions.computeSunPositionInEarthInertialFrame(
+110:  const fixed = Cesium.Matrix3.multiplyByVector(toFixed, inertial, new Cesium.Cartesian3());
+113:  const origin = Cesium.Cartographic.toCartesian(Cesium.Cartographic.fromDegrees(LON, LAT, 0));
+114:  const fixedFromEnu = Cesium.Transforms.eastNorthUpToFixedFrame(
+119:  const enuFromFixed = Cesium.Matrix4.inverseTransformation(fixedFromEnu, new Cesium.Matrix4());
+120:  const enu = Cesium.Matrix4.multiplyByPoint(enuFromFixed, fixed, new Cesium.Cartesian3());
+121:  const u = Cesium.Cartesian3.normalize(enu, new Cesium.Cartesian3());
+131: * Meeus 16.4 atmospheric refraction in degrees, matching the correction suncalc
+135:function refractionDeg(altDeg: number): number {
+136:  const h = Math.max(altDeg, 0) * RAD;
+141:function angularSeparationDeg(azA: number, altA: number, azB: number, altB: number): number {
+142:  const unit = (az: number, alt: number): [number, number, number] => [
+147:  const a = unit(azA, altA);
+148:  const b = unit(azB, altB);
+149:  const dot = Math.min(1, Math.max(-1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+164:      const c = cesiumSunAltAz(date);
+sed: 1: ",+45p
+": invalid command code ,
+===ELEV===
+117:export function resolveEyeEllipsoidalHeight(input: EyeHeightInput): number {
+118-  const { groundOrthometric, surfaceOrthometric, eyeHeight } = input;
+119-
+120-  assertFinite(eyeHeight, 'eye height');
+121-  if (eyeHeight < 0) {
+122-    throw new RangeError(`eye height must be >= 0, received ${eyeHeight}`);
+123-  }
+124-
+125-  let surface: number;
+67:export function orthometricToEllipsoidal(
+68-  orthometric: number,
+69-  undulation: number = GEOID_UNDULATION_BERLIN,
+70-): number {
+71-  assertFinite(orthometric, 'orthometric height');

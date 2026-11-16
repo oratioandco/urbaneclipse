@@ -1,0 +1,143 @@
+  });
+
+  it('returns NaN and zero coverage when NO terrain is available, never 0 degrees', () => {
+    const p = sampleHorizonProfile({ point: CENTRE, azimuthDeg: 0, maxDistanceM: 100, stepM: 50, map: grid(() => -3276.8) });
+    expect(p.coverage).toBe(0);
+    expect(Number.isNaN(p.horizonAltitudeDeg)).toBe(true);
+    expect(p.truncated).toBe(true);
+    expect(p.samples).toHaveLength(0);
+  });
+});
+
+describe('Siegessäule target window — spherical trig, known answers', () => {
+  it('looks almost exactly west from Straße des 17. Juni', () => {
+    // Independent WGS84 Vincenty inverse: 270.069244374 deg. (A mean-sphere
+    // haversine gives 270.069397 — the 1.5e-4 deg difference is the datum, not drift.)
+    expect(azimuthToLandmark(OBS, SIEGESSAEULE)).toBeCloseTo(270.069244, 5);
+  });
+
+  it('puts the 67 m tip about 3.2 deg above the eye at ~1.35 km', () => {
+    expect(landmarkHeight(SIEGESSAEULE)).toBeCloseTo(67, 6);
+    // Independent: base 44 + 67 = 111 m, eye 35.6 m, WGS84 geodesic d = 1351.037460 m
+    // -> 3.189035495 deg. The mean-sphere haversine distance (1346.678 m) is 4.36 m
+    // short on this east-west line at 52.5 deg N, which would overstate this by 0.010 deg.
+    expect(landmarkTipAltitudeDeg(OBS, SIEGESSAEULE)).toBeCloseTo(3.189035495, 6);
+  });
+
+  it('spans the published azimuth/altitude box', () => {
+    const w = targetWindow(OBS, SIEGESSAEULE);
+    expect(w.azimuthDeg).toBeCloseTo(270.069244, 5);
+    // Widest profile radius is the 30 m terrace -> 1.272052783 deg at 1351.037 m.
+    expect(w.azimuthHalfWidthDeg).toBeCloseTo(1.272052783, 6);
+    expect(w.altitudeMinDeg).toBeCloseTo(0.350943598, 6);
+    expect(w.altitudeMaxDeg).toBeCloseTo(3.189035495, 6);
+    expect(w.altitudeMaxDeg).toBeGreaterThan(w.altitudeMinDeg);
+  });
+
+  it('is a much smaller target than the Fernsehturm from the same spot', () => {
+    const column = targetWindow(OBS, SIEGESSAEULE);
+    const tower = targetWindow(OBS, FERNSEHTURM);
+    expect(tower.altitudeMaxDeg).toBeGreaterThan(column.altitudeMaxDeg);
+  });
+});
+
+describe('gateDirection — the disc must clear the terrain AND hit the target', () => {
+  const target = targetWindow(OBS, SIEGESSAEULE);
+  const clearSky = { azimuthDeg: target.azimuthDeg, horizonAltitudeDeg: -0.5, samples: [], horizonDistanceM: 100, maxDistanceM: 1400, coverage: 1, truncated: false };
+
+  it('accepts a setting sun on the column above the skyline', () => {
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, clearSky, 0.25);
+    expect(g.clearsHorizon).toBe(true);
+    expect(g.alignedWithTarget).toBe(true);
+    expect(g.horizonConfident).toBe(true);
+  });
+
+  it('rejects a geometrically perfect alignment that is already below the skyline', () => {
+    const blocked = { ...clearSky, horizonAltitudeDeg: 2.0 };
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, blocked, 0.25);
+    expect(g.alignedWithTarget).toBe(true);
+    expect(g.clearsHorizon).toBe(false);
+  });
+
+  it('requires the WHOLE disc to clear when a radius is given', () => {
+    const horizon = { ...clearSky, horizonAltitudeDeg: 1.4 };
+    expect(gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, horizon, 0).clearsHorizon).toBe(true);
+    expect(gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, horizon, 0.25).clearsHorizon).toBe(false);
+  });
+
+  it('rejects a body outside the azimuth box', () => {
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg + 5, altitudeDeg: 1.5 }, target, clearSky, 0.25);
+    expect(g.alignedWithTarget).toBe(false);
+  });
+
+  it('rejects a body above the tip', () => {
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 20 }, target, clearSky, 0.25);
+    expect(g.alignedWithTarget).toBe(false);
+  });
+
+  it('handles the 0/360 azimuth wrap', () => {
+    const north = { ...target, azimuthDeg: 0.2 };
+    const g = gateDirection({ azimuthDeg: 359.9, altitudeDeg: 1.5 }, north, clearSky, 0.25);
+    expect(g.alignedWithTarget).toBe(true);
+  });
+
+  it('flags a decision made on a truncated skyline as not confident', () => {
+    const partial = { ...clearSky, truncated: true, coverage: 0.7 };
+    const g = gateDirection({ azimuthDeg: target.azimuthDeg, altitudeDeg: 1.5 }, target, partial, 0.25);
+    expect(g.horizonConfident).toBe(false);
+  });
+});
+
+describe('the REAL committed DGM1 grid — the honest limitation', () => {
+  it('does not cover the Siegessäule itself, and says so', () => {
+    const map = realBerlin();
+    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, map, 25);
+    // The grid starts at lon 13.3611; the column stands at 13.3501 — outside it.
+    expect(p.truncated).toBe(true);
+    expect(p.coverage).toBeGreaterThan(0.4);
+    expect(p.coverage).toBeLessThan(1);
+    expect(p.maxDistanceM).toBeLessThan(1200);
+    expect(p.samples.length).toBeGreaterThan(10);
+  });
+
+  it('still measures a plausible Berlin skyline towards the column', () => {
+    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, realBerlin(), 25);
+    // Tiergarten ground is ~32-34 m; the eye is at 35.6 m, so the skyline is near 0.
+    expect(p.horizonAltitudeDeg).toBeGreaterThan(-2);
+    expect(p.horizonAltitudeDeg).toBeLessThan(1);
+  });
+
+  it('never samples past the landmark, so ground behind it cannot hide it', () => {
+    const p = horizonTowardsLandmark(OBS, SIEGESSAEULE, realBerlin(), 25);
+    for (const s of p.samples) expect(s.distanceM).toBeLessThanOrEqual(OBS.distanceToLandmarkM);
+  });
+
+  it('marks any window gated on that partial skyline as not confident', () => {
+    const horizon = horizonTowardsLandmark(OBS, SIEGESSAEULE, realBerlin(), 25);
+    const g = gateDirection({ azimuthDeg: targetWindow(OBS, SIEGESSAEULE).azimuthDeg, altitudeDeg: 1 }, targetWindow(OBS, SIEGESSAEULE), horizon, 0.25);
+    expect(g.horizonConfident).toBe(false);
+  });
+
+  it('is fully covered for a short sightline inside the grid', () => {
+===VANT===
+/**
+ * Named vantages — pure data + pure geometry, NO Cesium (Constitution Principle I).
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * The founding use case: "sunset or moon behind the Fernsehturm from MY bridge, predicted
+ * precisely." The area solver answers "where do I stand?"; findOccultationsAtPosition
+ * answers "when, from this exact spot?" — but both take an ad-hoc observer. A photographer
+ * has a PLACE: a curved bridge whose standing points differ. Over the Lichtenberger
+ * Bruecke's ~150 m the bearing to the tower sweeps 279.6 deg to 280.4 deg, and the
+ * alignment calendar shifts about a day per 0.6 deg of bearing — so each standing point
+ * deserves its own entry, not one averaged "the bridge".
+ *
+ * WHERE THE DATA COMES FROM
+ * -------------------------
+ * Polyline: OSM way 1335772137 (two carriageway arms, fetched 2026-11-12). Deck
+ * elevation: Berlin DOM1 (1 m surface model, sheet dom1_33_398_5818_2, EPSG:25833,
+ * DHHN2016), sampled per node on 2026-11-12. Only crest nodes whose measured median
+ * falls inside the curated mid-span envelope 48.1-48.3 m adopt their own value. The
+ * ramp/flank nodes measure 46.9-47.8 m — the real ramp profile (scripts/README.md:
+ * west ramp 46.1 m, east ramp 46.7 m), but not a confirmed deck height for the

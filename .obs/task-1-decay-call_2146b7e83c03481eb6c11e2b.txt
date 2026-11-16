@@ -1,0 +1,37 @@
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {
+53-  if (body === 'moon') {
+54-    const p = getMoonPosition(date, lat, lon);
+55-    return {
+56-      az: p.azimuth,
+57-      alt: p.altitude,
+58-      distanceKm: p.distance,
+59-      radiusKm: MOON_RADIUS_KM,
+60-    };
+61-  }
+62-  const p = getPosition(date, lat, lon);
+63-  return {
+64-    az: p.azimuth,
+65-    alt: p.altitude,
+66-    distanceKm: sunDistanceKm(date),
+67-    radiusKm: SUN_RADIUS_KM,
+68-  };
+67:export function orthometricToEllipsoidal(
+68-  orthometric: number,
+69-  undulation: number = GEOID_UNDULATION_BERLIN,
+70-): number {
+41:export interface ObserverGeodetic {
+42-  lat: number;
+43-  lon: number;
+44-  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+45-  ellipsoidalHeight: number;
+46-}
+47-
+48-/** Direction in the observer's horizontal frame. */
+49-export interface AzAlt {
+50-  /** Degrees clockwise from north. */
+51-  az: number;
+--
+91:  observer: ObserverGeodetic,
+92-  azDeg: number,
+93-  altDeg: number,
+94-  distanceM: number,

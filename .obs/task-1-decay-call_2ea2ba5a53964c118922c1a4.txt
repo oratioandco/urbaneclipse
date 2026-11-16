@@ -1,0 +1,3 @@
+ERROR: exit: exit status 1
+39:export function sunDistanceKm(date: Date): number {
+52:export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample {

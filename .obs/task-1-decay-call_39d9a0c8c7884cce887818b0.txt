@@ -1,0 +1,6 @@
+tricToEllipsoidal | export function ellipsoidalToOrthometric | export function resolveEyeEllipsoidalHeight
+GEOID: GEOID_UNDULATION_BERLIN = 39.5
+COORDS: export function transformCoord(from: string, to: string, coord: Vec3)
+BS: MISSING
+SB: export function sampleBody(body: Body, date: Date, lat: number, lon: number): BodySample
+SGO: export function s

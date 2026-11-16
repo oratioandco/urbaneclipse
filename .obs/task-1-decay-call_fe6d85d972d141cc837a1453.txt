@@ -1,0 +1,69 @@
+/**
+ * Standing points of the Lichtenberger Bruecke — the deck-height decision, locked.
+ *
+ * THE DECISION THESE TESTS DEFEND (chosen by the person, ask id 2, key "2")
+ * -----------------------------------------------------------------------
+ * Berlin DOM1 was sampled at all six OSM nodes. Only the two crest nodes measure
+ * inside the curated mid-span envelope 48.1-48.3 m DHHN2016; the four ramp/flank
+ * nodes measure 46.9-47.8 m, which is the real ramp profile (scripts/README.md:
+ * west ramp 46.1 m, east ramp 46.7 m), not a confirmed deck height for the curated
+ * band. So ONLY the crest points adopt an individual value and clear needsSiteCheck;
+ * the ramp points keep the curated 48.2 m and still need an on-site survey.
+ *
+ * The original acceptance criterion asked for six individual heights inside
+ * 48.0-48.5 m. That is NOT satisfiable with the real data, and raising a measured
+ * 46.9 m to 48.0 m would be fabrication. The person chose this reading knowing that
+ * consequence, so the last test below pins the consequence instead of hiding it.
+ */
+import { describe, it, expect } from 'vitest';
+import {
+  LICHTENBERGER_BRUECKE,
+  EYE_HEIGHT_M,
+  CURATED_CREST_ENVELOPE_M,
+  bearingDistanceTo,
+  standingPoint,
+} from '../../src/lib/vantages.js';
+
+const FERNSEHTURM = { lat: 52.520815, lon: 13.409419 };
+
+/** The DOM1 plateau medians measured per node, metres DHHN2016 (three samplings, +-0.1 m). */
+const MEASURED: Record<string, number> = {
+  'nord-west': 47.8,
+  'nord-mitte': 47.7,
+  'nord-knick': 46.9,
+  'sued-west': 47.0,
+  'sued-mitte': 48.2,
+  'sued-ost': 48.1,
+};
+
+/** The DOM1 median of a node; fails loudly if a point is ever added without data. */
+function measured(id: string): number {
+  const m = MEASURED[id];
+  if (m === undefined) throw new Error(`no DOM1 median recorded for ${id}`);
+  return m;
+}
+
+const CURATED_MIDSPAN = 48.2;
+const CREST_IDS = ['sued-mitte', 'sued-ost'];
+const RAMP_IDS = ['nord-west', 'nord-mitte', 'nord-knick', 'sued-west'];
+
+const points = LICHTENBERGER_BRUECKE.points;
+const byId = (id: string) => {
+  const p = points.find((q) => q.id === id);
+  if (!p) throw new Error(`no standing point ${id}`);
+  return p;
+};
+
+describe('Lichtenberger Bruecke standing points', () => {
+  it('carries exactly the six OSM nodes of both carriageway arms', () => {
+    expect(points.map((p) => p.id)).toEqual([
+      'nord-west',
+      'nord-mitte',
+      'nord-knick',
+      'sued-west',
+      'sued-mitte',
+      'sued-ost',
+    ]);
+  });
+
+  it('k

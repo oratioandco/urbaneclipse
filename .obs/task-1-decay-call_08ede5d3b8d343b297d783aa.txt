@@ -1,0 +1,1 @@
+['export interface RevolutionLandmark {', 'export const FERNSEHTURM: RevolutionLandmark = {', 'export const SIEGESSAEULE: RevolutionLandmark = {', 'export const BRANDENBURGER_['export interface ObserverGeodetic ', 'export interface AzAlt ', 'export function geodeticToECEF', 'export function ecefToENU', 'export function directionOffsetECEF', 'export

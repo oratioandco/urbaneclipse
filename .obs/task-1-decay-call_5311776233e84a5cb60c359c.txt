@@ -1,0 +1,100 @@
+export interface ObserverGeodetic {
+  lat: number;
+  lon: number;
+  /** Eye height, metres above the WGS84 ellipsoid (see src/lib/elevation.ts). */
+  ellipsoidalHeight: number;
+}
+
+/** Direction in the observer's horizontal frame. */
+export interface AzAlt {
+  /** Degrees clockwise from north. */
+  az: number;
+  /** Degrees above the horizon. */
+  alt: number;
+}
+
+type Vec3 = [number, number, number];
+
+/** Geodetic (deg, deg, ellipsoidal m) -> ECEF metres. */
+export function azAltTo(
+  observer: ObserverGeodetic,
+  targetLat: number,
+  targetLon: number,
+  targetEllipsoidalHeight: number,
+): AzAlt & { rangeM: number } {
+  const o = geodeticToECEF(observer.lat, observer.lon, observer.ellipsoidalHeight);
+  const t = geodeticToECEF(targetLat, targetLon, targetEllipsoidalHeight);
+  const enu = ecefToENU([t[0] - o[0], t[1] - o[1], t[2] - o[2]], observer.lat, observer.lon);
+  const [e, n, u] = enu;
+  const horiz = Math.hypot(e, n);
+  return {
+    az: ((Math.atan2(e, n) * DEG) + 360) % 360,
+    alt: Math.atan2(u, horiz) * DEG,
+    rangeM: Math.hypot(horiz, u),
+  };
+}
+
+/**
+ * Project an az/alt direction into a local tangent-plane angular frame centred on
+ * `reference`, in degrees.
+ *
+ * Uses a gnomonic (tangent-plane) projection about the reference direction, so the
+ * `x` axis is the local great-circle east-ish direction and `y` is toward increasing
+ * altitude. Azimuth differences are compressed by cos(alt), which is essential: near
+ * the zenith a degree of azimuth is far less than a degree on the sky, and ignoring
+ * it would badly distort high-sun geometry.
+ */
+export interface SilhouetteDirections {
+  outline: AzAlt[];
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+}
+
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+
+  const left: AzAlt[] = [];
+  const right: AzAlt[] = [];
+  let azMin = Infinity;
+  let azMax = -Infinity;
+  let altMin = Infinity;
+  let altMax = -Infinity;
+
+  for (let i = 0; i <= steps; i++) {
+    const hAgl = (total * i) / steps;
+    const axis = azAltTo(observer, landmark.lat, landmark.lon, baseEllipsoidal + hAgl);
+    const r = radiusAtHeight(landmark, hAgl);
+
+    // Horizontal angular half-width of the limb at this height.
+    const ratio = Math.min(1, r / Math.max(axis.rangeM, 1e-9));
+    const halfWidthDeg = Math.asin(ratio) * DEG;
+
+    // Offset in azimuth. Divide by cos(alt) so that after the tangent-plane
+    // projection's cos(alt) compression the on-sky width is correct.
+    const cosAlt = Math.max(Math.cos(axis.alt * RAD), 1e-9);
+    const dAz = halfWidthDeg / cosAlt;
+
+    left.push({ az: axis.az - dAz, alt: axis.alt });
+    right.push({ az: axis.az + dAz, alt: axis.alt });
+
+    azMin = Math.min(azMin, axis.az - dAz);
+    azMax = Math.max(azMax, axis.az + dAz);
+    altMin = Math.min(altMin, axis.alt);
+    altMax = Math.max(altMax, axis.alt);
+  }
+
+  // Trace up the left limb and back down the right to close the outline.
+  return {
+    outline: [...left, ...right.reverse()],
+    bounds: { azMin, azMax, altMin, altMax },
+  };
+}
+
+/** Project precomputed absolute directions into the disc-centred tangent plane.

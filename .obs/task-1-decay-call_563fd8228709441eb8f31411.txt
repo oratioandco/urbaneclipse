@@ -1,0 +1,51 @@
+    [22.2, 5.0],
+    [22.4, 2.6], // the quadriga's horses, about 5 m wide
+    [26.0, 0.4],
+  ],
+  notes:
+    'Revolution approximation of a rectangular gate: half-way between the facade half-width ' +
+    '(17.4 m) and the half-depth (8.3 m), so hidden/edge verdicts carry about a factor of ' +
+    'two either side of the axis. The quadriga band above 21 m is the shot.',
+};
+
+/**
+ * Radius of a landmark at a given height above its base, linearly interpolated.
+ * Returns 0 at or above the top, and the base radius below the base.
+ */
+export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+  const p = profile;
+  if (p.length === 0) return 0;
+  if (!Number.isFinite(heightAboveBase)) {
+    throw new RangeError(`height must be finite, received ${heightAboveBase}`);
+  }
+  if (heightAboveBase <= p[0][0]) return p[0][1];
+  const top = p[p.length - 1];
+  if (heightAboveBase >= top[0]) return 0;
+
+  for (let i = 1; i < p.length; i++) {
+    const [h1, r1] = p[i];
+    if (heightAboveBase <= h1) {
+      const [h0, r0] = p[i - 1];
+      const span = h1 - h0;
+      if (span <= 0) return r1;
+      return r0 + ((r1 - r0) * (heightAboveBase - h0)) / span;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Radius of a landmark at a given height above its base, linearly interpolated.
+ * Returns 0 at or above the top, and the base radius below the base.
+ */
+export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+  return profileRadius(landmark.profile, heightAboveBase);
+}
+
+/** Total height of the landmark above its base, metres. */
+export function landmarkHeight(landmark: RevolutionLandmark): number {
+  const p = landmark.profile;
+  return p.length === 0 ? 0 : p[p.length - 1][0];
+}
+2026-11-13
+task/berliner-dom-landmark

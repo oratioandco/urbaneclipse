@@ -1,0 +1,31 @@
+ERROR: exit: exit status 1
+265:export function buildSilhouetteDirections(
+266-  observer: ObserverGeodetic,
+267-  landmark: RevolutionLandmark,
+268-  steps = 96,
+269-): SilhouetteDirections {
+270-  const total = landmarkHeight(landmark);
+271-  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+272-  if (total <= 0) return empty;
+273-
+274-  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);
+275-
+276-  const left: AzAlt[] = [];
+277-  const right: AzAlt[] = [];
+278-  let azMin = Infinity;
+279-  let azMax = -Infinity;
+export interface SilhouetteDirections {
+  outline: AzAlt[];
+  bounds: { azMin: number; azMax: number; altMin: number; altMax: number };
+}
+
+export function buildSilhouetteDirections(
+  observer: ObserverGeodetic,
+  landmark: RevolutionLandmark,
+  steps = 96,
+): SilhouetteDirections {
+  const total = landmarkHeight(landmark);
+  const empty = { outline: [], bounds: { azMin: 0, azMax: 0, altMin: 0, altMax: 0 } };
+  if (total <= 0) return empty;
+
+  const baseEllipsoidal = orthometricToEllipsoidal(landmark.baseOrthometric);

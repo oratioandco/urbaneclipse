@@ -1,0 +1,11 @@
+src/lib/landmarks.ts:31:export interface RevolutionLandmark {
+src/lib/landmarks.ts:96:export const FERNSEHTURM: RevolutionLandmark = {
+src/lib/landmarks.ts:142:export const SIEGESSAEULE: RevolutionLandmark = {
+src/lib/landmarks.ts:175:export const BRANDENBURGER_TOR: RevolutionLandmark = {
+src/lib/landmarks.ts:199:export function profileRadius(profile: RevolutionLandmark['profile'], heightAboveBase: number): number {
+src/lib/landmarks.ts:225:export function radiusAtHeight(landmark: RevolutionLandmark, heightAboveBase: number): number {
+src/lib/landmarks.ts:230:export function landmarkHeight(landmark: RevolutionLandmark): number {
+src/lib/areaSolver.ts:48:export interface LatLon {
+src/lib/areaSolver.ts:54:export interface BodySample {
+src/lib/areaSolver.ts:66:export type GroundProvider = (pos: LatLon) => number | undefined;
+src/lib/areaSolver.ts:68:export interface Solv

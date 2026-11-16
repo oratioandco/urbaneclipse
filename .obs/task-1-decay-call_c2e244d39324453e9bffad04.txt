@@ -1,0 +1,52 @@
+ ❯ tests/unit/domLandmark.test.ts (10 tests | 6 failed) 783ms
+ FAIL  tests/unit/domLandmark.test.ts > BERLINER_DOM sanity > carries the sourced 33 m dome diameter as its widest ring
+ ❯ tests/unit/domLandmark.test.ts:143:18
+ FAIL  tests/unit/domLandmark.test.ts > geometry from the canonical vantage (Friedrichsbrücke) > silhouette spans exactly the dome band — no towers, no nave
+ ❯ tests/unit/domLandmark.test.ts:176:35
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > finds real transits in BOTH seasonal windows, including full ones
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:243:20
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > pins transit dates against the independent Meeus ephemeris
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:251:20
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > JUNE: no transits — the sun passes far ABOVE the dome
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:276:18
+ FAIL  tests/unit/domLandmark.test.ts > sun transits behind the dome from Friedrichsbrücke (2026) > DECEMBER: no transits — proves towers/nave are NOT modeled
+ ❯ search tests/unit/domLandmark.test.ts:208:5
+ ❯ tests/unit/domLandmark.test.ts:293:18
+44:  profile: ReadonlyArray<readonly [number, number]>;
+136:  profile: [
+159:  profile: [
+export const BERLINER_DOM: RevolutionLandmark = {
+  id: 'berliner-dom',
+  name: 'Berliner Dom',
+  lat: 52.5190822,
+  lon: 13.4010942,
+  baseOrthometric: 35.26,
+  profile: [
+    [62, 16.5], // tambour foot (assumed band; diameter sourced: 33 m)
+    [68, 16.5], // dome springing (assumed height)
+    [71, 16.22], // hemisphere r(h) = sqrt(16.5^2 - (h-68)^2)
+src/lib/landmarks.ts(130,14): error TS2741: Property 'notes' is missing in type '{ id: string; name: string; lat: number; lon: number; baseOrthometric: number; profile: [number, number][]; }' but required in type 'RevolutionLandmark'.
+src/lib/landmarks.ts(262,26): error TS2532: Object is possibly 'undefined'.
+src/lib/landmarks.ts(262,42): error TS2532: Object is possibly 'undefined'.
+src/lib/landmarks.ts(264,26): error TS18048: 'top' is possibly 'undefined'.
+src/lib/landmarks.ts(267,11): error TS2488: Type 'readonly [number, number] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/lib/landmarks.ts(269,13): error TS2488: Type 'readonly [number, number] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/lib/landmarks.ts(289,31): error TS2532: Object is possibly 'undefined'.
+tests/unit/domLandmark.test.ts(142,64): error TS2339: Property 'r' does not exist on type 'readonly [number, number]'.
+tests/unit/domLandmark.test.ts(145,17): error TS2339: Property 'r' does not exist on type 'readonly [number, number]'.
+tests/unit/domLandmark.test.ts(176,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(176,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(177,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(177,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(178,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(178,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(179,35): error TS2339: Property 'map' does not exist on type 'SilhouetteDirections'.
+tests/unit/domLandmark.test.ts(179,40): error TS7006: Parameter 's' implicitly has an 'any' type.
+tests/unit/domLandmark.test.ts(209,7): error TS2353: Object literal may only specify known properties, and 'position' does not exist in type 'FixedSearchRequest'.
+tests/unit/domLandmark.test.ts(255,39): error TS2339: Property 'date' does not exist on type 'FixedCandidate'.
+tests/unit/domLandmark.test.ts(264,39): error TS2339: Property 'date' does not exist on type 'FixedCandidate'.
+tests/unit/domLandmark.test.ts(265,35): error TS2339: Property 'date' does not exist on type 'FixedCandidate'.
+TYPE_ERRORS_IN_TOUCHED_FILES

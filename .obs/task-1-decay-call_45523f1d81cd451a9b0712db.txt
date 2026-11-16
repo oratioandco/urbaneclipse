@@ -1,0 +1,1 @@
+e; stepMinutes: number; bodyAt: (t: Date) => BodySample; wanted?: OccultationKind[]; minAltitudeDeg?: number; limit?: nu
