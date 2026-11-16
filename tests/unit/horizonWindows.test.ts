@@ -23,11 +23,12 @@ import {
   eyeEllipsoidal,
   enumerateHorizonGatedWindows,
   HorizonWindowsDisabledError,
+  columnBandAt,
 } from '../../src/lib/horizonWindows.js';
 import { sampleBody } from '../../src/lib/bodyPosition.js';
 import { createHeightmap, decodeSamples, type HeightmapHeader, type Heightmap } from '../../src/lib/heightmap.js';
 import { SIEGESSAEULE, FERNSEHTURM, landmarkHeight } from '../../src/lib/landmarks.js';
-import { standingPoint, EYE_HEIGHT_M } from '../../src/lib/vantages.js';
+import { standingPoint, EYE_HEIGHT_M, STRASSE_DES_17_JUNI } from '../../src/lib/vantages.js';
 import { resolveEyeEllipsoidalHeight } from '../../src/lib/elevation.js';
 
 /** A standing point on Straße des 17. Juni, east of the column, looking west. */
@@ -514,5 +515,60 @@ describe('enumerateHorizonGatedWindows — flag-gated, terrain-aware', () => {
     });
     expect(centre.some((x) => x.clearsHorizon)).toBe(true);
     expect(whole.every((x) => !x.clearsHorizon)).toBe(true);
+  });
+});
+
+describe('Straße des 17. Juni → Siegessäule on the real terrain stack (panel 05 preview)', () => {
+  const STACK = [realBerlin(), realBerlin('berlin-dgm1-horizon')];
+  const bodyAt = (p: { lat: number; lon: number }) => (t: Date, body: 'sun' | 'moon') => sampleBody(body, t, p.lat, p.lon);
+
+  it('places the median points on the street axis, east of the column', () => {
+    expect(STRASSE_DES_17_JUNI.landmarkId).toBe(SIEGESSAEULE.id);
+    for (const p of STRASSE_DES_17_JUNI.points) {
+      // The street climbs ~140 m north over the 1.3 km to the column's east, so the
+      // back-bearing is ~264 deg, not due west (WGS84 geodesic, pyproj, per point:
+      // west 0.72 km -> 264.08, mitte 1.09 km -> 264.05, ost 1.35 km -> 264.06 deg).
+      expect(p.bearingToLandmarkDeg).toBeGreaterThan(263.5);
+      expect(p.bearingToLandmarkDeg).toBeLessThan(264.5);
+      expect(p.distanceToLandmarkM).toBeGreaterThan(650);
+      expect(p.distanceToLandmarkM).toBeLessThan(1450);
+      expect(p.needsSiteCheck).toBe(true);
+    }
+    const p135 = STRASSE_DES_17_JUNI.points.find((p) => p.id === 'ost')!;
+    expect(p135.bearingToLandmarkDeg).toBeCloseTo(264.05, 1);
+  });
+
+  it('labels the column bands by height, Viktoria on top', () => {
+    const p = STRASSE_DES_17_JUNI.points[2]!;
+    const tip = landmarkTipAltitudeDeg(p, SIEGESSAEULE);
+    expect(columnBandAt(tip - 0.01, p, SIEGESSAEULE)).toBe('viktoria');
+    expect(columnBandAt(tip * 0.5, p, SIEGESSAEULE)).toBe('column');
+    expect(columnBandAt(0, p, SIEGESSAEULE)).toBe('hall');
+  });
+
+  it('finds horizon-clear, confident sunset windows in March and September', () => {
+    const p = STRASSE_DES_17_JUNI.points[2]!;
+    const w = enumerateHorizonGatedWindows({
+      point: p,
+      landmark: SIEGESSAEULE,
+      map: STACK,
+      bodyAt: bodyAt(p),
+      bodies: ['sun'],
+      start: new Date(Date.UTC(2027, 1, 15)),
+      end: new Date(Date.UTC(2027, 9, 31)),
+      stepMinutes: 5,
+      enabled: true,
+    });
+    expect(w.every((x) => x.horizonConfident)).toBe(true);
+    const clear = w.filter((x) => x.clearsHorizon);
+    const month = (x: { peak: Date }) => x.peak.getUTCMonth();
+    // Sunset azimuth passes ~264 deg about a week before the March equinox and a week
+    // after the September one.
+    expect(clear.some((x) => month(x) === 2)).toBe(true);
+    expect(clear.some((x) => month(x) === 8 || month(x) === 9)).toBe(true);
+    expect(w.filter((x) => month(x) >= 4 && month(x) <= 7)).toHaveLength(0); // summer sets far north-west
+    for (const x of clear) {
+      expect(Math.abs(x.peakAzimuthDeg - p.bearingToLandmarkDeg)).toBeLessThan(1.5);
+    }
   });
 });

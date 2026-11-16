@@ -197,3 +197,48 @@ export const LICHTENBERGER_BRUECKE: Vantage = {
   ],
   notes: OSM_BRIDGE_SOURCE,
 };
+
+/** Siegessäule axis (landmarks.ts SIEGESSAEULE; kept local to avoid an import cycle). */
+const SIEGESSAEULE_POS: LatLon = { lat: 52.514513, lon: 13.350099 };
+
+const STRASSE_DES_17_JUNI_SOURCE =
+  'Points on the central median of Straße des 17. Juni, midway between the two ' +
+  'carriageways (OSM ways 340498991/206170874, 1465102569/1465102570 and ' +
+  '508779923/1094666586, fetched via Overpass 2026-11-16). The street runs ENE from the ' +
+  'column, so the bearing back to it is ~264 deg, not due west. Surface = street ' +
+  'ground, so bare-earth DGM1 is the right model here (unlike a bridge deck): median of ' +
+  'the 1 m DGM1 points within 3 m (sheet DGM1_388_5818, DHHN2016, sampled 2026-11-16, ' +
+  'spread under 0.25 m). needsSiteCheck stays true until someone stands there: the median ' +
+  'is a traffic island, and trees on the Tiergarten side can cut the low western sky.';
+
+/**
+ * The second fixed vantage: the Siegessäule seen down Straße des 17. Juni. Flag-gated
+ * with the horizon windows (PUBLIC_HORIZON_WINDOWS) — the column stands against open
+ * western sky, so its windows are only honest when gated on the terrain horizon.
+ */
+export const STRASSE_DES_17_JUNI: Vantage = {
+  id: 'strasse-des-17-juni',
+  name: 'Straße des 17. Juni',
+  landmarkId: 'siegessaeule',
+  points: (
+    [
+      ['west', 52.5151789, 13.3606248, 33.5],
+      ['mitte', 52.5155286, 13.3660504, 33.8],
+      ['ost', 52.5157705, 13.369867, 34.2],
+    ] as const
+  ).map(([id, lat, lon, ground]) =>
+    standingPoint(
+      {
+        id,
+        lat,
+        lon,
+        surfaceOrthometric: ground,
+        eyeHeightM: EYE_HEIGHT_M,
+        needsSiteCheck: true,
+        source: `${STRASSE_DES_17_JUNI_SOURCE} DGM1 median here: ${ground.toFixed(1)} m.`,
+      },
+      SIEGESSAEULE_POS,
+    ),
+  ),
+  notes: STRASSE_DES_17_JUNI_SOURCE,
+};

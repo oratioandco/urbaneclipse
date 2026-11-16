@@ -331,6 +331,8 @@ export interface HorizonWindowRequest {
   discRadiusDeg?: number;
   /** Explicit override; when omitted the module's own flag is consulted. */
   enabled?: boolean;
+  /** Sharpen each window's peak to the true minute (see enumerateVantageWindows). */
+  refinePeaks?: boolean;
 }
 
 /** The shape the ephemeris adapter must return (structurally BodySample). */
@@ -375,6 +377,7 @@ export function enumerateHorizonGatedWindows(
     horizonStepM = 25,
     horizonBeyondM = DEFAULT_HORIZON_BEYOND_M,
     discRadiusDeg = 0,
+    refinePeaks = false,
   } = req;
 
   const horizon = horizonTowardsLandmark(point, landmark, map, horizonStepM, horizonBeyondM);
@@ -388,6 +391,7 @@ export function enumerateHorizonGatedWindows(
     start,
     end,
     stepMinutes,
+    refinePeaks,
   });
 
   return raw.map((w) => {
@@ -412,4 +416,22 @@ export function enumerateHorizonGatedWindows(
       photographable: gate.clearsHorizon && w.coveredFraction > 0,
     };
   });
+}
+
+/** Where on the Siegessäule the disc sits: the gilded Viktoria, the column, or the hall. */
+export type ColumnBand = 'viktoria' | 'column' | 'hall';
+
+/**
+ * Band of the Siegessäule at an apparent altitude, from a standing point: Viktoria from
+ * the statue base (58.7 m) up, the column from its foot (12.8 m), the square hall and
+ * terrace below. Same curvature/refraction convention as the horizon samples, so a band
+ * edge and the skyline are measured alike.
+ */
+export function columnBandAt(altDeg: number, point: StandingPoint, landmark: RevolutionLandmark): ColumnBand {
+  const { distanceM } = bearingDistanceTo(point, { lat: landmark.lat, lon: landmark.lon });
+  const eye = point.surfaceOrthometric + point.eyeHeightM;
+  const at = (hAgl: number) => groundAltitudeDeg(landmark.baseOrthometric + hAgl, eye, distanceM);
+  if (altDeg >= at(58.7)) return 'viktoria';
+  if (altDeg >= at(12.8)) return 'column';
+  return 'hall';
 }

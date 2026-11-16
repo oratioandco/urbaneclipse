@@ -26,9 +26,17 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
-import { LICHTENBERGER_BRUECKE } from '../../lib/vantages.js';
+import { LICHTENBERGER_BRUECKE, STRASSE_DES_17_JUNI, type Vantage } from '../../lib/vantages.js';
 import { enumerateVantageWindows, type VantageWindow } from '../../lib/vantageWindows.js';
-import { FERNSEHTURM } from '../../lib/landmarks.js';
+import { FERNSEHTURM, SIEGESSAEULE, type RevolutionLandmark } from '../../lib/landmarks.js';
+import {
+  columnBandAt,
+  enumerateHorizonGatedWindows,
+  horizonWindowsEnabled,
+  type ColumnBand,
+} from '../../lib/horizonWindows.js';
+import type { Heightmap } from '../../lib/heightmap.js';
+import { loadHeightmap } from '../../cesium/loadHeightmap.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
 import { moonLighting } from '../../lib/moonPhase.js';
 import {
@@ -41,12 +49,84 @@ import { dateTime, viewMode } from '../../store.js';
 
 const WINDOW_MONTHS = 12;
 
-const BAND_LABEL: Record<VantageWindow['band'], string> = {
+const BAND_LABEL: Record<VantageWindow['band'] | ColumnBand, string> = {
   spire: 'Spitze',
   sphere: 'Kugel',
   shaft: 'Schaft',
   base: 'Fuß',
+  viktoria: 'Viktoria',
+  column: 'Säule',
+  hall: 'Sockel',
 };
+
+/** One calendar row, whichever target produced it. */
+interface CalendarRow {
+  body: VantageWindow['body'];
+  peak: Date;
+  coveredFraction: number;
+  band: VantageWindow['band'] | ColumnBand;
+  /** Horizon-gated targets only: does the disc clear the terrain skyline? */
+  horizon?: 'frei' | 'verdeckt' | 'unsicher';
+}
+
+interface Target {
+  id: 'fernsehturm' | 'siegessaeule';
+  label: string;
+  vantage: Vantage;
+  landmark: RevolutionLandmark;
+  bearingLabel: string;
+  /** Gate windows on the DGM1 terrain horizon (needs the heightmap stack). */
+  horizonGated: boolean;
+}
+
+const TARGETS: Target[] = [
+  {
+    id: 'fernsehturm',
+    label: 'Fernsehturm',
+    vantage: LICHTENBERGER_BRUECKE,
+    landmark: FERNSEHTURM,
+    bearingLabel: 'Peilung zum Turm',
+    horizonGated: false,
+  },
+  {
+    id: 'siegessaeule',
+    label: 'Siegessäule',
+    vantage: STRASSE_DES_17_JUNI,
+    landmark: SIEGESSAEULE,
+    bearingLabel: 'Peilung',
+    horizonGated: true,
+  },
+];
+
+/**
+ * The Siegessäule target is a preview: on with the build flag PUBLIC_HORIZON_WINDOWS, or
+ * per visit with ?horizon=1 so it can be checked on the live site without shipping it.
+ */
+function horizonPreviewOn(): boolean {
+  if (horizonWindowsEnabled()) return true;
+  try {
+    return new URLSearchParams(window.location.search).get('horizon') === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Core 10 m grid first, then the 25 m horizon grid west to Teufelsberg; loaded once. */
+let heightmapStack: Promise<Heightmap[]> | null = null;
+function loadHeightmapStack(): Promise<Heightmap[]> {
+  heightmapStack ??= Promise.all([
+    loadHeightmap('/heightmap/berlin-dgm1'),
+    loadHeightmap('/heightmap/berlin-dgm1-horizon'),
+  ]).then((results) => {
+    const grids = results.map((r) => r.grid).filter((g): g is Heightmap => g !== null);
+    if (grids.length !== results.length) {
+      heightmapStack = null; // let a later run retry
+      throw new Error(results.map((r) => r.error).filter(Boolean).join('; '));
+    }
+    return grids;
+  });
+  return heightmapStack;
+}
 
 const BODY_LABEL: Record<VantageWindow['body'], string> = {
   sun: 'Sonne',
@@ -78,9 +158,13 @@ type WeatherState =
   | { status: 'error' };
 
 export default function VantageCalendar() {
+  const horizonOn = useMemo(horizonPreviewOn, []);
+  const [targetId, setTargetId] = useState<Target['id']>('fernsehturm');
+  const target = TARGETS.find((t) => t.id === targetId) ?? TARGETS[0]!;
   const [pointId, setPointId] = useState(LICHTENBERGER_BRUECKE.points[0]!.id);
   const [state, setState] = useState<'idle' | 'running' | 'done'>('idle');
-  const [windows, setWindows] = useState<VantageWindow[]>([]);
+  const [windows, setWindows] = useState<CalendarRow[]>([]);
+  const [terrainError, setTerrainError] = useState<string | null>(null);
   const [weather, setWeather] = useState<WeatherState>({ status: 'idle' });
   // "Now" as of the sweep, so "in N Tagen" stays put while the panel sits open.
   const [sweptAt, setSweptAt] = useState<Date | null>(null);
@@ -91,57 +175,102 @@ export default function VantageCalendar() {
 
   const point = useMemo(
     // The registry is a non-empty constant; the ?? guards only the type, not reality.
-    () => LICHTENBERGER_BRUECKE.points.find((p) => p.id === pointId) ?? LICHTENBERGER_BRUECKE.points[0]!,
-    [pointId],
+    () => target.vantage.points.find((p) => p.id === pointId) ?? target.vantage.points[0]!,
+    [pointId, target],
   );
 
-  const assessmentFor = (w: VantageWindow): WeatherAssessment | undefined =>
+  const reset = (): void => {
+    runSeq.current++; // drop any in-flight terrain/weather answer
+    setState('idle');
+    setWindows([]);
+    setWeather({ status: 'idle' });
+    setTerrainError(null);
+  };
+
+  const assessmentFor = (w: CalendarRow): WeatherAssessment | undefined =>
     weather.status === 'ok' ? weather.assessments.get(w.peak.toISOString()) : undefined;
+
+  const sweep = (now: Date, end: Date, grids: Heightmap[] | null): CalendarRow[] => {
+    const bodyAt = (t: Date, body: 'sun' | 'moon') => sampleBody(body, t, point.lat, point.lon);
+    if (!target.horizonGated) {
+      return enumerateVantageWindows({
+        point,
+        landmark: target.landmark,
+        bodyAt,
+        start: now,
+        end,
+        stepMinutes: 5,
+        refinePeaks: true,
+      });
+    }
+    return enumerateHorizonGatedWindows({
+      point,
+      landmark: target.landmark,
+      map: grids!,
+      bodyAt,
+      start: now,
+      end,
+      stepMinutes: 5,
+      refinePeaks: true,
+      enabled: true, // the panel already gated on horizonPreviewOn()
+    }).map((w) => ({
+      body: w.body,
+      peak: w.peak,
+      coveredFraction: w.coveredFraction,
+      band: columnBandAt(w.peakAltitudeDeg, point, target.landmark),
+      horizon: !w.horizonConfident ? 'unsicher' : w.clearsHorizon ? 'frei' : 'verdeckt',
+    }));
+  };
 
   const run = (): void => {
     setState('running');
     setWeather({ status: 'idle' });
+    setTerrainError(null);
     const epoch = ++runSeq.current;
-    // Two rAFs so the "running" state paints before the synchronous sweep blocks.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        const now = new Date();
-        const end = new Date(now);
-        end.setMonth(end.getMonth() + WINDOW_MONTHS);
-        const found = enumerateVantageWindows({
-          point,
-          landmark: FERNSEHTURM,
-          bodyAt: (t, body) => sampleBody(body, t, point.lat, point.lon),
-          start: now,
-          end,
-          stepMinutes: 5,
-          refinePeaks: true,
-        });
-        setWindows(found);
-        setSweptAt(now);
-        setState('done');
-
-        // The geometric list is the answer; the weather only annotates it. Async so a
-        // dead network costs the calendar nothing.
-        setWeather({ status: 'loading' });
-        loadForecast(point.lat, point.lon)
-          .then((forecast) => {
-            if (runSeq.current !== epoch) return;
-            const assessments = new Map<string, WeatherAssessment>();
-            for (const w of found) {
-              const a = assessWindowWeather(forecast, w.peak);
-              if (a) assessments.set(w.peak.toISOString(), a);
-            }
-            setWeather({ status: 'ok', assessments });
-          })
-          .catch(() => {
-            if (runSeq.current === epoch) setWeather({ status: 'error' });
-          });
-      }),
+    const terrain = target.horizonGated ? loadHeightmapStack() : Promise.resolve(null);
+    terrain.then(
+      (grids) => {
+        if (runSeq.current !== epoch) return;
+        // Two rAFs so the "running" state paints before the synchronous sweep blocks.
+        requestAnimationFrame(() => requestAnimationFrame(() => compute(epoch, grids)));
+      },
+      (err: unknown) => {
+        if (runSeq.current !== epoch) return;
+        setTerrainError(err instanceof Error ? err.message : String(err));
+        setState('idle');
+      },
     );
   };
 
-  const next = windows[0];
+  const compute = (epoch: number, grids: Heightmap[] | null): void => {
+    const now = new Date();
+    const end = new Date(now);
+    end.setMonth(end.getMonth() + WINDOW_MONTHS);
+    const found = sweep(now, end, grids);
+    setWindows(found);
+    setSweptAt(now);
+    setState('done');
+
+    // The geometric list is the answer; the weather only annotates it. Async so a
+    // dead network costs the calendar nothing.
+    setWeather({ status: 'loading' });
+    loadForecast(point.lat, point.lon)
+      .then((forecast) => {
+        if (runSeq.current !== epoch) return;
+        const assessments = new Map<string, WeatherAssessment>();
+        for (const w of found) {
+          const a = assessWindowWeather(forecast, w.peak);
+          if (a) assessments.set(w.peak.toISOString(), a);
+        }
+        setWeather({ status: 'ok', assessments });
+      })
+      .catch(() => {
+        if (runSeq.current === epoch) setWeather({ status: 'error' });
+      });
+  };
+
+  // A row whose disc is already behind the terrain is listed (honestly) but is not "next".
+  const next = windows.find((w) => w.horizon !== 'verdeckt');
 
   return (
     <section className="pv-panel" data-testid="vantage-calendar">
@@ -155,20 +284,42 @@ export default function VantageCalendar() {
       </header>
 
       <div className="pv-readout" style={{ marginTop: 0 }}>
+        {horizonOn && (
+          <div className="pv-readout__row">
+            <dt className="pv-label">Ziel</dt>
+            <dd className="pv-value">
+              <select
+                aria-label="Ziel und Standort"
+                data-testid="vantage-target"
+                value={targetId}
+                onChange={(e) => {
+                  const t = TARGETS.find((x) => x.id === e.target.value) ?? TARGETS[0]!;
+                  setTargetId(t.id);
+                  setPointId(t.vantage.points[0]!.id);
+                  reset();
+                }}
+              >
+                {TARGETS.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </dd>
+          </div>
+        )}
         <div className="pv-readout__row">
           <dt className="pv-label">Stehpunkt</dt>
           <dd className="pv-value">
             <select
-              aria-label="Stehpunkt auf der Brücke"
+              aria-label={`Stehpunkt: ${target.vantage.name}`}
               value={pointId}
               onChange={(e) => {
                 setPointId(e.target.value);
-                setState('idle');
-                setWindows([]);
-                setWeather({ status: 'idle' });
+                reset();
               }}
             >
-              {LICHTENBERGER_BRUECKE.points.map((p) => (
+              {target.vantage.points.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.id} · {(p.distanceToLandmarkM / 1000).toFixed(2)} km
                 </option>
@@ -177,7 +328,7 @@ export default function VantageCalendar() {
           </dd>
         </div>
         <div className="pv-readout__row">
-          <dt className="pv-label">Peilung zum Turm</dt>
+          <dt className="pv-label">{target.bearingLabel}</dt>
           <dd className="pv-value">{point.bearingToLandmarkDeg.toFixed(2)}°</dd>
         </div>
       </div>
@@ -187,6 +338,13 @@ export default function VantageCalendar() {
           {state === 'running' ? 'Scanne 12 Monate…' : '12 Monate rechnen'}
         </button>
       </div>
+
+      {terrainError && (
+        <div className="pv-msg pv-msg--warn" role="status">
+          <strong className="pv-msg__title">Geländedaten nicht geladen.</strong> Ohne
+          Horizont kann die Säule nicht ehrlich gerechnet werden ({terrainError}).
+        </div>
+      )}
 
       {state === 'done' && (
         <>
@@ -227,6 +385,8 @@ export default function VantageCalendar() {
                       {BODY_LABEL[w.body]} · {BAND_LABEL[w.band]} · {Math.round(w.coveredFraction * 100)} %
                       {w.body === 'moon' &&
                         ` · ${Math.round(moonLighting(w.peak, point.lat, point.lon).fraction * 100)} % beleuchtet`}
+                      {w.horizon === 'verdeckt' && ' · hinter dem Horizont'}
+                      {w.horizon === 'unsicher' && ' · Horizont unsicher'}
                       {a && (
                         <span className={`pv-wx pv-wx--${a.verdict}`}>
                           {formatAssessment(a)}
@@ -240,6 +400,15 @@ export default function VantageCalendar() {
             })}
           </ul>
 
+          {target.horizonGated ? (
+            <div className="pv-msg" role="status">
+              <strong className="pv-msg__title">Ehrlich gelesen</strong>
+              {`${windows.filter((w) => w.body === 'sun').length} Sonnenfenster, ${windows.filter((w) => w.body === 'moon').length} Mondfenster; ${windows.filter((w) => w.horizon === 'frei').length} davon über dem Horizont.`}{' '}
+              Horizont aus DGM1 bis 10 km hinter der Säule: nacktes Gelände, ohne Bäume und
+              Häuser — die Bäume am Tiergarten können tiefe Scheiben trotzdem verdecken.
+              Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc).
+            </div>
+          ) : (
           <div className="pv-msg" role="status">
             <strong className="pv-msg__title">Ehrlich gelesen</strong>
             {windows.filter((w) => w.body === 'sun').length === 0
@@ -247,6 +416,7 @@ export default function VantageCalendar() {
               : `${windows.filter((w) => w.body === 'sun').length} Sonnenfenster, ${windows.filter((w) => w.body === 'moon').length} Mondfenster. Wo keine Zeile steht, passiert es nicht — das ist keine Lücke, sondern das Ergebnis.`}
             {' '}Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc); die Spitzen-Treffer im Frühjahr/Spätsommer sind die verlässlichsten.
           </div>
+          )}
 
           {weather.status === 'loading' && (
             <div className="pv-msg" role="status">
@@ -273,7 +443,13 @@ export default function VantageCalendar() {
             );
           })()}
 
-          {point.needsSiteCheck && (
+          {point.needsSiteCheck && target.horizonGated && (
+            <div className="pv-msg" role="note">
+              Stehpunkte auf dem Mittelstreifen der Straße des 17. Juni, Bodenhöhe aus
+              DGM1 — vor Ort noch nicht geprüft.
+            </div>
+          )}
+          {point.needsSiteCheck && !target.horizonGated && (
             <div className="pv-msg" role="note">
               Deckhöhe an dieser Stelle noch nicht verifiziert (Mid-Span-Wert 48,2 m angenommen) —
               das verschiebt Band-Grenzen um Zentimeter, nicht um Fenster.
