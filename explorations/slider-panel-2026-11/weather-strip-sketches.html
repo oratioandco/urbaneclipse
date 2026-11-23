@@ -341,6 +341,98 @@
   .data-note code { font-size: 11.5px; background: var(--field); border: 1px solid var(--line);
     border-radius: 4px; padding: 1px 4px; }
   @media (max-width: 480px) { .spark-day { width: 74px; } }
+  /* ---- Round 10: the panel as an app — peek / grid / plan sheet, desktop side panel, preview ticket. ---- */
+  .r10sub { font-size: 12px; font-weight: 700; color: var(--muted); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .r10 { position: relative; overflow: hidden; background: var(--field); outline: none; user-select: none; -webkit-user-select: none; }
+  .r10:focus-visible { box-shadow: 0 0 0 3px var(--moon); }
+  .r10phone { width: 300px; max-width: 100%; height: 600px; margin: 0 auto; border-radius: 34px; border: 8px solid #1d1b19; }
+  .r10desk { width: 100%; height: 440px; border-radius: 12px; border: 1px solid var(--line); }
+  .r10map { position: absolute; inset: 0; cursor: grab; touch-action: none; overflow: hidden; }
+  .r10map.grabbing { cursor: grabbing; }
+  .r10map svg { position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; }
+  .r10maptag { position: absolute; top: 12px; left: 12px; font-size: 10.5px; font-weight: 600; background: var(--surface); color: var(--muted);
+    border-radius: 10px; padding: 3px 8px; box-shadow: 0 1px 4px rgba(0,0,0,.15); pointer-events: none; }
+  .r10desk .r10maptag { left: auto; right: 12px; }
+  .r10pv { position: absolute; inset: 0; display: none; overflow: hidden; }
+  .r10[data-mode="preview"] .r10pv { display: block; }
+  .r10[data-mode="preview"] .r10map, .r10[data-mode="preview"] .r10sheet { display: none; }
+  .r10pv .tower { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 2; filter: brightness(0.35) saturate(0.6); }
+  .r10pv .disc { position: absolute; width: 22px; height: 22px; margin: 0 0 -11px -11px; border-radius: 50%; z-index: 1;
+    background: radial-gradient(circle, #fff6dc 0 35%, #ffb24a 60%, rgba(255,140,40,0) 72%); transition: box-shadow .2s; }
+  .r10pv .disc.moon { background: url(icons/moon_disc_64.png) center/contain no-repeat; width: 18px; height: 18px; margin: 0 0 -9px -9px; }
+  .r10pv .disc.contact { box-shadow: 0 0 26px 12px rgba(255,190,90,.75); }
+  .r10pv .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 9%; background: rgba(10,10,20,.55); z-index: 3; }
+  .r10back { position: absolute; top: 12px; left: 12px; z-index: 5; }
+  .r10fab { font: inherit; font-size: 11.5px; font-weight: 600; border: 0; border-radius: 16px; padding: 6px 11px; cursor: pointer;
+    background: var(--surface); color: var(--ink); box-shadow: 0 1px 6px rgba(0,0,0,.25); }
+  .r10minimap { position: absolute; top: 12px; right: 12px; z-index: 5; width: 40px; height: 40px; border-radius: 12px; overflow: hidden;
+    border: 2px solid var(--surface); box-shadow: 0 1px 6px rgba(0,0,0,.3); cursor: pointer; background: var(--field); transition: width .2s, height .2s; padding: 0; }
+  .r10minimap.open { width: 132px; height: 132px; }
+  .r10minimap svg { width: 100%; height: 100%; display: block; }
+  .r10ticket { position: absolute; left: 10px; right: 10px; bottom: 12px; z-index: 6; background: var(--surface); border-radius: 14px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.32); padding: 8px 10px 9px; }
+  .r10desk .r10ticket { left: 50%; right: auto; width: 400px; max-width: calc(100% - 80px); transform: translateX(-50%); margin-left: 24px; }
+  .r10ticket .top { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .r10ticket .top b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r10ticket .top .t { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .r10ticket .badge { font-size: 10px; font-weight: 700; color: #fff; background: var(--sun); border-radius: 8px; padding: 1px 6px; visibility: hidden; }
+  .r10ticket.contact .badge { visibility: visible; }
+  .r10more-btn { font: inherit; font-size: 14px; line-height: 1; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; padding: 2px 7px; cursor: pointer; }
+  .r10scrub { position: relative; height: 22px; margin: 8px 6px 0; border-radius: 11px; touch-action: none; cursor: ew-resize; }
+  .r10scrub .peak { position: absolute; top: 4px; bottom: 4px; width: 2px; margin-left: -1px; background: #fff; border-radius: 1px; opacity: .9; }
+  .r10scrub .knob { position: absolute; top: -3px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: var(--surface);
+    box-shadow: 0 1px 5px rgba(0,0,0,.4); }
+  .r10more { display: none; flex-wrap: wrap; gap: 6px; margin-top: 9px; font-size: 11px; color: var(--muted); align-items: center; }
+  .r10ticket.open .r10more { display: flex; }
+  .r10more .stand { flex-basis: 100%; }
+  .r10sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; background: var(--surface); border-radius: 18px 18px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.18); display: flex; flex-direction: column; transition: height .3s cubic-bezier(.2,.8,.2,1); }
+  .r10sheet.dragging { transition: none; }
+  .r10handle { flex: none; height: 20px; display: grid; place-items: center; cursor: grab; touch-action: none; }
+  .r10handle i { width: 36px; height: 4px; border-radius: 2px; background: var(--line); }
+  .r10peek { flex: none; min-height: 40px; padding: 0 12px 8px 14px; display: flex; align-items: center; gap: 10px; touch-action: none; cursor: grab; }
+  .r10peek .txt { flex: 1; min-width: 0; }
+  .r10peek .txt b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r10peek .txt small { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r10dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+  .r10go { font: inherit; font-size: 12px; font-weight: 700; border: 0; border-radius: 12px; padding: 8px 12px; background: var(--sun); color: #fff; cursor: pointer; flex: none; }
+  .r10body { flex: 1; min-height: 0; overflow: auto; padding: 4px 12px 16px; overscroll-behavior: contain; }
+  .r10grid { display: grid; grid-template-columns: 50px repeat(4, minmax(0, 1fr)); gap: 4px; font-size: 11px; }
+  .r10grid .h { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; text-align: center; padding-bottom: 1px; }
+  .r10grid .d { font-weight: 700; align-self: center; font-size: 11px; }
+  .r10grid .d small { display: block; font-weight: 400; color: var(--muted); font-size: 9.5px; }
+  .r10cell { border-radius: 8px; padding: 5px 5px 6px; min-height: 48px; border: 1px solid var(--line); background: var(--field); color: inherit;
+    font: inherit; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .r10cell b { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .r10cell span { font-size: 9.5px; color: var(--muted); line-height: 1.2; }
+  .r10cell.moon b { color: var(--moon); }
+  .r10cell.good { border-color: var(--good); box-shadow: inset 0 0 0 1px var(--good); }
+  .r10cell.dead { cursor: default; background: transparent; border-style: dashed; color: var(--muted); font-size: 9.5px; line-height: 1.25; justify-content: center; }
+  .r10cell.sel { outline: 2px solid var(--sun); outline-offset: 1px; }
+  .r10daywhy { grid-column: 2 / -1; border: 1px dashed var(--line); border-radius: 8px; min-height: 48px; display: flex; align-items: center;
+    padding: 0 10px; color: var(--muted); font-size: 11px; }
+  .r10plan h4 { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 16px 0 6px; }
+  .r10chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .r10chip { font: inherit; font-size: 11px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 12px; padding: 3px 9px; cursor: pointer; }
+  .r10chip.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  .r10chip[disabled] { opacity: .45; cursor: default; }
+  .r10cloud { display: grid; grid-template-columns: 50px 1fr; gap: 5px 8px; align-items: center; font-size: 11px; }
+  .r10cloud .bar { height: 12px; border-radius: 3px; display: flex; overflow: hidden; background: var(--phase-day); }
+  .r10cloud .bar i { flex: 1; background: var(--deck); }
+  .r10cloud .axis { grid-column: 2; display: flex; justify-content: space-between; font-size: 9px; color: var(--muted); }
+  .r10note { font-size: 11px; color: var(--muted); margin: 6px 0 0; }
+  .r10side { position: absolute; top: 0; bottom: 0; left: 0; z-index: 4; width: 300px; background: var(--surface); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; transition: width .25s cubic-bezier(.2,.8,.2,1); box-shadow: 2px 0 14px rgba(0,0,0,.08); }
+  .r10side .r10peek { padding: 12px 10px 10px 14px; cursor: default; border-bottom: 1px solid var(--line); }
+  .r10side .r10body { padding-top: 10px; }
+  .r10collapse { font: inherit; font-size: 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 8px; width: 28px; height: 28px; cursor: pointer; flex: none; }
+  .r10rail { display: none; flex-direction: column; align-items: center; gap: 8px; padding-top: 12px; }
+  .r10rail button { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--field); color: var(--ink); cursor: pointer; font-size: 15px; }
+  .r10rail .next { border-color: var(--sun); }
+  .r10desk[data-rail] .r10side { width: 50px; }
+  .r10desk[data-rail] .r10side > :not(.r10rail) { display: none; }
+  .r10desk[data-rail] .r10rail { display: flex; }
+  .r10desk[data-mode="preview"] .r10side { display: none; }
 </style>
 
 <div class="wrap">
@@ -374,6 +466,7 @@
     <a href="#round7" style="border-color: var(--moon); color: var(--ink)">R7 · Crazy 8</a>
 <a href="#round8" style="border-color: var(--sun); color: var(--ink)">R8 · One day</a>
 <a href="#round9" style="border-color: var(--sun); color: var(--ink)">R9 · The throw</a>
+<a href="#round10" style="border-color: var(--sun); color: var(--ink)">R10 · As an app</a>
   </nav>
 </header>
 
@@ -871,6 +964,23 @@
     that focal length (tower filling, sun a 0.5° rim behind the shaft, none of the disc-the-size-of-the-
     sphere lie) plus stand · face · lens, ready to commit.</p>
   <div data-r9></div><small class="read7"></small>
+</div>
+<div class="card" style="margin-top: 34px; border-left: 3px solid var(--sun);" id="round10">
+  <div class="eyebrow">Round 10 · the panel as an app</div>
+  <h2>Peek, grid, plan, and a ticket in place of the panel at eye level</h2>
+  <p>This round answers the critique of rounds 1–9: the panel took the map hostage, and it showed hours when the job is <b>shots</b>.
+    On a phone it becomes a <b>sheet that snaps to three heights</b>.</p>
+  <ul>
+    <li><b>Peek</b> is one line: the next shot with a countdown, plus the best one in three days.</li>
+    <li><b>Half</b> is the <b>3-day shot grid</b>: one row per day and four fixed columns. A cell holds the best shot with its grade and minute, or a dashed note saying why there is none. A day with no shots at all collapses to one sentence.</li>
+    <li><b>Full</b> is planning: filters, the cloud detail and the year search.</li>
+  </ul>
+  <p>Touching the map always drops the sheet to peek. Escape steps down one height. Preview replaces the sheet with a <b>floating ticket</b>: shot name, a scrubber that snaps to the contact minute, lens and stand behind "⋯", and the minimap as a corner button. On wide screens the same content becomes a side panel that folds to an icon rail.</p>
+  <h3 class="r10sub">Phone</h3>
+  <div data-r10="phone"></div><small class="read7" data-r10read="phone"></small>
+  <h3 class="r10sub">Desktop · 900 px and wider</h3>
+  <div data-r10="desk"></div><small class="read7" data-r10read="desk"></small>
+  <p class="r10note">The shots come from the three mock days this page shares (EVENTS5, towerWins7, the 15:06 alignment), and "now" is the sketch's 13:20. As in the app, only the Fernsehturm has shot maths; the Siegessäule chip waits for hers. Stands and lenses are the Round 8 mocks.</p>
 </div>
 <script type="module">
   const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -2578,5 +2688,266 @@
     view.addEventListener('pointerup', release);
     view.addEventListener('pointercancel', release);
     read('throw the strip — it coasts, catches a detent; land it on 15:06 and the frame ignites');
+  }
+
+  // ---- Round 10 · the panel as an app. One shot model, two shells (phone sheet, desktop side panel). ----
+  {
+    const G10 = { good: 'var(--good)', fair: 'var(--fair)', poor: 'var(--poor)' };
+    const SLOTS10 = [['dawn', 'Dawn'], ['day', 'Day'], ['dusk', 'Dusk'], ['night', 'Night']];
+    const DAYLBL10 = ['Today', 'Tomorrow', 'Sat'];
+    const shootable10 = (s) => s.grade !== 'poor' && s.horizon <= 0.6;
+    const why10 = (s) => s.text.replace(/ may .*/, '').split(/[:,]/)[0];
+    // The grid's truth: per day, per slot, the best shot or the reason there is none.
+    const CELLS10 = EVENTS5.map((ev, i) => {
+      const d = DAYS[i];
+      const moonW = towerWins7[i].find((w) => w.kind === 'moon');
+      const pct = Math.round(d.moon.illum * 100);
+      return {
+        dawn: shootable10(ev.riseSky)
+          ? { i, slot: 'dawn', kind: 'sun', a: SUN_WINDOWS5[0][0], b: SUN_WINDOWS5[0][1], peak: null, t: ev.rise,
+              title: 'First light', sub: 'skyline wide', grade: ev.riseSky.grade,
+              stand: 'Jannowitzbrücke · 1.1 km · face NE 70°', mm: '35 mm', face: 70 }
+          : { why: why10(ev.riseSky) },
+        day: { why: 'flat light, nothing lines up' },
+        dusk: shootable10(ev.setSky)
+          ? { i, slot: 'dusk', kind: 'sun', a: SUN_WINDOWS5[1][0], b: SUN_WINDOWS5[1][1], peak: ALIGN7[i], t: ALIGN7[i],
+              title: 'Tower eclipse', sub: 'sun behind the shaft', grade: ev.setSky.grade,
+              stand: 'Mollstraße bridge · 1.3 km · face SW 245°', mm: '300 mm', face: TOWER_AZ7 }
+          : { why: why10(ev.setSky) },
+        night: moonW
+          ? { i, slot: 'night', kind: 'moon', a: moonW.a, b: moonW.b, peak: moonW.peak, t: moonW.peak,
+              title: `Moon ${pct}%`, sub: 'in the tower band', grade: d.moon.illum >= 0.5 ? 'good' : 'fair',
+              stand: 'Spree bank · solver pick · 0.8 km', mm: '600 mm' }
+          : { why: d.moon.illum < MOON_GATE5 ? `moon ${pct}%, too thin` : 'cloud over the moon' },
+      };
+    });
+    const ALL10 = CELLS10.flatMap((c) => SLOTS10.map(([k]) => c[k]).filter((s) => s.title));
+    const abs10 = (s) => s.i * 1440 + s.t;
+    const NEXT10 = ALL10.filter((s) => abs10(s) > NOW_MIN).sort((x, y) => abs10(x) - abs10(y))[0];
+    const RANK10 = { good: 2, fair: 1, poor: 0 };
+    const score10 = (s) => RANK10[s.grade] * 2 + (s.slot === 'dusk' ? 1 : 0);   // the tower eclipse is the headline shot
+    const BEST10 = [...ALL10].sort((x, y) => score10(y) - score10(x) || abs10(x) - abs10(y))[0];
+    const when10 = (s) => `${DAYS[s.i].name} ${fmtMin(s.t)}`;
+    const until10 = (s) => { const m = abs10(s) - NOW_MIN, h = Math.floor(m / 60);
+      return h >= 24 ? `in ${Math.round(m / 1440)} d` : h ? `in ${h} h ${m % 60} min` : `in ${m} min`; };
+
+    // A clay map: blocks, the Spree, the tower; the stand pin when a shot is picked.
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const BLOCKS10 = []; for (let k = 0; k < 150; k++) {
+      const x = rnd() * 600, y = rnd() * 600; if (Math.abs(y - (300 + 60 * Math.sin(x / 90))) < 26) continue;
+      BLOCKS10.push([x, y, 14 + rnd() * 30, 10 + rnd() * 24]); }
+    const mapSvg10 = (pin) => {
+      const s = el('svg', { viewBox: '0 0 600 600', preserveAspectRatio: 'xMidYMid slice' });
+      s.append(el('rect', { width: 600, height: 600, fill: 'var(--field)' }));
+      for (const [x, y, w, h] of BLOCKS10) s.append(el('rect', { x, y, width: w, height: h, rx: 3, fill: 'var(--line)' }));
+      let p = 'M -10 300'; for (let x = 0; x <= 610; x += 20) p += ` L ${x} ${300 + 60 * Math.sin(x / 90)}`;
+      s.append(el('path', { d: p, stroke: 'var(--rain)', 'stroke-width': 22, fill: 'none', opacity: 0.45, 'stroke-linecap': 'round' }));
+      const tw = el('image', { href: 'icons/lm/fernsehturm.png', x: 286, y: 226, width: 28, height: 56 }); s.append(tw);
+      if (pin) {
+        const [px, py] = pin.slot === 'dawn' ? [250, 340] : pin.slot === 'dusk' ? [352, 232] : [330, 318];
+        s.append(el('line', { x1: px, y1: py, x2: 300, y2: 270, stroke: pin.kind === 'moon' ? 'var(--moon)' : 'var(--sun)', 'stroke-width': 2, 'stroke-dasharray': '4 3' }));
+        s.append(el('circle', { cx: px, cy: py, r: 7, fill: pin.kind === 'moon' ? 'var(--moon)' : 'var(--sun)', stroke: '#fff', 'stroke-width': 2.5 }));
+      }
+      return s;
+    };
+
+    const build10 = (host, kind) => {
+      const read = (t) => { document.querySelector(`[data-r10read="${kind}"]`).textContent = t; };
+      const root = mk(`r10 ${kind === 'phone' ? 'r10phone' : 'r10desk'}`, host);
+      root.tabIndex = 0; root.dataset.mode = 'map';
+      const S = { sel: NEXT10, filter: { sun: true, moon: true }, height: 'half', remembered: 'half', min: NEXT10.t, pan: [0, 0] };
+
+      // map
+      const map = mk('r10map', root); let mapSvg = mapSvg10(S.sel); map.append(mapSvg);
+      const tag = mk('r10maptag', root); tag.textContent = 'drag the map';
+      const setPan = () => { mapSvg.style.transform = `translate(${S.pan[0]}px, ${S.pan[1]}px)`; };
+      const redrawMap = () => { mapSvg.remove(); mapSvg = mapSvg10(S.sel); map.append(mapSvg); setPan(); };
+      { let start = null;
+        map.addEventListener('pointerdown', (e) => { start = [e.clientX, e.clientY, ...S.pan, false];
+          try { map.setPointerCapture(e.pointerId); } catch {} map.classList.add('grabbing'); });
+        map.addEventListener('pointermove', (e) => { if (!start) return;
+          const dx = e.clientX - start[0], dy = e.clientY - start[1];
+          if (!start[4] && Math.hypot(dx, dy) > 4) { start[4] = true; onMapMove(); }
+          S.pan = [clamp7(start[2] + dx, -150, 150), clamp7(start[3] + dy, -150, 150)]; setPan(); });
+        const end = () => { start = null; map.classList.remove('grabbing'); };
+        map.addEventListener('pointerup', end); map.addEventListener('pointercancel', end); }
+
+      // shared content
+      const peekEl = (parent) => { const p = mk('r10peek', parent);
+        const txt = mk('txt', p); const b = document.createElement('b'), sm = document.createElement('small'); txt.append(b, sm);
+        const go = document.createElement('button'); go.className = 'r10go'; go.textContent = 'Preview ▸'; p.append(go);
+        go.addEventListener('click', (e) => { e.stopPropagation(); enterPreview(); });
+        go.addEventListener('pointerdown', (e) => e.stopPropagation());
+        return { p, b, sm }; };
+      const fillPeek = (pk) => { const s = S.sel;
+        const picked = s !== NEXT10;
+        pk.b.innerHTML = `<i class="r10dot" style="background:${G10[s.grade]}"></i>${picked ? '' : 'Next: '}${when10(s)} · ${s.title}`;
+        pk.sm.textContent = picked ? `${s.grade} · ${s.stand.split(' · ')[0]} · ${s.mm}`
+          : `${s.grade} · ${until10(s)} · best in 3 days: ${BEST10 === s ? 'this one' : `${DAYLBL10[BEST10.i]} ${fmtMin(BEST10.t)} ${BEST10.grade}`}`; };
+      const gridEl = (parent) => { const g = mk('r10grid', parent); return g; };
+      const fillGrid = (g) => { g.innerHTML = '';
+        mk('h', g); for (const [, lbl] of SLOTS10) mk('h', g).textContent = lbl;
+        CELLS10.forEach((c, i) => {
+          const d = mk('d', g); d.innerHTML = `${DAYLBL10[i]}<small>${['Thu', 'Fri', 'Sat'][i]}</small>`;
+          if (SLOTS10.every(([k]) => !c[k].title)) {           // a dead day is one sentence, not four grey boxes
+            mk('r10daywhy', g).textContent = `Nothing to shoot: ${c.dawn.why}, ${c.dusk.why}.`; return; }
+          for (const [k] of SLOTS10) {
+            const s = c[k];
+            const hidden = s.title && !S.filter[s.kind];
+            if (!s.title || hidden) { const n = mk('r10cell dead', g); n.textContent = hidden ? `${s.kind} hidden` : s.why; continue; }
+            const n = document.createElement('button');
+            n.className = `r10cell ${s.kind} ${s.grade}${s === S.sel ? ' sel' : ''}`;
+            n.innerHTML = `<b>${fmtMin(s.t)}</b><span><i class="r10dot" style="background:${G10[s.grade]}"></i>${s.title}</span>`;
+            n.addEventListener('click', () => pick(s));
+            g.append(n);
+          }
+        }); };
+      const planEl = (parent) => { const p = mk('r10plan', parent);
+        p.innerHTML = '<h4>Show</h4>';
+        const chips = mk('r10chips', p);
+        const chip = (lbl, on, fn, dis) => { const c = document.createElement('button'); c.className = `r10chip${on ? ' on' : ''}`;
+          c.textContent = lbl; if (dis) c.disabled = true; if (fn) c.addEventListener('click', () => { fn(); c.classList.toggle('on'); }); chips.append(c); };
+        chip('☀ Sun', true, () => { S.filter.sun = !S.filter.sun; refresh(); read(`sun shots ${S.filter.sun ? 'shown' : 'hidden'} in the grid`); });
+        chip('☾ Moon', true, () => { S.filter.moon = !S.filter.moon; refresh(); read(`moon shots ${S.filter.moon ? 'shown' : 'hidden'} in the grid`); });
+        chip('Fernsehturm', true);
+        chip('Siegessäule · soon', false, null, true);
+        mk('', p).outerHTML = '<h4>Cloud, hour by hour</h4>';
+        const cl = mk('r10cloud', p);
+        DAYS.forEach((d, i) => { mk('', cl).textContent = DAYLBL10[i]; const bar = mk('bar', cl);
+          for (let h = 0; h < 24; h++) { const t = document.createElement('i'); t.style.opacity = coverAt(d, h).toFixed(2); bar.append(t); } });
+        mk('', cl); const ax = mk('axis', cl); ax.innerHTML = '<span>0</span><span>6</span><span>12</span><span>18</span><span>24</span>';
+        mk('', p).outerHTML = '<h4>Further out</h4>';
+        const yr = document.createElement('button'); yr.className = 'r10chip'; yr.textContent = 'Search the next 12 months for tower eclipses';
+        yr.addEventListener('click', () => read('would run the app\'s year search (plan mode) and list each dated tower eclipse here'));
+        p.append(yr);
+        mk('r10note', p).textContent = 'Planning stays one height away; the grid answers "this week?" first.'; };
+
+      const peeks = [], grids = [];
+      const refresh = () => { peeks.forEach(fillPeek); grids.forEach(fillGrid); };
+      const pick = (s) => { S.sel = s; S.min = s.t; refresh(); redrawMap();
+        if (kind === 'phone') setHeight('peek');
+        read(`picked ${when10(s)} · ${s.title}. The sheet steps down so the stand pin shows on the map; Preview ▸ opens the ticket`); };
+
+      // ---- phone sheet: peek / half / full with drag, momentum and snapping ----
+      let setHeight = () => {}, sheetStep = () => false;
+      if (kind === 'phone') {
+        const sheet = mk('r10sheet', root);
+        const handle = mk('r10handle', sheet); handle.append(document.createElement('i'));
+        const pk = peekEl(sheet); peeks.push(pk);
+        const body = mk('r10body', sheet); grids.push(gridEl(body)); planEl(body);
+        const snaps = () => { const H = root.clientHeight; return { peek: 70, half: Math.round(H * 0.46), full: H - 44 }; };
+        setHeight = (k) => { S.height = k; sheet.style.height = `${snaps()[k]}px`; body.style.visibility = k === 'peek' ? 'hidden' : 'visible'; };
+        sheetStep = () => { if (S.height === 'full') { setHeight('half'); return true; } if (S.height === 'half') { setHeight('peek'); return true; } return false; };
+        let drag = null;
+        const down = (e) => { drag = { y: e.clientY, h: sheet.offsetHeight, moved: false, samples: [[performance.now(), e.clientY]] };
+          sheet.classList.add('dragging'); body.style.visibility = 'visible';
+          try { e.currentTarget.setPointerCapture(e.pointerId); } catch {} };
+        const move = (e) => { if (!drag) return; const dy = e.clientY - drag.y;
+          if (Math.abs(dy) > 3) drag.moved = true;
+          const sn = snaps(); sheet.style.height = `${clamp7(drag.h - dy, sn.peek - 14, sn.full)}px`;
+          drag.samples.push([performance.now(), e.clientY]); if (drag.samples.length > 6) drag.samples.shift(); };
+        const up = () => { if (!drag) return; sheet.classList.remove('dragging');
+          const sn = snaps();
+          if (!drag.moved) { setHeight(S.height === 'peek' ? 'half' : 'peek'); drag = null; read(`tap toggles peek ⇄ half · now ${S.height}`); return; }
+          const [t0, y0] = drag.samples[0], [t1, y1] = drag.samples[drag.samples.length - 1];
+          const v = -(y1 - y0) / Math.max(1, t1 - t0);                 // px of height per ms
+          const aim = sheet.offsetHeight + v * 200;                    // momentum: where the flick is heading
+          const k = Object.entries(sn).sort((x, y) => Math.abs(x[1] - aim) - Math.abs(y[1] - aim))[0][0];
+          setHeight(k); drag = null;
+          read({ peek: 'peek: one line, the map is yours', half: 'half: the 3-day shot grid', full: 'full: planning — filters, cloud detail, year search' }[k]); };
+        for (const t of [handle, pk.p]) { t.addEventListener('pointerdown', down); t.addEventListener('pointermove', move);
+          t.addEventListener('pointerup', up); t.addEventListener('pointercancel', up); }
+        requestAnimationFrame(() => setHeight('half'));
+      } else {
+        // ---- desktop side panel that folds to an icon rail ----
+        const side = mk('r10side', root);
+        const pk = peekEl(side); peeks.push(pk);
+        const col = document.createElement('button'); col.className = 'r10collapse'; col.textContent = '‹'; col.title = 'Fold to rail (Esc)';
+        col.addEventListener('click', () => { root.dataset.rail = ''; read('folded to the rail — the map gets the screen'); }); pk.p.append(col);
+        const body = mk('r10body', side); grids.push(gridEl(body)); planEl(body);
+        const rail = mk('r10rail', side);
+        for (const [ico, lbl, cls] of [['◷', 'Next shot', 'next'], ['▦', '3-day grid', ''], ['⌕', 'Plan', '']]) {
+          const b = document.createElement('button'); b.textContent = ico; b.title = lbl; if (cls) b.className = cls;
+          b.addEventListener('click', () => { delete root.dataset.rail;
+            if (lbl === 'Plan') body.scrollTop = body.scrollHeight; else body.scrollTop = 0; read(`opened the panel at: ${lbl}`); });
+          rail.append(b); }
+        sheetStep = () => { if (!('rail' in root.dataset)) { root.dataset.rail = ''; return true; } return false; };
+      }
+      const onMapMove = () => {
+        if (kind === 'phone' && S.height !== 'peek') { setHeight('peek'); read('moving the map dropped the sheet to peek — the next shot stays in view'); }
+        else read('panning the map'); };
+
+      // ---- preview: the ticket replaces the panel ----
+      const pv = mk('r10pv', root);
+      const sky = mk('', pv); sky.style.cssText = 'position:absolute;inset:0';
+      const disc = mk('disc', pv);
+      const tower = document.createElement('img'); tower.className = 'tower'; tower.src = 'icons/lm/fernsehturm.png'; pv.append(tower);
+      mk('ground', pv);
+      const back = document.createElement('button'); back.className = 'r10fab r10back'; back.textContent = '‹ Map'; pv.append(back);
+      back.addEventListener('click', () => exitPreview());
+      const mini = document.createElement('button'); mini.className = 'r10minimap'; mini.title = 'Minimap'; pv.append(mini);
+      mini.addEventListener('click', () => { mini.classList.toggle('open'); read(mini.classList.contains('open') ? 'minimap open: stand → tower sightline' : 'minimap tucked into the corner'); });
+      const tk = mk('r10ticket', pv);
+      const top = mk('top', tk);
+      const tName = document.createElement('b'), tT = document.createElement('span'), badge = document.createElement('span');
+      tT.className = 't'; badge.className = 'badge'; badge.textContent = '◉ contact';
+      const more = document.createElement('button'); more.className = 'r10more-btn'; more.textContent = '⋯'; more.title = 'Lens, format, stand';
+      top.append(tName, badge, tT, more);
+      more.addEventListener('click', () => { tk.classList.toggle('open'); });
+      const scrub = mk('r10scrub', tk); const peakMark = mk('peak', scrub); const knob = mk('knob', scrub);
+      const moreRow = mk('r10more', tk);
+      const drawPv = () => {
+        const s = S.sel, m = S.min, ev = EVENTS5[s.i];
+        sky.style.background = skyCss7(m);
+        const tall = s.slot === 'dusk' ? 0.8 : s.slot === 'night' ? 0.62 : 0.42;
+        tower.style.height = `${tall * 100}%`;
+        let x, yb;
+        if (s.kind === 'sun') { x = 50 + (sunAz7(ev, m) - s.face) * 6; yb = m < ev.rise || m > ev.set ? -6 : 9 + altAt7(ev, m) * 6; }
+        else { x = 50 + ((m - s.peak) / Math.max(10, s.b - s.a)) * 70; yb = 9 + (moonAlt5(ev.moon, m % 1440) ?? 0) * 5; }
+        disc.className = `disc${s.kind === 'moon' ? ' moon' : ''}`;
+        disc.style.left = `${x}%`; disc.style.bottom = `${yb}%`;
+        const contact = s.peak !== null && Math.abs(m - s.peak) < 0.5;
+        disc.classList.toggle('contact', contact && s.kind === 'sun'); tk.classList.toggle('contact', contact);
+        tT.textContent = fmtMin(m);
+        knob.style.left = pct7(m - s.a, s.b - s.a);
+      };
+      const setupPv = () => { const s = S.sel;
+        tName.textContent = `${DAYLBL10[s.i]} · ${s.title}`;
+        scrub.style.background = `linear-gradient(90deg, ${SKY7[phaseAt7(s.a)][2]}, ${SKY7[phaseAt7((s.a + s.b) / 2)][2]}, ${SKY7[phaseAt7(s.b)][1]})`;
+        peakMark.hidden = s.peak === null; if (s.peak !== null) peakMark.style.left = pct7(s.peak - s.a, s.b - s.a);
+        moreRow.innerHTML = '';
+        const st = mk('stand', moreRow); st.textContent = `Stand: ${s.stand}`;
+        for (const mm of ['35 mm', '85 mm', '300 mm', '600 mm']) { const c = document.createElement('button'); c.className = `r10chip${mm === s.mm ? ' on' : ''}`; c.textContent = mm;
+          c.addEventListener('click', () => { moreRow.querySelectorAll('.r10chip.lens').forEach((n) => n.classList.remove('on')); c.classList.add('on'); read(`lens ${mm} (sketch: the frame would re-crop)`); });
+          c.classList.add('lens'); moreRow.append(c); }
+        for (const f of ['3:2', '4:5', '9:16']) { const c = document.createElement('button'); c.className = `r10chip${f === '3:2' ? ' on' : ''}`; c.textContent = f;
+          c.addEventListener('click', () => { moreRow.querySelectorAll('.r10chip.fmt').forEach((n) => n.classList.remove('on')); c.classList.add('on'); });
+          c.classList.add('fmt'); moreRow.append(c); }
+        mini.innerHTML = ''; mini.append(mapSvg10(s));
+        S.min = s.peak ?? s.t; drawPv(); };
+      dragX7(scrub, (e) => { const s = S.sel;
+        let m = s.a + minFrom7(e, scrub, s.b - s.a);
+        if (s.peak !== null && Math.abs(m - s.peak) < 3) m = s.peak;      // magnetic at the alignment minute
+        S.min = Math.round(m); drawPv();
+        read(s.peak !== null && S.min === s.peak ? `${fmtMin(S.min)} — contact, snapped to the alignment minute` : `${fmtMin(S.min)} · ${s.title}${s.peak === null ? ' — no alignment, scrub the light' : ''}`); });
+      const enterPreview = () => {
+        if (kind === 'phone') S.remembered = S.height;
+        root.dataset.mode = 'preview'; tk.classList.remove('open'); mini.classList.remove('open'); setupPv();
+        read(`eye level: ${when10(S.sel)} · ${S.sel.title}. The ticket replaces the panel — scrub snaps to contact, ⋯ holds lens · format · stand, Esc goes back`); };
+      const exitPreview = () => { root.dataset.mode = 'map';
+        if (kind === 'phone') setHeight(S.remembered);
+        read(`back on the map — the sheet returns at ${kind === 'phone' ? S.remembered : 'its last state'}`); };
+
+      root.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return;
+        if (root.dataset.mode === 'preview') { exitPreview(); e.preventDefault(); return; }
+        if (sheetStep()) { e.preventDefault(); read(kind === 'phone' ? `Esc / back: stepped down to ${S.height}` : 'Esc: folded to the rail'); } });
+
+      refresh();
+      read(kind === 'phone'
+        ? 'drag the handle (flick to throw between heights), tap a grid cell, drag the map, or press Preview ▸'
+        : 'side panel: peek line on top, grid, then planning. ‹ folds to a rail; Preview ▸ swaps the panel for the ticket');
+    };
+    build10(document.querySelector('[data-r10="phone"]'), 'phone');
+    build10(document.querySelector('[data-r10="desk"]'), 'desk');
   }
 </script>

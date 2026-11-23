@@ -13,6 +13,7 @@ Open `weather-strip-sketches.html` in a browser. It is one self-contained page w
 - Round 7: Crazy 8, the lens pass (lens on the band, three lanes, the whole panel as one eclipse pill, …)
 - Round 8: the assembly round
 - Round 9: the mechanism the slider actually teaches
+- Round 10 (added 23 Nov, after the critique): the panel as an app. A phone sheet with peek / half / full, a 3-day shot grid, planning one height up, a desktop side panel that folds to a rail, and a floating preview ticket in place of the panel
 
 ## How this was recovered
 
