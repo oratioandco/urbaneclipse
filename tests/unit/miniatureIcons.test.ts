@@ -9,6 +9,10 @@ import { describe, expect, it } from 'vitest';
 import { ICONS, ICON_NAMES, ICON_STROKE, icon, iconBody, iconSprite, iconUse, weatherIcon, phaseIcon, WEATHER_STATES, LIGHT_PHASES, PHASE_ALTITUDE } from '../../src/miniature/icons.js';
 // @ts-expect-error plain JS modules of the miniature
 import { sunSvg, moonSvg, bodySvg, drawSun, drawMoon, discRadius, GLOW_REACH, MOON_DARK } from '../../src/miniature/bodies.js';
+// @ts-expect-error plain JS modules of the miniature
+import { MARK_KINDS, MARK_NAMES, MARK_COLOUR, MARK_FILL, markSvg, markBody, drawMark, needleSvg, drawNeedle, NEEDLE_HALF_WIDTH } from '../../src/miniature/marks.js';
+// @ts-expect-error plain JS modules of the miniature
+import { CONTROL_NAMES, controlName } from '../../src/miniature/controlNames.js';
 import { cssRgb, moonLook, sunLook } from '../../src/lib/mapBodyLook.js';
 import { lightPhaseAt } from '../../src/lib/lightPhases.js';
 import { skyPalette } from '../../src/lib/skyPalette.js';
@@ -209,5 +213,97 @@ describe('weather and light phases', () => {
     expect(phaseIcon('golden')).toContain(`stop-color="${cssRgb(sunLook(PHASE_ALTITUDE.golden).core)}"`);
     expect(phaseIcon('night')).not.toContain('radialGradient');
     expect(() => phaseIcon('dawn')).toThrow();
+  });
+});
+
+describe('event marks', () => {
+  it('gives every event its own drawing, with a name', () => {
+    const drawings = MARK_KINDS.map((kind: string) => markBody(kind, ''));
+    expect(new Set(drawings).size).toBe(MARK_KINDS.length);
+    for (const kind of MARK_KINDS) expect(MARK_NAMES[kind], kind).toBeTruthy();
+    expect(() => markSvg('tower-venus')).toThrow();
+  });
+
+  it('separates the two orange marks by shape, not colour: a ring and a bar', () => {
+    const tower = markBody('tower-sun', '');
+    const henge = markBody('henge-sun', '');
+    expect(tower).toContain('<circle');
+    expect(tower).not.toContain('<rect');
+    expect(henge).toContain('<rect');
+    expect(henge).not.toContain('<circle');
+    // Dan's suggestion for the sun behind the tower: an orange outline with a white fill.
+    expect(tower).toContain(`fill="#fff" stroke="${MARK_COLOUR.sun}"`);
+  });
+
+  it('separates sun from moon by fill as well as colour', () => {
+    for (const event of ['tower', 'henge']) {
+      expect(markBody(`${event}-moon`, ''), event).toContain(`fill="${MARK_FILL.moon}"`);
+      expect(markBody(`${event}-sun`, ''), event).not.toContain(MARK_FILL.moon);
+    }
+  });
+
+  it('carries a halo so an overlapped pair stays two marks', () => {
+    for (const kind of MARK_KINDS) {
+      expect(markSvg(kind), kind).toContain('fill="var(--surface, #fff)"');
+      expect(markSvg(kind, { halo: '' }), kind).not.toContain('--surface');
+    }
+  });
+
+  it('is decorative by default and labelled on request', () => {
+    expect(markSvg('tower-sun', { size: 10 })).toContain('width="10" height="10" aria-hidden="true"');
+    expect(markSvg('henge-moon', { label: MARK_NAMES['henge-moon'] })).toContain('aria-label="Street henge, moon"');
+  });
+
+  it('draws on a canvas without throwing', () => {
+    const calls: string[] = [];
+    const ctx = new Proxy({} as Record<string, unknown>, {
+      get: (target, key: string) => (key in target ? target[key] : () => calls.push(key)),
+      set: (target, key: string, value) => ((target[key] = value), true),
+    });
+    for (const kind of MARK_KINDS) drawMark(ctx, kind, 10, 10, 12, '#fff');
+    drawNeedle(ctx, 10, 10, 1, 16, { kind: 'moon', halo: '#fff' });
+    expect(calls).toContain('arc');
+    expect(calls).toContain('roundRect');
+    expect(calls).toContain('rotate');
+  });
+});
+
+describe('direction needle', () => {
+  it('is at least as long as twice its width, unlike the old triangle', () => {
+    // Today's arrow in overlay.js is 11 long and 12 wide.
+    expect(1 / (2 * NEEDLE_HALF_WIDTH)).toBeGreaterThanOrEqual(1.9);
+  });
+
+  it('colours the end that points, and leaves the tail to the text colour', () => {
+    const sun = needleSvg({ kind: 'sun', angleDeg: 30 });
+    expect(sun).toContain('rotate(30)');
+    expect(sun).toContain('fill="currentColor"');
+    // The coloured part is the one that holds the tip at x = 8 (half of the 16-unit box).
+    expect(sun).toMatch(new RegExp(`<path d="M8 0L[^"]*" fill="${MARK_COLOUR.sun}"`));
+    expect(needleSvg({ kind: 'moon' })).toContain(`fill="${MARK_COLOUR.moon}"`);
+    expect(() => needleSvg({ kind: 'venus' })).toThrow();
+  });
+});
+
+describe('control names', () => {
+  it('names every control with a short tooltip and a full accessible name', () => {
+    const keys = new Set<string>();
+    for (const control of CONTROL_NAMES) {
+      expect(keys.has(control.key), control.key).toBe(false);
+      keys.add(control.key);
+      expect(control.tip.length, control.key).toBeGreaterThan(1);
+      expect(control.tip.length, control.key).toBeLessThanOrEqual(20);
+      expect(control.tip.endsWith('.'), control.key).toBe(false);
+      expect(control.name.length, control.key).toBeGreaterThanOrEqual(control.tip.length);
+      if (control.icon && control.icon !== 'sun' && control.icon !== 'moon') expect(ICON_NAMES, control.key).toContain(control.icon);
+    }
+  });
+
+  it('covers the toolbar of plan.astro', () => {
+    for (const id of ['compass', 'face-tower', 'face-sun', 'face-moon', 'locate', 'help', 'layers', 'tilt', 'photographer', 'back', 'takeoff', 'share']) {
+      expect(CONTROL_NAMES.some((c: { id: string | null }) => c.id === id), id).toBe(true);
+    }
+    expect(controlName('takeoff').icon).toBe('drone');
+    expect(() => controlName('nope')).toThrow();
   });
 });

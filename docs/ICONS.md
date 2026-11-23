@@ -4,6 +4,8 @@ One icon set for `/plan/`, and the one sun and one moon. Written 2026-11-23.
 
 - `src/miniature/icons.js`: the icons, the weather and light-phase marks, the DOM helpers.
 - `src/miniature/bodies.js`: the canonical sun and moon, as SVG and on a canvas.
+- `src/miniature/marks.js`: the event marks for timeline and map, and the direction needle.
+- `src/miniature/controlNames.js`: tooltip and accessible name of every icon-only control.
 - `explorations/icons-2026-11/specimen.html`: every icon at 16, 20, 24 and 32 px on the light
   and the dark surface, the sun from -6° to 45°, the moon by phase, altitude and sky. Open the
   file in a browser. Rebuild it after any change: `node scripts/build-icon-specimen.mjs`.
@@ -90,7 +92,7 @@ would rather not repeat paths.
 | The photographer, stand here | `camera` |
 | Lens and focal length | `lens` |
 | Lines at thirds | `thirds` |
-| Drone, take off | `drone`, `takeoff` |
+| Drone view, on foot, lift off | `drone`, `walk`, `takeoff` |
 | Go there, directions | `pin` |
 | Share, copy link | `share`, `link` |
 | Back, go, opens another site | `arrow-left`, `arrow-right`, `external` |
@@ -104,11 +106,139 @@ would rather not repeat paths.
 | Night, twilight, blue hour, golden hour, day | `phaseIcon('night' \| 'twilight' \| 'blue' \| 'golden' \| 'day')` |
 | Beside "Go" / "Maybe" / "Skip" | `verdict-go` / `verdict-maybe` / `verdict-skip` |
 | The sun, the moon | `sunSvg`, `moonSvg` (never an icon) |
+| An event on a timeline or the map | `markSvg` / `drawMark`: `tower-sun`, `henge-sun`, `tower-moon`, `henge-moon` |
+| Which way the sun or moon lies | `needleSvg` / `drawNeedle` |
 
 Clear, some cloud, overcast and rain can be told from what `weather.js` fetches today (cloud
 cover by layer, precipitation). It does not fetch a weather code, so nothing can say
 "thunderstorm" yet: the icon is ready, the data is not. The light phases are the five of
 `src/lib/lightPhases.ts`.
+
+## Dan's feedback: marks, needle, drone, tooltips
+
+Dan's three points (recorded in the panel spec) and what this set offers for each.
+
+### 1. The two orange dots
+
+**Which two.** A sun event behind the TV tower and a sun event down a street (a street henge)
+are drawn with the same orange mark wherever they meet:
+
+| Place | File and lines | Tower alignment, sun | Street henge, sun |
+| --- | --- | --- | --- |
+| Three-day strip, a tick per shot | `sparkstrip.js:73–91`, `miniature.css:328–332` | orange diamond on a stem (`spark-sun`) | the same orange diamond; ticks are nudged apart (`MIN_GAP`) but still touch |
+| Bars above the time slider | `plan.js:189–216` (rows), `plan.js:222–238` (bars), `miniature.css:225–229` | `--sun` bar, 3 px at its shortest, so a dot | `#d9a441` bar on the row below: a second orange |
+| List rows | `daylist.js:188–192` `bodyIcon()`, used at `daylist.js:172`, `planmode.js:233`, `dates.js:110` | two-tone orange disc | the same disc |
+| Street chips | `miniature.css:238–240` `#moments button::before` | | 8 px `--sun` dot |
+| Map and minimap | `overlay.js:208–218`, `minimap.js:110–118` | white disc with an orange ring (the sphere spot) | a glowing street, no dot |
+
+Dan's screenshots are not in the repo, so which of the first three he was looking at is a
+reading of the code, not a certainty. The strip is the one where two marks overlap.
+
+**The family** (`markSvg`, `drawMark`, `MARK_NAMES` in `marks.js`). What happens sets the
+shape, which body sets the fill:
+
+| | Sun | Moon |
+| --- | --- | --- |
+| Tower alignment | `tower-sun`: orange ring, white inside | `tower-moon`: blue ring, dark inside |
+| Street henge | `henge-sun`: solid orange upright bar | `henge-moon`: blue upright bar, dark inside |
+
+Every mark has a halo in the surface colour, so two that overlap remain two.
+
+**Judged against the alternatives** at 8, 10, 12 and 14 px, light and dark, alone and as six
+overlapped pairs (specimen, "Event marks: three candidates"):
+
+- *Today* (every event a dot): the orange and ochre dots are one blob when they overlap, in
+  either order, and differ by hue alone when apart.
+- *Dan's suggestion, literally* (only the sun behind the tower becomes a white-filled ring):
+  it does fix the pair he named, and it matches the ring the map already draws for the sphere
+  spot. It leaves the moon's two events as identical blue dots, and sun against moon as
+  colour alone.
+- *Chosen*: Dan's ring kept for the tower, a bar for the street, and the moon's marks dark
+  inside. Any two of the four differ in shape or in fill, at 8 px too, and a ring over a bar
+  or a bar over a ring both show two marks. Street henges take the body's colour; the third
+  orange (`#d9a441`) is no longer needed.
+
+A mark still never stands without its words: `MARK_NAMES[kind]` in the row, the tooltip or
+the `label`.
+
+### 2. The direction arrow
+
+Today: `overlay.js:106–118` in `drawPill()`, a solid triangle 11 long and 12 wide in the text
+colour, used for both pills on the map (`overlay.js:300`) and at eye level (`overlay.js:655`).
+It is wider than it is long, which is why its tip is ambiguous.
+
+`needleSvg({ kind, angleDeg, size })` and `drawNeedle(ctx, x, y, angleRad, length, { kind, ink, halo })`
+draw a kite about twice as long as it is wide with a notched tail. The front half is the
+body's colour (sun `#f26a12`, moon `#5b82ff`, the colours of that body's lines on the map), the
+back half is ink: as on a compass, the coloured end is the one that points. On the map use a
+length of 18 and pass the pill's fill as `halo`. The specimen shows it at eight rotations and
+on canvas pills.
+
+The swap in `drawPill()`: replace the triangle's `save … restore` block with
+`drawNeedle(ctx, x + ux * (reach + 12), y + uy * (reach + 12), Math.atan2(uy, ux), 18, { kind: moon ? 'moon' : 'sun', ink: night ? '#ece8df' : '#24221f', halo: <the pill fill> })`.
+
+### 3. The drone icon
+
+Today: `walk.js:94` `DRONE_ICON`, four rings and a square seen from above, set at
+`walk.js:128`. From above a quadcopter is an abstract X; nothing says "camera in the air".
+
+`drone` is now a drone seen from the front: two rotors, the body, and the camera hanging under
+it. `walk` (a walking figure) is its counterpart for being on foot. On the specimen the two
+sit beside `eye` and `camera` at 20 and 24 px and in 40 px buttons; no two share a silhouette.
+This is my reading of a render. Nobody outside has been asked whether it now says "drone".
+
+### 4. Tooltips and accessible names
+
+`CONTROL_NAMES` in `controlNames.js` holds the wording, and
+`nameControl(button, 'layers')` sets icon, `title`, `data-tip` and `aria-label` in one call.
+The tooltip names the thing in two or three words; the accessible name says what it does.
+
+| Control | `id` today (`plan.astro` line) | Icon | Tooltip | Accessible name |
+| --- | --- | --- | --- | --- |
+| compass | `#compass` (26) | `compass` | Face north | Compass: turn the map to face north |
+| face-tower | `#face-tower` (27) | `tower` | Face the TV tower | Turn to face the TV tower |
+| face-sun | `#face-sun` (28) | `sunSvg` | Face the sun | Turn to face the sun |
+| face-moon | `#face-moon` (29) | `moonSvg` | Face the moon | Turn to face the moon |
+| locate | `#locate` (30) | `locate` | My location | Stand where you are now |
+| help | `#help` (31) | `help` | How this works | How this works |
+| layers | `#layers` (32) | `layers` | Map layers | Map layers: choose what the map shows |
+| tilt-flat | `#tilt` (33) | text | Flat view | Switch to the flat view from above |
+| tilt-angled | `#tilt` (33) | text | Angled view | Switch to the angled view |
+| photographer | `#photographer` (34) | `camera` | Stand here | Stand here: drag onto the map, or tap to stand in the middle |
+| back | `#back` (121) | `arrow-left` | Back to the map | Back to the map |
+| takeoff | `#takeoff` (122) | `drone` | Drone view | Take off: see this spot from a drone, up to 120 metres |
+| land | `#takeoff` (122) | `walk` | Back on foot | Land: return to eye level on foot |
+| go-there | `#share` (123) | `pin` | Go there | Go there: directions, calendar and a link to this view |
+| directions | `#directions` (126) | `pin` | Directions | Directions to this spot |
+| calendar | `#calendar` (127) | `calendar` | Add to calendar | Add this shot to your calendar |
+| copy-link | `#copylink` (128) | `link` | Copy link | Copy a link to this exact view |
+| share-link | `#copylink` (128) | `share` | Share | Share a link to this exact view |
+| expand | `#sheet-toggle` (145) | `chevron-up` | Show more | Show more of the panel |
+| collapse | `#sheet-toggle` (145) | `chevron-down` | Show less | Show less of the panel |
+| close | (new) | `close` | Close | Close |
+| more | (new) | `more` | Lens and format | More: lens and camera format |
+| filters | (new) | `tune` | Filters | Filters: which shots to show |
+| minimap | `#minimap` (142) | `minimap` | Minimap | Minimap: where you stand. Tap to go back to the map |
+| lens | (new) | `lens` | Lens | Lens: choose the focal length |
+| thirds | `#thirds` (178) | `thirds` | Thirds | Show lines at thirds |
+| reaim | (new) | `aim` | Re-aim | Re-aim the camera at the shot |
+| view-here | `#viewhere` (139) | `eye` | View from here | View from here at eye level |
+| shot-earlier | (new) | `shot-earlier` | Earlier shot | Go to the earlier shot |
+| shot-later | (new) | `shot-later` | Later shot | Go to the later shot |
+| minute-back | (new) | `minus` | 1 minute earlier | One minute earlier |
+| minute-forward | (new) | `plus` | 1 minute later | One minute later |
+| now | (new) | `now` | Now | Go to the present minute |
+| play | (new) | `play` | Play | Run time forward |
+| pause | (new) | `pause` | Pause | Pause time |
+| prev-day | `#prev-day` (183) | `chevron-left` | Previous day | Previous day |
+| next-day | `#next-day` (190) | `chevron-right` | Next day | Next day |
+| pick-date | `#date` (187) | `calendar` | Choose a date | Choose a date |
+| more-dates | `#dates-toggle` (175) | `calendar` | More dates | More dates from where you stand |
+
+`2D`/`3D`, `±30 min`, `Today` and `Advanced` stay words and need no tooltip. The existing
+`title` attributes ("TV tower", "Sun", "Moon", "Where am I?", "Layers", "How this works",
+"Lines at thirds") are replaced by the tooltips above; `#compass`, `#tilt`, `#photographer`,
+`#back`, `#takeoff` and `#share` have none today.
 
 ## Audit: what the planner draws today
 
@@ -164,7 +294,7 @@ Found in `src/pages/plan.astro`, `src/miniature/*.js` and `src/miniature/miniatu
 | `.legend summary::after`, `#flatmap` `›` | `›` glyph | opens | `chevron-right` at 16 |
 | `.intro-shot b i` | sun, moon, ink dots | which body the shot is of | `sunSvg` / `moonSvg` at 12–14 for the two bodies, `drone` for the drone card |
 | `#back` `← Map` | arrow glyph | back to the map | `arrow-left` (or `map`) + "Map" |
-| `#takeoff` `↑ Take off`, `walk.js` `DRONE_ICON` | arrow glyph; drone with 4 rotors | take off, land | `takeoff` and `drone` |
+| `#takeoff` `↑ Take off`, `walk.js:94` `DRONE_ICON` | arrow glyph; drone with 4 rings from above | take off, land | `drone` with "Take off", `walk` with "Land" (`takeoff` remains for a bare lift-off arrow) |
 | `#share` "Go there", `#directions` | pin, 1.8 stroke | go there, directions | `pin` |
 | `#calendar`, `#dates-toggle`, `.daypick` | calendar at three weights | add to calendar, more dates, pick a date | `calendar` |
 | `#copylink` | chain links | copy or share link | `link`; `share` where the system share sheet opens |
@@ -185,11 +315,15 @@ Found in `src/pages/plan.astro`, `src/miniature/*.js` and `src/miniature/miniatu
 | `#fine` `±30 min` | text | fine timing | keep as text |
 | `#prev-day` `‹`, `#next-day` `›` | angle glyphs | previous, next day | `chevron-left`, `chevron-right` |
 | `#viewhere` dot (`pointer.js:123,150`) | `--sun` / `--moon` dot | view from here, for that body | `sunSvg` / `moonSvg` at 14, or `eye` when no body applies |
-| `.spark-tick::after` | small diamond | a shot on the day strip | keep: a mark on a chart. The new timeline's ticks replace it |
+| `.spark-tick::after` (`miniature.css:328–332`, `sparkstrip.js:73–91`) | diamond (sun) or dot (moon), same for tower and street | a shot on the day strip | `markSvg(kind, { size: 10 })`, kind from the row: `tower-sun`, `henge-sun`, `tower-moon`, `henge-moon` |
+| `.track--sun`, `.track--moon`, `.track--streets` bars (`plan.js:189–238`, `miniature.css:225–229`) | orange, blue and ochre bars, dots when short | when things line up today | a `markSvg` at the peak of each run, the bar kept for its length in the body's colour |
+| `#moments button::before` (`miniature.css:238–240`) | `--sun` / `--moon` dot | a street henge chip | `markSvg('henge-sun' \| 'henge-moon', { size: 10 })` |
 | `kbd` `←` `→` `⇧` | key legends | keyboard keys | keep: they name keys |
 | `#loading i` | CSS spinner | building the city | keep |
 | `overlay.js` `drawDisc()` in the direction pill | `sunLook` gradient disc; `moonLook` on `#20263a` | where the sun or moon lies | `drawSun(ctx, x, y, 7.5, body.alt, { glow: false })` / `drawMoon(…)`. Same colours; adds the rim, and the moon's dark ring |
-| `overlay.js` pill arrow, eclipse ring, photographer badge | canvas shapes | direction, closeness, where you stand | keep: map marks, not interface icons. The badge's camera could follow `camera` later |
+| `overlay.js:106–118` pill arrow | solid triangle, 11 long, 12 wide | which way the body lies | `drawNeedle(…)`, see "The direction arrow" above |
+| `overlay.js:208–218`, `minimap.js:110–118` sphere spots | white disc, ring in the body's colour | where to stand for the sphere | `drawMark(ctx, 'tower-sun' \| 'tower-moon', x, y, 16)`: the same ring for the sun, dark inside for the moon |
+| `overlay.js` eclipse ring, photographer badge | canvas shapes | closeness, where you stand | keep: map marks, not interface icons. The badge's camera could follow `camera` later |
 | `horizon.js:100–112` | 4 px dots in `sunCol` / `moonCol` | bodies on the horizon strip | `drawSun` / `drawMoon` with radius 4.5, `glow: false` |
 | `minimap.js:176` | 4.5 px `--sun` / `--moon` dots on the rim | which way the bodies lie | `drawSun` / `drawMoon` with radius 4.5, `glow: false` |
 | `minimap.js:184` | red "N" in a disc | north | keep |

@@ -26,6 +26,16 @@
   .brow { display: grid; grid-template-columns: 62px repeat(10, minmax(48px, 1fr)); align-items: center; justify-items: center; padding: 3px 0; }
   .brow i { font-style: normal; font-size: 11px; color: var(--muted); justify-self: start; }
   .brow.head span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .cell.wide { margin-bottom: 8px; }
+  .cell.wide > b small { font-weight: 400; margin-left: 6px; }
+  .markrow { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 8px; }
+  .markcell { display: inline-flex; align-items: center; gap: 9px; }
+  .markcell small { margin-left: 2px; }
+  .pairbox { position: relative; display: inline-block; }
+  .pairbox > svg, .pairbox > span { position: absolute; top: 0; left: 0; }
+  .timeline { position: relative; height: 26px; background: var(--surface); border-radius: 14px; margin: 0 2px; }
+  .timeline i { position: absolute; left: 14px; right: 14px; top: 12.5px; height: 1px; background: var(--line); }
+  .timeline span { position: absolute; top: 8px; margin-left: 9px; }
   .tools, .verdicts, .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .round { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--surface); color: var(--ink); display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 4px 14px rgba(0, 0, 0, 0.1); padding: 0; }
   .round.small { width: 36px; height: 36px; }
