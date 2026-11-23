@@ -106,7 +106,9 @@ onPeek(() => {
 
 /** The day's sky at an instant as a verdict in words; without a forecast, which kind of none. */
 function verdictAt(day, from, t) {
-  return shotVerdict(day, from, t, { missing: forecastReach(svDate(from)).ok ? 'Forecast loading' : 'No forecast yet' });
+  const date = svDate(from);
+  const missing = !forecastReach(date).ok ? 'No forecast yet' : retryAfter.has(date) ? 'No forecast' : 'Forecast loading';
+  return shotVerdict(day, from, t, { missing });
 }
 
 /** The same reading as a short note, in the weather line's words. */
@@ -120,20 +122,27 @@ function noteAt(day, from, t) {
   return ` · ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}${view}`;
 }
 
-/** Cloud forecasts by day, resolved once and kept; a late arrival redraws the cards, and a
- * failed one is forgotten, so the next redraw tries again. */
+/** Cloud forecasts by day, resolved once and kept; a late arrival redraws the cards. A failed
+ * one is not asked for again for a minute and redraws nothing: a redraw would ask again at
+ * once, and with the forecast service down that went round as fast as the network answered. */
 const forecasts = new Map();
+const retryAfter = new Map();
+const RETRY_MS = 60_000;
 function forecastFor(from) {
   const date = svDate(from);
-  if (!forecasts.has(date)) {
+  if (!forecasts.has(date) && (retryAfter.get(date) ?? 0) <= Date.now()) {
     forecasts.set(date, null);
     cloudsFor(date, from).then((day) => {
-      if (day) forecasts.set(date, day);
-      else forecasts.delete(date);
-      renderPlanCards();
+      if (day) {
+        forecasts.set(date, day);
+        renderPlanCards();
+      } else {
+        forecasts.delete(date);
+        retryAfter.set(date, Date.now() + RETRY_MS);
+      }
     });
   }
-  return forecasts.get(date);
+  return forecasts.get(date) ?? null;
 }
 
 /** The collected rows of one day, kept per day and data state so a redraw only re-grades. */
@@ -172,7 +181,9 @@ const dayName = (from, i) =>
 /** The cards: three days, each its best few moments, the best weather and the biggest
  * spectacle first. */
 export function renderPlanCards() {
-  if (document.body.dataset.eye === 'true') return;
+  // Not before the city's streets and the day's paths are in (three days of alignment maths
+  // would run twice), and not while standing in the street, where the plan is out of sight.
+  if (!app.dayReady || document.body.dataset.eye === 'true') return;
   const now = Date.now();
   const base = realToday();
   renderMoonHead();

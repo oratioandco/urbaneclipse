@@ -367,19 +367,17 @@ function glideTo(minute) {
 // timeline lets the browser keep vertical swipes (touch-action: pan-y), so a swipe that
 // starts here scrolls the sheet, and the browser cancels the pointer to say so. Whole minutes:
 // a quarter of a pixel at phone width, so the thumb moves freely and never snaps to a shot.
+// The timeline's box is read once, at the press: nothing is measured while the thumb moves.
 let scrub = null;
-const minuteAt = (event) => {
-  const box = timeline.getBoundingClientRect();
-  return Math.round(xToMinute(event.clientX, box.left + PAD_X, box.width - 2 * PAD_X));
-};
+const minuteAt = (event, box = timeline.getBoundingClientRect()) => Math.round(xToMinute(event.clientX, box.left + PAD_X, box.width - 2 * PAD_X));
 timeline.addEventListener('pointerdown', (event) => {
   if (atEye() || scrub || (event.pointerType === 'mouse' && event.button !== 0)) return;
   stopGlide();
-  scrub = { id: event.pointerId, x0: event.clientX, moved: event.pointerType === 'mouse' };
+  scrub = { id: event.pointerId, x0: event.clientX, moved: event.pointerType === 'mouse', box: timeline.getBoundingClientRect() };
   if (scrub.moved) {
     timeline.setPointerCapture(scrub.id);
     timeline.dataset.scrub = 'true';
-    setMinute(minuteAt(event));
+    setMinute(minuteAt(event, scrub.box));
   }
 });
 timeline.addEventListener('pointermove', (event) => {
@@ -390,12 +388,12 @@ timeline.addEventListener('pointermove', (event) => {
     timeline.setPointerCapture(scrub.id);
     timeline.dataset.scrub = 'true';
   }
-  setMinute(minuteAt(event));
+  setMinute(minuteAt(event, scrub.box));
 });
 function endScrub(event) {
   if (!scrub || event.pointerId !== scrub.id) return;
   // A tap that never moved: go to the minute under it.
-  if (!scrub.moved && event.type === 'pointerup') glideTo(minuteAt(event));
+  if (!scrub.moved && event.type === 'pointerup') glideTo(minuteAt(event, scrub.box));
   scrub = null;
   delete timeline.dataset.scrub;
 }

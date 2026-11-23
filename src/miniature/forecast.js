@@ -28,6 +28,13 @@ export function loadWeather() {
     if (dateInput.value !== date) return;
     app.weather = day;
     app.weatherFailed = !day;
+    if (!day) {
+      // The request failed: say so, and let the lists and the day view say "No forecast".
+      showWeather();
+      updateTracks();
+      renderDayList();
+      return;
+    }
     // The low and middle decks are what can hide the map: when their peak for the day is heavy,
     // the layers button says so.
     setCloudHint(Math.max(...day.berlin.low.map((low, h) => Math.max(low, day.berlin.mid[h]))) > 0.55);
