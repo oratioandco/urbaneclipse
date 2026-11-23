@@ -18,24 +18,33 @@
   #stage { width: 100%; display: block; touch-action: none; cursor: grab; outline: none; border-radius: 20px; -webkit-tap-highlight-color: transparent; }
   #stage:active { cursor: grabbing; }
   #stage:focus-visible { box-shadow: 0 0 0 3px var(--accent); }
+  .tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tab { font: inherit; text-align: left; border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 14px; padding: 8px 12px; cursor: pointer; min-width: 0; }
+  .tab b { display: block; font-size: 14px; }
+  .tab small { display: block; font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tab.on { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+  .nav { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: -8px; }
+  .nav button { font: 600 13px var(--display); padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--chip); color: var(--fg); cursor: pointer; }
   .hint { font: 12px var(--mono); color: var(--muted); margin: -10px 0 0; min-height: 18px; }
-  .days { display: grid; gap: 10px; }
-  .day { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: start; }
-  .day b { font-size: 14px; padding-top: 5px; }
-  .day b small { display: block; font: 11px var(--mono); color: var(--muted); font-weight: 400; }
-  .shots { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-  .shot { font: 12px var(--mono); border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px; padding: 5px 10px 5px 8px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px; }
-  .shot i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-  .shot.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-  .shot.poor { color: var(--muted); }
+  .days { display: grid; gap: 6px; }
+  .row { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; text-align: left; font: inherit; border: 1px solid var(--line);
+    background: var(--chip); color: var(--fg); border-radius: 12px; padding: 9px 12px; cursor: pointer; }
+  .row .t { font: 600 13px var(--mono); }
+  .row .n { min-width: 0; font-weight: 500; }
+  .row .n small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; }
+  .row .v { font: 600 12px var(--mono); white-space: nowrap; }
+  .row .v.good { color: var(--good); } .row .v.fair { color: var(--fair); } .row .v.poor { color: var(--poor); }
+  .row.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .row.poor .t, .row.poor .n { opacity: .6; }
   .notes { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13.5px; max-width: 68ch; display: grid; gap: 4px; }
   .notes b { color: var(--fg); font-weight: 500; }
 </style>
 <div class="wrap">
   <h1>Three days of Berlin light in one slider</h1>
   <p class="lede">The track is the forecast, painted as sky. Every landmark stands at the minute it lines up, lit by the weather it will get. Drag the glass: it bends the scene and catches on each shot.</p>
+  <div class="tabs" id="tabs"></div>
   <canvas id="stage" tabindex="0" role="slider" aria-label="Time across the next three days" aria-valuemin="0" aria-valuemax="4320"></canvas>
+  <div class="nav"><button id="prev">‹ Earlier shot</button><button id="next">Later shot ›</button></div>
   <p class="hint" id="hint" aria-live="polite"></p>
   <div class="days" id="days"></div>
   <ul class="notes">
@@ -52,7 +61,7 @@
   const hint = document.getElementById('hint'), daysEl = document.getElementById('days');
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const DPR = Math.min(2, window.devicePixelRatio || 1);
-  const CAP = 62, D = 132, TH = 96, TOFF = (D - TH) / 2, HZ = TOFF + TH - 15, SH = D, CH = CAP + D + 14;
+  const CAP = 62, D = 116, TH = 88, TOFF = (D - TH) / 2, HZ = TOFF + TH - 15, SH = D, CH = CAP + D + 14;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
   const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const DAYN = ['Thu', 'Fri', 'Sat'], DAYL = ['Today', 'Tomorrow', 'Saturday'];
@@ -93,6 +102,7 @@
     [2, 906, 'fernsehturm', 'sun behind the shaft', 'sun'], [2, 938, 'molecule_man', 'blue hour on the Spree', 'sun'],
   ].map(([d, m, slug, label, kind]) => { const wm = d * 1440 + m; return { d, m, wm, slug, label, kind, name: LM[slug][0], h: LM[slug][1], grade: gradeAt(wm), verdict: verdict(wm), x: 0 }; });
   const NOW = 800;
+  const WORD = { good: 'Go', fair: 'Maybe', poor: 'Skip' };
   const GCOL = { good: '#5fd08a', fair: '#f0b24a', poor: '#8a91a3' };
 
   // ---- warped time: dawn and dusk get the width ----
@@ -153,13 +163,13 @@
       b.textAlign = 'left'; b.fillText(DAYL[d].toUpperCase(), d * W + 22, TOFF + 17);
       if (d) { f.fillStyle = 'rgba(255,255,255,.22)'; f.fillRect(d * W - .5, TOFF, 1, TH); } }
     for (const s of [...SHOTS].sort((p, q) => q.h - p.h)) { const sp = sprites[s.slug]; if (!sp) continue;
-      const h = s.h * (W < 480 ? .92 : 1), w = h * sp.box[2] / sp.box[3], sk = skyAt(s.wm);
+      const h = s.h * .9, w = h * sp.box[2] / sp.box[3], sk = skyAt(s.wm);
       if (s.grade !== 'poor') { const col = s.kind === 'moon' ? [150, 180, 255] : [255, 176, 84], g = b.createRadialGradient(s.x, HZ - h * .45, 2, s.x, HZ - h * .45, h * .95);
         g.addColorStop(0, rgb(col, s.grade === 'good' ? .75 : .4)); g.addColorStop(1, rgb(col, 0)); b.fillStyle = g; b.fillRect(s.x - h, HZ - h * 1.5, h * 2, h * 1.5); }
       const tint = s.grade === 'poor' ? rgb(mix([40, 44, 60], [118, 124, 136], sk.dayness), .7)
         : rgb(mix([16, 16, 34], [58, 34, 40], sk.dayness), s.kind === 'moon' ? .42 : lerp(.4, .22, sstep(2, 10, sk.alt)));
       f.globalAlpha = s.grade === 'poor' ? .8 : 1; f.drawImage(tinted(sp, tint), s.x - w / 2, HZ - h + 1, w, h); f.globalAlpha = 1;
-      f.fillStyle = GCOL[s.grade]; f.beginPath(); f.arc(s.x, HZ + 4.5, 2.6, 0, 7); f.fill(); }
+ }
     const xn = xOf(NOW); f.fillStyle = 'rgba(6,7,14,.26)'; f.fillRect(0, 0, xn, SH);
     f.fillStyle = 'rgba(255,255,255,.75)'; f.fillRect(xn - .5, TOFF, 1, TH);
     // cloud puffs, anchored to the hour they belong to
@@ -170,7 +180,7 @@
         const warm = sstep(-6, 0, sk.alt) * (1 - sstep(4, 10, sk.alt)) * (1 - sstep(.7, .9, cover(wm)));
         const base = mix([34, 38, 60], mix([150, 154, 166], [246, 247, 251], 1 - sstep(.6, .9, c)), sk.dayness);
         puffs.push({ x, y: y + (rnd() - .5) * 12, r: r * (.7 + c * .8) * (.8 + rnd() * .5), a: amax * (.35 + c * .65), col: rgb(mix(base, [255, 150, 96], warm * .75)), ph: rnd() * 6.28, low: key === 'low', rain: key === 'low' && samp(wm, 'rain') > 45 }); } }
-    if (!lens.init) { lens.x = lens.tx = xOf(NOW); lens.init = true; cam = 0; } else { lens.x = lens.tx = xOf(lens.wm); cam = clamp(lens.x - W / 2, 0, 2 * W); }
+    if (!lens.init) { lens.x = lens.tx = xOf(NOW); lens.init = true; cam = 0; } else { lens.x = lens.tx = xOf(lens.wm); cam = clamp(Math.floor(lens.x / W), 0, 2) * W; }
     renderList();
   }
   const puffCache = {};
@@ -245,7 +255,8 @@
     if (drag) { const E = 46;
       if (drag.px < E) cam -= (E - drag.px) * 9 * dt; if (drag.px > W - E) cam += (drag.px - (W - E)) * 9 * dt; cam = clamp(cam, 0, 2 * W);
       const wx = clamp(cam + drag.px, 4, 3 * W - 4), [s, d] = nearest(wx); lens.tx = d < 11 ? s.x : wx; }
-    else { const target = clamp(lens.x - W / 2, 0, 2 * W), lxs = lens.x - cam; if (lxs < W * .16 || lxs > W * .84 || flying) cam += (target - cam) * Math.min(1, dt * 5); }
+    else { const target = clamp(Math.floor(lens.tx / W), 0, 2) * W; cam += (target - cam) * Math.min(1, dt * 6); }
+    const vd = clamp(Math.floor(lens.tx / W), 0, 2); if (vd !== viewDay) { viewDay = vd; renderList(); }
     const k = 520, c = 38; lens.v += (k * (lens.tx - lens.x) - c * lens.v) * dt; lens.x += lens.v * dt;
     if (REDUCED) { lens.x = lens.tx; lens.v = 0; }
     lens.popV += (-300 * lens.pop - 16 * lens.popV) * dt; lens.pop += lens.popV * dt;
@@ -278,40 +289,46 @@
 
     // caption plate riding the lens
     const d = clamp(Math.floor(lens.wm / 1440), 0, 2), s = lens.shot, mono = getComputedStyle(cv).getPropertyValue('--mono') || 'monospace';
-    const l1 = s ? `${DAYN[s.d]} ${fmt(s.m)} · ${s.name}` : `${DAYN[d]} ${fmt(lens.wm % 1440)} · ${lightWord(lens.wm)}`, l2 = s ? `${s.label} · ${s.verdict}` : '';
-    ctx.font = `600 12.5px ${mono}`; let tw = ctx.measureText(l1).width; ctx.font = `400 11px ${mono}`; if (l2) tw = Math.max(tw, ctx.measureText(l2).width + 14);
+    const l1 = s ? `${DAYN[s.d]} ${fmt(s.m)} · ${s.name}` : `${DAYN[d]} ${fmt(lens.wm % 1440)} · ${lightWord(lens.wm)}`, l2 = s ? `${WORD[s.grade]}: ${s.verdict} · ${s.label}` : '';
+    ctx.font = `600 12.5px ${mono}`; let tw = ctx.measureText(l1).width; ctx.font = `400 11px ${mono}`; if (l2) tw = Math.max(tw, ctx.measureText(l2).width);
     capW += (tw + 26 - capW) * Math.min(1, dt * 14); capH += ((s ? 44 : 27) - capH) * Math.min(1, dt * 14);
     const cx = clamp(lxs, capW / 2 + 2, W - capW / 2 - 2), cy = CAP - 12 - capH - ry + D / 2 - 2;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5; ctx.fillStyle = 'rgba(16,19,34,.9)'; rr(ctx, cx - capW / 2, cy, capW, capH, Math.min(14, capH / 2)); ctx.fill(); ctx.restore();
     ctx.strokeStyle = s ? GCOL[s.grade] : 'rgba(255,255,255,.22)'; ctx.lineWidth = 1; rr(ctx, cx - capW / 2 + .5, cy + .5, capW - 1, capH - 1, Math.min(14, capH / 2)); ctx.stroke();
     ctx.fillStyle = '#f2f4fb'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `600 12.5px ${mono}`; ctx.fillText(l1, cx, cy + (s ? 14 : capH / 2 + .5));
-    if (s && capH > 38) { ctx.font = `400 11px ${mono}`; const w2 = ctx.measureText(l2).width; ctx.fillStyle = GCOL[s.grade]; ctx.beginPath(); ctx.arc(cx - w2 / 2 - 3, cy + 31, 3.2, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(242,244,251,.78)'; ctx.fillText(l2, cx + 5, cy + 31); }
+    if (s && capH > 38) { ctx.font = `400 11px ${mono}`; ctx.fillStyle = 'rgba(242,244,251,.8)'; ctx.fillText(l2, cx, cy + 31); }
   }
 
   // ---- input ----
-  let flying = false;
+  let flying = false, viewDay = 0;
+  const tabsEl = document.getElementById('tabs');
   const pos = (e) => e.clientX - cv.getBoundingClientRect().left;
   cv.addEventListener('pointerdown', (e) => { drag = { px: pos(e) }; flying = false; try { cv.setPointerCapture(e.pointerId); } catch {} e.preventDefault(); });
   cv.addEventListener('pointermove', (e) => { if (drag) drag.px = pos(e); });
   const up = () => { if (!drag) return; drag = null; const [s, d] = nearest(lens.tx); if (d < 26) lens.tx = s.x; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   const flyTo = (s) => { lens.tx = s.x; flying = true; };
-  cv.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault();
-    const dir = e.key === 'ArrowRight' ? 1 : -1, list = [...SHOTS].sort((a, b) => a.wm - b.wm);
-    const nxt = dir > 0 ? list.find((s) => s.x > lens.tx + 1) : [...list].reverse().find((s) => s.x < lens.tx - 1); if (nxt) flyTo(nxt); });
+  const step = (dir) => { const list = [...SHOTS].sort((a, b) => a.wm - b.wm);
+    const nxt = dir > 0 ? list.find((s) => s.x > lens.tx + 1) : [...list].reverse().find((s) => s.x < lens.tx - 1); if (nxt) flyTo(nxt); };
+  cv.addEventListener('keydown', (e) => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); step(e.key === 'ArrowRight' ? 1 : -1); });
+  document.getElementById('prev').addEventListener('click', () => step(-1));
+  document.getElementById('next').addEventListener('click', () => step(1));
   function announce() { const s = lens.shot;
-    hint.textContent = s ? `${DAYL[s.d]} ${fmt(s.m)} · ${s.name} · ${s.label} · ${s.verdict} (${s.grade})` : 'Drag the glass, or use ← → to jump between shots. Push it against an edge to travel to the next day.';
-    cv.setAttribute('aria-valuenow', Math.round(lens.wm)); cv.setAttribute('aria-valuetext', s ? hint.textContent : `${DAYL[clamp(Math.floor(lens.wm / 1440), 0, 2)]} ${fmt(lens.wm % 1440)}`);
-    daysEl.querySelectorAll('.shot').forEach((b) => b.classList.toggle('on', s && b.dataset.wm == s.wm)); }
-  function renderList() { daysEl.innerHTML = '';
-    for (let d = 0; d < 3; d++) { const row = document.createElement('div'); row.className = 'day';
-      const list = SHOTS.filter((s) => s.d === d).sort((a, b) => a.wm - b.wm), ok = list.filter((s) => s.grade !== 'poor').length;
-      row.innerHTML = `<b>${DAYL[d]}<small>${ok ? `${ok} worth it` : 'washed out'}</small></b>`;
-      const wrap = document.createElement('div'); wrap.className = 'shots';
-      for (const s of list) { const b = document.createElement('button'); b.className = `shot ${s.grade}`; b.dataset.wm = s.wm;
-        b.innerHTML = `<i style="background:var(--${s.grade})"></i>${fmt(s.m)} ${s.name}`; b.title = `${s.label} · ${s.verdict}`; b.addEventListener('click', () => flyTo(s)); wrap.append(b); }
-      row.append(wrap); daysEl.append(row); }
+    hint.textContent = s ? '' : 'Drag the glass or tap anywhere on the sky. Tap a day, a shot below, or use the two buttons.';
+    cv.setAttribute('aria-valuenow', Math.round(lens.wm));
+    cv.setAttribute('aria-valuetext', s ? `${DAYL[s.d]} ${fmt(s.m)}, ${s.name}, ${WORD[s.grade]}: ${s.verdict}` : `${DAYL[clamp(Math.floor(lens.wm / 1440), 0, 2)]} ${fmt(lens.wm % 1440)}`);
+    daysEl.querySelectorAll('.row').forEach((b) => b.classList.toggle('on', !!s && b.dataset.wm == s.wm)); }
+  const dayShots = (d) => SHOTS.filter((s) => s.d === d).sort((a, b) => a.wm - b.wm);
+  function renderList() {
+    tabsEl.innerHTML = '';
+    for (let d = 0; d < 3; d++) { const list = dayShots(d), ok = list.filter((s) => s.grade !== 'poor'), go = list.filter((s) => s.grade === 'good').length;
+      const b = document.createElement('button'); b.className = `tab${d === viewDay ? ' on' : ''}`;
+      b.innerHTML = `<b>${DAYL[d]}</b><small>${ok.length ? [[go, 'go'], [ok.length - go, 'maybe'], [list.length - ok.length, 'skip']].filter(([n]) => n).map(([n, w]) => `${n} ${w}`).join(' · ') : 'Skip: ' + list[0].verdict}</small>`;
+      b.addEventListener('click', () => flyTo(list.find((s) => s.grade === 'good') || ok[0] || list[0])); tabsEl.append(b); }
+    daysEl.innerHTML = '';
+    for (const s of dayShots(viewDay)) { const b = document.createElement('button'); b.className = `row ${s.grade}`; b.dataset.wm = s.wm;
+      b.innerHTML = `<span class="t">${fmt(s.m)}</span><span class="n">${s.name}<small>${s.label}</small></span><span class="v ${s.grade}">${WORD[s.grade]} · ${s.verdict}</span>`;
+      b.addEventListener('click', () => flyTo(s)); daysEl.append(b); }
     announce(); }
   requestAnimationFrame(frame);
   if (!REDUCED) setTimeout(() => { if (!drag && bg) flyTo(SHOTS.find((s) => s.wm > NOW)); }, 900);
