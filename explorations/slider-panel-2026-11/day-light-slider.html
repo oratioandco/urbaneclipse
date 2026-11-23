@@ -28,12 +28,15 @@
   .glass { background: var(--glass); border: .5px solid var(--edge); border-radius: 22px; padding: 11px 12px 12px; backdrop-filter: blur(26px) saturate(1.7); -webkit-backdrop-filter: blur(26px) saturate(1.7); }
   .glass h3 { margin: 0 2px 8px; font: 600 11.5px var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; gap: 8px; }
   .glass h3 span { text-transform: none; letter-spacing: 0; font-weight: 500; }
-  .shots { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 2px; border-top: .5px solid var(--edge); padding-top: 8px; }
+  .shots.more { -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
+  .shots.more.end { -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%); mask-image: linear-gradient(90deg, transparent, #000 18%); }
+  .shots.more.mid { -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+  .shots { display: flex; gap: 2px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -4px; padding: 0 2px; border-top: .5px solid var(--edge); padding-top: 8px; }
   .shots::-webkit-scrollbar { display: none; }
-  .shot { flex: 1 0 64px; display: grid; justify-items: center; gap: 5px; padding: 6px 2px 7px; border: 0; background: transparent; color: var(--fg); font: inherit; cursor: pointer; border-radius: 16px; transition: background .2s; min-width: 0; }
+  .shot { scroll-snap-align: start; flex: 1 0 58px; display: grid; justify-items: center; gap: 5px; padding: 6px 2px 7px; border: 0; background: transparent; color: var(--fg); font: inherit; cursor: pointer; border-radius: 16px; transition: background .2s; min-width: 0; }
   .shot .t { font: 600 14px var(--ui); font-variant-numeric: tabular-nums; }
   .shot canvas { width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 0 0 .5px rgba(255,255,255,.5), 0 4px 12px rgba(6,10,28,.3); }
-  .shot .n { font: 500 11px var(--ui); color: var(--dim); white-space: nowrap; }
+  .shot .n { font: 500 10.5px var(--ui); color: var(--dim); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   .shot .w { font: 600 13px var(--ui); }
   .shot.go .w { color: var(--go); } .shot.maybe .w { color: var(--maybe); } .shot.skip .w, .shot.past .w { color: var(--skip); }
   .shot.past { opacity: .55; } .shot.skip canvas, .shot.past canvas { filter: saturate(.3); }
@@ -60,7 +63,7 @@
     <div class="top"><div class="pill" id="tabs"></div><span style="display:inline-flex;gap:6px"><button class="ghost" id="motionBtn"></button><button class="ghost" id="nowBtn" aria-label="Back to now">Now</button></span></div>
     <div class="read"><div class="time" id="time"></div><div class="cond" id="cond"></div><p class="sentence" id="sentence"></p></div>
     <section class="glass"><h3>Shots <span id="shotCount"></span></h3><div class="shots" id="chips"></div></section>
-    <section class="glass"><h3>Light, 24 hours <span>band: cloud · bars: rain</span></h3>
+    <section class="glass"><h3>Light, 24 hours <span>band: high, mid, low cloud · bars: rain</span></h3>
       <div class="tl" id="tlwrap" tabindex="0" role="slider" aria-label="Time of day" aria-valuemin="0" aria-valuemax="1440"><canvas id="tl"></canvas><div id="thumb"><b id="thumbT"></b></div></div>
       <p class="sel" id="sel" aria-live="polite"></p></section>
     <div class="nudge"><button id="prevShot">‹ Earlier shot</button><button id="minus">− 1 min</button><button id="plus">+ 1 min</button><button id="nextShot">Later shot ›</button></div>
@@ -71,7 +74,7 @@
 <script id="fs" type="x-shader/x-fragment">
 precision highp float;
 uniform vec2 uCanvas, uSize; uniform float uLoop, uHw, uTime, uMode, uThumbM, uThumbX, uDpr, uFlashX, uFlash, uSeed, uGround, uMargin, uNowX, uRadius;
-uniform vec4 uMoon, uPrev; uniform sampler2D uWx, uCloudA, uCloudB; uniform float uTex; uniform vec3 uShots[8];
+uniform vec4 uMoon, uPrev, uSun; uniform sampler2D uWx, uCloudA, uCloudB; uniform float uTex; uniform vec3 uShots[8];
 const float PI = 3.14159265;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(hash(i), hash(i+vec2(1,0)), f.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y); }
@@ -79,7 +82,7 @@ float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 5; i++) { v += a * 
 float mir(float u){ return abs(fract(u * .5) * 2. - 1.); }
 vec3 cell(sampler2D t, vec2 uv, float i){ float c = mod(i, 6.), r = floor(i / 6.); vec2 l = clamp(uv, vec2(.003, .006), vec2(.997, .994)); return texture2D(t, vec2((c + l.x) / 6., (5. - r + l.y) / 6.)).rgb; }
 vec3 atlas(sampler2D t, vec2 uv){ float f = fract(uLoop) * 36., i0 = floor(f); return mix(cell(t, uv, i0), cell(t, uv, mod(i0 + 1., 36.)), f - i0); }
-float sunAlt(float m){ if (m >= 452. && m <= 919.) return 15. * sin(PI * (m - 452.) / 467.); float t = m > 919. ? (m - 919.) / 973. : (m + 521.) / 973.; return -40. * sin(PI * t); }
+float sunAlt(float m){ if (m >= uSun.x && m <= uSun.y) return uSun.z * sin(PI * (m - uSun.x) / (uSun.y - uSun.x)); float nl = 1440. - uSun.y + uSun.x, t = m > uSun.y ? (m - uSun.y) / nl : (m + 1440. - uSun.y) / nl; return uSun.w * sin(PI * t); }
 float moonAlt(float m){ float a = -1.; if (m >= uMoon.x && m <= uMoon.x + uMoon.y) a = uMoon.z * sin(PI * (m - uMoon.x) / uMoon.y);
   float mp = m + 1440.; if (mp >= uPrev.x && mp <= uPrev.x + uPrev.y) a = max(a, uPrev.z * sin(PI * (mp - uPrev.x) / uPrev.y)); return a; }
 vec3 scene(vec2 p){
@@ -101,9 +104,9 @@ vec3 scene(vec2 p){
   float star = step(.94, sh) * smoothstep(.34, 0., length(fract(sp) - .5 - (vec2(hash(sid + 1.3), hash(sid + 2.7)) - .5) * .6)) * (.55 + .45 * sin(uTime * 2.2 + sh * 40.));
   col += star * (1. - a1) * (1. - smoothstep(.2, .7, cover)) * step(uGround, p.y);
   // sun and moon of the selected minute
-  float tAlt = sunAlt(uThumbM), k = (uSize.y - uGround - uSize.y * .14) / 15.;
+  float tAlt = sunAlt(uThumbM), k = (uSize.y - uGround - uSize.y * .14) / uSun.z;
   vec4 wt = texture2D(uWx, vec2(uThumbM / 1440., .5)); float clear = 1. - smoothstep(.45, .95, wt.r);
-  vec2 sunP = uMode < .5 ? vec2(uThumbX, uGround + tAlt * k) : vec2(uSize.x * .74, uSize.y * (.34 + tAlt * .033));
+  vec2 sunP = uMode < .5 ? vec2(uThumbX, uGround + tAlt * k) : vec2(uSize.x * .74, uSize.y * (.34 + tAlt / uSun.z * .5));
   if (tAlt > -3. && p.y > uGround) { float d = length(p - sunP) / R, warm = 1. - smoothstep(1., 8., tAlt);
     vec3 sc = mix(vec3(1., .95, .82), vec3(1., .62, .26), warm);
     col += sc * (exp(-d * 5.) * .55 + exp(-d * 16.) * .7) * (.25 + .75 * clear);
@@ -193,27 +196,28 @@ void main(){
   const fmt = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
   const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
   const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
-  const DAYL = ['Today', 'Tomorrow', 'Saturday'], NOW = 800, PAD = 6, TLH = 132, HOR = 78;
+  let day = 0;
+  const DAYL = ['Today', 'Fri', 'Sat', 'Summer'], NOW = 800, PAD = 6, TLH = 132, HOR = 78;
   const WX = [
     { low: [.92,.95,.96,.96,.95,.93,.9,.85,.8,.75,.7,.62,.7,.95,.8,.68,.6,.5,.45,.5,.55,.6,.65,.7], mid: [.6,.6,.6,.6,.6,.6,.6,.55,.5,.45,.4,.35,.5,.85,.55,.35,.3,.25,.2,.2,.2,.2,.2,.2],
-      high: [.3,.3,.3,.3,.3,.3,.3,.3,.25,.2,.2,.15,.1,.1,.15,.2,.3,.4,.5,.5,.4,.4,.35,.3], rain: [0,0,0,0,0,0,0,0,0,0,0,5,10,85,45,10,0,0,0,0,0,0,0,0], thunder: [], moon: [1230, 420, 22, .58], prev: [1200, 400, 24, .68] },
-    { low: Array(24).fill(.95), mid: Array(24).fill(.82), high: Array(24).fill(.6), rain: [40,45,50,50,55,60,65,70,70,75,75,80,80,90,95,95,80,70,65,60,60,55,50,45], thunder: [13.2, 16.2], moon: [1260, 450, 18, .47], prev: [1230, 420, 22, .58] },
+      high: [.3,.3,.3,.3,.3,.3,.3,.3,.25,.2,.2,.15,.1,.1,.15,.2,.3,.4,.5,.5,.4,.4,.35,.3], rain: [0,0,0,0,0,0,0,0,0,0,0,5,10,85,45,10,0,0,0,0,0,0,0,0], thunder: [], sun: [452, 919, 15, -40], moon: [1230, 420, 22, .58], prev: [1200, 400, 24, .68] },
+    { low: Array(24).fill(.95), mid: Array(24).fill(.82), high: Array(24).fill(.6), rain: [40,45,50,50,55,60,65,70,70,75,75,80,80,90,95,95,80,70,65,60,60,55,50,45], thunder: [13.2, 16.2], sun: [452, 919, 15, -40], moon: [1260, 450, 18, .47], prev: [1230, 420, 22, .58] },
     { low: [.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.05,.08,.1,.15,.2,.3,.35,.4,.45,.5,.5,.45,.4], mid: [.1,.1,.1,.1,.1,.1,.1,.1,.1,.1,.15,.2,.25,.3,.4,.5,.6,.65,.7,.7,.65,.6,.55,.5],
-      high: [.05,.05,.05,.05,.05,.05,.05,.05,.1,.1,.15,.2,.25,.3,.35,.4,.5,.55,.6,.6,.55,.5,.45,.4], rain: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,10,10,10,5,5,0], thunder: [], moon: [1275, 480, 12, .22], prev: [1260, 450, 18, .47] },
+      high: [.05,.05,.05,.05,.05,.05,.05,.05,.1,.1,.15,.2,.25,.3,.35,.4,.5,.55,.6,.6,.55,.5,.45,.4], rain: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,5,10,10,10,5,5,0], thunder: [], sun: [452, 919, 15, -40], moon: [1275, 480, 12, .22], prev: [1260, 450, 18, .47] },
+    { low: [0,0,0,0,0,0,0,0,0,0,.08,.18,.3,.36,.34,.28,.2,.1,.05,0,0,0,0,0], mid: [0,0,0,0,0,0,0,0,0,0,0,.05,.1,.12,.1,.1,.15,.2,.25,.3,.3,.2,.1,.05],
+      high: [.1,.1,.05,0,0,0,0,0,0,0,0,0,.05,.1,.15,.2,.3,.4,.5,.55,.5,.4,.3,.2], rain: Array(24).fill(0), thunder: [], sun: [285, 1290, 60, -14], moon: [1325, 400, 14, .8], prev: [1290, 420, 16, .86] },
   ];
   const samp = (d, m, key) => { const h = clamp(m, 0, 1439.9) / 60, a = Math.floor(h), b = Math.min(23, a + 1); return lerp(WX[d][key][a], WX[d][key][b], h - a); };
   const cover = (d, m) => Math.max(samp(d, m, 'low'), samp(d, m, 'mid'), samp(d, m, 'high'));
   const thunder = (d, m) => WX[d].thunder.length > 0 && m / 60 >= WX[d].thunder[0] && m / 60 <= WX[d].thunder[1];
-  const RISE = 452, SET = 919;
-  const sunAlt = (m) => { if (m >= RISE && m <= SET) return 15 * Math.sin(Math.PI * (m - RISE) / (SET - RISE));
-    const t = m > SET ? (m - SET) / (1440 - SET + RISE) : (m + 1440 - SET) / (1440 - SET + RISE); return -40 * Math.sin(Math.PI * t); };
+  const sunAlt = (m, d = day) => { const [R, S, MX, NM] = WX[d].sun; if (m >= R && m <= S) return MX * Math.sin(Math.PI * (m - R) / (S - R));
+    const nl = 1440 - S + R, t = m > S ? (m - S) / nl : (m + 1440 - S) / nl; return NM * Math.sin(Math.PI * t); };
   const moonAlt = (d, m) => { const [r, l, mx] = WX[d].moon, [pr, pl, pmx] = WX[d].prev; let a = -1; if (m >= r && m <= r + l) a = mx * Math.sin(Math.PI * (m - r) / l);
     if (m + 1440 >= pr && m + 1440 <= pr + pl) a = Math.max(a, pmx * Math.sin(Math.PI * (m + 1440 - pr) / pl)); return a; };
   const PHASES = [[-16, [27, 33, 64]], [-9, [47, 58, 110]], [-3.5, [63, 98, 181]], [1, [240, 160, 60]], [9, [243, 230, 196]]];
   const barCol = (m) => { const a = sunAlt(m); if (a <= PHASES[0][0]) return PHASES[0][1]; for (let i = 0; i < 4; i++) if (a <= PHASES[i + 1][0]) return mix(PHASES[i][1], PHASES[i + 1][1], sstep(PHASES[i][0], PHASES[i + 1][0], a)); return PHASES[4][1]; };
   const phaseName = (m) => { const a = sunAlt(m); return a >= 6 ? 'Day' : a >= 0 ? 'Golden hour' : a >= -6 ? 'Blue hour' : a >= -12 ? 'Twilight' : 'Night'; };
   const edge = (from, to, test) => { for (let m = from; from < to ? m <= to : m >= to; m += from < to ? 1 : -1) if (test(m)) return m; return to; };
-  const G_PM_START = edge(SET, 720, (m) => sunAlt(m) >= 6) + 1;
   const gradeAt = (d, m) => { const c = cover(d, m), r = samp(d, m, 'rain'); return r > 50 || c >= .8 ? 'skip' : c >= .55 ? 'maybe' : 'go'; };
   const wxWord = (d, m) => { const c = cover(d, m), r = samp(d, m, 'rain'); return thunder(d, m) ? 'Thunderstorm' : r > 50 ? 'Rain' : r > 25 ? 'Showers nearby' : c >= .8 ? 'Overcast' : c >= .55 ? 'Mostly cloudy' : c >= .25 ? 'Partly cloudy' : 'Clear'; };
   const reason = (d, m) => { const g = gradeAt(d, m), hi = samp(d, m, 'high'); return g === 'skip' ? wxWord(d, m).toLowerCase() : g === 'maybe' ? 'mixed cloud' : hi > .2 && hi < .65 ? 'cloud to catch the colour' : 'clear light'; };
@@ -224,6 +228,9 @@ void main(){
     [0, 458, 'reichstag', 'first light on the cupola'], [0, 878, 'siegessaeule', 'golden column'], [0, 906, 'fernsehturm', 'sun behind the shaft'], [0, 936, 'oberbaumbruecke', 'blue hour on the bridge'], [0, 1268, 'berliner_dom', 'moon over the dome'],
     [1, 466, 'brandenburger_tor', 'sunrise on the axis'], [1, 878, 'siegessaeule', 'golden column'], [1, 906, 'fernsehturm', 'sun behind the shaft'],
     [2, 160, 'fernsehturm', 'moon beside the sphere'], [2, 462, 'brandenburger_tor', 'sunrise on the axis'], [2, 878, 'siegessaeule', 'golden column'], [2, 906, 'fernsehturm', 'sun behind the shaft'], [2, 938, 'molecule_man', 'blue hour on the Spree'],
+    [3, 290, 'brandenburger_tor', 'sunrise on the axis'], [3, 304, 'reichstag', 'first light on the cupola'], [3, 322, 'frankfurter_tor', 'low sun down the allee'], [3, 345, 'molecule_man', 'sun through the figures'], [3, 372, 'oberbaumbruecke', 'morning light on the arches'],
+    [3, 1192, 'siegessaeule', 'golden column'], [3, 1218, 'berliner_dom', 'warm light on the dome'], [3, 1247, 'fernsehturm', 'sun behind the shaft'], [3, 1266, 'oberbaumbruecke', 'sunset through the arches'], [3, 1284, 'molecule_man', 'last light on the Spree'],
+    [3, 1312, 'reichstag', 'blue hour on the cupola'], [3, 1334, 'brandenburger_tor', 'blue hour on the gate'], [3, 1404, 'fernsehturm', 'moon beside the sphere'],
   ].map(([d, m, slug, what]) => ({ d, m, slug, what, name: LM[slug][0], short: LM[slug][1], grade: gradeAt(d, m), reason: reason(d, m), past: d === 0 && m < NOW }));
   const dayShots = () => SHOTS.filter((s) => s.d === day).sort((a, b) => a.m - b.m);
 
@@ -241,15 +248,15 @@ void main(){
         try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, im); ready[i] = true; } catch (e) {} gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); par(); gl.activeTexture(gl.TEXTURE0); }; im.src = src; });
     const U = {}; const u = (n) => U[n] || (U[n] = gl.getUniformLocation(pr, n));
     return { texReady: () => ready[0] && ready[1], setDay(d) { const data = new Uint8Array(96 * 4); for (let i = 0; i < 96; i++) { const m = i * 15 + 7; data[i * 4] = cover(d, m) * 255; data[i * 4 + 1] = samp(d, m, 'rain') * 2.55; data[i * 4 + 2] = thunder(d, m) ? 255 : 0; data[i * 4 + 3] = 255; }
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 96, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data); gl.uniform4fv(u('uMoon'), WX[d].moon); gl.uniform4fv(u('uPrev'), WX[d].prev); },
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 96, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data); gl.uniform4fv(u('uSun'), WX[d].sun); gl.uniform4fv(u('uMoon'), WX[d].moon); gl.uniform4fv(u('uPrev'), WX[d].prev); },
       draw(o) { gl.viewport(0, 0, canvas.width, canvas.height); gl.uniform1i(u('uWx'), 0); gl.uniform1i(u('uCloudA'), 1); gl.uniform1i(u('uCloudB'), 2); gl.uniform1f(u('uTex'), ready[0] && ready[1] ? 1 : 0);
         for (const k in o) { const val = o[k]; if (typeof val === 'number') gl.uniform1f(u(k), val); else if (val.length === 2) gl.uniform2fv(u(k), val); else gl.uniform3fv(u(k), val); }
         gl.drawArrays(gl.TRIANGLES, 0, 3); } }; }
   const H = makeGL(heroC);
 
-  let W = 0, HW = 0, HH = 0, day = 0, min = NOW, target = null, drag = false, lastT = 0, lastKey = '', flash = 0, seed = 1, nextBolt = 0, clock = 0, frames = 0, lastCur = null;
+  let bandC = null, bandKey = '', W = 0, HW = 0, HH = 0, min = NOW, target = null, drag = false, lastT = 0, lastKey = '', flash = 0, seed = 1, nextBolt = 0, clock = 0, frames = 0, lastCur = null;
   const xOf = (m) => PAD + m / 1440 * (W - 2 * PAD), mOf = (x) => clamp((x - PAD) / (W - 2 * PAD) * 1440, 0, 1439);
-  const sunY = (a) => a >= 0 ? HOR - a * 3.4 : HOR - a * .5, moonY = (a) => HOR - a * 2.1;
+  const sunY = (a) => { const [, , MX, NM] = WX[day].sun; return a >= 0 ? HOR - a / MX * 51 : HOR + a / NM * 20; }, moonY = (a) => HOR - a * 2.1;
   const sprites = {};
   const skyJS = (d, m) => { const alt = sunAlt(m), a1 = sstep(-14, -5, alt), a2 = sstep(-5, .5, alt), a3 = sstep(1, 8, alt), dayness = sstep(-6, 4, alt), ov = sstep(.5, .95, cover(d, m)) * .9;
     const top = mix(mix(mix([18, 26, 77], [31, 51, 133], a1), [69, 102, 199], a2), [43, 128, 245], a3), bot = mix(mix(mix([41, 54, 133], [69, 102, 204], a1), [255, 153, 77], a2), [168, 219, 255], a3), grey = mix([61, 71, 117], [189, 199, 214], dayness);
@@ -261,8 +268,10 @@ void main(){
     const t = document.createElement('canvas'); t.width = bw; t.height = bh; const tx = t.getContext('2d'); tx.drawImage(sp.c, bx, by, bw, bh, 0, 0, bw, bh); tx.globalCompositeOperation = 'source-atop';
     tx.fillStyle = rgb(mix([18, 20, 44], [66, 40, 40], sk.dayness), lerp(.7, .3, sstep(2, 10, sk.alt))); tx.fillRect(0, 0, bw, bh);
     x.imageSmoothingQuality = 'high'; x.drawImage(t, n / 2 - w / 2, n * .9 - h, w, h); x.fillStyle = rgb(mix([18, 23, 61], [232, 224, 207], sk.dayness)); x.fillRect(0, n * .88, n, n * .12); }
+  const fade = () => { const over = chipsEl.scrollWidth > chipsEl.clientWidth + 2, atEnd = chipsEl.scrollLeft + chipsEl.clientWidth >= chipsEl.scrollWidth - 4, atStart = chipsEl.scrollLeft < 4; chipsEl.classList.toggle('more', over); chipsEl.classList.toggle('end', over && atEnd && !atStart); chipsEl.classList.toggle('mid', over && !atEnd && !atStart); };
+  chipsEl.addEventListener('scroll', fade, { passive: true });
   function layout() { chipsEl.innerHTML = ''; const list = dayShots(), ok = list.filter((s) => !s.past && s.grade !== 'skip').length;
-    $('shotCount').textContent = list.length ? `${ok} possible${day === 0 ? ' from now' : ''}` : '';
+    $('shotCount').textContent = list.length ? `${ok} possible${day === 0 ? ' from now' : ''}` : ''; requestAnimationFrame(() => { const nx = [...chipsEl.children].find((b) => +b.dataset.m >= min - 3); if (nx && chipsEl.scrollWidth > chipsEl.clientWidth + 2) chipsEl.scrollLeft = Math.max(0, nx.offsetLeft - chipsEl.offsetLeft - 6); fade(); if (chipsEl.scrollWidth > chipsEl.clientWidth + 2) $('shotCount').textContent += ` · ${list.length} in all, swipe`; });
     if (!list.length) { chipsEl.innerHTML = '<div class="none">No shots line up on this day.</div>'; return; }
     for (const s of list) { const b = document.createElement('button'); b.className = `shot ${s.grade}${s.past ? ' past' : ''}`; b.dataset.m = s.m;
       b.setAttribute('aria-label', `${fmt(s.m)} ${s.name}, ${s.what}. ${s.past ? 'Passed.' : WORD[s.grade] + ': ' + s.reason + '.'}`);
@@ -275,17 +284,23 @@ void main(){
 
   // The timeline: a sun and moon curve over a horizon, cloud as a soft band, rain as bars, shots as ticks.
   function drawTL(cur) { const x = tl.getContext('2d'); x.setTransform(DPR, 0, 0, DPR, 0, 0); x.clearRect(0, 0, W, TLH); const x0 = PAD, x1 = W - PAD;
-    for (let px = x0; px < x1; px += 2) { const m = mOf(px), c = cover(day, m), r = samp(day, m, 'rain'); const g = x.createLinearGradient(0, 2, 0, 14); g.addColorStop(0, `rgba(255,255,255,${(c * .62).toFixed(3)})`); g.addColorStop(1, `rgba(255,255,255,${(c * .16).toFixed(3)})`);
-      x.fillStyle = g; x.fillRect(px, 2, 2.2, 12); if (r > 12 && Math.round((px - x0) / 2) % 3 === 0) { x.fillStyle = `rgba(150,205,255,${(.35 + r / 160).toFixed(2)})`; x.beginPath(); x.roundRect ? x.roundRect(px, 16, 2, 2 + r * .11, 1) : x.rect(px, 16, 2, 2 + r * .11); x.fill(); } }
-    if (WX[day].thunder.length) { x.fillStyle = '#ffe58a'; x.font = `600 11px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('⚡', xOf((WX[day].thunder[0] + WX[day].thunder[1]) * 30), 27); }
+    const bk = `${day}|${W}`; if (bk !== bandKey) { bandKey = bk; bandC = document.createElement('canvas'); bandC.width = Math.round(W * DPR); bandC.height = Math.round(22 * DPR); const bx = bandC.getContext('2d'); bx.scale(DPR, DPR);
+      const LY = [['high', 4, 2.5, .7, [226, 238, 255]], ['mid', 9.5, 2.7, .82, [255, 255, 255]], ['low', 15.5, 3, .92, [232, 232, 240]]];   // three decks, each a soft stripe that fades to nothing when its layer is clear
+      for (let px = x0; px < x1; px += 1.5) { const m = mOf(px), g = bx.createLinearGradient(0, 0, 0, 22);
+        for (let y = 0; y <= 22; y += 2) { let keep = 1, cr = 0, cg = 0, cb = 0, wsum = 0; for (const [key, cy, sg, amax, col] of LY) { const c = samp(day, m, key), a = sstep(.05, .22, c) * (.3 + .7 * c) * amax * Math.exp(-((y - cy) ** 2) / (2 * sg * sg)); keep *= 1 - a; cr += col[0] * a; cg += col[1] * a; cb += col[2] * a; wsum += a; }
+          g.addColorStop(y / 22, wsum > .001 ? `rgba(${cr / wsum | 0},${cg / wsum | 0},${cb / wsum | 0},${(1 - keep).toFixed(3)})` : 'rgba(255,255,255,0)'); }
+        bx.fillStyle = g; bx.fillRect(px, 0, 1.7, 22); } }
+    x.drawImage(bandC, 0, 0, W, 22);
+    for (let px = x0; px < x1; px += 6) { const r = samp(day, mOf(px), 'rain'); if (r > 12) { x.fillStyle = `rgba(150,205,255,${(.35 + r / 160).toFixed(2)})`; x.beginPath(); x.roundRect ? x.roundRect(px, 22, 2, 2 + r * .1, 1) : x.rect(px, 22, 2, 2 + r * .1); x.fill(); } }
+    if (WX[day].thunder.length) { x.fillStyle = '#ffe58a'; x.font = `600 11px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('⚡', xOf((WX[day].thunder[0] + WX[day].thunder[1]) * 30), 34); }
     const curve = (fn, a, b) => { x.beginPath(); let on = false; for (let m = a; m <= b; m += 4) { const y = fn(m); if (y === null) { on = false; continue; } on ? x.lineTo(xOf(m), y) : x.moveTo(xOf(m), y); on = true; } };
-    x.save(); x.beginPath(); x.rect(x0, 0, x1 - x0, HOR); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.lineTo(xOf(1440), HOR); x.lineTo(xOf(0), HOR); const fg = x.createLinearGradient(0, 28, 0, HOR); fg.addColorStop(0, 'rgba(255,236,170,.34)'); fg.addColorStop(1, 'rgba(255,236,170,0)'); x.fillStyle = fg; x.fill();
+    x.save(); x.beginPath(); x.rect(x0, 0, x1 - x0, HOR); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.lineTo(xOf(1440), HOR); x.lineTo(xOf(0), HOR); const fg = x.createLinearGradient(0, 27, 0, HOR); fg.addColorStop(0, 'rgba(255,236,170,.34)'); fg.addColorStop(1, 'rgba(255,236,170,0)'); x.fillStyle = fg; x.fill();
     curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = 'rgba(255,255,255,.95)'; x.lineWidth = 2; x.stroke(); x.restore();
     x.save(); x.beginPath(); x.rect(x0, HOR, x1 - x0, 40); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = 'rgba(255,255,255,.3)'; x.lineWidth = 1.5; x.stroke(); x.restore();
     x.setLineDash([2, 4]); curve((m) => { const a = moonAlt(day, m); return a > 0 ? moonY(a) : null; }, 0, 1440); x.strokeStyle = 'rgba(196,214,255,.9)'; x.lineWidth = 1.5; x.stroke(); x.setLineDash([]);
     x.fillStyle = 'rgba(255,255,255,.4)'; x.fillRect(x0, HOR - .5, x1 - x0, 1);
     for (const s of dayShots()) { const sx = xOf(s.m), on = s === cur, a = s.past ? .25 : s.grade === 'skip' ? .28 : s.grade === 'maybe' ? .6 : .95; x.strokeStyle = `rgba(255,255,255,${on ? 1 : a})`; x.lineWidth = on ? 2 : 1.2; if (s.grade === 'skip' || s.past) x.setLineDash([2, 3]);
-      x.beginPath(); x.moveTo(sx, 24); x.lineTo(sx, 100); x.stroke(); x.setLineDash([]); x.fillStyle = `rgba(255,255,255,${on ? 1 : a})`; x.beginPath(); x.arc(sx, 24, on ? 3.2 : 2.4, 0, 7); x.fill(); }
+      x.beginPath(); x.moveTo(sx, 27); x.lineTo(sx, 100); x.stroke(); x.setLineDash([]); x.fillStyle = `rgba(255,255,255,${on ? 1 : a})`; x.beginPath(); x.arc(sx, 27, on ? 3.2 : 2.4, 0, 7); x.fill(); }
     if (day === 0) { const xn = xOf(NOW); x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 9.5px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillText('NOW', xn, 111); x.fillRect(xn - .5, 96, 1, 6); }
     const m = min, sa = sunAlt(m), ma = moonAlt(day, m), tx = xOf(m);
     if (ma > 0) { x.save(); x.shadowColor = 'rgba(190,210,255,.9)'; x.shadowBlur = 10; x.fillStyle = '#eef2ff'; x.beginPath(); x.arc(tx, moonY(ma), 4.5, 0, 7); x.fill(); x.restore(); }
@@ -307,9 +322,9 @@ void main(){
       $('sel').innerHTML = cur ? `<b>${cur.name}</b> · ${cur.what} · ${cur.past ? 'passed' : `${WORD[cur.grade]}: ${cur.reason}`}` : (sunAlt(m) > 0 ? `Sun ${Math.round(sunAlt(m))}° up` : moonAlt(day, m) > 0 ? 'Sun down, moon up' : 'Sun and moon down') + ` · cloud ${Math.round(cover(day, m) * 100)}% · rain ${Math.round(samp(day, m, 'rain'))}%`;
       chipsEl.querySelectorAll('.shot').forEach((b) => { const on = !!cur && +b.dataset.m === cur.m; b.classList.toggle('on', on); if (on && !drag) b.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); });
       wrap.setAttribute('aria-valuenow', m); wrap.setAttribute('aria-valuetext', `${fmt(m)}, ${phaseName(m)}, ${wxWord(day, m)}`); } }
-  function setDay(d) { day = d; target = null; min = d === 0 ? NOW : G_PM_START; lastKey = ''; nextBolt = 0; flash = 0; H && H.setDay(d);
+  function setDay(d) { day = d; target = null; min = d === 0 ? NOW : edge(WX[d].sun[1], 720, (m) => sunAlt(m, d) >= 6) + 1; lastKey = ''; nextBolt = 0; flash = 0; H && H.setDay(d); bandKey = '';
     $('tabs').querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', i === d)); $('nowBtn').hidden = d !== 0;
-    const gm = (G_PM_START + SET) / 2, g = gradeAt(d, gm), w = wxWord(d, gm).toLowerCase();
+    const SET = WX[d].sun[1], G_PM_START = edge(SET, 720, (m) => sunAlt(m) >= 6) + 1, gm = (G_PM_START + SET) / 2, g = gradeAt(d, gm), w = wxWord(d, gm).toLowerCase();
     $('sentence').textContent = `Golden hour ${fmt(G_PM_START)}–${fmt(SET)}${g === 'go' ? ', in clear light.' : g === 'maybe' ? `, ${w}.` : `, lost to ${w}.`}`; layout(); }
   DAYL.forEach((l, i) => { const b = document.createElement('button'); b.textContent = l; b.addEventListener('click', () => setDay(i)); $('tabs').append(b); });
   $('nowBtn').addEventListener('click', () => { target = NOW; });
@@ -324,13 +339,13 @@ void main(){
   wrap.addEventListener('keydown', (e) => { const st = { ArrowLeft: -5, ArrowRight: 5, PageDown: -30, PageUp: 30 }[e.key]; if (!st) return; e.preventDefault(); target = clamp(base() + st, 0, 1439); });
   const setMotion = (on) => { motionOn = on; $('motionBtn').textContent = on ? 'Pause' : 'Play'; $('motionBtn').setAttribute('aria-label', on ? 'Pause weather animation' : 'Play weather animation'); $('motionBtn').setAttribute('aria-pressed', on); };
   $('motionBtn').addEventListener('click', () => setMotion(!motionOn)); setMotion(motionOn);
-  setInterval(() => { $('status').textContent = `v10 · motion ${motionOn ? 'on' : 'off'}${RM ? ' (device asks for reduced motion)' : ''} · sky ${H ? (H.texReady() ? 'photo frames' : 'drawn fallback') : 'no WebGL'} · ${frames} fps · clock ${clock.toFixed(0)} s`; frames = 0; }, 1000);
+  setInterval(() => { $('status').textContent = `v11 · motion ${motionOn ? 'on' : 'off'}${RM ? ' (device asks for reduced motion)' : ''} · sky ${H ? (H.texReady() ? 'photo frames' : 'drawn fallback') : 'no WebGL'} · ${frames} fps · clock ${clock.toFixed(0)} s`; frames = 0; }, 1000);
   let n = 0; const slugs = Object.keys(IMG);
   for (const slug of slugs) { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); let box = [0, 0, im.width, im.height];
       try { const d = x.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
         for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) if (d[(yy * c.width + xx) * 4 + 3] > 24) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
         if (x1 > x0) box = [x0, y0, x1 - x0 + 1, y1 - y0 + 1]; } catch {}
       sprites[slug] = { c, box }; if (++n === slugs.length) layout(); }; im.src = IMG[slug]; }
-  setDay(0); requestAnimationFrame(frame);
+  setDay({ '#fri': 1, '#sat': 2, '#summer': 3 }[location.hash] || 0); requestAnimationFrame(frame);
 })();
 </script>
