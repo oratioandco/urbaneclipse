@@ -12,6 +12,9 @@ import { layers, shownBody } from './chrome.js';
 import { dayStart } from './clock.js';
 import { BODY_NAME } from './eclipse.js';
 import { cloudNote } from './forecast.js';
+import { forecastReach } from './weather.js';
+import { shotVerdict } from './verdict.js';
+import { dateInput } from './clock.js';
 import { toScene } from './plan.js';
 import { goViewHere } from './pointer.js';
 import { app, invalidate } from './state.js';
@@ -168,8 +171,9 @@ export function renderDayList() {
       item.className = 'dayrow';
       item.dataset.body = row.body;
       item.dataset.kind = row.kind;
-      item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><em>Go \u203a</em>`;
+      item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">\u203a</i>`;
       item.querySelector('b').textContent = row.title;
+      showVerdict(item.querySelector('.verdict'), dayVerdict(row.t));
       item.querySelector('small').textContent = row.detail + cloudNote(row.t);
       item.addEventListener('click', () => {
         row.go();
@@ -179,6 +183,18 @@ export function renderDayList() {
     }),
   );
   if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up today. Try another day.</p>';
+}
+
+/** A verdict into its element: the word and the reason as text, the grade for the colour. */
+export function showVerdict(el, verdict) {
+  el.textContent = verdict.label;
+  el.dataset.grade = verdict.grade ?? 'none';
+}
+
+/** The verdict for an instant of the chosen day: its forecast, or why there is none. */
+export function dayVerdict(t) {
+  const missing = !forecastReach(dateInput.value).ok ? 'No forecast yet' : app.weather === null && app.weatherFailed ? 'No forecast' : 'Forecast loading';
+  return shotVerdict(app.weather, dayStart(), t, { now: Date.now(), missing });
 }
 
 /** A small sun, or the moon in its phase at that time, for the list. */

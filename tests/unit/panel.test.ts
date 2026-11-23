@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { coverage, parseHeight, sheetSizes, snapHeight, stepDown, stepUp, tapHeight } from '../../src/miniature/sheetHeights.js';
-import { PASSED, countdown, gradeSky, readingVerdict, verdict } from '../../src/miniature/verdict.js';
+import { PASSED, countdown, gradeSky, readingVerdict, shotVerdict, skyAt, verdict } from '../../src/miniature/verdict.js';
 import {
   altitudeToY,
   clampMinute,
@@ -116,6 +116,24 @@ describe('verdicts in words', () => {
   it('words a sunrise or sunset reading', () => {
     expect(readingVerdict({ grade: 'good', text: 'clouds above to catch the colour' }).label).toBe('Go · clouds above to catch the colour');
     expect(readingVerdict({ grade: 'poor', text: 'overcast, little direct light' }).word).toBe('Skip');
+  });
+  it('reads a shot\u2019s sky from the forecast day, between the hours', () => {
+    const hours = (v: (h: number) => number) => Array.from({ length: 24 }, (_, h) => v(h));
+    // Clear until 14:00, overcast and rainy from 15:00.
+    const day = {
+      berlin: { low: hours((h) => (h >= 15 ? 0.9 : 0)), mid: hours(() => 0), high: hours(() => 0) },
+      vis: hours(() => 24_000),
+      rain: { prob: hours((h) => (h >= 15 ? 0.8 : 0)), mm: hours(() => 0) },
+    };
+    const from = Date.UTC(2026, 10, 23);
+    expect(skyAt(day, 14 * 60 + 30).low).toBeCloseTo(0.45, 9);
+    expect(skyAt(day, 15 * 60 + 5).rain).toBe(0.8);
+    expect(shotVerdict(day, from, from + 10 * 3_600_000).label).toBe('Go \u00b7 clear light');
+    expect(shotVerdict(day, from, from + 16 * 3_600_000).label).toBe('Skip \u00b7 rain likely');
+    // A shot behind us has passed, whatever the sky was.
+    expect(shotVerdict(day, from, from + 10 * 3_600_000, { now: from + 11 * 3_600_000 })).toBe(PASSED);
+    expect(shotVerdict(null, from, from + 10 * 3_600_000, { missing: 'Forecast loading' }).label).toBe('Forecast loading');
+    expect(shotVerdict(null, from, from + 10 * 3_600_000).grade).toBeNull();
   });
   it('counts down in the units that fit', () => {
     const now = Date.UTC(2026, 10, 23, 12);

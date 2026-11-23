@@ -1,6 +1,7 @@
 /** The day's cloud forecast in the panel: loading it and reading sunrise and sunset for colour. */
 import { cloudsAt, cloudsFor, forecastReach, readSky, visibilityAt } from './weather.js';
 import { formatClock } from './time.js';
+import { readingVerdict } from './verdict.js';
 import { layers, setCloudHint } from './chrome.js';
 import { dateInput, dayStart } from './clock.js';
 import { renderDayList } from './daylist.js';
@@ -22,9 +23,11 @@ export function loadWeather() {
   }
   weatherLine.textContent = 'Loading the cloud forecast\u2026';
   weatherLine.dataset.state = 'loading';
+  app.weatherFailed = false;
   cloudsFor(date, dayStart()).then((day) => {
     if (dateInput.value !== date) return;
     app.weather = day;
+    app.weatherFailed = !day;
     // The low and middle decks are what can hide the map: when their peak for the day is heavy,
     // the layers button says so.
     setCloudHint(Math.max(...day.berlin.low.map((low, h) => Math.max(low, day.berlin.mid[h]))) > 0.55);
@@ -50,8 +53,11 @@ function showWeather() {
       const reading = readSky(app.weather, which);
       const part = document.createElement('span');
       if (!reading) return part;
-      part.dataset.grade = reading.grade;
-      part.textContent = `${which === 'rise' ? 'Sunrise' : 'Sunset'} ${formatClock(reading.t)}: ${reading.text}`;
+      // The verdict as a word with its reason; the colour only backs the word up.
+      const said = readingVerdict(reading);
+      const word = Object.assign(document.createElement('em'), { className: 'verdict', textContent: said.word });
+      word.dataset.grade = reading.grade;
+      part.append(`${which === 'rise' ? 'Sunrise' : 'Sunset'} ${formatClock(reading.t)}: `, word, ` \u00b7 ${said.reason}`);
       return part;
     }),
   );

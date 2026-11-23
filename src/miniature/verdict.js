@@ -5,7 +5,18 @@
  * The thresholds are the plan's own grading (cloud over 75% or under 3 km of sight is poor,
  * over 50% or under 9 km fair); this file only adds the words.
  */
+import { cloudsAt, visibilityAt } from './weather.js';
+
 export const VERDICT_WORD = { good: 'Go', fair: 'Maybe', poor: 'Skip' };
+
+/**
+ * The sky a forecast day (`cloudsFor` in weather.js) gives at a minute after midnight: the
+ * three cloud layers and the sight, between the hours, and that hour's chance of rain.
+ */
+export function skyAt(day, minutes) {
+  const hour = Math.min(day.rain.prob.length - 1, Math.max(0, Math.floor(minutes / 60)));
+  return { ...cloudsAt(day, minutes), vis: visibilityAt(day, minutes), rain: day.rain.prob[hour] ?? 0 };
+}
 
 /** The grade for a sky: `low`, `mid`, `high` cloud 0 to 1, `vis` sight in metres. */
 export function gradeSky({ low, mid, high, vis = 24_000 }) {
@@ -49,6 +60,15 @@ export function verdict(sky, missing = 'No forecast yet') {
 
 /** A shot whose minute is behind us. */
 export const PASSED = { grade: 'past', word: 'Passed', reason: '', label: 'Passed' };
+
+/**
+ * The verdict for a shot at instant `t` on the day starting at `from`: passed, or the sky's,
+ * or which kind of no-forecast it is (`missing`).
+ */
+export function shotVerdict(day, from, t, { now = null, missing } = {}) {
+  if (now !== null && t < now) return PASSED;
+  return verdict(day ? skyAt(day, (t - from) / 60_000) : null, missing);
+}
 
 /**
  * A sunrise or sunset reading (`readSky` in weather.js) as a verdict: its grade's word, and

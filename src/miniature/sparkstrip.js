@@ -80,8 +80,9 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
     prevLeft = left;
     tick.style.left = `${left.toFixed(2)}%`;
     const when = formatClock(pick.t);
-    tick.title = `${when} — ${pick.title}`;
-    tick.setAttribute('aria-label', `${when}, ${pick.title}. ${pick.detail}. Tap to fly there.`);
+    const verdict = pick.verdict ? ` ${pick.verdict.label}.` : '';
+    tick.title = `${when} — ${pick.title}${pick.verdict ? ` — ${pick.verdict.label}` : ''}`;
+    tick.setAttribute('aria-label', `${when}, ${pick.title}.${verdict} ${pick.detail}. Tap to fly there.`);
     tick.addEventListener('click', () => onTick?.(pick, from));
     const stem = document.createElement('i');
     stem.setAttribute('aria-hidden', 'true');

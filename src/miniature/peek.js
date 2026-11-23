@@ -32,7 +32,7 @@ export function renderPeek(shot, now, sentence = 'Looking for the next shot…')
   icon.innerHTML = bodyIcon(row.body, row.t);
   const time = Object.assign(document.createElement('b'), { textContent: when });
   const parts = [icon.content, time, span('what', row.title), span('in', wait)];
-  if (verdict) parts.push(Object.assign(span(`verdict`, verdict.word), { title: verdict.label }));
+  if (verdict) parts.push(Object.assign(document.createElement('em'), { className: 'verdict', textContent: verdict.word, title: verdict.label }));
   line.replaceChildren(...parts);
   if (verdict) line.lastElementChild.dataset.grade = verdict.grade ?? 'none';
   const said = `Next shot: ${row.title}, ${when}, ${wait}${verdict ? `. ${verdict.label}` : ''}`;

@@ -11,10 +11,11 @@ import { litDiscPath, phaseName } from '../lib/moonPhase.ts';
 import { getMoonIllumination, getMoonTimes } from 'suncalc';
 import { formatClock } from './time.js';
 import { params } from './config.js';
-import { cloudsAt, cloudsFor, visibilityAt } from './weather.js';
+import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
+import { shotVerdict } from './verdict.js';
 import { layers } from './chrome.js';
 import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js';
-import { bodyIcon, collectRows, renderDayList } from './daylist.js';
+import { bodyIcon, collectRows, renderDayList, showVerdict } from './daylist.js';
 import { computeDayPaths, getViewshed } from './plan.js';
 import { renderPeek } from './peek.js';
 import { onPeek } from './sheet.js';
@@ -103,16 +104,9 @@ onPeek(() => {
   invalidate();
 });
 
-/** The day's clouds and sight at an instant, as a grade for the card's dot. */
-function gradeAt(day, from, t) {
-  if (!day) return null;
-  const minutes = (t - from) / 60_000;
-  const c = cloudsAt(day, minutes);
-  const cover = Math.max(c.low, c.mid, c.high);
-  const vis = visibilityAt(day, minutes);
-  if (cover > 0.75 || vis < 3000) return 'poor';
-  if (cover > 0.5 || vis < 9000) return 'fair';
-  return 'good';
+/** The day's sky at an instant as a verdict in words; without a forecast, which kind of none. */
+function verdictAt(day, from, t) {
+  return shotVerdict(day, from, t, { missing: forecastReach(svDate(from)).ok ? 'Forecast loading' : 'No forecast yet' });
 }
 
 /** The same reading as a short note, in the weather line's words. */
@@ -196,7 +190,10 @@ export function renderPlanCards() {
     // strip still shows those days — light and cloud are exactly what a covered week is for
     // glancing at — but they earn no cards and no ticks.
     const picks = rows
-      .map((row) => ({ ...row, grade: gradeAt(day, from, row.t) }))
+      .map((row) => {
+        const verdict = verdictAt(day, from, row.t);
+        return { ...row, verdict, grade: verdict.grade };
+      })
       .filter((row) => row.grade !== 'poor')
       .sort((a, b) => GRADE_WEIGHT[b.grade ?? 'fair'] * b.score - GRADE_WEIGHT[a.grade ?? 'fair'] * a.score)
       .slice(0, PER_DAY);
@@ -204,10 +201,10 @@ export function renderPlanCards() {
     blocks.push({ from, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }
   // The one line: the earliest of the picks, whichever day it falls on.
-  const first = blocks.flatMap((block) => block.picks.map((row) => ({ row, from: block.from, day: block.i === 0 ? '' : block.i === 1 ? 'Tomorrow' : block.name.slice(0, 3) }))).sort((a, b) => a.row.t - b.row.t)[0];
+  const first = blocks.flatMap((block) => block.picks.map((row) => ({ row, from: block.from, verdict: row.verdict, day: block.i === 0 ? '' : block.i === 1 ? 'Tomorrow' : block.name.slice(0, 3) }))).sort((a, b) => a.row.t - b.row.t)[0];
   next = first ?? null;
   nextSentence = blocks.some((block) => block.rows > 0)
-    ? 'No shot worth going out for in the next three days: too much cloud'
+    ? 'Skip the next three days: too much cloud for a shot'
     : 'Nothing lines up in the next three days';
   renderPeek(next, now, nextSentence);
   if (document.body.dataset.mode !== 'plan') return;
@@ -247,8 +244,9 @@ export function renderPlanCards() {
         item.type = 'button';
         item.className = 'dayrow planrow';
         item.dataset.body = row.body;
-        item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><i class="grade"${row.grade ? ` data-grade="${row.grade}"` : ''} title="${row.grade ?? 'waiting for the forecast'}"></i>`;
+        item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">›</i>`;
         item.querySelector('b').textContent = row.title;
+        showVerdict(item.querySelector('.verdict'), row.verdict);
         item.querySelector('small').textContent = row.detail + noteAt(day, from, row.t);
         item.addEventListener('click', () => flyTo(row, from));
         return item;

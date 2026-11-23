@@ -243,9 +243,12 @@
 
       /* Planning: the coming days and this day, as lists. */
       .weather-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--muted); }
-      .weather-line span::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #b9b2a6; vertical-align: 1px; }
-      .weather-line span[data-grade='good']::before { background: #3aa65b; }
-      .weather-line span[data-grade='poor']::before { background: #c7503d; }
+      /* A verdict is a word with its reason. The colour backs the word up, never stands alone. */
+      .verdict { font-style: normal; font-weight: 600; font-size: var(--text-s); color: var(--muted); }
+      .verdict[data-grade='good'] { color: var(--good); }
+      .verdict[data-grade='fair'] { color: var(--fair); }
+      .verdict[data-grade='poor'] { color: var(--poor); }
+      .peek-line .verdict { flex: none; margin-left: auto; }
       #dayfilter, .plan-filter { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
       #dayfilter button, .plan-filter button { height: var(--control-s); padding: 0 12px; border: 1px solid var(--line); border-radius: calc(var(--control-s) / 2); background: none; font-size: var(--text-s); font-weight: 600; color: var(--muted); cursor: pointer; }
       #dayfilter button[aria-pressed='true'], .plan-filter button[aria-pressed='true'] { background: var(--field); color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
@@ -258,7 +261,7 @@
       .dayrow span { flex: 1; min-width: 0; display: grid; gap: 2px; }
       .dayrow b { font-weight: 600; }
       .dayrow small { color: var(--muted); font-size: var(--text-s); }
-      .dayrow em { font-style: normal; font-weight: 600; color: var(--accent); white-space: nowrap; }
+      .dayrow .chev { flex: none; font-style: normal; font-size: 16px; color: var(--muted); }
       #plan-head { display: flex; align-items: center; gap: var(--gap); flex-wrap: wrap; }
       #moon-head { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; }
       #moon-head svg { flex: none; }
@@ -266,10 +269,6 @@
       #plan-head .plan-filter { flex: none; margin-left: auto; }
       .plan-day { margin: 8px 6px 2px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
       .plan-day:first-child { margin-top: 2px; }
-      .planrow .grade { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
-      .planrow .grade[data-grade='good'] { background: #3aa65b; }
-      .planrow .grade[data-grade='fair'] { background: #e2a53f; }
-      .planrow .grade[data-grade='poor'] { background: #c7503d; }
 
       /* The days at a glance: one strip per day over a shared 24-hour axis. A tick's head
        * sits at its minute; its height is the spectacle. Taps fly, hovers read the hour. */
