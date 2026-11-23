@@ -16,8 +16,10 @@ export async function loadLevel(tile, lod) {
   const head = new Uint32Array(data.buffer, 0, 2);
   const vertices = new Uint16Array(lod.vertices * 4);
   MeshoptDecoder.decodeVertexBuffer(new Uint8Array(vertices.buffer), lod.vertices, 8, data.subarray(8, 8 + head[0]));
-  const indices = new Uint32Array(lod.indexCount);
-  MeshoptDecoder.decodeIndexBuffer(new Uint8Array(indices.buffer), lod.indexCount, 4, data.subarray(8 + head[0], 8 + head[0] + head[1]));
+  // No level in the city has more than 65,535 vertices, so two bytes an index do: half the
+  // memory, here and on the graphics card, of the largest thing a tile holds.
+  const indices = lod.vertices <= 65_535 ? new Uint16Array(lod.indexCount) : new Uint32Array(lod.indexCount);
+  MeshoptDecoder.decodeIndexBuffer(new Uint8Array(indices.buffer), lod.indexCount, indices.BYTES_PER_ELEMENT, data.subarray(8 + head[0], 8 + head[0] + head[1]));
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.InterleavedBufferAttribute(new THREE.InterleavedBuffer(vertices, 4), 3, 0));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
