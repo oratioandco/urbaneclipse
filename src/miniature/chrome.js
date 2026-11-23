@@ -20,6 +20,29 @@ export const shownBody = (item) => layers[item.body] !== false;
 export const towerItems = (items) => (layers.tower ? items.filter(shownBody) : []);
 
 document.getElementById('minimap').addEventListener('click', () => exitEye());
+// The ticket at eye level: the camera's rows wait behind "More", the map of where you stand
+// behind a corner button. Both are remembered.
+function ticketSwitch(button, attribute, key, pressed) {
+  const set = (open, remember = true) => {
+    document.body.dataset[attribute] = open ? 'open' : 'closed';
+    button.setAttribute(pressed, String(open));
+    if (!remember) return;
+    try {
+      localStorage.setItem(key, open ? 'open' : 'closed');
+    } catch {}
+  };
+  let stored = null;
+  try {
+    stored = localStorage.getItem(key);
+  } catch {}
+  set((params.get(attribute) ?? stored) === 'open', false);
+  button.addEventListener('click', () => {
+    set(document.body.dataset[attribute] !== 'open');
+    invalidate();
+  });
+}
+ticketSwitch(document.getElementById('ticket-more'), 'more', 'miniature.more', 'aria-expanded');
+ticketSwitch(document.getElementById('minimap-toggle'), 'minimap', 'miniature.minimap', 'aria-pressed');
 
 const intro = document.getElementById('intro');
 const openIntro = () => {

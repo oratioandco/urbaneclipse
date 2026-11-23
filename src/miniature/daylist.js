@@ -1,4 +1,4 @@
-/** The day as a list in the expanded sheet: tower alignments and street henges, each with Go. */
+/** The day as a list in the panel's planning: tower alignments and street henges, each a tap away. */
 import * as THREE from 'three';
 import { getMoonIllumination } from 'suncalc';
 import { sampleBody } from '../lib/bodyPosition.ts';
@@ -17,7 +17,6 @@ import { goViewHere } from './pointer.js';
 import { app, invalidate } from './state.js';
 
 const dayList = document.getElementById('daylist');
-const sheetToggle = document.getElementById('sheet-toggle');
 const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
 /**
@@ -174,14 +173,12 @@ export function renderDayList() {
       item.querySelector('small').textContent = row.detail + cloudNote(row.t);
       item.addEventListener('click', () => {
         row.go();
-        setSheet(false);
         invalidate();
       });
       return item;
     }),
   );
   if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up today. Try another day.</p>';
-  sheetToggle.querySelector('span').textContent = `${rows.length} chance${rows.length === 1 ? '' : 's'} today`;
 }
 
 /** A small sun, or the moon in its phase at that time, for the list. */
@@ -190,9 +187,3 @@ export function bodyIcon(body, t) {
   const moon = getMoonIllumination(new Date(t));
   return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/><circle r="0.92" fill="none" stroke="#5b82ff" stroke-width="0.12"/></svg>`;
 }
-
-export function setSheet(open) {
-  document.body.dataset.sheet = open ? 'open' : 'closed';
-  sheetToggle.setAttribute('aria-expanded', String(open));
-}
-sheetToggle.addEventListener('click', () => setSheet(document.body.dataset.sheet !== 'open'));

@@ -130,6 +130,9 @@ function safeArea(bottomInset) {
   const topLeft = document.querySelector('.topleft');
   const box = topLeft && getComputedStyle(topLeft).display !== 'none' ? topLeft.getBoundingClientRect() : null;
   if (box?.height) area.top = Math.max(area.top, box.bottom + 8);
+  // On a wide screen the panel stands at the left edge, not along the bottom.
+  const side = document.getElementById('panel')?.getBoundingClientRect();
+  if (side?.width && side.left < 40 && side.width < innerWidth / 2) area.left = Math.max(area.left, side.right + 8);
   return area;
 }
 
