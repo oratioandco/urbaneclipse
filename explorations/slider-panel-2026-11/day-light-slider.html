@@ -69,7 +69,7 @@
 </div>
 <script id="fs" type="x-shader/x-fragment">
 precision highp float;
-uniform vec2 uCanvas, uSize; uniform float uTime, uMode, uThumbM, uThumbX, uDpr, uFlashX, uFlash, uSeed, uGround, uMargin, uNowX, uRadius;
+uniform vec2 uCanvas, uSize; uniform float uHw, uTime, uMode, uThumbM, uThumbX, uDpr, uFlashX, uFlash, uSeed, uGround, uMargin, uNowX, uRadius;
 uniform vec4 uMoon, uPrev; uniform sampler2D uWx; uniform vec3 uShots[8];
 const float PI = 3.14159265;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -104,11 +104,12 @@ vec3 scene(vec2 p){
     col += sc * (exp(-d * 5.) * .55 + exp(-d * 16.) * .7) * (.25 + .75 * clear);
     col = mix(col, mix(vec3(1., .99, .93), vec3(1., .86, .6), warm), smoothstep(.062, .05, d) * (.5 + .5 * clear)); }
   float mAltT = moonAlt(uThumbM);
-  if (mAltT > 0. && p.y > uGround) { vec2 mp = vec2(uMode < .5 ? uThumbX : uSize.x * .76, uGround + mAltT * k * .55 + uSize.y * .12); float d = length(p - mp) / uSize.y;
+  if (mAltT > 0. && p.y > uGround) { vec2 mp = vec2(uMode < .5 ? uThumbX : uSize.x * .76, uGround + mAltT * k * .6); float d = length(p - mp) / uSize.y;
     col += vec3(.6, .7, 1.) * exp(-d * 9.) * .35 * clear;
     float disc = smoothstep(.052, .044, d) * (1. - smoothstep(.06, .05, length(p - mp + vec2(uSize.y * .11 * uMoon.w, uSize.y * .008)) / uSize.y) * step(uMoon.w, .92));
     col = mix(col, vec3(.95, .96, 1.), disc * (.45 + .55 * clear)); }
   if (uMode < .5) {
+    float mA = moonAlt(m); col += vec3(.72, .82, 1.) * smoothstep(1.3 * uDpr, 0., abs(p.y - uGround - mA * k * .6)) * step(.5, fract(pc.x / 7.)) * step(0.001, mA) * step(uGround, p.y) * .6;
     float yArc = uGround + alt * k; col += vec3(1.) * smoothstep(1.3 * uDpr, 0., abs(p.y - yArc)) * step(.5, fract(pc.x / 7.)) * step(0., alt) * .5;
     for (int i = 0; i < 8; i++) { float dx = (p.x - uShots[i].x) / uDpr; col += vec3(1., .96, .84) * uShots[i].y * (exp(-dx * dx / 60.) * .22 + smoothstep(1.2, .2, abs(dx)) * .75) * step(uGround, p.y); }
   }
@@ -139,19 +140,26 @@ vec3 scene(vec2 p){
   return col;
 }
 float sdBox(vec2 p, vec2 c, vec2 hs, float r){ vec2 q = abs(p - c) - (hs - r); return length(max(q, 0.)) + min(max(q.x, q.y), 0.) - r; }
+float sdThumb(vec2 q){ return sdBox(q, vec2(uThumbX, uCanvas.y * .5), vec2(uHw, uCanvas.y * .5 - uDpr), 14. * uDpr); }
+vec3 S(vec2 q){ return scene(vec2(q.x, clamp(q.y - uMargin, 1., uSize.y - 1.))); }
 void main(){
   vec2 f = gl_FragCoord.xy;
   if (uMode > .5) { gl_FragColor = vec4(scene(f), 1.); return; }
   vec2 p = vec2(f.x, f.y - uMargin);
-  float dT = sdBox(f, uCanvas * .5, vec2(uCanvas.x * .5, uSize.y * .5), uRadius), hw = 21. * uDpr, dC = sdBox(f, vec2(uThumbX, uCanvas.y * .5), vec2(hw, uCanvas.y * .5 - uDpr), 11. * uDpr);
+  float dT = sdBox(f, uCanvas * .5, vec2(uCanvas.x * .5, uSize.y * .5), uRadius), hw = uHw, dC = sdThumb(f);
   float aT = smoothstep(.8, -.8, dT), aC = smoothstep(.8, -.8, dC);
   vec3 col;
-  if (dC < 0.) { float nx = (f.x - uThumbX) / hw, bev = smoothstep(.6, 1., abs(nx)), yc = f.y / uCanvas.y, yb = smoothstep(.9, 1., abs(yc * 2. - 1.));
-    col = scene(vec2(uThumbX + nx * hw * (.96 - .2 * bev * bev), clamp(mix(p.y, uSize.y * .5, .03 + .1 * yb), 1., uSize.y - 1.))) * 1.04 + .025;
-    col += bev * .1 + yb * .08; col += exp(-pow((nx + .78) / .07, 2.)) * .22 * smoothstep(.06, .2, yc) * smoothstep(.97, .7, yc);
-    col = mix(col, vec3(1.), smoothstep(1.1 * uDpr, .35 * uDpr, abs(f.x - uThumbX)) * .9);
-    col = mix(col, vec3(1.), smoothstep(-2.2 * uDpr, -.6 * uDpr, dC) * .9); }
-  else { col = scene(vec2(p.x, clamp(p.y, 0., uSize.y))); col *= 1. - .3 * smoothstep(12. * uDpr, 0., dC); col += smoothstep(.9, 1., p.y / uSize.y) * .1; }
+  if (dC < 0.) { // a glass slab: flat face, thick bevel that bends and splits the light
+    float t = smoothstep(-11. * uDpr, 0., dC); vec2 cpos = vec2(uThumbX, uCanvas.y * .5);
+    vec2 n = normalize(vec2(sdThumb(f + vec2(1., 0.)) - sdThumb(f - vec2(1., 0.)), sdThumb(f + vec2(0., 1.)) - sdThumb(f - vec2(0., 1.))) + 1e-5);
+    vec2 base = cpos + (f - cpos) * vec2(.9, .97), off = -n * t * t * 18. * uDpr;
+    if (t > .02) col = vec3(S(base + off * .75).r, S(base + off).g, S(base + off * 1.3).b); else col = S(base);
+    col = col * 1.06 + .02;
+    float ld = dot(n, normalize(vec2(-.45, .9))); col += t * max(ld, 0.) * .6; col -= t * max(-ld, 0.) * .2;
+    float sh = (f.x - uThumbX) / hw + (f.y / uCanvas.y - .5) * 1.5 + sin(uThumbX / uCanvas.x * 9.) * .7; col += exp(-sh * sh * 10.) * .13 * (1. - t);
+    col = mix(col, vec3(1.), smoothstep(1.1 * uDpr, .35 * uDpr, abs(f.x - uThumbX)) * .85 * (1. - t));
+    col = mix(col, vec3(1.), smoothstep(-1.8 * uDpr, -.5 * uDpr, dC) * .85); }
+  else { col = scene(vec2(p.x, clamp(p.y, 0., uSize.y))); col *= 1. - .38 * smoothstep(16. * uDpr, 0., dC); col += smoothstep(.9, 1., p.y / uSize.y) * .1; }
   float a = max(aT, aC); gl_FragColor = vec4(col * a, a);
 }
 </script>
@@ -216,7 +224,7 @@ void main(){
   const G = makeGL(glc), H = makeGL(heroC);
   if (!G || !H) { $('sel').textContent = 'This browser could not start WebGL, so the sky cannot be drawn.'; }
 
-  let lastCur = null, W = 0, HW = 0, HH = 0, day = 0, min = NOW, target = null, drag = false, lastT = 0, lastKey = '', flash = 0, flashM = 0, seed = 1, nextBolt = 0, clock = 0;
+  let stretch = 0, prevTx = 0, lastCur = null, W = 0, HW = 0, HH = 0, day = 0, min = NOW, target = null, drag = false, lastT = 0, lastKey = '', flash = 0, flashM = 0, seed = 1, nextBolt = 0, clock = 0;
   const xOf = (m) => PAD + m / 1440 * (W - 2 * PAD), mOf = (x) => clamp((x - PAD) / (W - 2 * PAD) * 1440, 0, 1439);
   const sprites = {};
   const skyJS = (d, m) => { const alt = sunAlt(m), a1 = sstep(-14, -5, alt), a2 = sstep(-5, .5, alt), a3 = sstep(1, 8, alt), dayness = sstep(-6, 4, alt), ov = sstep(.5, .95, cover(d, m)) * .9;
@@ -256,10 +264,11 @@ void main(){
     const th = WX[day].thunder; flash = Math.max(0, flash - dt * 5.5);
     if (th.length && !REDUCED && t > nextBolt) { flash = 1; flashM = lerp(th[0], th[1], Math.random()) * 60; seed = Math.random() * 50; nextBolt = t + 1400 + Math.random() * 2800; }
     const cur = SHOTS.find((s) => s.d === day && Math.abs(s.m - min) < 3) || null, tx = xOf(min);
+    const vel = Math.abs(tx - prevTx) / dt; prevTx = tx; stretch += ((REDUCED ? 0 : clamp(vel / 2200, 0, .32)) - stretch) * .22;
     if (G) { const shots = new Float32Array(24); SHOTS.filter((s) => s.d === day && !s.past && s.grade !== 'skip').slice(0, 8).forEach((s, i) => { shots[i * 3] = xOf(s.m) * GDPR; shots[i * 3 + 1] = s === cur ? 1 : .6; });
-      G.draw({ uCanvas: [glc.width, glc.height], uSize: [glc.width, TRACK * GDPR], uTime: clock, uMode: 0, uThumbM: min, uThumbX: tx * GDPR, uDpr: GDPR, uFlash: flash, uFlashX: xOf(flashM) * GDPR, uSeed: seed, uGround: GROUND * GDPR, uMargin: MARGIN * GDPR,
+      G.draw({ uCanvas: [glc.width, glc.height], uSize: [glc.width, TRACK * GDPR], uTime: clock, uHw: 22 * GDPR * (1 + stretch), uMode: 0, uThumbM: min, uThumbX: tx * GDPR, uDpr: GDPR, uFlash: flash, uFlashX: xOf(flashM) * GDPR, uSeed: seed, uGround: GROUND * GDPR, uMargin: MARGIN * GDPR,
         uNowX: day === 0 ? xOf(NOW) * GDPR : -1, uRadius: 28 * GDPR, uShots: shots }); }
-    if (H) { const near = thunder(day, min) ? flash : 0; H.draw({ uCanvas: [heroC.width, heroC.height], uSize: [heroC.width, heroC.height], uTime: clock, uMode: 1, uThumbM: min, uThumbX: 0, uDpr: GDPR * .75, uFlash: near, uFlashX: heroC.width * .4, uSeed: seed, uGround: 0, uMargin: 0, uNowX: -1, uRadius: 0, uShots: new Float32Array(24) }); }
+    if (H) { const near = thunder(day, min) ? flash : 0; H.draw({ uCanvas: [heroC.width, heroC.height], uSize: [heroC.width, heroC.height], uTime: clock, uHw: 1, uMode: 1, uThumbM: min, uThumbX: 0, uDpr: GDPR * .75, uFlash: near, uFlashX: heroC.width * .4, uSeed: seed, uGround: 0, uMargin: 0, uNowX: -1, uRadius: 0, uShots: new Float32Array(24) }); }
     const lx = lane.getContext('2d'); lx.setTransform(DPR, 0, 0, DPR, 0, 0); lx.clearRect(0, 0, W, LANE);
     for (const s of SHOTS) { if (s.d !== day) continue; const bx = xOf(s.m), on = s === cur; lx.strokeStyle = on ? css('--accent') : css('--line'); lx.lineWidth = on ? 2 : 1.5;
       lx.beginPath(); lx.moveTo(s.cx, 0); lx.bezierCurveTo(s.cx, LANE * .7, bx, LANE * .3, bx, LANE - 8); lx.stroke(); lx.fillStyle = on ? css('--accent') : css('--muted'); lx.beginPath(); lx.arc(bx, LANE - 8, 2.5, 0, 7); lx.fill(); }
