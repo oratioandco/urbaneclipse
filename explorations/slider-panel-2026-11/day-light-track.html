@@ -79,7 +79,7 @@
 </div>
 <script id="fs" type="x-shader/x-fragment">
 precision highp float;
-uniform vec2 uCanvas, uSize; uniform float uLoop, uHw, uTime, uMode, uThumbM, uThumbX, uDpr, uFlashX, uFlash, uSeed, uGround, uMargin, uNowX, uRadius;
+uniform vec2 uCanvas, uSize; uniform float uPlain, uLoop, uHw, uTime, uMode, uThumbM, uThumbX, uDpr, uFlashX, uFlash, uSeed, uGround, uMargin, uNowX, uRadius;
 uniform vec4 uMoon, uPrev, uSun; uniform sampler2D uWx, uCloudA, uCloudB; uniform float uTex; uniform vec3 uShots[8];
 const float PI = 3.14159265;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
@@ -113,16 +113,17 @@ vec3 scene(vec2 p){
   float tAlt = sunAlt(uThumbM), k = (uSize.y - uGround - uSize.y * .14) / uSun.z;
   vec4 wt = texture2D(uWx, vec2(uThumbM / 1440., .5)); float clear = 1. - smoothstep(.45, .95, wt.r);
   vec2 sunP = uMode < .5 ? vec2(uThumbX, uGround + tAlt * k) : vec2(uSize.x * .74, uSize.y * (.34 + tAlt / uSun.z * .5));
-  if (tAlt > -3. && p.y > uGround) { float d = length(p - sunP) / R, warm = 1. - smoothstep(1., 8., tAlt);
+  bool bodies = uMode > .5 || uPlain < .5;
+  if (bodies && tAlt > -3. && p.y > uGround) { float d = length(p - sunP) / R, warm = 1. - smoothstep(1., 8., tAlt);
     vec3 sc = mix(vec3(1., .95, .82), vec3(1., .62, .26), warm);
     col += sc * (exp(-d * 5.) * .55 + exp(-d * 16.) * .7) * (.25 + .75 * clear);
     col = mix(col, mix(vec3(1., .99, .93), vec3(1., .86, .6), warm), smoothstep(.062, .05, d) * (.5 + .5 * clear)); }
   float mAltT = moonAlt(uThumbM);
-  if (mAltT > 0. && p.y > uGround) { vec2 mp = uMode < .5 ? vec2(uThumbX, uGround + mAltT * k * .6) : vec2(uSize.x * .72, uSize.y * (.52 + mAltT * .015)); float d = length(p - mp) / R;
+  if (bodies && mAltT > 0. && p.y > uGround) { vec2 mp = uMode < .5 ? vec2(uThumbX, uGround + mAltT * k * .6) : vec2(uSize.x * .72, uSize.y * (.52 + mAltT * .015)); float d = length(p - mp) / R;
     col += vec3(.6, .7, 1.) * exp(-d * 9.) * .35 * clear;
     float disc = smoothstep(.052, .044, d) * (1. - smoothstep(.06, .05, length(p - mp + vec2(R * .11 * uMoon.w, R * .008)) / R) * step(uMoon.w, .92));
     col = mix(col, vec3(.95, .96, 1.), disc * (.45 + .55 * clear)); }
-  if (uMode < .5) {
+  if (uMode < .5 && uPlain < .5) {
     float mA = moonAlt(m); col += vec3(.72, .82, 1.) * smoothstep(1.3 * uDpr, 0., abs(p.y - uGround - mA * k * .6)) * step(.5, fract(pc.x / 7.)) * step(0.001, mA) * step(uGround, p.y) * .6;
     float yArc = uGround + alt * k; col += vec3(1.) * smoothstep(1.3 * uDpr, 0., abs(p.y - yArc)) * step(.5, fract(pc.x / 7.)) * step(0., alt) * .5;
     for (int i = 0; i < 8; i++) { float dx = (p.x - uShots[i].x) / uDpr; col += vec3(1., .96, .84) * uShots[i].y * (exp(-dx * dx / 60.) * .22 + smoothstep(1.2, .2, abs(dx)) * .75) * step(uGround, p.y); }
@@ -139,7 +140,7 @@ vec3 scene(vec2 p){
     float la = dot(atlas(uCloudA, vec2(mir(q.x * .26 + uTime * .02), uMode > .5 ? mix(.99, .42, clamp(vt / 1.15, 0., 1.)) : mix(.42, .99, y01))), vec3(.333));
     float thr = mix(.72, .02, smoothstep(.1, .75, cover)), gate = smoothstep(thr, thr + .28, fbm(q * vec2(.8, 1.3) + vec2(uTime * .03, 3.))) * smoothstep(.1, .28, cover);
     vec3 cl = mix(lit, vec3(1., .76, .58), gold * .85 * (1. - ov)); cl = mix(cl, mix(vec3(.2, .23, .34), vec3(.45, .48, .57), dayness), storm);
-    col = mix(col, cl * (.42 + .72 * la) + fl, smoothstep(.04, .46, la) * gate * (1. - deck * .85)); }
+    col = mix(col, cl * mix(1., .7 + .3 * smoothstep(.3, .95, la), smoothstep(.14, .42, la)) + fl, smoothstep(.05, .4, la) * gate * (1. - deck * .85)); }
   else   if (p.y > uGround) { vec2 q = p / uSize.y; float show = smoothstep(.12, .3, cover), thr = mix(.74, .3, cover);
     for (int L = 0; L < 2; L++) { float fl = float(L); vec2 cq = q * mix(vec2(1.1, 2.4), vec2(1.9, 3.6), fl) + vec2(uTime * mix(.04, .07, fl) + fl * 31., fl * 7.);
       float n = fbm(cq) * smoothstep(.02, mix(.5, .3, fl), y01), n2 = fbm(cq + vec2(.07, .09)), dens = smoothstep(thr, thr + .2, n) * show;
