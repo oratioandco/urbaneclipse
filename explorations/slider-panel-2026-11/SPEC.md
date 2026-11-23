@@ -14,8 +14,27 @@ A releasable version of the planner that answers the feedback on the current one
 - it must perform well on phones
 - the Molecule Man landmark should be more accurate
 
-Dan's full feedback is not written down in the repo. The list above comes from Tobias. Ask him
-for the original before calling the release done.
+## Dan's feedback (first impressions of the current planner)
+
+Tobias supplied Dan's notes on 2026-11-23. Dan attached screenshots (`icons.png`, `arrow_1.PNG`,
+`arrow_2.PNG`, `drone.jpg`) that are not in the repo. His three points:
+
+1. **Dots.** The two orange dots are hard to tell apart, most of all where they overlap on the
+   timeline. His suggestion: draw the one for the sun behind the TV tower as an orange outline
+   with a white fill.
+2. **Directionality.** It took him a moment to see that the arrow points toward the sun. The
+   arrow is an equilateral triangle, so its tip is ambiguous. His suggestion: make it clearly
+   isosceles, or better, mark the tip in a distinct, contrasting colour like a compass needle.
+3. **Drone icon.** It was not clear what the icon showed (he guessed the drone point of view).
+   He also asks for tooltips on the toolbar buttons.
+
+What follows from this for the build:
+
+- Marks that mean different things must differ in shape or fill, not only in position, and must
+  stay distinguishable when they overlap. Every mark also gets a word (see the verdict rule).
+- The sun and moon direction arrows need an unmistakable tip.
+- Every toolbar button gets a tooltip and an accessible name, and the drone icon is redrawn so
+  it reads as a drone view.
 
 ## Two surfaces, two jobs
 
