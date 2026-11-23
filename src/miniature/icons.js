@@ -72,7 +72,8 @@ export const ICONS = {
   camera: { d: `M4.25 8.25H7.5l1.4-2.5h6.2l1.4 2.5h3.25a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H4.25a1.5 1.5 0 0 1-1.5-1.5v-8a1.5 1.5 0 0 1 1.5-1.5z${c(12, 13.5, 3.25)}`, mass: c(12, 13.5, 3.25), use: 'The photographer: stand here' },
   lens: { d: RING + c(12, 12, 3.75), mass: c(12, 12, 3.75), soft: 'M7.3 9.6a5.3 5.3 0 0 1 2.3-2.3', use: 'Lens and focal length' },
   thirds: { d: rr(3, 5.25, 18, 13.5, 2.75), soft: 'M9 5.25v13.5M15 5.25v13.5M3 9.75h18M3 14.25h18', use: 'Lines at thirds' },
-  drone: { d: `${rr(9, 9.5, 6, 5, 1.5)}M9.25 9.75L7.5 8M14.75 9.75L16.5 8M9.25 14.25L7.5 16M14.75 14.25L16.5 16${c(5.75, 6.25, 2.5)}${c(18.25, 6.25, 2.5)}${c(5.75, 17.75, 2.5)}${c(18.25, 17.75, 2.5)}`, mass: rr(9, 9.5, 6, 5, 1.5), use: 'Drone view' },
+  drone: { d: `M2.25 5.75H10M14 5.75h7.75M6 5.75v4.75M18 5.75v4.75M6 10.5h2M16 10.5h2${rr(8, 7.75, 8, 6.5, 2.5)}${c(12, 18.5, 2.4)}`, mass: rr(8, 7.75, 8, 6.5, 2.5), dots: dot(12, 18.5), use: 'Drone view: fly above the spot' },
+  walk: { d: `${c(13, 4.5, 1.9)}M12.25 8.75l-2 5.25 3.25 3 .75 4.5M10.25 14L7.5 21.25M8 12.25l4.25-3.5 2.75 3 2.75.75`, use: 'Eye level on foot: walk from here' },
   takeoff: { d: 'M4.5 20.5h15M12 16.5V4M7.5 8.5L12 4l4.5 4.5', use: 'Take off' },
 
   // Going there
