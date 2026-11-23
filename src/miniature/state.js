@@ -22,4 +22,4 @@ export function invalidateShadows() {
   app.dirty = true;
 }
 
-export const stats = { texel: 0, ms: 0, frames: 0, triangles: 0, calls: 0 };
+export const stats = { texel: 0, ms: 0, frames: 0, shadowFrames: 0, triangles: 0, calls: 0 };
