@@ -2,63 +2,64 @@
 <title>Day Light Slider</title>
 <style>
   /* Layout: the whole card is the live sky. Frosted glass panels float on it: the day's shots as a forecast row, then the 24-hour light curve with its glass thumb. */
-  :root { --bg: #dfe4ee; --fg: #ffffff; --dim: rgba(255,255,255,.72); --faint: rgba(255,255,255,.5); --glass: rgba(255,255,255,.13); --edge: rgba(255,255,255,.22); --page-fg: #5a6276;
-    --go: #86f5ae; --maybe: #ffd684; --skip: rgba(255,255,255,.55);
+  :root { --bg: #efece6; --fg: #ece8df; --dim: rgba(236,232,223,.78); --faint: rgba(236,232,223,.56); --glass: rgba(20,23,38,.34); --edge: rgba(236,232,223,.16); --page-fg: #6f6a62;
+    --sun: #f26a12; --moon: #8fa8ff; --accent: #d9772b; --ink: #24221f; --radius: 14px;
+    --go: #7fe0a2; --maybe: #f5b561; --skip: rgba(236,232,223,.55);
     --ui: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Inter', system-ui, sans-serif; color-scheme: light; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #05070d; --page-fg: #8d94a8; color-scheme: dark } }
-  :root[data-theme="dark"] { --bg: #05070d; --page-fg: #8d94a8; color-scheme: dark }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0e1120; --page-fg: #a7a7b4; color-scheme: dark } }
+  :root[data-theme="dark"] { --bg: #0e1120; --page-fg: #a7a7b4; color-scheme: dark }
   body { background: var(--bg); color: var(--page-fg); font: 15px/1.4 var(--ui); -webkit-font-smoothing: antialiased;
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; }
   .wrap { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
-  .card { position: relative; isolation: isolate; border-radius: 36px; overflow: hidden; color: var(--fg); background: #2a4a9a; padding: 16px 14px 14px; display: grid; gap: 12px;
+  .card { position: relative; isolation: isolate; border-radius: 22px; overflow: hidden; color: var(--fg); background: #1b2140; padding: 16px 14px 14px; display: grid; gap: 12px;
     box-shadow: 0 30px 70px -30px rgba(10,20,50,.6), 0 2px 6px rgba(10,20,50,.15); }
   #hero { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
-  .card::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(6,10,28,.3), rgba(6,10,28,.1) 34%, rgba(6,10,28,.3) 100%); }
+  .card::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(20,23,38,.34), rgba(20,23,38,.1) 34%, rgba(20,23,38,.36) 100%); }
   .card > * { min-width: 0; }
   .top > * { flex: none; }
   .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .pill { display: inline-flex; background: var(--glass); border: .5px solid var(--edge); border-radius: 999px; padding: 3px; backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
-  .pill button, .ghost { font: 600 13px var(--ui); border: 0; background: transparent; color: var(--dim); padding: 6px 8px; white-space: nowrap; font-size: 12.5px; border-radius: 999px; cursor: pointer; }
-  .pill button[aria-pressed="true"] { background: rgba(255,255,255,.9); color: #10162c; }
-  .ghost { background: var(--glass); border: .5px solid var(--edge); color: var(--fg); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
+  .pill { display: inline-flex; background: var(--glass); border: .5px solid var(--edge); border-radius: var(--radius); padding: 3px; backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
+  .pill button, .ghost { font: 600 13px var(--ui); border: 0; background: transparent; color: var(--dim); padding: 6px 9px; white-space: nowrap; font-size: 12.5px; border-radius: 11px; cursor: pointer; }
+  .pill button[aria-pressed="true"] { background: var(--fg); color: var(--ink); }
+  .ghost { border-radius: var(--radius); background: var(--glass); border: .5px solid var(--edge); color: var(--fg); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
   .read { text-align: center; padding: 6px 6px 4px; text-shadow: 0 1px 18px rgba(6,10,28,.35); display: grid; gap: 2px; }
-  .read .time { font: 200 clamp(72px, 23vw, 96px)/.95 var(--ui); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-  .read .cond { font: 500 19px var(--ui); }
+  .read .time { font: 600 clamp(54px, 17vw, 72px)/1 var(--ui); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+  .read .cond { font: 600 11.5px var(--ui); letter-spacing: .08em; text-transform: uppercase; }
   .read .sentence { margin: 2px auto 0; font: 400 15px/1.35 var(--ui); color: var(--dim); max-width: 30ch; text-wrap: balance; }
-  .glass { background: var(--glass); border: .5px solid var(--edge); border-radius: 22px; padding: 11px 12px 12px; backdrop-filter: blur(26px) saturate(1.7); -webkit-backdrop-filter: blur(26px) saturate(1.7); }
-  .glass h3 { margin: 0 2px 8px; font: 600 11.5px var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; gap: 8px; }
+  .glass { background: var(--glass); border: .5px solid var(--edge); border-radius: var(--radius); padding: 11px 12px 12px; backdrop-filter: blur(26px) saturate(1.7); -webkit-backdrop-filter: blur(26px) saturate(1.7); }
+  .glass h3 { margin: 0 2px 8px; font: 600 10.5px var(--ui); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; gap: 8px; }
   .glass h3 span { text-transform: none; letter-spacing: 0; font-weight: 500; }
   .shots.more { -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
   .shots.more.end { -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%); mask-image: linear-gradient(90deg, transparent, #000 18%); }
   .shots.more.mid { -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
   .shots { display: flex; gap: 2px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -6px; padding: 8px 0 0; border-top: .5px solid var(--edge); }
   .shots::-webkit-scrollbar { display: none; }
-  .shot { scroll-snap-align: start; flex: 1 0 54px; display: grid; justify-items: center; gap: 5px; padding: 6px 2px 7px; border: 0; background: transparent; color: var(--fg); font: inherit; cursor: pointer; border-radius: 16px; transition: background .2s; min-width: 0; }
+  .shot { scroll-snap-align: start; flex: 1 0 54px; display: grid; justify-items: center; gap: 5px; padding: 6px 2px 7px; border: 0; background: transparent; color: var(--fg); font: inherit; cursor: pointer; border-radius: 11px; transition: background .2s, box-shadow .2s; min-width: 0; }
   .shot .t { font: 600 14px var(--ui); font-variant-numeric: tabular-nums; }
-  .shot canvas { width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 0 0 .5px rgba(255,255,255,.5), 0 4px 12px rgba(6,10,28,.3); }
+  .shot canvas { width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(236,232,223,.4), 0 4px 12px rgba(20,23,38,.4); }
   .shot .n { font: 500 10.5px var(--ui); color: var(--dim); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   .shot .w { font: 600 13px var(--ui); }
   .shot.go .w { color: var(--go); } .shot.maybe .w { color: var(--maybe); } .shot.skip .w, .shot.past .w { color: var(--skip); }
   .shot.past { opacity: .55; } .shot.skip canvas, .shot.past canvas { filter: saturate(.3); }
-  .shot.on { background: rgba(255,255,255,.2); }
+  .shot.on { background: rgba(217,119,43,.26); box-shadow: inset 0 0 0 1px var(--accent); }
   .shot:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
   .none { padding: 14px 4px; color: var(--dim); font-size: 14px; }
   .tl { position: relative; touch-action: pan-y; cursor: ew-resize; outline: none; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
-  .tl:focus-visible { box-shadow: 0 0 0 2px rgba(255,255,255,.8); }
+  .tl:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
   #tl { width: 100%; display: block; position: relative; }
   #strip { display: none; position: absolute; left: 6px; top: 18px; width: calc(100% - 12px); height: 94px; }
   .skybar #strip { display: block; }
   .skybar #thumb { background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; } .skybar #thumb::after { display: none; }
-  #thumb { position: absolute; top: 14px; width: 34px; margin-left: -17px; height: 88px; border-radius: 13px; pointer-events: none; background: linear-gradient(105deg, rgba(255,255,255,.34), rgba(255,255,255,.08) 38%, rgba(255,255,255,.04) 62%, rgba(255,255,255,.2));
-    border: .5px solid rgba(255,255,255,.85); backdrop-filter: brightness(1.22) saturate(1.5); -webkit-backdrop-filter: brightness(1.22) saturate(1.5);
+  #thumb { position: absolute; top: 14px; width: 34px; margin-left: -17px; height: 88px; border-radius: 11px; pointer-events: none; background: linear-gradient(105deg, rgba(255,255,255,.34), rgba(255,255,255,.08) 38%, rgba(255,255,255,.04) 62%, rgba(255,255,255,.2));
+    border: .5px solid rgba(236,232,223,.8); backdrop-filter: brightness(1.22) saturate(1.5); -webkit-backdrop-filter: brightness(1.22) saturate(1.5);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -10px 14px -8px rgba(255,255,255,.25), 0 8px 20px -6px rgba(6,10,28,.5); }
-  #thumb::after { content: ""; position: absolute; left: 50%; top: 5px; bottom: 5px; width: 1px; margin-left: -.5px; background: rgba(255,255,255,.85); }
+  #thumb::after { content: ""; position: absolute; left: 50%; top: 5px; bottom: 5px; width: 1.5px; margin-left: -.75px; background: var(--sun); border-radius: 1px; }
   #thumb b { position: absolute; left: 50%; top: -17px; transform: translateX(-50%); font: 600 11.5px var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 1px 6px rgba(6,10,28,.5); }
   .sel { margin: 6px 2px 0; min-height: 20px; font: 400 14px var(--ui); color: var(--dim); } .sel b { color: var(--fg); font-weight: 600; }
   .nudge { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.25fr; gap: 6px; }
-  .nudge button { font: 600 13px var(--ui); min-height: 42px; border-radius: 14px; border: .5px solid var(--edge); background: var(--glass); color: var(--fg); cursor: pointer; white-space: nowrap; padding: 0 4px;
+  .nudge button { font: 600 12.5px var(--ui); min-height: 40px; border-radius: var(--radius); border: .5px solid var(--edge); background: var(--glass); color: var(--fg); cursor: pointer; white-space: nowrap; padding: 0 4px;
     backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
-  .nudge button:active { background: rgba(255,255,255,.28); }
+  .nudge button:active { background: rgba(217,119,43,.3); }
   .notes { margin: 0 4px; font-size: 12.5px; max-width: 66ch; }
 </style>
 <div class="wrap">
@@ -296,21 +297,21 @@ void main(){
           g.addColorStop(y / 22, wsum > .001 ? `rgba(${cr / wsum | 0},${cg / wsum | 0},${cb / wsum | 0},${(1 - keep).toFixed(3)})` : 'rgba(255,255,255,0)'); }
         bx.fillStyle = g; bx.fillRect(px, 0, 1.7, 22); } }
     x.drawImage(bandC, 0, 0, W, 22);
-    for (let px = x0; px < x1; px += 6) { const r = samp(day, mOf(px), 'rain'); if (r > 12) { x.fillStyle = `rgba(150,205,255,${(.35 + r / 160).toFixed(2)})`; x.beginPath(); x.roundRect ? x.roundRect(px, 22, 2, 2 + r * .1, 1) : x.rect(px, 22, 2, 2 + r * .1); x.fill(); } }
+    for (let px = x0; px < x1; px += 6) { const r = samp(day, mOf(px), 'rain'); if (r > 12) { x.fillStyle = `rgba(143,168,255,${(.4 + r / 160).toFixed(2)})`; x.beginPath(); x.roundRect ? x.roundRect(px, 22, 2, 2 + r * .1, 1) : x.rect(px, 22, 2, 2 + r * .1); x.fill(); } }
     if (WX[day].thunder.length) { x.fillStyle = '#ffe58a'; x.font = `600 11px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('⚡', xOf((WX[day].thunder[0] + WX[day].thunder[1]) * 30), 34); }
     if (SKYBAR) { x.shadowColor = 'rgba(6,10,30,.55)'; x.shadowBlur = 4; x.shadowOffsetY = 1; }
     const curve = (fn, a, b) => { x.beginPath(); let on = false; for (let m = a; m <= b; m += 4) { const y = fn(m); if (y === null) { on = false; continue; } on ? x.lineTo(xOf(m), y) : x.moveTo(xOf(m), y); on = true; } };
-    x.save(); x.beginPath(); x.rect(x0, 0, x1 - x0, HOR); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.lineTo(xOf(1440), HOR); x.lineTo(xOf(0), HOR); x.save(); if (SKYBAR) x.globalAlpha = 0; const fg = x.createLinearGradient(0, 27, 0, HOR); fg.addColorStop(0, 'rgba(255,236,170,.34)'); fg.addColorStop(1, 'rgba(255,236,170,0)'); x.fillStyle = fg; x.fill(); x.restore();
-    curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = 'rgba(255,255,255,.95)'; x.lineWidth = 2; x.stroke(); x.restore();
-    x.save(); x.beginPath(); x.rect(x0, HOR, x1 - x0, 40); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = 'rgba(255,255,255,.3)'; x.lineWidth = 1.5; x.stroke(); x.restore();
-    x.setLineDash([2, 4]); curve((m) => { const a = moonAlt(day, m); return a > 0 ? moonY(a) : null; }, 0, 1440); x.strokeStyle = 'rgba(196,214,255,.9)'; x.lineWidth = 1.5; x.stroke(); x.setLineDash([]);
-    x.fillStyle = 'rgba(255,255,255,.4)'; x.fillRect(x0, HOR - .5, x1 - x0, 1);
-    for (const s of dayShots()) { const sx = xOf(s.m), on = s === cur, a = s.past ? .25 : s.grade === 'skip' ? .28 : s.grade === 'maybe' ? .6 : .95; x.strokeStyle = `rgba(255,255,255,${on ? 1 : a})`; x.lineWidth = on ? 2 : 1.2; if (s.grade === 'skip' || s.past) x.setLineDash([2, 3]);
-      x.beginPath(); x.moveTo(sx, 27); x.lineTo(sx, 100); x.stroke(); x.setLineDash([]); x.fillStyle = `rgba(255,255,255,${on ? 1 : a})`; x.beginPath(); x.arc(sx, 27, on ? 3.2 : 2.4, 0, 7); x.fill(); }
+    x.save(); x.beginPath(); x.rect(x0, 0, x1 - x0, HOR); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.lineTo(xOf(1440), HOR); x.lineTo(xOf(0), HOR); x.save(); if (SKYBAR) x.globalAlpha = 0; const fg = x.createLinearGradient(0, 27, 0, HOR); fg.addColorStop(0, 'rgba(242,106,18,.42)'); fg.addColorStop(1, 'rgba(242,106,18,0)'); x.fillStyle = fg; x.fill(); x.restore();
+    curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = '#ffb27a'; x.lineWidth = 2; x.stroke(); x.restore();
+    x.save(); x.beginPath(); x.rect(x0, HOR, x1 - x0, 40); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = 'rgba(255,178,122,.34)'; x.lineWidth = 1.5; x.stroke(); x.restore();
+    x.setLineDash([2, 4]); curve((m) => { const a = moonAlt(day, m); return a > 0 ? moonY(a) : null; }, 0, 1440); x.strokeStyle = '#8fa8ff'; x.lineWidth = 1.5; x.stroke(); x.setLineDash([]);
+    x.fillStyle = 'rgba(236,232,223,.4)'; x.fillRect(x0, HOR - .5, x1 - x0, 1);
+    for (const s of dayShots()) { const sx = xOf(s.m), on = s === cur, a = s.past ? .25 : s.grade === 'skip' ? .28 : s.grade === 'maybe' ? .6 : .95; x.strokeStyle = on ? '#f26a12' : `rgba(236,232,223,${a})`; x.lineWidth = on ? 2 : 1.2; if (s.grade === 'skip' || s.past) x.setLineDash([2, 3]);
+      x.beginPath(); x.moveTo(sx, 27); x.lineTo(sx, 100); x.stroke(); x.setLineDash([]); x.fillStyle = on ? '#f26a12' : `rgba(236,232,223,${a})`; x.beginPath(); x.arc(sx, 27, on ? 3.2 : 2.4, 0, 7); x.fill(); }
     if (day === 0) { const xn = xOf(NOW); x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 9.5px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillText('NOW', xn, 111); x.fillRect(xn - .5, 96, 1, 6); }
     const m = min, sa = sunAlt(m), ma = moonAlt(day, m), tx = xOf(m);
-    if (ma > 0) { x.save(); x.shadowColor = 'rgba(190,210,255,.9)'; x.shadowBlur = 10; x.fillStyle = '#eef2ff'; x.beginPath(); x.arc(tx, moonY(ma), 4.5, 0, 7); x.fill(); x.restore(); }
-    x.save(); if (sa >= 0) { x.shadowColor = 'rgba(255,214,120,1)'; x.shadowBlur = 16; x.fillStyle = '#fff6d8'; x.beginPath(); x.arc(tx, sunY(sa), 6.5, 0, 7); x.fill(); x.fill(); }
+    if (ma > 0) { x.save(); x.shadowColor = 'rgba(91,130,255,1)'; x.shadowBlur = 12; x.fillStyle = '#dfe6ff'; x.beginPath(); x.arc(tx, moonY(ma), 4.5, 0, 7); x.fill(); x.restore(); }
+    x.save(); if (sa >= 0) { x.shadowColor = 'rgba(242,106,18,1)'; x.shadowBlur = 18; x.fillStyle = '#ffe2c2'; x.beginPath(); x.arc(tx, sunY(sa), 6.5, 0, 7); x.fill(); x.fill(); }
     else { x.strokeStyle = 'rgba(255,255,255,.6)'; x.lineWidth = 1.5; x.beginPath(); x.arc(tx, sunY(sa), 4.5, 0, 7); x.stroke(); } x.restore();
     x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
     const g = x.createLinearGradient(x0, 0, x1, 0); for (let mm = 0; mm <= 1440; mm += 8) g.addColorStop(mm / 1440, rgb(barCol(mm))); x.fillStyle = g; x.beginPath(); x.roundRect ? x.roundRect(x0, 114, x1 - x0, 5, 2.5) : x.rect(x0, 114, x1 - x0, 5); x.fill();
@@ -348,7 +349,7 @@ void main(){
   wrap.addEventListener('keydown', (e) => { const st = { ArrowLeft: -5, ArrowRight: 5, PageDown: -30, PageUp: 30 }[e.key]; if (!st) return; e.preventDefault(); target = clamp(base() + st, 0, 1439); });
   const setMotion = (on) => { motionOn = on; $('motionBtn').textContent = on ? 'Pause' : 'Play'; $('motionBtn').setAttribute('aria-label', on ? 'Pause weather animation' : 'Play weather animation'); $('motionBtn').setAttribute('aria-pressed', on); };
   $('motionBtn').addEventListener('click', () => setMotion(!motionOn)); setMotion(motionOn);
-  setInterval(() => { $('status').textContent = `${SKYBAR ? 'glass+sky' : 'glass'} · v13 · motion ${motionOn ? 'on' : 'off'}${RM ? ' (device asks for reduced motion)' : ''} · sky ${H ? (H.texReady() ? 'photo frames' : 'drawn fallback') : 'no WebGL'} · ${frames} fps · clock ${clock.toFixed(0)} s`; frames = 0; }, 1000);
+  setInterval(() => { $('status').textContent = `${SKYBAR ? 'glass+sky' : 'glass'} · v14 · motion ${motionOn ? 'on' : 'off'}${RM ? ' (device asks for reduced motion)' : ''} · sky ${H ? (H.texReady() ? 'photo frames' : 'drawn fallback') : 'no WebGL'} · ${frames} fps · clock ${clock.toFixed(0)} s`; frames = 0; }, 1000);
   let n = 0; const slugs = Object.keys(IMG);
   for (const slug of slugs) { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); let box = [0, 0, im.width, im.height];
       try { const d = x.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
