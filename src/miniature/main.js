@@ -15,7 +15,7 @@
  * light or the view moves.
  */
 import * as THREE from 'three';
-import { MeshoptDecoder } from 'meshoptimizer';
+import { MeshoptDecoder } from 'meshoptimizer/decoder';
 import { decodeStreets } from '../lib/streets.ts';
 import { cityUniforms, makeTerrainTexture } from './shading.js';
 import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';

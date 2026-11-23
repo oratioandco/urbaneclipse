@@ -1,6 +1,6 @@
 /** City tiles: loading levels of detail by size on screen, within a triangle budget. */
 import * as THREE from 'three';
-import { MeshoptDecoder } from 'meshoptimizer';
+import { MeshoptDecoder } from 'meshoptimizer/decoder';
 import { CITY, CITY_VERSION, ERROR_PX, TRIANGLE_BUDGET } from './config.js';
 import { buildingMaterial, controls, eyeCamera, scene } from './render.js';
 import { app, invalidate, invalidateShadows } from './state.js';
