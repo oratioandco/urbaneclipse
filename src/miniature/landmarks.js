@@ -24,6 +24,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { scene } from './render.js';
 import { cityUniforms, shadeBuildings } from './shading.js';
 import { app } from './state.js';
+import { FEET, MOLECULE_MAN, OUTLINE, moleculeHoles } from './moleculeManShape.js';
+
+export { MOLECULE_MAN };
 
 const material = shadeBuildings(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, side: THREE.DoubleSide }), { windows: false });
 /** The towers get the city's own clay, so their windows light at night like the streets' houses. */
@@ -992,108 +995,36 @@ function theCube() {
 
 // --- Molecule Man ----------------------------------------------------------------------------
 // Jonathan Borofsky's 30 m sculpture standing in the Spree by the Treptowers, which the tiles
-// never had: three identical walking figures facing each other across a meeting point, every
-// one of them a thin aluminium silhouette shot through with small round holes — the molecule
-// motif. Each figure is an extruded profile with the holes cut through; the sampler that
-// places them is seeded, so the sculpture is the same on every visit.
-export const MOLECULE_MAN = { centre: [3363.9, 2651.1], terrain: 0, top: 30 };
+// never had: three flat aluminium men in profile, striding towards one shared axis from three
+// sides 120 degrees apart, leaning in until their stubs of arms fuse on it, every plate shot
+// through with round holes, the molecule motif. The sources, the outline and what is left
+// unmodelled are in moleculeManShape.js; this only extrudes it.
 
 /** The sculpture's aluminium, through the city's lighting, with a soft metal sheen and no windows. */
 const steel = shadeBuildings(new THREE.MeshPhongMaterial({ color: 0xc2c6cd, specular: 0x555555, shininess: 16, flatShading: true, side: THREE.DoubleSide }), { windows: false, name: 'city-landmarks-steel' });
 
 function moleculeMan() {
-  // A seeded generator, so the holes are the same constellation every time.
-  const rand = ((seed) => () => {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  })(1912);
-
-  // The right half of the front profile, bottom to top; the left mirrors it.
-  const half = [
-    [1.05, 0], // the right foot's inner edge
-    [2.6, 0], // its outer edge
-    [2.95, 6.5], // the outer leg
-    [3.25, 15.2], // the hip
-    [2.45, 18.6], // the waist
-    [2.6, 21.5], // the chest's side
-    [3.05, 23.1], // the armpit
-    [3.55, 19.6], // down the inner arm, the sliver of light between arm and body
-    [3.25, 15.2],
-    [3.15, 12.4], // the hand's inner edge
-    [4.25, 12.1], // the hand's tip
-    [4.75, 15.6], // up the arm's outer edge
-    [5.25, 21.4],
-    [4.95, 24.5], // the shoulder
-    [2.85, 26.3], // the trapezius
-    [1.15, 27.0], // the neck
-    [1.45, 27.9], // the cheek
-    [1.3, 28.9],
-    [0.7, 29.75],
-    [0, 30], // the crown of the head
-  ];
-  const outline = [
-    [-2.6, 0], // the left foot's outer edge
-    [-1.05, 0], // its inner edge
-    [-0.6, 11.8], // up the left leg's inner edge
-    [0, 13.2], // the crotch
-    [0.6, 11.8], // down the right leg's inner edge
-    ...half, // and around the right half to the crown
-  ];
-  for (let i = half.length - 1; i >= 1; i--) outline.push([-half[i][0], half[i][1]]); // down the left half
+  const { centre, terrain, top, bearings, thickness, pad } = MOLECULE_MAN;
   const profile = new THREE.Shape();
-  profile.moveTo(...outline[0]);
-  for (let i = 1; i < outline.length; i++) profile.lineTo(...outline[i]);
+  profile.moveTo(...OUTLINE[0]);
+  for (let i = 1; i < OUTLINE.length; i++) profile.lineTo(...OUTLINE[i]);
   profile.closePath();
+  // The outline runs clockwise, so the holes run the other way round.
+  for (const { x, y, r } of moleculeHoles()) profile.holes.push(new THREE.Path().absarc(x, y, r, 0, Math.PI * 2, false));
 
-  // The molecule holes: small round openings scattered over the body, each kept clear of the
-  // outline and of its neighbours. Rejection sampling over the profile's bounding box.
-  const inside = (poly, x, y) => {
-    let inPoly = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const [xi, yi] = poly[i], [xj, yj] = poly[j];
-      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inPoly = !inPoly;
-    }
-    return inPoly;
-  };
-  const edgeDist = (poly, x, y) => {
-    let best = Infinity;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const [xi, yi] = poly[i], [xj, yj] = poly[j];
-      const dx = xj - xi, dy = yj - yi;
-      const t = Math.min(1, Math.max(0, ((x - xi) * dx + (y - yi) * dy) / (dx * dx + dy * dy)));
-      best = Math.min(best, Math.hypot(x - (xi + t * dx), y - (yi + t * dy)));
-    }
-    return best;
-  };
-  const holes = [];
-  for (let tries = 0; holes.length < 30 && tries < 800; tries++) {
-    const band = rand();
-    const y = band < 0.5 ? 13.5 + rand() * 11 : band < 0.78 ? 1 + rand() * 11.5 : band < 0.92 ? 26.8 + rand() * 2.6 : 12 + rand() * 9; // torso, legs, head, arms
-    const x = (rand() * 2 - 1) * 4.6;
-    const r = 0.14 + rand() * rand() * 0.36;
-    if (!inside(outline, x, y) || edgeDist(outline, x, y) < r + 0.28) continue;
-    if (holes.some((h) => Math.hypot(h.x - x, h.y - y) < h.r + r + 0.22)) continue;
-    holes.push({ x, y, r });
-  }
-  for (const { x, y, r } of holes) {
-    const p = new THREE.Path();
-    p.absarc(x, y, r, 0, Math.PI * 2, true); // against the profile's run
-    profile.holes.push(p);
-  }
-
-  // Three figures facing each other across a meeting point: each stands ~2.7 m out from it,
-  // turned to face it, so the hands of neighbours meet a whisker short of the halfway angles
-  // (hand reach 5.0 m from the point, ±57.6 degrees against 60) — fused, like the real one,
-  // with the three heads clearly apart and each figure on its own base in the water.
-  const geo = new THREE.ExtrudeGeometry(profile, { depth: 0.8, bevelEnabled: false }).translate(0, 0, -0.4);
-  return [0, 1, 2].map((i) => {
-    const a = (i * 2 * Math.PI) / 3;
+  // The plate stands on its pads, so the 30 m of the outline squeeze into what is left above
+  // them. Octagonal holes: at this size they read as round, at a third of the triangles.
+  const plate = new THREE.ExtrudeGeometry(profile, { depth: thickness, bevelEnabled: false, curveSegments: 4 })
+    .translate(0, 0, -thickness / 2)
+    .scale(1, (top - pad) / 30, 1)
+    .translate(0, pad, 0);
+  // A pad under each foot, down past the water's surface. (The real one has five: see the shape's notes.)
+  const pads = FEET.map(([from, to]) => box(from - 0.3, to + 0.3, -0.8, pad, -0.7, 0.7));
+  const geo = mergeGeometries([plate, ...pads].map(clean));
+  return bearings.map((bearing) => {
     const mesh = new THREE.Mesh(geo, steel);
-    mesh.position.set(MOLECULE_MAN.centre[0] + Math.sin(a) * 2.7, MOLECULE_MAN.terrain, MOLECULE_MAN.centre[1] + Math.cos(a) * 2.7);
-    mesh.rotation.y = a + Math.PI; // local +z, the face, towards the meeting point
+    mesh.position.set(centre[0], terrain, centre[1]);
+    mesh.rotation.y = THREE.MathUtils.degToRad(90 - bearing); // local +x, away from the axis, onto the compass bearing
     mesh.matrixAutoUpdate = false;
     mesh.updateMatrix();
     return mesh;
