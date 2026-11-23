@@ -68,3 +68,18 @@ Open points for the next phase:
 - A busy day has 19-24 shots (every clear stretch of the tower path, and twelve streets); the
   home grid should rank them, as the three-day list already does.
 - The half height is content-sized. Shot cards as rendered frames will need the same budget.
+
+## Dan's feedback (added 2026-11-23, same branch)
+
+1. **Dots.** Event marks differ by shape and fill: behind the tower is a ring (white inside for the
+   sun, dark for the moon), a street henge a solid bar (the moon's dark with a rim), each with a
+   halo so overlapping marks stay apart. Used on the day view's ticks, the three-day strip and
+   the shot cards (`markShape` in `daylist.js`); interim until the icons session's `marks.js`.
+2. **Directionality.** The pill's arrow is a compass needle: long and narrow, haloed, with a red
+   tip (`drawPill` in `overlay.js`).
+3. **Tooltips.** Every toolbar button has a tip (`data-tip`, shown on hover and keyboard focus)
+   and an accessible name. The drone icon itself is the icons session's to redraw.
+
+Also: the sun's curve takes the sun's colour for its height from `skyPalette`, as the dot and the
+card discs already did from `sunLook`. The event ticks stay in the app's sun and moon colours:
+they mark events, and a near-white ring would not show on the light surface.

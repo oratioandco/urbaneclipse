@@ -73,7 +73,8 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   for (const pick of [...picks].sort((a, b) => a.t - b.t)) {
     const tick = document.createElement('button');
     tick.type = 'button';
-    tick.className = `spark-tick spark-${pick.body}`;
+    // The head says what kind: a ring for the tower, a bar for a street.
+    tick.className = `spark-tick spark-${pick.body} spark-${pick.kind}`;
     tick.style.setProperty('--score', pick.score.toFixed(2));
     const trueLeft = ((pick.t - from) / 86_400_000) * 100;
     const left = Math.min(97, Math.max(3, trueLeft, prevLeft + MIN_GAP));

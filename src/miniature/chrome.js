@@ -77,7 +77,8 @@ let cloudHeavy = false;
 function refreshCloudHint() {
   const covered = cloudHeavy && layers.clouds;
   layersButton.classList.toggle('clouds-heavy', covered);
-  layersButton.title = covered ? 'The forecast’s clouds cover the map — switch off “Clouds on the map” in the layers' : '';
+  layersButton.dataset.tip = covered ? 'Map layers: the forecast’s clouds cover the map' : 'Map layers';
+  layersButton.setAttribute('aria-label', covered ? 'Map layers: the forecast’s clouds cover the map. Switch off “Clouds on the map” here' : 'Map layers: choose what the map shows');
 }
 /** Called by the weather code when the day's peak cloud cover crosses in or out of the heavy band. */
 export function setCloudHint(heavy) {

@@ -217,6 +217,23 @@ export function dayVerdict(t) {
 }
 
 /**
+ * The mark for a kind of event, the same on the timeline, the strip and the cards, and told
+ * apart by shape and fill, not by colour alone (Dan's feedback): behind the tower is a ring,
+ * white inside for the sun and dark inside for the moon; a street henge is a solid bar, the
+ * moon's dark with a rim. Each has a halo, so two that overlap stay two. Interim, until the
+ * icons session's mark family (marks.js) is merged.
+ */
+export function markShape(kind, body, x = 0, y = 0) {
+  const colour = `var(--${body})`;
+  if (kind === 'tower') {
+    return `<circle class="mark-halo" cx="${x}" cy="${y}" r="4.6"/><circle cx="${x}" cy="${y}" r="3" fill="${body === 'sun' ? '#fff' : '#20263a'}" stroke="${colour}" stroke-width="1.9"/>`;
+  }
+  return `<rect class="mark-halo" x="${x - 3.2}" y="${y - 5.5}" width="6.4" height="11" rx="3.2"/><rect x="${x - 1.7}" y="${y - 4}" width="3.4" height="8" rx="1.7" fill="${body === 'sun' ? colour : '#20263a'}" stroke="${colour}" stroke-width="${body === 'sun' ? 0 : 1.3}"/>`;
+}
+export const MARK_WORD = { tower: 'behind the tower', street: 'street henge' };
+export const markIcon = (kind, body) => `<svg class="mark" viewBox="-6 -6 12 12" aria-hidden="true">${markShape(kind, body)}</svg>`;
+
+/**
  * A small sun, or the moon in its phase, as it looks at that time. The colours are the map's
  * own (mapBodyLook.ts): one sun and one moon everywhere, redder when low.
  */

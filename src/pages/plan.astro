@@ -23,15 +23,15 @@ import '../miniature/miniature.css';
   <body data-mode="shoot">
     <canvas id="labels"></canvas>
     <div class="tools">
-      <button id="compass" class="round surface" aria-label="Compass: turn to face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
-      <button id="face-tower" class="round surface eye-only" aria-label="Turn to the TV tower" title="TV tower"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="11.2" y="1.5" width="1.6" height="7"/><circle cx="12" cy="11" r="3.6"/><path d="M10.6 14.2h2.8l.9 8.3h-4.6z"/></svg></button>
-      <button id="face-sun" class="round surface eye-only" aria-label="Turn to the sun" title="Sun" hidden><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="4.3" fill="#f26a12"/><path d="M12 2.2v3M12 18.8v3M2.2 12h3M18.8 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M5.1 18.9l2.1-2.1M16.8 7.2l2.1-2.1" stroke="#f26a12" stroke-width="2" stroke-linecap="round"/></svg></button>
-      <button id="face-moon" class="round surface eye-only" aria-label="Turn to the moon" title="Moon" hidden><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 4.2a8 8 0 1 0 4.3 12.6A7 7 0 0 1 15.5 4.2z" fill="#5b82ff"/></svg></button>
-      <button id="locate" class="round surface" aria-label="Stand where you are" title="Where am I?"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M20 4 4 11l7 2 2 7z"/></svg></button>
-      <button id="help" class="round surface" aria-label="How this works" title="How this works">?</button>
-      <button id="layers" class="round surface" aria-label="What the map shows" aria-expanded="false" aria-controls="layers-menu" title="Layers"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5 21 8.5 12 13.5 3 8.5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity="0.5"/></svg></button>
-      <button id="tilt" class="round surface overview-only" aria-label="Switch between flat and angled view">2D</button>
-      <button id="photographer" class="round surface overview-only" aria-label="Drag onto the map to stand there, or tap to stand in the middle">
+      <button id="compass" class="round surface" aria-label="Compass: turn the map to face north" data-tip="Face north"><svg viewBox="-12 -12 24 24" width="26" height="26"><path d="M0,-10 L4,0 L-4,0 Z" fill="#d6453a"/><path d="M0,10 L4,0 L-4,0 Z" fill="currentColor" opacity="0.55"/></svg></button>
+      <button id="face-tower" class="round surface eye-only" aria-label="Turn to face the TV tower" data-tip="Face the TV tower"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="11.2" y="1.5" width="1.6" height="7"/><circle cx="12" cy="11" r="3.6"/><path d="M10.6 14.2h2.8l.9 8.3h-4.6z"/></svg></button>
+      <button id="face-sun" class="round surface eye-only" hidden aria-label="Turn to face the sun" data-tip="Face the sun"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="4.3" fill="#f26a12"/><path d="M12 2.2v3M12 18.8v3M2.2 12h3M18.8 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M5.1 18.9l2.1-2.1M16.8 7.2l2.1-2.1" stroke="#f26a12" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <button id="face-moon" class="round surface eye-only" hidden aria-label="Turn to face the moon" data-tip="Face the moon"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 4.2a8 8 0 1 0 4.3 12.6A7 7 0 0 1 15.5 4.2z" fill="#5b82ff"/></svg></button>
+      <button id="locate" class="round surface" aria-label="Stand where you are now" data-tip="My location"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M20 4 4 11l7 2 2 7z"/></svg></button>
+      <button id="help" class="round surface" aria-label="How this works" data-tip="How this works">?</button>
+      <button id="layers" class="round surface" aria-expanded="false" aria-controls="layers-menu" aria-label="Map layers: choose what the map shows" data-tip="Map layers"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5 21 8.5 12 13.5 3 8.5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity="0.5"/></svg></button>
+      <button id="tilt" class="round surface overview-only" aria-label="Switch between the flat view from above and the angled view" data-tip="Flat or angled view">2D</button>
+      <button id="photographer" class="round surface overview-only" aria-label="Stand here: drag onto the map, or tap to stand in the middle" data-tip="Stand here: drag onto the map">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><circle cx="12" cy="5" r="3"/><path d="M8 10h8l1 6h-3v6h-4v-6H7z"/><rect x="13.5" y="9" width="6" height="4.2" rx="1"/></svg>
       </button>
     </div>
@@ -118,9 +118,9 @@ import '../miniature/miniature.css';
       </div>
     </dialog>
     <div class="topleft">
-      <button id="back" class="chip surface">&larr; Map</button>
-      <button id="takeoff" class="chip surface">&uarr; Take off</button>
-      <button id="share" class="chip surface" aria-expanded="false" aria-controls="share-menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>Go there</button>
+      <button id="back" class="chip surface" aria-label="Back to the map" data-tip="Back to the map">&larr; Map</button>
+      <button id="takeoff" class="chip surface" aria-label="Take off: see this spot from a drone, up to 120 metres" data-tip="Drone view, up to 120 m">&uarr; Take off</button>
+      <button id="share" class="chip surface" aria-expanded="false" aria-controls="share-menu" aria-label="Go there: directions, calendar and a link to this view" data-tip="Directions, calendar, link"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>Go there</button>
     </div>
     <div id="share-menu" class="sharemenu surface" hidden>
       <a id="directions" class="shareitem" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg><span><b>Directions</b><small id="directions-app"></small></span></a>
@@ -146,11 +146,11 @@ import '../miniature/miniature.css';
         <div class="sheet-head" id="sheet-head">
           <button id="sheet-grab" class="sheet-grab" type="button" aria-label="Panel height: press to step through peek, half and full, or use the up and down arrow keys"><i aria-hidden="true"></i></button>
           <button id="sheet-toggle" class="peek" type="button" aria-expanded="true" aria-controls="sheet-body"><span id="peek-line" class="peek-line"><span class="what">Looking for the next shot&hellip;</span></span></button>
-          <button id="sheet-step" class="icon-btn" type="button" aria-label="Show planning" aria-controls="planning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.5 12 8.5l6 6" /></svg></button>
-          <button id="panel-fold" class="icon-btn" type="button" aria-label="Fold the panel to the side" aria-controls="sheet-body"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6.5 5.5 12l5.5 5.5M18 6.5 12.5 12l5.5 5.5" /></svg></button>
+          <button id="sheet-step" class="icon-btn" type="button" aria-label="Show planning" aria-controls="planning" title="Planning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.5 12 8.5l6 6" /></svg></button>
+          <button id="panel-fold" class="icon-btn" type="button" aria-label="Fold the panel to the side" aria-controls="sheet-body" title="Fold the panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 6.5 5.5 12l5.5 5.5M18 6.5 12.5 12l5.5 5.5" /></svg></button>
         </div>
         <div class="rail" id="rail" role="toolbar" aria-label="Panel, folded" aria-orientation="vertical">
-          <button id="rail-open" class="icon-btn" type="button" aria-label="Open the panel" aria-controls="sheet-body"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6.5 18.5 12 13 17.5M6 6.5 11.5 12 6 17.5" /></svg></button>
+          <button id="rail-open" class="icon-btn" type="button" aria-label="Open the panel" aria-controls="sheet-body" title="Open the panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 6.5 18.5 12 13 17.5M6 6.5 11.5 12 6 17.5" /></svg></button>
           <button id="rail-next" class="rail-next" type="button"></button>
           <button id="rail-day" class="icon-btn" type="button" aria-label="The day: light, weather and shots" title="The day"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h18" /><path d="M5.5 17a6.5 6.5 0 0 1 13 0" /><path d="M12 4.5v2.5M4.6 9.2l1.8 1.5M19.4 9.2l-1.8 1.5" /></svg></button>
           <button id="rail-plan" class="icon-btn" type="button" aria-label="The coming days&rsquo; shots" title="Coming days"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="14" rx="2" /><path d="M4 10.5h16M8.5 3.5v4M15.5 3.5v4M8 14.5h3M8 17h6" /></svg></button>

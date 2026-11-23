@@ -14,9 +14,10 @@ import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../lib/lightPhases.ts';
 import { cssRgb, moonLook, sunLook } from '../lib/mapBodyLook.ts';
+import { skyPalette } from '../lib/skyPalette.ts';
 import { litDiscPath } from '../lib/moonPhase.ts';
 import { dateInput, dayStart } from './clock.js';
-import { bodyIcon, currentRows, dayVerdict, showVerdict } from './daylist.js';
+import { bodyIcon, currentRows, dayVerdict, MARK_WORD, markIcon, markShape, showVerdict } from './daylist.js';
 import {
   DAY_MINUTES,
   altitudeToY,
@@ -108,7 +109,11 @@ function drawPlot() {
   below.append(el('rect', { x: 0, y: horizonY, width, height: 100 - horizonY }));
   const glow = el('linearGradient', { id: 'tl-daylight', x1: 0, y1: 0, x2: 0, y2: 1 });
   glow.append(el('stop', { offset: 0, 'stop-color': 'var(--sun)', 'stop-opacity': 0.3 }), el('stop', { offset: 1, 'stop-color': 'var(--sun)', 'stop-opacity': 0 }));
-  defs.append(above, below, glow);
+  // The sun's curve takes the sun's own colour for its height, minute by minute: orange on
+  // the horizon, pale gold higher, white when high, from the palette the map's sun uses.
+  const sunTint = el('linearGradient', { id: 'tl-suntint', gradientUnits: 'userSpaceOnUse', x1: x(0), y1: 0, x2: x(DAY_MINUTES), y2: 0 });
+  for (const s of samples) sunTint.append(el('stop', { offset: (s.minute / DAY_MINUTES).toFixed(4), 'stop-color': cssRgb(skyPalette('sun', Math.max(0, s.sun)).discTint) }));
+  defs.append(above, below, glow, sunTint);
 
   // Cloud: one band from the three layers, each hour at its centre. Clear sky leaves it empty.
   const day = app.weather;
@@ -134,17 +139,21 @@ function drawPlot() {
     el('path', { class: 'tl-curve tl-down', d: line('sun'), 'clip-path': 'url(#tl-below)' }),
     el('path', { class: 'tl-curve tl-moon tl-down', d: line('moon'), 'clip-path': 'url(#tl-below)' }),
     el('path', { class: 'tl-curve tl-moon', d: line('moon'), 'clip-path': 'url(#tl-above)' }),
-    el('path', { class: 'tl-curve tl-sun', d: line('sun'), 'clip-path': 'url(#tl-above)' }),
+    el('path', { class: 'tl-curve tl-casing', d: line('sun'), 'clip-path': 'url(#tl-above)' }),
+    el('path', { class: 'tl-curve tl-sun', d: line('sun'), stroke: 'url(#tl-suntint)', 'clip-path': 'url(#tl-above)' }),
   );
 
   // The shots, as ticks standing on the light bar at their minute.
+  // Their heads say what kind: a ring for the tower, a bar for a street (markShape). Streets
+  // first, so a tower's ring lies on top where the two meet.
   const now = Date.now();
-  drawn.rows.forEach((row, i) => {
+  const order = drawn.rows.map((row, i) => ({ row, i })).sort((a, b) => (a.row.kind === 'tower') - (b.row.kind === 'tower'));
+  for (const { row, i } of order) {
     const at = x(drawn.minutes[i]).toFixed(1);
     const tick = el('g', { class: `tl-tick tl-tick-${row.body}${row.t < now ? ' tl-past' : ''}` });
-    tick.append(el('path', { d: `M${at},${CURVES.y + 4}V${BAR.y}` }), el('circle', { cx: at, cy: CURVES.y + 4, r: 2.3 }));
+    tick.innerHTML = `<path d="M${at},${CURVES.y + 4}V${BAR.y}"/>${markShape(row.kind, row.body, Number(at), CURVES.y + 4)}`;
     nodes.push(tick);
-  });
+  }
   // Where today has got to.
   if (now >= from && now < from + 86_400_000) {
     const at = x((now - from) / 60_000).toFixed(1);
@@ -193,15 +202,15 @@ function drawShots() {
       card.dataset.body = row.body;
       card.dataset.grade = verdict.grade ?? 'none';
       card.dataset.index = String(i);
-      card.innerHTML = `<b></b>${bodyIcon(row.body, row.t)}<span class="shot-name"></span><em class="verdict"></em><small></small>`;
+      card.innerHTML = `<b></b>${bodyIcon(row.body, row.t)}<span class="shot-name">${markIcon(row.kind, row.body)}<span></span></span><em class="verdict"></em><small></small>`;
       card.querySelector('b').textContent = formatClock(row.t);
-      card.querySelector('.shot-name').textContent = row.short;
+      card.querySelector('.shot-name span').textContent = row.short;
       const [word, why] = cardWords(verdict);
       card.querySelector('.verdict').textContent = word;
       card.querySelector('.verdict').dataset.grade = verdict.grade ?? 'none';
       card.querySelector('small').textContent = why;
       card.setAttribute('aria-label', `${formatClock(row.t)}, ${row.title}. ${verdict.label}. ${row.detail}`);
-      card.title = `${row.title} · ${row.detail}`;
+      card.title = `${row.title} (${MARK_WORD[row.kind]}) · ${row.detail}`;
       card.addEventListener('click', () => {
         // A first tap brings the time to the shot; a tap on the shot the thumb stands on opens
         // the view from where to stand for it.
