@@ -11,9 +11,28 @@ let half = 1;
 const canvas = document.getElementById('minimap');
 const ctx = canvas.getContext('2d');
 
-/** Turn the ground map's channels (street glow, water, parks) into map colours, once. */
+/**
+ * The ground map to draw from. Recolouring its four million pixels takes a quarter of a second
+ * on a laptop and only eye level shows the result, so it waits for a quiet moment after the
+ * city is up, or for the first look from the street, whichever comes first.
+ */
+let pending = null;
 export function setMinimapGround(groundCanvas, modelHalf) {
   half = modelHalf;
+  pending = groundCanvas;
+  const build = () => {
+    if (!window.__ready) return void setTimeout(build, 500);
+    paintBase();
+  };
+  if (window.requestIdleCallback) requestIdleCallback(build, { timeout: 10_000 });
+  else setTimeout(build, 3000);
+}
+
+/** Turn the ground map's channels (street glow, water, parks) into map colours, once. */
+function paintBase() {
+  if (!pending) return;
+  const groundCanvas = pending;
+  pending = null;
   const size = Math.min(2048, groundCanvas.width);
   const work = document.createElement('canvas');
   work.width = work.height = size;
@@ -55,6 +74,7 @@ export function setMinimapGround(groundCanvas, modelHalf) {
  * @param view.bodies [{ az, moon? }] above the horizon
  */
 export function drawMinimap({ look, fov, paths, rays, spots, bodies, night }) {
+  paintBase();
   if (!base) return;
   const dpr = Math.min(devicePixelRatio, 2);
   const size = canvas.clientWidth;
