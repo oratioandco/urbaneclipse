@@ -10,7 +10,7 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightPhaseOf } from '../lib/lightPhases.ts';
 import { EYE_HEIGHT, latLonFromScene } from './eye.js';
 import { formatClock, formatDay } from './time.js';
-import { discOverSphere } from './towerShots.js';
+import { discOverSphere, gridConvergenceDeg } from './towerShots.js';
 import { cloudsAt, cloudsFor, forecastReach } from './weather.js';
 import { setDay, setFine, setMinute } from './clock.js';
 import { bodyIcon } from './daylist.js';
@@ -160,7 +160,10 @@ async function refresh() {
 
   const base = app.groundAt(0, 0);
   const eye = { x: spot.x, y: app.groundAt(spot.x, spot.z) + EYE_HEIGHT + spot.lift, z: spot.z };
-  const towerJob = search({ kind: 'tower', eye, base, lat, lon, start: now, end: now + YEAR_MS });
+  // The sun and moon are worked out where you stand, from true north; the scene's north is
+  // the tower's, so the search is told how far the two differ here.
+  const northOffsetDeg = gridConvergenceDeg(lat, lon, FERNSEHTURM.lon);
+  const towerJob = search({ kind: 'tower', eye, base, lat, lon, northOffsetDeg, start: now, end: now + YEAR_MS });
   const streetJob = street
     ? search({ kind: 'street', view: { bearingDeg: street.bearingDeg, skylineDeg: street.skylineDeg, toleranceDeg: street.toleranceDeg, from: { lat, lon } }, start: now, end: now + YEAR_MS })
     : null;
