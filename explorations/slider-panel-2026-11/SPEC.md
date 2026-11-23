@@ -36,6 +36,41 @@ What follows from this for the build:
 - Every toolbar button gets a tooltip and an accessible name, and the drone icon is redrawn so
   it reads as a drone view.
 
+## Core use cases: the yardstick for every change
+
+The app exists for one person: a photographer in Berlin who wants a picture of the sun or moon
+lined up with a landmark or a street. Every view must serve one of these, and say so at a glance:
+
+1. **"Is there anything worth shooting soon?"** Next few days, all landmarks, weather included.
+   Answered by the home shot grid.
+2. **"What will this day's light do?"** Golden and blue hour, cloud, rain, and the few shot
+   moments of one day. Answered by the day view.
+3. **"Where exactly do I stand, and what will I see?"** Standing point, direction, distance,
+   lens, and a preview of the frame at that minute. Answered by eye level and the shot ticket.
+4. **"When does this happen from my spot?"** One location, far ahead, sun and moon and street
+   valleys. Answered by the per-location list.
+5. **"Take me there and remind me."** Directions, calendar entry, a link to share.
+
+If a control, mark or number does not help with one of these, it should go. If a number could
+send someone to the wrong place or the wrong minute, it must be right or not shown.
+
+## One design system
+
+The release must read as one product across the landing page, `/plan/`, and what is linked from
+them. One source of truth, used everywhere:
+
+- **Tokens:** the colours, radius, control height and shadows in `src/miniature/miniature.css`.
+  New surfaces use them; no one-off values.
+- **Type:** the system font, one scale of sizes, small bold uppercase for labels.
+- **Sun and moon:** one of each, from `src/lib/mapBodyLook.ts`.
+- **Icons:** one set, one stroke weight (the icons session's module).
+- **Marks:** one family for events, distinguishable by shape and fill (Dan's point 1).
+- **Words:** one vocabulary. "Shot", "tower alignment", "street henge"; "Go / Maybe / Skip";
+  the five light phases. The same thing has the same name in every view.
+- **Behaviour:** one way to collapse, one way to select a shot, one way to go back.
+
+A change is not done if it makes one view better and leaves it inconsistent with the others.
+
 ## Two surfaces, two jobs
 
 **Home: a grid of shots for the next 3 days.** It answers "what is worth going out for".
