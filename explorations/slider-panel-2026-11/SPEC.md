@@ -71,6 +71,27 @@ them. One source of truth, used everywhere:
 
 A change is not done if it makes one view better and leaves it inconsistent with the others.
 
+## Baseline: the live site on 2026-11-23, at phone width
+
+Captured headless from the live site, 390 px wide. `/classic` did not render in the capture.
+
+- **Three views, three looks.** The landing page is dark with a bold display heading and orange
+  pill buttons. `/plan/` is a light paper panel with the system font and round white toolbar
+  buttons. `/map` is a dark navy sheet with a serif "Today" heading, its own chips and a square
+  legend. They do not read as one product.
+- **`/plan/` panel size.** In plan mode the panel covers roughly the lower 60% of the screen.
+- **Marks without words.** The shot list ends each row in a small grey dot, and the three-day
+  strip uses blue dots on stems. Neither says what it means.
+- **Direction pills.** "Sun 0° up" and "Moon 9° up" carry a small solid triangle beside the
+  pill; this is the arrow Dan found ambiguous.
+- **Toolbar.** Six round buttons with no labels: compass, locate, help, layers, 2D, and a
+  standing figure.
+- **Words differ.** `/plan/` says "shots"; `/map` says "No sun shot at this time" and has
+  "Tower" and "Streets" chips; the landing page says "See the shots".
+
+The release should close the gap between `/plan/` and the landing page first, since those are
+what a new visitor sees. `/map` and `/classic` are older and can follow.
+
 ## Two surfaces, two jobs
 
 **Home: a grid of shots for the next 3 days.** It answers "what is worth going out for".
