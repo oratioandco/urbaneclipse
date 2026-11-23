@@ -166,6 +166,12 @@ out.start = await page.evaluate(() => ({
   fcpMs: Math.round(performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? -1),
 }));
 
+if (args.includes('--load-only')) {
+  out.loadFrames = (await snapshot()).frames;
+  out.longTasks = await page.evaluate(() => ({ count: window.__perf.longTasks.length, totalMs: window.__perf.longTasks.reduce((s, e) => s + e.ms, 0) }));
+  console.log(JSON.stringify(out));
+  process.exit(0);
+}
 // Network totals, by kind. City files answered from the cache count at their recorded wire size.
 const groups = {};
 for (const r of requests.values()) {
@@ -250,8 +256,20 @@ out.sceneCounts = await page.evaluate(() => {
       treeTris += tris * o.count;
     }
   });
-  for (const t of m.tiles) if (t.mesh) tileTris += t.mesh.geometry.index.count / 3;
-  return { buildingTrianglesLoaded: Math.round(tileTris), treeInstances: trees, treeTriangles: Math.round(treeTris) };
+  // Every tile keeps its coarse level beside the one it shows.
+  const held = new Set();
+  for (const t of m.tiles) {
+    if (t.mesh) tileTris += t.mesh.geometry.index.count / 3;
+    if (t.mesh) held.add(t.mesh.geometry);
+    if (t.coarse) held.add(t.coarse);
+  }
+  let indexBytes = 0;
+  let vertexBytes = 0;
+  for (const g of held) {
+    indexBytes += g.index.array.byteLength;
+    vertexBytes += g.attributes.position.data.array.byteLength;
+  }
+  return { buildingTrianglesLoaded: Math.round(tileTris), buildingIndexMB: +(indexBytes / 1e6).toFixed(1), buildingVertexMB: +(vertexBytes / 1e6).toFixed(1), treeInstances: trees, treeTriangles: Math.round(treeTris) };
 });
 
 const profilePath = flag('profile');
