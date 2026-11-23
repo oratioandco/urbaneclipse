@@ -31,9 +31,9 @@
   .shots.more { -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
   .shots.more.end { -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%); mask-image: linear-gradient(90deg, transparent, #000 18%); }
   .shots.more.mid { -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
-  .shots { display: flex; gap: 2px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -4px; padding: 0 2px; border-top: .5px solid var(--edge); padding-top: 8px; }
+  .shots { display: flex; gap: 2px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin: 0 -6px; padding: 8px 0 0; border-top: .5px solid var(--edge); }
   .shots::-webkit-scrollbar { display: none; }
-  .shot { scroll-snap-align: start; flex: 1 0 58px; display: grid; justify-items: center; gap: 5px; padding: 6px 2px 7px; border: 0; background: transparent; color: var(--fg); font: inherit; cursor: pointer; border-radius: 16px; transition: background .2s; min-width: 0; }
+  .shot { scroll-snap-align: start; flex: 1 0 54px; display: grid; justify-items: center; gap: 5px; padding: 6px 2px 7px; border: 0; background: transparent; color: var(--fg); font: inherit; cursor: pointer; border-radius: 16px; transition: background .2s; min-width: 0; }
   .shot .t { font: 600 14px var(--ui); font-variant-numeric: tabular-nums; }
   .shot canvas { width: 42px; height: 42px; border-radius: 50%; box-shadow: 0 0 0 .5px rgba(255,255,255,.5), 0 4px 12px rgba(6,10,28,.3); }
   .shot .n { font: 500 10.5px var(--ui); color: var(--dim); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -63,12 +63,12 @@
     <div class="top"><div class="pill" id="tabs"></div><span style="display:inline-flex;gap:6px"><button class="ghost" id="motionBtn"></button><button class="ghost" id="nowBtn" aria-label="Back to now">Now</button></span></div>
     <div class="read"><div class="time" id="time"></div><div class="cond" id="cond"></div><p class="sentence" id="sentence"></p></div>
     <section class="glass"><h3>Shots <span id="shotCount"></span></h3><div class="shots" id="chips"></div></section>
-    <section class="glass"><h3>Light, 24 hours <span>band: high, mid, low cloud · bars: rain</span></h3>
+    <section class="glass"><h3>Light <span>band: cloud layers · bars: rain</span></h3>
       <div class="tl" id="tlwrap" tabindex="0" role="slider" aria-label="Time of day" aria-valuemin="0" aria-valuemax="1440"><canvas id="tl"></canvas><div id="thumb"><b id="thumbT"></b></div></div>
       <p class="sel" id="sel" aria-live="polite"></p></section>
     <div class="nudge"><button id="prevShot">‹ Earlier shot</button><button id="minus">− 1 min</button><button id="plus">+ 1 min</button><button id="nextShot">Later shot ›</button></div>
   </div>
-  <p class="notes">The sky stands in for the map: in the app this slider would drive the miniature and its weather. Sketch data: Today has a shower around 13:00, Tomorrow is rain with an afternoon thunderstorm, Saturday is clear with a moon shot at 02:40. Shot minutes are mock values.</p>
+  <p class="notes">The sky stands in for the map: in the app this slider would drive the miniature and its weather. Sketch data: Today has a shower around 13:00, Fri is rain with an afternoon thunderstorm, Sat is clear with a moon shot at 02:40, Summer is a long June day with 13 shots. Shot minutes are mock values.</p>
   <p class="notes" id="status" style="font-family:ui-monospace,Menlo,monospace;font-size:11.5px"></p>
 </div>
 <script id="fs" type="x-shader/x-fragment">
