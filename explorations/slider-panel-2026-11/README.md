@@ -14,6 +14,7 @@ Open `weather-strip-sketches.html` in a browser. It is one self-contained page w
 - Round 8: the assembly round
 - Round 9: the mechanism the slider actually teaches
 - Round 10 (added 23 Nov, after the critique): the panel as an app. A phone sheet with peek / half / full, a 3-day shot grid, planning one height up, a desktop side panel that folds to a rail, and a floating preview ticket in place of the panel
+- Round 11 (`glass-day-slider.html`, 23 Nov): the whole forecast as one slider. Three days of sky on a canvas track with stretched dawn and dusk, eight landmarks standing at their shot minutes, and a refracting glass lens as the thumb
 
 ## How this was recovered
 
