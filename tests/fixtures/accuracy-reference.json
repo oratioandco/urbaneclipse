@@ -1,0 +1,1067 @@
+{
+ "source": "Skyfield 1.55 with JPL DE421, topocentric apparent places; Bennett refraction at 10 degC / 1010 mbar; WGS84 geodesics (Vincenty). scripts/audit/make_fixture.py",
+ "observer": {
+  "lat": 52.520815,
+  "lon": 13.409419
+ },
+ "directions": [
+  {
+   "body": "sun",
+   "utc": "2026-12-21T07:30:00Z",
+   "az": 132.4026,
+   "altAirless": 0.9027,
+   "altApparent": 1.2748,
+   "radiusDeg": 0.2708
+  },
+  {
+   "body": "sun",
+   "utc": "2026-12-21T14:40:00Z",
+   "az": 227.8342,
+   "altAirless": 0.7683,
+   "altApparent": 1.1543,
+   "radiusDeg": 0.2709
+  },
+  {
+   "body": "sun",
+   "utc": "2027-01-14T22:35:00Z",
+   "az": 342.1301,
+   "altAirless": -57.734,
+   "altApparent": -57.734,
+   "radiusDeg": 0.2709
+  },
+  {
+   "body": "sun",
+   "utc": "2027-03-20T05:30:00Z",
+   "az": 93.3315,
+   "altAirless": 2.2398,
+   "altApparent": 2.5071,
+   "radiusDeg": 0.2676
+  },
+  {
+   "body": "sun",
+   "utc": "2027-03-20T17:00:00Z",
+   "az": 267.2213,
+   "altAirless": 2.0556,
+   "altApparent": 2.3343,
+   "radiusDeg": 0.2676
+  },
+  {
+   "body": "sun",
+   "utc": "2027-03-28T00:30:00Z",
+   "az": 23.3285,
+   "altAirless": -32.2434,
+   "altApparent": -32.2434,
+   "radiusDeg": 0.267
+  },
+  {
+   "body": "sun",
+   "utc": "2027-03-28T01:30:00Z",
+   "az": 39.7213,
+   "altAirless": -27.4524,
+   "altApparent": -27.4524,
+   "radiusDeg": 0.267
+  },
+  {
+   "body": "sun",
+   "utc": "2027-03-28T17:20:00Z",
+   "az": 273.5862,
+   "altAirless": 1.1487,
+   "altApparent": 1.4971,
+   "radiusDeg": 0.267
+  },
+  {
+   "body": "sun",
+   "utc": "2027-06-21T03:00:00Z",
+   "az": 51.0905,
+   "altAirless": 1.126,
+   "altApparent": 1.4765,
+   "radiusDeg": 0.2622
+  },
+  {
+   "body": "sun",
+   "utc": "2027-06-21T19:15:00Z",
+   "az": 308.6666,
+   "altAirless": 1.2735,
+   "altApparent": 1.6108,
+   "radiusDeg": 0.2622
+  },
+  {
+   "body": "sun",
+   "utc": "2027-09-23T05:10:00Z",
+   "az": 92.1952,
+   "altAirless": 1.6976,
+   "altApparent": 2.0009,
+   "radiusDeg": 0.2655
+  },
+  {
+   "body": "sun",
+   "utc": "2027-09-23T16:50:00Z",
+   "az": 268.1623,
+   "altAirless": 1.1855,
+   "altApparent": 1.5306,
+   "radiusDeg": 0.2655
+  },
+  {
+   "body": "sun",
+   "utc": "2027-09-27T15:11:00Z",
+   "az": 247.3383,
+   "altAirless": 14.3937,
+   "altApparent": 14.4566,
+   "radiusDeg": 0.2658
+  },
+  {
+   "body": "sun",
+   "utc": "2027-10-31T00:30:00Z",
+   "az": 36.6561,
+   "altAirless": -46.6109,
+   "altApparent": -46.6109,
+   "radiusDeg": 0.2683
+  },
+  {
+   "body": "sun",
+   "utc": "2027-10-31T01:30:00Z",
+   "az": 54.6226,
+   "altAirless": -40.0936,
+   "altApparent": -40.0936,
+   "radiusDeg": 0.2683
+  },
+  {
+   "body": "sun",
+   "utc": "2027-10-31T15:30:00Z",
+   "az": 245.6677,
+   "altAirless": 0.4253,
+   "altApparent": 0.8505,
+   "radiusDeg": 0.2684
+  },
+  {
+   "body": "sun",
+   "utc": "2027-11-11T02:45:00Z",
+   "az": 75.382,
+   "altAirless": -32.5713,
+   "altApparent": -32.5713,
+   "radiusDeg": 0.2691
+  },
+  {
+   "body": "sun",
+   "utc": "2027-04-08T17:36:00Z",
+   "az": 279.9462,
+   "altAirless": 1.6027,
+   "altApparent": 1.9132,
+   "radiusDeg": 0.2661
+  },
+  {
+   "body": "moon",
+   "utc": "2026-12-21T07:30:00Z",
+   "az": 349.4549,
+   "altAirless": -14.9447,
+   "altApparent": -14.9447,
+   "radiusDeg": 0.2713
+  },
+  {
+   "body": "moon",
+   "utc": "2026-12-21T14:40:00Z",
+   "az": 76.3746,
+   "altAirless": 19.1179,
+   "altApparent": 19.165,
+   "radiusDeg": 0.2752
+  },
+  {
+   "body": "moon",
+   "utc": "2027-01-14T22:35:00Z",
+   "az": 279.9929,
+   "altAirless": 2.9553,
+   "altApparent": 3.185,
+   "radiusDeg": 0.2574
+  },
+  {
+   "body": "moon",
+   "utc": "2027-03-20T05:30:00Z",
+   "az": 302.0293,
+   "altAirless": -10.6311,
+   "altApparent": -10.6311,
+   "radiusDeg": 0.2704
+  },
+  {
+   "body": "moon",
+   "utc": "2027-03-20T17:00:00Z",
+   "az": 100.1164,
+   "altAirless": 16.2442,
+   "altApparent": 16.2998,
+   "radiusDeg": 0.272
+  },
+  {
+   "body": "moon",
+   "utc": "2027-03-28T00:30:00Z",
+   "az": 139.5193,
+   "altAirless": -0.4963,
+   "altApparent": 0.0643,
+   "radiusDeg": 0.2498
+  },
+  {
+   "body": "moon",
+   "utc": "2027-03-28T01:30:00Z",
+   "az": 151.4087,
+   "altAirless": 4.4615,
+   "altApparent": 4.6362,
+   "radiusDeg": 0.2501
+  },
+  {
+   "body": "moon",
+   "utc": "2027-03-28T17:20:00Z",
+   "az": 33.0694,
+   "altAirless": -62.4859,
+   "altApparent": -62.4859,
+   "radiusDeg": 0.2449
+  },
+  {
+   "body": "moon",
+   "utc": "2027-06-21T03:00:00Z",
+   "az": 210.2543,
+   "altAirless": 8.1356,
+   "altApparent": 8.2429,
+   "radiusDeg": 0.2463
+  },
+  {
+   "body": "moon",
+   "utc": "2027-06-21T19:15:00Z",
+   "az": 102.3045,
+   "altAirless": -18.0634,
+   "altApparent": -18.0634,
+   "radiusDeg": 0.2443
+  },
+  {
+   "body": "moon",
+   "utc": "2027-09-23T05:10:00Z",
+   "az": 192.056,
+   "altAirless": 63.5919,
+   "altApparent": 63.6001,
+   "radiusDeg": 0.27
+  },
+  {
+   "body": "moon",
+   "utc": "2027-09-23T16:50:00Z",
+   "az": 354.3782,
+   "altAirless": -11.8269,
+   "altApparent": -11.8269,
+   "radiusDeg": 0.2663
+  },
+  {
+   "body": "moon",
+   "utc": "2027-09-27T15:11:00Z",
+   "az": 280.2133,
+   "altAirless": 3.3529,
+   "altApparent": 3.5653,
+   "radiusDeg": 0.2742
+  },
+  {
+   "body": "moon",
+   "utc": "2027-10-31T00:30:00Z",
+   "az": 14.9278,
+   "altAirless": -61.072,
+   "altApparent": -61.072,
+   "radiusDeg": 0.256
+  },
+  {
+   "body": "moon",
+   "utc": "2027-10-31T01:30:00Z",
+   "az": 39.3607,
+   "altAirless": -57.2053,
+   "altApparent": -57.2053,
+   "radiusDeg": 0.256
+  },
+  {
+   "body": "moon",
+   "utc": "2027-10-31T15:30:00Z",
+   "az": 219.5185,
+   "altAirless": 2.0454,
+   "altApparent": 2.3248,
+   "radiusDeg": 0.2579
+  },
+  {
+   "body": "moon",
+   "utc": "2027-11-11T02:45:00Z",
+   "az": 279.9939,
+   "altAirless": 2.4926,
+   "altApparent": 2.7455,
+   "radiusDeg": 0.2541
+  },
+  {
+   "body": "moon",
+   "utc": "2027-04-08T17:36:00Z",
+   "az": 272.9258,
+   "altAirless": 22.0162,
+   "altApparent": 22.0567,
+   "radiusDeg": 0.2654
+  }
+ ],
+ "moonLit": [
+  {
+   "utc": "2026-12-21T07:30:00Z",
+   "fraction": 0.8896
+  },
+  {
+   "utc": "2026-12-21T14:40:00Z",
+   "fraction": 0.9106
+  },
+  {
+   "utc": "2027-01-14T22:35:00Z",
+   "fraction": 0.4055
+  },
+  {
+   "utc": "2027-03-20T05:30:00Z",
+   "fraction": 0.9356
+  },
+  {
+   "utc": "2027-03-20T17:00:00Z",
+   "fraction": 0.9602
+  },
+  {
+   "utc": "2027-03-28T00:30:00Z",
+   "fraction": 0.6898
+  },
+  {
+   "utc": "2027-03-28T01:30:00Z",
+   "fraction": 0.686
+  },
+  {
+   "utc": "2027-03-28T17:20:00Z",
+   "fraction": 0.6254
+  },
+  {
+   "utc": "2027-06-21T03:00:00Z",
+   "fraction": 0.9601
+  },
+  {
+   "utc": "2027-06-21T19:15:00Z",
+   "fraction": 0.9315
+  },
+  {
+   "utc": "2027-09-23T05:10:00Z",
+   "fraction": 0.5254
+  },
+  {
+   "utc": "2027-09-23T16:50:00Z",
+   "fraction": 0.4708
+  },
+  {
+   "utc": "2027-09-27T15:11:00Z",
+   "fraction": 0.0854
+  },
+  {
+   "utc": "2027-10-31T00:30:00Z",
+   "fraction": 0.027
+  },
+  {
+   "utc": "2027-10-31T01:30:00Z",
+   "fraction": 0.0284
+  },
+  {
+   "utc": "2027-10-31T15:30:00Z",
+   "fraction": 0.0519
+  },
+  {
+   "utc": "2027-11-11T02:45:00Z",
+   "fraction": 0.899
+  },
+  {
+   "utc": "2027-04-08T17:36:00Z",
+   "fraction": 0.0378
+  }
+ ],
+ "bridge": {
+  "point": "sued-mitte",
+  "bearingDeg": 280.0946,
+  "distanceM": 6188.8,
+  "passes": [
+   {
+    "body": "moon",
+    "start": "2026-12-28T09:35:20Z",
+    "end": "2026-12-28T09:39:05Z",
+    "peak": "2026-12-28T09:37:20Z",
+    "coveredFraction": 0.27,
+    "peakAlt": 1.455,
+    "axisCrossing": "2026-12-28T09:37:27Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-01-14T22:33:55Z",
+    "end": "2027-01-14T22:36:30Z",
+    "peak": "2027-01-14T22:35:45Z",
+    "coveredFraction": 0.048,
+    "peakAlt": 3.03,
+    "axisCrossing": "2027-01-14T22:35:09Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-02-10T20:38:15Z",
+    "end": "2027-02-10T20:41:20Z",
+    "peak": "2027-02-10T20:39:50Z",
+    "coveredFraction": 0.297,
+    "peakAlt": 1.063,
+    "axisCrossing": "2027-02-10T20:39:46Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-02-21T05:56:10Z",
+    "end": "2027-02-21T06:00:00Z",
+    "peak": "2027-02-21T05:58:05Z",
+    "coveredFraction": 0.394,
+    "peakAlt": 1.65,
+    "axisCrossing": "2027-02-21T05:58:17Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-05T17:39:05Z",
+    "end": "2027-04-05T17:42:20Z",
+    "peak": "2027-04-05T17:40:40Z",
+    "coveredFraction": 0.32,
+    "peakAlt": 0.545,
+    "axisCrossing": "2027-04-05T17:40:40Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-04-06T17:11:10Z",
+    "end": "2027-04-06T17:13:50Z",
+    "peak": "2027-04-06T17:12:40Z",
+    "coveredFraction": 0.062,
+    "peakAlt": 2.942,
+    "axisCrossing": "2027-04-06T17:12:31Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-06T17:37:40Z",
+    "end": "2027-04-06T17:40:50Z",
+    "peak": "2027-04-06T17:39:10Z",
+    "coveredFraction": 0.292,
+    "peakAlt": 0.967,
+    "axisCrossing": "2027-04-06T17:39:14Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-07T17:36:00Z",
+    "end": "2027-04-07T17:39:20Z",
+    "peak": "2027-04-07T17:37:55Z",
+    "coveredFraction": 0.265,
+    "peakAlt": 1.365,
+    "axisCrossing": "2027-04-07T17:37:49Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-08T17:34:45Z",
+    "end": "2027-04-08T17:38:05Z",
+    "peak": "2027-04-08T17:36:20Z",
+    "coveredFraction": 0.429,
+    "peakAlt": 1.816,
+    "axisCrossing": "2027-04-08T17:36:23Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-09T17:33:35Z",
+    "end": "2027-04-09T17:36:50Z",
+    "peak": "2027-04-09T17:35:40Z",
+    "coveredFraction": 0.154,
+    "peakAlt": 2.145,
+    "axisCrossing": "2027-04-09T17:34:59Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-10T17:32:15Z",
+    "end": "2027-04-10T17:34:55Z",
+    "peak": "2027-04-10T17:33:50Z",
+    "coveredFraction": 0.074,
+    "peakAlt": 2.641,
+    "axisCrossing": "2027-04-10T17:33:35Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-04-11T17:30:55Z",
+    "end": "2027-04-11T17:33:30Z",
+    "peak": "2027-04-11T17:32:50Z",
+    "coveredFraction": 0.046,
+    "peakAlt": 3.023,
+    "axisCrossing": "2027-04-11T17:32:11Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-04-17T02:30:25Z",
+    "end": "2027-04-17T02:33:45Z",
+    "peak": "2027-04-17T02:32:10Z",
+    "coveredFraction": 0.32,
+    "peakAlt": 0.499,
+    "axisCrossing": "2027-04-17T02:32:04Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-05-14T00:22:40Z",
+    "end": "2027-05-14T00:25:30Z",
+    "peak": "2027-05-14T00:24:10Z",
+    "coveredFraction": 0.085,
+    "peakAlt": 2.505,
+    "axisCrossing": "2027-05-14T00:24:05Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-06-27T11:36:35Z",
+    "end": "2027-06-27T11:39:40Z",
+    "peak": "2027-06-27T11:38:15Z",
+    "coveredFraction": 0.284,
+    "peakAlt": 1.195,
+    "axisCrossing": "2027-06-27T11:38:08Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-08-31T17:30:05Z",
+    "end": "2027-08-31T17:32:25Z",
+    "peak": "2027-08-31T17:31:55Z",
+    "coveredFraction": 0.03,
+    "peakAlt": 3.133,
+    "axisCrossing": "2027-08-31T17:31:07Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-01T17:30:35Z",
+    "end": "2027-09-01T17:33:15Z",
+    "peak": "2027-09-01T17:31:55Z",
+    "coveredFraction": 0.071,
+    "peakAlt": 2.814,
+    "axisCrossing": "2027-09-01T17:31:55Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-02T17:31:20Z",
+    "end": "2027-09-02T17:34:15Z",
+    "peak": "2027-09-02T17:33:05Z",
+    "coveredFraction": 0.101,
+    "peakAlt": 2.331,
+    "axisCrossing": "2027-09-02T17:32:43Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-03T17:32:00Z",
+    "end": "2027-09-03T17:35:25Z",
+    "peak": "2027-09-03T17:33:55Z",
+    "coveredFraction": 0.416,
+    "peakAlt": 1.899,
+    "axisCrossing": "2027-09-03T17:33:31Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-04T17:32:20Z",
+    "end": "2027-09-04T17:35:50Z",
+    "peak": "2027-09-04T17:34:00Z",
+    "coveredFraction": 0.332,
+    "peakAlt": 1.573,
+    "axisCrossing": "2027-09-04T17:34:19Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-05T17:33:35Z",
+    "end": "2027-09-05T17:36:40Z",
+    "peak": "2027-09-05T17:35:10Z",
+    "coveredFraction": 0.28,
+    "peakAlt": 1.104,
+    "axisCrossing": "2027-09-05T17:35:07Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-06T17:34:20Z",
+    "end": "2027-09-06T17:37:30Z",
+    "peak": "2027-09-06T17:36:00Z",
+    "coveredFraction": 0.316,
+    "peakAlt": 0.688,
+    "axisCrossing": "2027-09-06T17:35:54Z"
+   },
+   {
+    "body": "sun",
+    "start": "2027-09-07T17:35:05Z",
+    "end": "2027-09-07T17:38:20Z",
+    "peak": "2027-09-07T17:36:35Z",
+    "coveredFraction": 0.339,
+    "peakAlt": 0.314,
+    "axisCrossing": "2027-09-07T17:36:42Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-09-17T06:14:25Z",
+    "end": "2027-09-17T06:17:25Z",
+    "peak": "2027-09-17T06:16:00Z",
+    "coveredFraction": 0.283,
+    "peakAlt": 1.261,
+    "axisCrossing": "2027-09-17T06:15:53Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-11-11T02:43:50Z",
+    "end": "2027-11-11T02:46:30Z",
+    "peak": "2027-11-11T02:45:10Z",
+    "coveredFraction": 0.084,
+    "peakAlt": 2.671,
+    "axisCrossing": "2027-11-11T02:45:09Z"
+   },
+   {
+    "body": "moon",
+    "start": "2027-11-21T11:55:25Z",
+    "end": "2027-11-21T11:58:45Z",
+    "peak": "2027-11-21T11:57:15Z",
+    "coveredFraction": 0.291,
+    "peakAlt": 0.883,
+    "axisCrossing": "2027-11-21T11:57:05Z"
+   }
+  ]
+ },
+ "miniatureBridge": {
+  "spot": {
+   "lat": 52.511101,
+   "lon": 13.4991829,
+   "eyeOrthometric": 49.800000000000004,
+   "towerBaseOrthometric": 34.6
+  },
+  "crossings": [
+   {
+    "body": "moon",
+    "state": "antenna",
+    "axisCrossing": "2027-01-14T22:35:09Z"
+   },
+   {
+    "body": "moon",
+    "state": "edge",
+    "axisCrossing": "2027-02-21T05:58:17Z"
+   },
+   {
+    "body": "sun",
+    "state": "ring",
+    "axisCrossing": "2027-04-08T17:36:23Z"
+   },
+   {
+    "body": "moon",
+    "state": "antenna",
+    "axisCrossing": "2027-05-14T00:24:05Z"
+   },
+   {
+    "body": "moon",
+    "state": "antenna",
+    "axisCrossing": "2027-08-21T08:10:55Z"
+   },
+   {
+    "body": "sun",
+    "state": "edge",
+    "axisCrossing": "2027-09-03T17:33:31Z"
+   },
+   {
+    "body": "sun",
+    "state": "edge",
+    "axisCrossing": "2027-09-04T17:34:19Z"
+   },
+   {
+    "body": "moon",
+    "state": "antenna",
+    "axisCrossing": "2027-11-11T02:45:09Z"
+   }
+  ]
+ },
+ "streets": [
+  {
+   "name": "Frankfurter Allee",
+   "from": {
+    "lat": 52.51167,
+    "lon": 13.49556
+   },
+   "to": {
+    "lat": 52.51584,
+    "lon": 13.4542
+   },
+   "geodesicBearingDeg": 279.4,
+   "storedBearingDeg": 279.41
+  },
+  {
+   "name": "Frankfurter Allee",
+   "from": {
+    "lat": 52.51584,
+    "lon": 13.4542
+   },
+   "to": {
+    "lat": 52.51167,
+    "lon": 13.49556
+   },
+   "geodesicBearingDeg": 99.367,
+   "storedBearingDeg": 99.37
+  },
+  {
+   "name": "Karl-Marx-Allee",
+   "from": {
+    "lat": 52.51584,
+    "lon": 13.4542
+   },
+   "to": {
+    "lat": 52.51841,
+    "lon": 13.42958
+   },
+   "geodesicBearingDeg": 279.72,
+   "storedBearingDeg": 279.72
+  },
+  {
+   "name": "Karl-Marx-Allee",
+   "from": {
+    "lat": 52.51841,
+    "lon": 13.42958
+   },
+   "to": {
+    "lat": 52.51584,
+    "lon": 13.4542
+   },
+   "geodesicBearingDeg": 99.7,
+   "storedBearingDeg": 99.7
+  },
+  {
+   "name": "Bismarckstraße",
+   "from": {
+    "lat": 52.51089,
+    "lon": 13.29736
+   },
+   "to": {
+    "lat": 52.51239,
+    "lon": 13.32071
+   },
+   "geodesicBearingDeg": 83.98,
+   "storedBearingDeg": 83.95
+  },
+  {
+   "name": "Bismarckstraße",
+   "from": {
+    "lat": 52.51239,
+    "lon": 13.32071
+   },
+   "to": {
+    "lat": 52.51089,
+    "lon": 13.29736
+   },
+   "geodesicBearingDeg": 263.999,
+   "storedBearingDeg": 263.97
+  },
+  {
+   "name": "Unter den Linden",
+   "from": {
+    "lat": 52.51627,
+    "lon": 13.37953
+   },
+   "to": {
+    "lat": 52.5172,
+    "lon": 13.39324
+   },
+   "geodesicBearingDeg": 83.65,
+   "storedBearingDeg": 83.59
+  },
+  {
+   "name": "Unter den Linden",
+   "from": {
+    "lat": 52.5172,
+    "lon": 13.39324
+   },
+   "to": {
+    "lat": 52.51627,
+    "lon": 13.37953
+   },
+   "geodesicBearingDeg": 263.661,
+   "storedBearingDeg": 263.61
+  },
+  {
+   "name": "Kurfürstendamm",
+   "from": {
+    "lat": 52.50012,
+    "lon": 13.3074
+   },
+   "to": {
+    "lat": 52.49774,
+    "lon": 13.29424
+   },
+   "geodesicBearingDeg": 253.499,
+   "storedBearingDeg": 253.47
+  },
+  {
+   "name": "Kurfürstendamm",
+   "from": {
+    "lat": 52.49774,
+    "lon": 13.29424
+   },
+   "to": {
+    "lat": 52.50012,
+    "lon": 13.3074
+   },
+   "geodesicBearingDeg": 73.488,
+   "storedBearingDeg": 73.46
+  },
+  {
+   "name": "Bismarckstraße",
+   "from": {
+    "lat": 52.46073,
+    "lon": 13.33941
+   },
+   "to": {
+    "lat": 52.4539,
+    "lon": 13.33879
+   },
+   "geodesicBearingDeg": 183.174,
+   "storedBearingDeg": 183.2
+  },
+  {
+   "name": "Bismarckstraße",
+   "from": {
+    "lat": 52.4539,
+    "lon": 13.33879
+   },
+   "to": {
+    "lat": 52.46073,
+    "lon": 13.33941
+   },
+   "geodesicBearingDeg": 3.174,
+   "storedBearingDeg": 3.2
+  },
+  {
+   "name": "Schönhauser Allee",
+   "from": {
+    "lat": 52.55459,
+    "lon": 13.41448
+   },
+   "to": {
+    "lat": 52.54839,
+    "lon": 13.41336
+   },
+   "geodesicBearingDeg": 186.284,
+   "storedBearingDeg": 186.3
+  },
+  {
+   "name": "Schönhauser Allee",
+   "from": {
+    "lat": 52.54839,
+    "lon": 13.41336
+   },
+   "to": {
+    "lat": 52.55459,
+    "lon": 13.41448
+   },
+   "geodesicBearingDeg": 6.283,
+   "storedBearingDeg": 6.3
+  },
+  {
+   "name": "Schönhauser Allee",
+   "from": {
+    "lat": 52.53521,
+    "lon": 13.41262
+   },
+   "to": {
+    "lat": 52.54025,
+    "lon": 13.41234
+   },
+   "geodesicBearingDeg": 358.06,
+   "storedBearingDeg": 358.05
+  }
+ ],
+ "days": [
+  {
+   "day": "2026-12-21",
+   "sunCentre4DegDownEvening": "2026-12-21T15:19:57Z",
+   "sunrise": "2026-12-21T07:14:54Z",
+   "sunset": "2026-12-21T14:53:55Z",
+   "moonrise": [
+    "2026-12-21T12:07:49Z"
+   ],
+   "moonset": [
+    "2026-12-21T04:15:00Z"
+   ]
+  },
+  {
+   "day": "2027-01-14",
+   "sunCentre4DegDownEvening": "2027-01-14T15:44:54Z",
+   "sunrise": "2027-01-14T07:10:57Z",
+   "sunset": "2027-01-14T15:20:06Z",
+   "moonrise": [
+    "2027-01-14T09:18:40Z"
+   ],
+   "moonset": [
+    "2027-01-14T23:01:50Z"
+   ]
+  },
+  {
+   "day": "2027-03-20",
+   "sunCentre4DegDownEvening": "2027-03-20T17:39:54Z",
+   "sunrise": "2027-03-20T05:09:49Z",
+   "sunset": "2027-03-20T17:19:01Z",
+   "moonrise": [
+    "2027-03-20T15:00:20Z"
+   ],
+   "moonset": [
+    "2027-03-20T04:18:07Z"
+   ]
+  },
+  {
+   "day": "2027-03-27",
+   "sunCentre4DegDownEvening": "2027-03-27T17:52:22Z",
+   "sunrise": "2027-03-27T04:53:20Z",
+   "sunset": "2027-03-27T17:31:20Z",
+   "moonrise": [
+    "2027-03-26T23:18:49Z"
+   ],
+   "moonset": [
+    "2027-03-27T06:19:22Z"
+   ]
+  },
+  {
+   "day": "2027-03-28",
+   "sunCentre4DegDownEvening": "2027-03-28T17:54:10Z",
+   "sunrise": "2027-03-28T04:50:58Z",
+   "sunset": "2027-03-28T17:33:06Z",
+   "moonrise": [
+    "2027-03-28T00:26:38Z"
+   ],
+   "moonset": [
+    "2027-03-28T07:00:04Z"
+   ]
+  },
+  {
+   "day": "2027-03-29",
+   "sunCentre4DegDownEvening": "2027-03-29T17:55:57Z",
+   "sunrise": "2027-03-29T04:48:37Z",
+   "sunset": "2027-03-29T17:34:51Z",
+   "moonrise": [
+    "2027-03-29T01:21:27Z"
+   ],
+   "moonset": [
+    "2027-03-29T07:53:09Z"
+   ]
+  },
+  {
+   "day": "2027-06-21",
+   "sunCentre4DegDownEvening": "2027-06-21T20:02:48Z",
+   "sunrise": "2027-06-21T02:43:02Z",
+   "sunset": "2027-06-21T19:33:13Z",
+   "moonrise": [
+    "2027-06-21T21:22:15Z"
+   ],
+   "moonset": [
+    "2027-06-21T04:36:26Z"
+   ]
+  },
+  {
+   "day": "2027-09-23",
+   "sunCentre4DegDownEvening": "2027-09-23T17:24:04Z",
+   "sunrise": "2027-09-23T04:53:20Z",
+   "sunset": "2027-09-23T17:03:15Z",
+   "moonrise": [
+    "2027-09-23T20:46:09Z"
+   ],
+   "moonset": [
+    "2027-09-23T13:49:01Z"
+   ]
+  },
+  {
+   "day": "2027-09-27",
+   "sunCentre4DegDownEvening": "2027-09-27T17:14:33Z",
+   "sunrise": "2027-09-27T05:00:05Z",
+   "sunset": "2027-09-27T16:53:46Z",
+   "moonrise": [
+    "2027-09-27T01:09:08Z"
+   ],
+   "moonset": [
+    "2027-09-27T15:39:36Z"
+   ]
+  },
+  {
+   "day": "2027-10-30",
+   "sunCentre4DegDownEvening": "2027-10-30T16:03:02Z",
+   "sunrise": "2027-10-30T05:58:22Z",
+   "sunset": "2027-10-30T15:40:56Z",
+   "moonrise": [
+    "2027-10-30T07:24:49Z"
+   ],
+   "moonset": [
+    "2027-10-30T15:25:59Z"
+   ]
+  },
+  {
+   "day": "2027-10-31",
+   "sunCentre4DegDownEvening": "2027-10-31T16:01:11Z",
+   "sunrise": "2027-10-31T06:00:12Z",
+   "sunset": "2027-10-31T15:39:00Z",
+   "moonrise": [
+    "2027-10-31T08:44:47Z"
+   ],
+   "moonset": [
+    "2027-10-31T15:58:45Z"
+   ]
+  },
+  {
+   "day": "2027-11-01",
+   "sunCentre4DegDownEvening": "2027-11-01T15:59:22Z",
+   "sunrise": "2027-11-01T06:02:02Z",
+   "sunset": "2027-11-01T15:37:06Z",
+   "moonrise": [
+    "2027-11-01T09:54:55Z"
+   ],
+   "moonset": [
+    "2027-11-01T16:42:53Z"
+   ]
+  }
+ ],
+ "siegessaeuleWestFullCover": [
+  {
+   "body": "moon",
+   "appPeakWhenAudited": "2027-01-12T20:24:00.000Z",
+   "refPeak": "2027-01-12T20:25:40Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "moon",
+   "appPeakWhenAudited": "2027-01-26T08:13:00.000Z",
+   "refPeak": "2027-01-26T08:13:15Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "sun",
+   "appPeakWhenAudited": "2027-03-10T16:57:00.000Z",
+   "refPeak": "2027-03-10T16:57:00Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "sun",
+   "appPeakWhenAudited": "2027-03-11T16:55:30.000Z",
+   "refPeak": "2027-03-11T16:57:25Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "sun",
+   "appPeakWhenAudited": "2027-03-12T16:56:30.000Z",
+   "refPeak": "2027-03-12T16:58:10Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "moon",
+   "appPeakWhenAudited": "2027-04-04T14:59:30.000Z",
+   "refPeak": "2027-04-04T14:59:40Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "sun",
+   "appPeakWhenAudited": "2027-10-01T16:36:30.000Z",
+   "refPeak": "2027-10-01T16:37:45Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "sun",
+   "appPeakWhenAudited": "2027-10-02T16:35:00.000Z",
+   "refPeak": "2027-10-02T16:36:30Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "sun",
+   "appPeakWhenAudited": "2027-10-03T16:35:30.000Z",
+   "refPeak": "2027-10-03T16:35:45Z",
+   "refCovered": 1.0
+  },
+  {
+   "body": "moon",
+   "appPeakWhenAudited": "2027-11-09T00:34:30.000Z",
+   "refPeak": "2027-11-09T00:36:25Z",
+   "refCovered": 1.0
+  }
+ ]
+}
