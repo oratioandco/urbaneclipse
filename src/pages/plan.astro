@@ -174,11 +174,25 @@ import '../miniature/miniature.css';
                 <button id="today" type="button" hidden>Today</button>
                 <button id="next-day" type="button" aria-label="Next day">&rsaquo;</button>
               </div>
-              <span class="muted" id="sun"></span>
+              <span class="muted" id="sun" hidden></span>
             </div>
-            <div id="tracks" aria-label="When things line up today"></div>
-            <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="any" aria-label="Time of day" /><button id="fine" type="button" aria-pressed="false" title="Fine timing: half an hour either side, to 5 seconds">&plusmn;30 min</button></div>
-            <div id="moments" aria-label="Streets lined up today"></div>
+            <div class="shots">
+              <div class="shots-head"><span id="shots-title">Shots</span><span id="shots-count" class="muted" aria-live="polite"></span></div>
+              <div class="shots-row" id="shots-row" role="list" aria-labelledby="shots-title"></div>
+            </div>
+            <div class="timeline" id="timeline">
+              <svg id="tl-plot" class="tl-plot" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div id="tl-bar" class="tl-bar" aria-hidden="true"></div>
+              <div id="tl-thumb" class="tl-thumb" aria-hidden="true"><span id="tl-label" class="tl-label"></span><i id="tl-moon" class="tl-dot tl-dot-moon"></i><i id="tl-sun" class="tl-dot tl-dot-sun"></i><b class="tl-grip"></b></div>
+              <div class="row" id="time-row"><input id="time" type="range" min="0" max="1439" step="any" aria-label="Time of day" /><button id="fine" type="button" aria-pressed="false" title="Fine timing: half an hour either side, to 5 seconds">&plusmn;30 min</button></div>
+            </div>
+            <div id="dv-readout" class="dv-readout"></div>
+            <div class="dv-nav" role="group" aria-label="Step through the day">
+              <button id="dv-earlier" type="button" aria-label="Earlier shot">&lsaquo; Shot</button>
+              <button id="dv-minus" type="button" aria-label="One minute earlier">&minus;1 min</button>
+              <button id="dv-plus" type="button" aria-label="One minute later">+1 min</button>
+              <button id="dv-later" type="button" aria-label="Later shot">Shot &rsaquo;</button>
+            </div>
           </section>
           <div class="camera-rows" id="camera-rows">
             <canvas id="horizon" role="img" aria-label="Horizon from here"></canvas>
@@ -225,7 +239,6 @@ import '../miniature/miniature.css';
               <button type="button" data-layer="streets">Streets</button>
             </div>
             <div id="daylist" class="mode-shoot" aria-label="Every chance today"></div>
-            <div class="muted mode-shoot" id="moments-empty" hidden>No street lines up with the sun or moon today.</div>
           </section>
         </div>
       </div>

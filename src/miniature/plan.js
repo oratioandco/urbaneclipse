@@ -1,25 +1,21 @@
 /**
- * The day's plan: tower paths and hour lines, street henges, the spots for now, and the bars
- * above the time slider.
+ * The day's plan: tower paths and hour lines, street henges and the spots for now. The panel
+ * draws from it: the day view (dayview.js), the day list and the coming days.
  */
-import * as THREE from 'three';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { streetMoments } from '../lib/streets.ts';
 import { alignmentLine, applyView, computeDayPath, MIN_MOON_ILLUMINATION, pointAtTime } from '../lib/dailyPaths.ts';
 import { loadViewshed, sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
-import { formatClock, formatHour, formatMinutes } from './time.js';
+import { formatHour } from './time.js';
 import { sceneFromLatLon } from './eye.js';
 import { antennaRange, visibleMoon } from './towerShots.js';
-import { flyTo } from './camera.js';
 import { layers, shownBody } from './chrome.js';
-import { dayStart, instant, showPhases, timeInput } from './clock.js';
+import { dayStart, instant, showPhases } from './clock.js';
 import { renderDayList } from './daylist.js';
+import { renderDayView } from './dayview.js';
 import { renderPlanCards } from './planmode.js';
-import { enterEye, fullFrame } from './eyeLevel.js';
 import { loadWeather } from './forecast.js';
-import { updateSun } from './lighting.js';
-import { eyeCamera } from './render.js';
 import { app, invalidate } from './state.js';
 
 const RAY_COLOUR = { sun: [1, 0.6, 0.16], moon: [0.56, 0.7, 1] };
@@ -55,34 +51,6 @@ export function updateDay() {
   app.shownKey = null;
   loadWeather();
   computePaths();
-  const list = document.getElementById('moments');
-  list.replaceChildren();
-  const seen = new Set();
-  // The longest views are the ones worth a trip; the rest can still be found with the slider.
-  const best = [...app.moments].sort((a, b) => b.view.lengthM - a.view.lengthM).slice(0, 14).sort((a, b) => a.peak - b.peak);
-  for (const moment of best.filter((m) => layers.streets && shownBody(m))) {
-    // One chip per street: both directions of a street rarely share a moment, but parts can.
-    const key = `${moment.view.name}${moment.body}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const chip = document.createElement('button');
-    const minutes = Math.round((moment.peak - from) / 60_000);
-    const stamp = formatMinutes(minutes);
-    chip.textContent = `${stamp} ${moment.view.name}`;
-    chip.dataset.body = moment.body;
-    chip.addEventListener('click', () => {
-      timeInput.value = String(minutes);
-      updateSun();
-      const [x, z] = moment.view.a;
-      app.photographer = { x, y: app.groundAt(x, z), z, heading: moment.view.bearingDeg };
-      if (app.camera === eyeCamera) enterEye(x, z, { heading: moment.view.bearingDeg, pitch: THREE.MathUtils.clamp(moment.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
-      else flyTo((moment.view.a[0] + moment.view.b[0]) / 2, (moment.view.a[1] + moment.view.b[1]) / 2);
-      invalidate();
-    });
-    list.append(chip);
-  }
-  // Saying no street lines up would be wrong while the streets are merely hidden.
-  document.getElementById('moments-empty').hidden = seen.size > 0 || !layers.streets;
 }
 
 // The rules live in towerShots.js. Along a line through the tower, where the disc sits behind
@@ -132,6 +100,7 @@ function computePaths() {
 function buildPaths() {
   const from = dayStart();
   app.dayPaths = computeDayPaths(from);
+  app.dayReady = true;
   // One line through the tower per hour, like the hours on a clock face: along each, the disc
   // sits behind some part of the tower at that hour.
   app.hourRays = [];
@@ -170,154 +139,13 @@ export function updateSpots(t) {
   }
 }
 
-/** Bars above the time slider for when each path is clear and when streets line up. */
+/**
+ * The day view shows when each path is clear and when streets line up, as shots on its scale.
+ * Called when the day's paths, its forecast or the layers change (the name is from when these
+ * were bars above the slider; forecast.js still calls it).
+ */
 export function updateTracks() {
-  const from = dayStart();
-  const pct = (t) => `${(((t - from) / 86_400_000) * 100).toFixed(2)}%`;
-  const span = (fromT, toT, title, detail) => ({ from: fromT, to: toT, title, detail });
-  const rows = [];
-  for (const path of app.dayPaths) {
-    const runs = [];
-    for (const segment of path.source.segments) {
-      let open = null;
-      for (const p of segment) {
-        if (p.clear === false) open = null;
-        else if (open) open.to = p.t;
-        else runs.push((open = { from: p.t, to: p.t }));
-      }
-    }
-    if (layers.tower && shownBody(path)) {
-      const who = path.body === 'sun' ? 'Sun' : 'Moon';
-      rows.push({
-        cls: path.body,
-        runs: runs.map((run) =>
-          span(
-            run.from,
-            run.to,
-            `${who} behind the TV tower`,
-            `${formatClock(run.from)}–${formatClock(run.to)} · the ${who.toLowerCase()} sits behind the tower with the buildings out of the way${path.faint ? ' · faint moon' : ''}`,
-          ),
-        ),
-      });
-    }
-  }
-  if (layers.streets) {
-    rows.push({
-      cls: 'streets',
-      runs: app.moments.filter(shownBody).map((m) =>
-        span(
-          m.from,
-          m.to,
-          `${m.view.name} street henge`,
-          `${formatClock(m.from)}–${formatClock(m.to)} · the ${m.body} runs straight down the street, peaking at ${formatClock(m.peak)}`,
-        ),
-      ),
-    });
-  }
-  const tracks = document.getElementById('tracks');
-  const cloudRow = cloudTrack();
-  hideTrackTip();
-  // A roving tab stop: Tab reaches the strip once, the arrow keys walk the bars.
-  const bars = [];
-  tracks.replaceChildren(
-    ...(cloudRow ? [cloudRow] : []),
-    ...rows.map((row) => {
-      const line = document.createElement('div');
-      line.className = `track track--${row.cls}`;
-      for (const run of row.runs) {
-        const bar = document.createElement('span');
-        bar.style.left = pct(run.from);
-        bar.style.width = `calc(${pct(run.to)} - ${pct(run.from)} + 3px)`;
-        bar.dataset.tipTitle = run.title;
-        bar.dataset.tipDetail = run.detail;
-        bar.setAttribute('role', 'img');
-        bar.setAttribute('aria-label', `${run.title}. ${run.detail}`);
-        bars.push(bar);
-        line.append(bar);
-      }
-      return line;
-    }),
-  );
-  if (bars.length) bars[0].tabIndex = 0;
-  for (const bar of bars.slice(1)) bar.tabIndex = -1;
-}
-
-/** One shared tooltip for the track bars, shown near the hovered or focused bar. */
-const trackTip = document.createElement('div');
-trackTip.id = 'track-tip';
-trackTip.className = 'track-tip surface';
-trackTip.setAttribute('role', 'tooltip');
-trackTip.hidden = true;
-document.body.append(trackTip);
-
-function showTrackTip(bar) {
-  trackTip.replaceChildren(
-    Object.assign(document.createElement('b'), { textContent: bar.dataset.tipTitle }),
-    Object.assign(document.createElement('small'), { textContent: bar.dataset.tipDetail }),
-  );
-  trackTip.hidden = false;
-  placeTrackTip(bar);
-}
-function placeTrackTip(bar) {
-  if (trackTip.hidden) return;
-  const barBox = bar.getBoundingClientRect();
-  const tipBox = trackTip.getBoundingClientRect();
-  const left = Math.max(8, Math.min(barBox.left + barBox.width / 2 - tipBox.width / 2, window.innerWidth - tipBox.width - 8));
-  let top = barBox.top - tipBox.height - 8;
-  if (top < 8) top = barBox.bottom + 8;
-  trackTip.style.left = `${Math.round(left)}px`;
-  trackTip.style.top = `${Math.round(top)}px`;
-}
-function hideTrackTip() {
-  trackTip.hidden = true;
-}
-{
-  const tracks = document.getElementById('tracks');
-  const barFor = (target) => (target instanceof Element ? target.closest('.track > span[data-tip-title]') : null);
-  const allBars = () => [...tracks.querySelectorAll('span[data-tip-title]')];
-  let bar = null;
-  tracks.addEventListener('mouseover', (e) => {
-    const hit = barFor(e.target);
-    if (hit) showTrackTip((bar = hit));
-  });
-  tracks.addEventListener('mousemove', () => placeTrackTip(bar));
-  tracks.addEventListener('mouseleave', hideTrackTip);
-  tracks.addEventListener('focusin', (e) => {
-    const hit = barFor(e.target);
-    if (hit) showTrackTip((bar = hit));
-  });
-  tracks.addEventListener('focusout', hideTrackTip);
-  tracks.addEventListener('keydown', (e) => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const hit = barFor(e.target);
-    if (!hit) return;
-    const bars = allBars();
-    const at = bars.indexOf(hit) + (e.key === 'ArrowRight' ? 1 : -1);
-    if (at < 0 || at >= bars.length) return;
-    e.preventDefault();
-    bars[at].focus();
-  });
-  window.addEventListener('scroll', hideTrackTip, true);
-  window.addEventListener('blur', hideTrackTip);
-}
-
-/** The day's clouds above the slider: high, mid and low in three thin bands, darker with more cover. */
-function cloudTrack() {
-  if (!app.weather || !layers.weather) return null;
-  const canvas = document.createElement('canvas');
-  canvas.className = 'track track--clouds';
-  canvas.width = 24 * 4;
-  canvas.height = 3;
-  const ctx = canvas.getContext('2d');
-  [['high', '#9aa3b5'], ['mid', '#6f788b'], ['low', '#454c5c']].forEach(([layer, colour], row) => {
-    app.weather.berlin[layer].forEach((cover, hour) => {
-      ctx.globalAlpha = Math.min(1, cover * 1.1);
-      ctx.fillStyle = colour;
-      ctx.fillRect(hour * 4, row, 4, 1);
-    });
-  });
-  canvas.title = 'Cloud through the day: high, middle and low';
-  return canvas;
+  renderDayView();
 }
 
 export const PHASE_COLOURS = { night: '#1b2140', twilight: '#2f3a6e', blue: '#3f62b5', golden: '#f0a03c', day: '#f3e6c4' };
