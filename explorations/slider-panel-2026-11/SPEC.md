@@ -52,6 +52,9 @@ moments that are shots. Reference: `day-light-glass.html`.
 
 - One day, full 24 hours, straight time scale. Night moon shots must fit.
 - Light shown as a sun curve and a moon curve over a horizon, with a dot for the selected minute.
+- The sun's colour follows its height, matching the light bar: deep orange at the horizon, pale
+  gold higher up, white when high. This applies to the curve along its length and to the dot.
+  It is never one fixed orange. Use `sunLook` from `src/lib/mapBodyLook.ts`.
 - Cloud as one band built from the forecast's high, mid and low layers, blended. Where the sky
   is clear the band is empty.
 - Rain as bars under the band. Thunder marked.

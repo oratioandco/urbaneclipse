@@ -222,6 +222,8 @@ void main(){
     if (m + 1440 >= pr && m + 1440 <= pr + pl) a = Math.max(a, pmx * Math.sin(Math.PI * (m + 1440 - pr) / pl)); return a; };
   const PHASES = [[-16, [27, 33, 64]], [-9, [47, 58, 110]], [-3.5, [63, 98, 181]], [1, [240, 160, 60]], [9, [243, 230, 196]]];
   const barCol = (m) => { const a = sunAlt(m); if (a <= PHASES[0][0]) return PHASES[0][1]; for (let i = 0; i < 4; i++) if (a <= PHASES[i + 1][0]) return mix(PHASES[i][1], PHASES[i + 1][1], sstep(PHASES[i][0], PHASES[i + 1][0], a)); return PHASES[4][1]; };
+  const SUNK = [[-6, [255, 107, 51]], [0, [255, 163, 61]], [6, [255, 209, 138]], [20, [255, 235, 199]], [45, [255, 255, 255]]];
+  const sunTint = (a) => { if (a <= SUNK[0][0]) return SUNK[0][1]; for (let i = 0; i < 4; i++) if (a <= SUNK[i + 1][0]) return mix(SUNK[i][1], SUNK[i + 1][1], (a - SUNK[i][0]) / (SUNK[i + 1][0] - SUNK[i][0])); return SUNK[4][1]; };
   const phaseName = (m) => { const a = sunAlt(m); return a >= 6 ? 'Day' : a >= 0 ? 'Golden hour' : a >= -6 ? 'Blue hour' : a >= -12 ? 'Twilight' : 'Night'; };
   const edge = (from, to, test) => { for (let m = from; from < to ? m <= to : m >= to; m += from < to ? 1 : -1) if (test(m)) return m; return to; };
   const gradeAt = (d, m) => { const c = cover(d, m), r = samp(d, m, 'rain'); return r > 50 || c >= .8 ? 'skip' : c >= .55 ? 'maybe' : 'go'; };
@@ -301,8 +303,8 @@ void main(){
     if (WX[day].thunder.length) { x.fillStyle = '#ffe58a'; x.font = `600 11px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'top'; x.fillText('⚡', xOf((WX[day].thunder[0] + WX[day].thunder[1]) * 30), 34); }
     if (SKYBAR) { x.shadowColor = 'rgba(6,10,30,.55)'; x.shadowBlur = 4; x.shadowOffsetY = 1; }
     const curve = (fn, a, b) => { x.beginPath(); let on = false; for (let m = a; m <= b; m += 4) { const y = fn(m); if (y === null) { on = false; continue; } on ? x.lineTo(xOf(m), y) : x.moveTo(xOf(m), y); on = true; } };
-    x.save(); x.beginPath(); x.rect(x0, 0, x1 - x0, HOR); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.lineTo(xOf(1440), HOR); x.lineTo(xOf(0), HOR); x.save(); if (SKYBAR) x.globalAlpha = 0; const fg = x.createLinearGradient(0, 27, 0, HOR); fg.addColorStop(0, 'rgba(242,106,18,.42)'); fg.addColorStop(1, 'rgba(242,106,18,0)'); x.fillStyle = fg; x.fill(); x.restore();
-    curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = '#ffb27a'; x.lineWidth = 2; x.stroke(); x.restore();
+    x.save(); x.beginPath(); x.rect(x0, 0, x1 - x0, HOR); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.lineTo(xOf(1440), HOR); x.lineTo(xOf(0), HOR); x.save(); if (SKYBAR) x.globalAlpha = 0; const cg = x.createLinearGradient(x0, 0, x1, 0); for (let mm = 0; mm <= 1440; mm += 12) cg.addColorStop(mm / 1440, rgb(sunTint(sunAlt(mm)))); x.globalAlpha = SKYBAR ? 0 : .2; x.fillStyle = cg; x.fill(); x.restore();
+    curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = cg; x.lineWidth = 2.2; x.stroke(); x.restore();
     x.save(); x.beginPath(); x.rect(x0, HOR, x1 - x0, 40); x.clip(); curve((m) => sunY(sunAlt(m)), 0, 1440); x.strokeStyle = 'rgba(255,178,122,.34)'; x.lineWidth = 1.5; x.stroke(); x.restore();
     x.setLineDash([2, 4]); curve((m) => { const a = moonAlt(day, m); return a > 0 ? moonY(a) : null; }, 0, 1440); x.strokeStyle = '#8fa8ff'; x.lineWidth = 1.5; x.stroke(); x.setLineDash([]);
     x.fillStyle = 'rgba(236,232,223,.4)'; x.fillRect(x0, HOR - .5, x1 - x0, 1);
@@ -311,7 +313,7 @@ void main(){
     if (day === 0) { const xn = xOf(NOW); x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 9.5px ${getComputedStyle(document.body).fontFamily}`; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillText('NOW', xn, 111); x.fillRect(xn - .5, 96, 1, 6); }
     const m = min, sa = sunAlt(m), ma = moonAlt(day, m), tx = xOf(m);
     if (ma > 0) { x.save(); x.shadowColor = 'rgba(91,130,255,1)'; x.shadowBlur = 12; x.fillStyle = '#dfe6ff'; x.beginPath(); x.arc(tx, moonY(ma), 4.5, 0, 7); x.fill(); x.restore(); }
-    x.save(); if (sa >= 0) { x.shadowColor = 'rgba(242,106,18,1)'; x.shadowBlur = 18; x.fillStyle = '#ffe2c2'; x.beginPath(); x.arc(tx, sunY(sa), 6.5, 0, 7); x.fill(); x.fill(); }
+    x.save(); if (sa >= 0) { const st = sunTint(sa); x.shadowColor = rgb(st); x.shadowBlur = 18; x.fillStyle = rgb(mix(st, [255, 255, 255], .35)); x.beginPath(); x.arc(tx, sunY(sa), 6.5, 0, 7); x.fill(); x.fill(); }
     else { x.strokeStyle = 'rgba(255,255,255,.6)'; x.lineWidth = 1.5; x.beginPath(); x.arc(tx, sunY(sa), 4.5, 0, 7); x.stroke(); } x.restore();
     x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
     const g = x.createLinearGradient(x0, 0, x1, 0); for (let mm = 0; mm <= 1440; mm += 8) g.addColorStop(mm / 1440, rgb(barCol(mm))); x.fillStyle = g; x.beginPath(); x.roundRect ? x.roundRect(x0, 114, x1 - x0, 5, 2.5) : x.rect(x0, 114, x1 - x0, 5); x.fill();
@@ -349,7 +351,7 @@ void main(){
   wrap.addEventListener('keydown', (e) => { const st = { ArrowLeft: -5, ArrowRight: 5, PageDown: -30, PageUp: 30 }[e.key]; if (!st) return; e.preventDefault(); target = clamp(base() + st, 0, 1439); });
   const setMotion = (on) => { motionOn = on; $('motionBtn').textContent = on ? 'Pause' : 'Play'; $('motionBtn').setAttribute('aria-label', on ? 'Pause weather animation' : 'Play weather animation'); $('motionBtn').setAttribute('aria-pressed', on); };
   $('motionBtn').addEventListener('click', () => setMotion(!motionOn)); setMotion(motionOn);
-  setInterval(() => { $('status').textContent = `${SKYBAR ? 'glass+sky' : 'glass'} · v14 · motion ${motionOn ? 'on' : 'off'}${RM ? ' (device asks for reduced motion)' : ''} · sky ${H ? (H.texReady() ? 'photo frames' : 'drawn fallback') : 'no WebGL'} · ${frames} fps · clock ${clock.toFixed(0)} s`; frames = 0; }, 1000);
+  setInterval(() => { $('status').textContent = `${SKYBAR ? 'glass+sky' : 'glass'} · v15 · motion ${motionOn ? 'on' : 'off'}${RM ? ' (device asks for reduced motion)' : ''} · sky ${H ? (H.texReady() ? 'photo frames' : 'drawn fallback') : 'no WebGL'} · ${frames} fps · clock ${clock.toFixed(0)} s`; frames = 0; }, 1000);
   let n = 0; const slugs = Object.keys(IMG);
   for (const slug of slugs) { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); let box = [0, 0, im.width, im.height];
       try { const d = x.getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
