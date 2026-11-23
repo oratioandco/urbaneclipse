@@ -65,7 +65,7 @@
       <div class="nudge"><button id="prevShot">‹ Earlier shot</button><button id="minus">− 1 min</button><button id="plus">+ 1 min</button><button id="nextShot">Later shot ›</button></div>
     </div>
   </div>
-  <p class="notes">The sky at the top stands in for the map: in the app the same slider would drive the miniature and its weather. Drag the track, tap a shot, or use the arrow keys. Sketch data: Today has a shower around 13:00, Tomorrow is rain with an afternoon thunderstorm, Saturday is clear and has a moon shot at 02:40. Shot minutes are mock values.</p>
+  <p class="notes">The sky at the top stands in for the map: in the app the same slider would drive the miniature and its weather. Drag the track, tap a shot, or use the arrow keys. Sketch data: Today has a shower around 13:00, Tomorrow is rain with an afternoon thunderstorm, Saturday is clear and has a moon shot at 02:40. Shot minutes are mock values. <span id="motion"></span> <span style="font-family:var(--mono)">v8</span></p>
 </div>
 <script id="fs" type="x-shader/x-fragment">
 precision highp float;
@@ -120,12 +120,12 @@ vec3 scene(vec2 p){
   if (p.y > uGround && uTex > .5) { vec2 q = p / uSize.y; vec3 lit = mix(vec3(.46, .54, .82), vec3(1.), dayness);
     float fl = uFlash * exp(-pow((p.x - uFlashX) / (uSize.y * (uMode < .5 ? .8 : 3.)), 2.)) * .9;
     // overcast deck: a photographed stratocumulus sky takes over as cover closes in
-    float lb = dot(atlas(uCloudB, vec2(mir(q.x * .3 + uTime * .003), y01)), vec3(.333)), deck = smoothstep(.6, .95, cover);
+    float lb = dot(atlas(uCloudB, vec2(mir(q.x * .3 + uTime * .014), y01)), vec3(.333)), deck = smoothstep(.6, .95, cover);
     vec3 dc = mix(vec3(.22, .26, .44), vec3(.97, .98, 1.), dayness) * (.3 + .95 * lb) * (1. - .5 * storm); dc = mix(dc, dc * vec3(1.12, .9, .78), gold * .5);
     col = mix(col, dc + fl, deck * .94);
     // cumulus: photographed clouds, let through where the forecast has cloud
-    float la = dot(atlas(uCloudA, vec2(mir(q.x * .26 + uTime * .004), mix(.42, .99, y01))), vec3(.333));
-    float thr = mix(.72, .02, smoothstep(.1, .75, cover)), gate = smoothstep(thr, thr + .28, fbm(q * vec2(.8, 1.3) + vec2(uTime * .007, 3.))) * smoothstep(.1, .28, cover);
+    float la = dot(atlas(uCloudA, vec2(mir(q.x * .26 + uTime * .02), mix(.42, .99, y01))), vec3(.333));
+    float thr = mix(.72, .02, smoothstep(.1, .75, cover)), gate = smoothstep(thr, thr + .28, fbm(q * vec2(.8, 1.3) + vec2(uTime * .03, 3.))) * smoothstep(.1, .28, cover);
     vec3 cl = mix(lit, vec3(1., .76, .58), gold * .85 * (1. - ov)); cl = mix(cl, mix(vec3(.2, .23, .34), vec3(.45, .48, .57), dayness), storm);
     col = mix(col, cl * (.42 + .72 * la) + fl, smoothstep(.06, .3, la) * gate * (1. - deck * .85)); }
   else   if (p.y > uGround) { vec2 q = p / uSize.y; float show = smoothstep(.12, .3, cover), thr = mix(.74, .3, cover);
@@ -294,9 +294,9 @@ void main(){
     const vel = Math.abs(tx - prevTx) / dt; prevTx = tx; stretch += ((REDUCED ? 0 : clamp(vel / 2200, 0, .32)) - stretch) * .22;
     vids.forEach((v, i) => { if (!v || !vidOk[i] || v.readyState < 2 || v.currentTime === vidT[i]) return; vidT[i] = v.currentTime; for (const g of [G, H]) if (g && !g.put(i, v)) vidOk[i] = false; });
     if (G) { const shots = new Float32Array(24); SHOTS.filter((s) => s.d === day && !s.past && s.grade !== 'skip').slice(0, 8).forEach((s, i) => { shots[i * 3] = xOf(s.m) * GDPR; shots[i * 3 + 1] = s === cur ? 1 : .6; });
-      G.draw({ uCanvas: [glc.width, glc.height], uSize: [glc.width, TRACK * GDPR], uTime: clock, uLoop: clock / 18, uHw: 22 * GDPR * (1 + stretch), uMode: 0, uThumbM: min, uThumbX: tx * GDPR, uDpr: GDPR, uFlash: flash, uFlashX: xOf(flashM) * GDPR, uSeed: seed, uGround: GROUND * GDPR, uMargin: MARGIN * GDPR,
+      G.draw({ uCanvas: [glc.width, glc.height], uSize: [glc.width, TRACK * GDPR], uTime: clock, uLoop: clock / 9, uHw: 22 * GDPR * (1 + stretch), uMode: 0, uThumbM: min, uThumbX: tx * GDPR, uDpr: GDPR, uFlash: flash, uFlashX: xOf(flashM) * GDPR, uSeed: seed, uGround: GROUND * GDPR, uMargin: MARGIN * GDPR,
         uNowX: day === 0 ? xOf(NOW) * GDPR : -1, uRadius: 28 * GDPR, uShots: shots }); }
-    if (H) { const near = thunder(day, min) ? flash : 0; H.draw({ uCanvas: [heroC.width, heroC.height], uSize: [heroC.width, heroC.height], uTime: clock, uLoop: clock / 18, uHw: 1, uMode: 1, uThumbM: min, uThumbX: 0, uDpr: GDPR * .75, uFlash: near, uFlashX: heroC.width * .4, uSeed: seed, uGround: 0, uMargin: 0, uNowX: -1, uRadius: 0, uShots: new Float32Array(24) }); }
+    if (H) { const near = thunder(day, min) ? flash : 0; H.draw({ uCanvas: [heroC.width, heroC.height], uSize: [heroC.width, heroC.height], uTime: clock, uLoop: clock / 9, uHw: 1, uMode: 1, uThumbM: min, uThumbX: 0, uDpr: GDPR * .75, uFlash: near, uFlashX: heroC.width * .4, uSeed: seed, uGround: 0, uMargin: 0, uNowX: -1, uRadius: 0, uShots: new Float32Array(24) }); }
     const lx = lane.getContext('2d'); lx.setTransform(DPR, 0, 0, DPR, 0, 0); lx.clearRect(0, 0, W, LANE);
     for (const s of SHOTS) { if (s.d !== day) continue; const bx = xOf(s.m), on = s === cur; lx.strokeStyle = on ? css('--accent') : css('--line'); lx.lineWidth = on ? 2 : 1.5;
       lx.beginPath(); lx.moveTo(s.cx, 0); lx.bezierCurveTo(s.cx, LANE * .7, bx, LANE * .3, bx, LANE - 8); lx.stroke(); lx.fillStyle = on ? css('--accent') : css('--muted'); lx.beginPath(); lx.arc(bx, LANE - 8, 2.5, 0, 7); lx.fill(); }
@@ -331,6 +331,7 @@ void main(){
         for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) if (d[(yy * c.width + xx) * 4 + 3] > 24) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
         if (x1 > x0) box = [x0, y0, x1 - x0 + 1, y1 - y0 + 1]; } catch {}
       sprites[slug] = { c, box }; if (++n === slugs.length && W) layout(); }; im.src = IMG[slug]; }
+  $('motion').textContent = REDUCED ? 'Motion is off because this device asks for reduced motion.' : '';
   setDay(0); requestAnimationFrame(frame);
 })();
 </script>
