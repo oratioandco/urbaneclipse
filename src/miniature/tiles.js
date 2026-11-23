@@ -86,8 +86,11 @@ export function updateLevels() {
       entry.lod = coarser;
     }
   }
+  // A tile waits for its coarse level, which the start-up pass is bringing in: asking here as
+  // well fetched most of the city twice, and a finer level that arrived first was thrown away
+  // when the coarse one landed on top of it.
   const toLoad = wanted
-    .filter((e) => e.tile.level !== e.lod.level && !loading.has(e.tile.id))
+    .filter((e) => e.tile.coarse && e.tile.level !== e.lod.level && !loading.has(e.tile.id))
     .sort((a, b) => a.distance - b.distance)
     .slice(0, Math.max(0, 6 - loading.size));
   for (const { tile, lod } of toLoad) {

@@ -87,8 +87,10 @@ export function leafOn(date) {
 }
 
 export async function loadTrees() {
-  const info = await (await fetch(`${CITY}trees.json${CITY_VERSION}`)).json();
-  const buffer = await (await fetch(`${CITY}trees.bin${CITY_VERSION}`)).arrayBuffer();
+  const [info, buffer] = await Promise.all([
+    fetch(`${CITY}trees.json${CITY_VERSION}`).then((response) => response.json()),
+    fetch(`${CITY}trees.bin${CITY_VERSION}`).then((response) => response.arrayBuffer()),
+  ]);
   app.bytesLoaded = (app.bytesLoaded ?? 0) + buffer.byteLength;
   const n = info.count;
   data = {

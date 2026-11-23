@@ -229,13 +229,21 @@ function frame(now) {
 }
 
 async function start() {
-  const manifest = await (await fetch(`${CITY}manifest.json${CITY_VERSION}`)).json();
-  const mapData = await (await fetch(`${CITY}map.json${CITY_VERSION}`)).json();
-  const roadPoints = new Int16Array(await (await fetch(`${CITY}roads.bin${CITY_VERSION}`)).arrayBuffer());
+  // All six at once: one after another, each waited a round trip for the one before it.
+  const get = (name) => fetch(`${CITY}${name}${CITY_VERSION}`);
+  const json = (name) => get(name).then((response) => response.json());
+  const binary = (name) => get(name).then((response) => response.arrayBuffer());
+  const [manifest, mapData, roadBytes, streetsDoc, terrainInfo, terrainBytes] = await Promise.all([
+    json('manifest.json'),
+    json('map.json'),
+    binary('roads.bin'),
+    json('streets.json'),
+    json('terrain.json'),
+    binary('terrain.bin'),
+  ]);
+  const roadPoints = new Int16Array(roadBytes);
   app.roadXZ = roadPoints;
-  const streetsDoc = await (await fetch(`${CITY}streets.json${CITY_VERSION}`)).json();
-  const terrainInfo = await (await fetch(`${CITY}terrain.json${CITY_VERSION}`)).json();
-  const terrain = new Int16Array(await (await fetch(`${CITY}terrain.bin${CITY_VERSION}`)).arrayBuffer());
+  const terrain = new Int16Array(terrainBytes);
   const { size, half } = terrainInfo;
   const plane = new THREE.PlaneGeometry(half * 2, half * 2, size - 1, size - 1);
   plane.rotateX(-Math.PI / 2);
