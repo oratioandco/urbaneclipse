@@ -19,7 +19,8 @@
   .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,12,30,.28), rgba(8,12,30,0) 38%, rgba(8,12,30,.38)); }
   .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .tabs { display: inline-flex; background: rgba(255,255,255,.18); border-radius: 999px; padding: 3px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-  .tabs button { font: 600 13px var(--display); border: 0; background: transparent; color: var(--on-sky); opacity: .8; padding: 6px 13px; border-radius: 999px; cursor: pointer; }
+  .top { flex-wrap: nowrap; }
+  .tabs button { font: 600 13px var(--display); border: 0; background: transparent; color: var(--on-sky); opacity: .8; padding: 6px 11px; border-radius: 999px; cursor: pointer; }
   .tabs button[aria-pressed="true"] { background: rgba(255,255,255,.92); color: #141826; opacity: 1; }
   .now { font: 600 12.5px var(--display); border: 0; background: rgba(255,255,255,.18); color: var(--on-sky); border-radius: 999px; padding: 7px 12px; cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   .read { display: grid; gap: 4px; text-shadow: 0 1px 12px rgba(8,12,30,.45); }
@@ -42,21 +43,26 @@
   .chip:focus-visible canvas { box-shadow: 0 0 0 3px var(--card), 0 0 0 6px var(--accent); }
   .none { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
   #lane, #axis { width: 100%; display: block; }
-  #gl { width: 100%; display: block; margin: -8px 0; position: relative; touch-action: none; cursor: ew-resize; outline: none; -webkit-tap-highlight-color: transparent; }
+  #gl { width: 100%; display: block; margin: -8px 0; position: relative; touch-action: pan-y; cursor: ew-resize; outline: none; -webkit-tap-highlight-color: transparent; }
   #gl:focus-visible { filter: drop-shadow(0 0 3px var(--accent)); }
+  .nudge { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.25fr; gap: 6px; }
+  .nudge button { font: 600 12.5px var(--display); min-height: 42px; border-radius: 13px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; white-space: nowrap; padding: 0 4px; }
+  .nudge button:active { background: var(--line); }
+  @media (max-width: 430px) { .lower { padding-inline: 12px; } .chip { width: 62px; margin-left: -31px; } .chip canvas { width: 48px; height: 48px; } .chip .n { font-size: 10px; } .hero { padding-inline: 14px; } }
   .sel { margin: 0; min-height: 21px; font-size: 14px; color: var(--muted); } .sel b { color: var(--fg); font-weight: 700; }
   .notes { margin: 0; color: var(--muted); font-size: 13px; max-width: 68ch; }
 </style>
 <div class="wrap">
   <div class="card">
     <div class="hero"><canvas id="hero"></canvas>
-      <div class="top"><div class="tabs" id="tabs"></div><button class="now" id="nowBtn">Back to now</button></div>
+      <div class="top"><div class="tabs" id="tabs"></div><button class="now" id="nowBtn" aria-label="Back to now">Now</button></div>
       <div class="read"><div class="row"><span class="time" id="time"></span><span class="phase" id="phase"></span><span class="wx" id="wx"></span></div><p class="sentence" id="sentence"></p></div>
     </div>
     <div class="lower">
       <div class="chips" id="chips"></div>
       <div><canvas id="lane"></canvas><canvas id="gl" tabindex="0" role="slider" aria-label="Time of day" aria-valuemin="0" aria-valuemax="1440"></canvas><canvas id="axis"></canvas></div>
       <p class="sel" id="sel" aria-live="polite"></p>
+      <div class="nudge"><button id="prevShot">‹ Earlier shot</button><button id="minus">− 1 min</button><button id="plus">+ 1 min</button><button id="nextShot">Later shot ›</button></div>
     </div>
   </div>
   <p class="notes">The sky at the top stands in for the map: in the app the same slider would drive the miniature and its weather. Drag the track, tap a shot, or use the arrow keys. Sketch data: Today has a shower around 13:00, Tomorrow is rain with an afternoon thunderstorm, Saturday is clear and has a moon shot at 02:40. Shot minutes are mock values.</p>
@@ -137,13 +143,14 @@ void main(){
   vec2 f = gl_FragCoord.xy;
   if (uMode > .5) { gl_FragColor = vec4(scene(f), 1.); return; }
   vec2 p = vec2(f.x, f.y - uMargin);
-  float dT = sdBox(f, uCanvas * .5, vec2(uCanvas.x * .5, uSize.y * .5), uRadius), hw = 23. * uDpr, dC = sdBox(f, vec2(uThumbX, uCanvas.y * .5), vec2(hw, uCanvas.y * .5 - uDpr), hw);
+  float dT = sdBox(f, uCanvas * .5, vec2(uCanvas.x * .5, uSize.y * .5), uRadius), hw = 21. * uDpr, dC = sdBox(f, vec2(uThumbX, uCanvas.y * .5), vec2(hw, uCanvas.y * .5 - uDpr), 11. * uDpr);
   float aT = smoothstep(.8, -.8, dT), aC = smoothstep(.8, -.8, dC);
   vec3 col;
-  if (dC < 0.) { float nx = (f.x - uThumbX) / hw, yy = clamp(mix(p.y, uSize.y * .5, .06), 1., uSize.y - 1.), yc = f.y / uCanvas.y;
-    col = scene(vec2(uThumbX + nx * hw * (.42 + .58 * nx * nx), yy)) * 1.05 + .03;
-    col += smoothstep(.72, 1., abs(nx)) * .2; col += exp(-pow((nx + .6) / .1, 2.)) * .34 * smoothstep(.08, .22, yc) * smoothstep(.97, .62, yc);
-    col = mix(col, vec3(1.), smoothstep(-2.4 * uDpr, -.6 * uDpr, dC) * .9); }
+  if (dC < 0.) { float nx = (f.x - uThumbX) / hw, bev = smoothstep(.6, 1., abs(nx)), yc = f.y / uCanvas.y, yb = smoothstep(.9, 1., abs(yc * 2. - 1.));
+    col = scene(vec2(uThumbX + nx * hw * (.96 - .2 * bev * bev), clamp(mix(p.y, uSize.y * .5, .03 + .1 * yb), 1., uSize.y - 1.))) * 1.04 + .025;
+    col += bev * .1 + yb * .08; col += exp(-pow((nx + .78) / .07, 2.)) * .22 * smoothstep(.06, .2, yc) * smoothstep(.97, .7, yc);
+    col = mix(col, vec3(1.), smoothstep(1.1 * uDpr, .35 * uDpr, abs(f.x - uThumbX)) * .9);
+    col = mix(col, vec3(1.), smoothstep(-2.2 * uDpr, -.6 * uDpr, dC) * .9); }
   else { col = scene(vec2(p.x, clamp(p.y, 0., uSize.y))); col *= 1. - .3 * smoothstep(12. * uDpr, 0., dC); col += smoothstep(.9, 1., p.y / uSize.y) * .1; }
   float a = max(aT, aC); gl_FragColor = vec4(col * a, a);
 }
@@ -209,7 +216,7 @@ void main(){
   const G = makeGL(glc), H = makeGL(heroC);
   if (!G || !H) { $('sel').textContent = 'This browser could not start WebGL, so the sky cannot be drawn.'; }
 
-  let W = 0, HW = 0, HH = 0, day = 0, min = NOW, target = null, drag = false, lastT = 0, lastKey = '', flash = 0, flashM = 0, seed = 1, nextBolt = 0, clock = 0;
+  let lastCur = null, W = 0, HW = 0, HH = 0, day = 0, min = NOW, target = null, drag = false, lastT = 0, lastKey = '', flash = 0, flashM = 0, seed = 1, nextBolt = 0, clock = 0;
   const xOf = (m) => PAD + m / 1440 * (W - 2 * PAD), mOf = (x) => clamp((x - PAD) / (W - 2 * PAD) * 1440, 0, 1439);
   const sprites = {};
   const skyJS = (d, m) => { const alt = sunAlt(m), a1 = sstep(-14, -5, alt), a2 = sstep(-5, .5, alt), a3 = sstep(1, 8, alt), dayness = sstep(-6, 4, alt), ov = sstep(.5, .95, cover(d, m)) * .9;
@@ -224,7 +231,7 @@ void main(){
     x.imageSmoothingQuality = 'high'; x.drawImage(t, n / 2 - w / 2, n * .9 - h, w, h); x.fillStyle = rgb(mix([18, 23, 61], [232, 224, 207], sk.dayness)); x.fillRect(0, n * .88, n, n * .12); }
   function layout() { chipsEl.innerHTML = ''; const list = SHOTS.filter((s) => s.d === day).sort((a, b) => a.m - b.m);
     if (!list.length) { chipsEl.innerHTML = '<div class="none">No shots line up on this day.</div>'; return; }
-    const gap = Math.min(76, (W - 68) / Math.max(1, list.length - 1)), lo = 34, hi = W - 34;
+    const cw = W < 370 ? 62 : 68, gap = Math.min(76, (W - cw) / Math.max(1, list.length - 1)), lo = cw / 2, hi = W - cw / 2;
     list.forEach((s, i) => { s.cx = Math.max(xOf(s.m), i ? list[i - 1].cx + gap : lo); });
     for (let i = list.length - 1; i >= 0; i--) list[i].cx = Math.min(list[i].cx, i === list.length - 1 ? hi : list[i + 1].cx - gap);
     list.forEach((s, i) => { s.cx = Math.max(s.cx, i ? list[i - 1].cx + gap * .98 : lo); });
@@ -256,6 +263,9 @@ void main(){
     const lx = lane.getContext('2d'); lx.setTransform(DPR, 0, 0, DPR, 0, 0); lx.clearRect(0, 0, W, LANE);
     for (const s of SHOTS) { if (s.d !== day) continue; const bx = xOf(s.m), on = s === cur; lx.strokeStyle = on ? css('--accent') : css('--line'); lx.lineWidth = on ? 2 : 1.5;
       lx.beginPath(); lx.moveTo(s.cx, 0); lx.bezierCurveTo(s.cx, LANE * .7, bx, LANE * .3, bx, LANE - 8); lx.stroke(); lx.fillStyle = on ? css('--accent') : css('--muted'); lx.beginPath(); lx.arc(bx, LANE - 8, 2.5, 0, 7); lx.fill(); }
+    if (drag) { const label = `${fmt(min)} · ${phaseName(min)}`; lx.font = `600 12px ${css('--mono')}`; const bw = lx.measureText(label).width + 18, bx = clamp(tx, bw / 2 + 1, W - bw / 2 - 1);
+      lx.fillStyle = 'rgba(16,19,34,.94)'; lx.beginPath(); lx.roundRect ? lx.roundRect(bx - bw / 2, 1, bw, 23, 11.5) : lx.rect(bx - bw / 2, 1, bw, 23); lx.fill(); lx.fillStyle = '#f2f4fb'; lx.textAlign = 'center'; lx.textBaseline = 'middle'; lx.fillText(label, bx, 13); }
+    if (cur !== lastCur) { lastCur = cur; if (cur && drag) { try { navigator.vibrate && navigator.vibrate(6); } catch {} } }
     const key = `${day}|${Math.round(min)}|${cur ? cur.m : ''}`; if (key !== lastKey) { lastKey = key; const m = Math.round(min), bc = barCol(m), lum = bc[0] * .3 + bc[1] * .59 + bc[2] * .11;
       $('time').textContent = fmt(m); $('phase').textContent = phaseName(m); $('phase').style.background = rgb(bc); $('phase').style.color = lum > 150 ? '#1a1408' : '#fff'; $('wx').textContent = wxWord(day, m);
       $('sel').innerHTML = cur ? `<b>${cur.name}</b> · ${cur.what} · ${cur.past ? 'passed' : `${WORD[cur.grade]}: ${cur.reason}`}` : (sunAlt(m) > 0 ? `Sun ${Math.round(sunAlt(m))}° above the horizon` : moonUp(day, m) ? 'Sun down, moon up' : 'Sun and moon below the horizon') + ` · cloud ${Math.round(cover(day, m) * 100)}%`;
@@ -268,6 +278,10 @@ void main(){
     if (W) layout(); }
   DAYL.forEach((l, i) => { const b = document.createElement('button'); b.textContent = l; b.addEventListener('click', () => setDay(i)); $('tabs').append(b); });
   $('nowBtn').addEventListener('click', () => { target = NOW; });
+  const base = () => Math.round(target ?? min);
+  $('minus').addEventListener('click', () => { target = clamp(base() - 1, 0, 1439); }); $('plus').addEventListener('click', () => { target = clamp(base() + 1, 0, 1439); });
+  const hop = (dir) => { const list = SHOTS.filter((s) => s.d === day).sort((a, b) => a.m - b.m), b = base(), nx = dir > 0 ? list.find((s) => s.m > b + 1) : [...list].reverse().find((s) => s.m < b - 1); if (nx) target = nx.m; };
+  $('prevShot').addEventListener('click', () => hop(-1)); $('nextShot').addEventListener('click', () => hop(1));
   const at = (e) => { target = null; min = mOf(e.clientX - glc.getBoundingClientRect().left); };
   glc.addEventListener('pointerdown', (e) => { drag = true; try { glc.setPointerCapture(e.pointerId); } catch {} at(e); e.preventDefault(); });
   glc.addEventListener('pointermove', (e) => { if (drag) at(e); });
