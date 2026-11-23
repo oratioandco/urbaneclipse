@@ -190,7 +190,6 @@ function drawShots() {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'shot';
-      card.setAttribute('role', 'listitem');
       card.dataset.body = row.body;
       card.dataset.grade = verdict.grade ?? 'none';
       card.dataset.index = String(i);
@@ -204,7 +203,8 @@ function drawShots() {
       card.setAttribute('aria-label', `${formatClock(row.t)}, ${row.title}. ${verdict.label}. ${row.detail}`);
       card.title = `${row.title} · ${row.detail}`;
       card.addEventListener('click', () => {
-        // A first tap brings the time to the shot; a tap on the shot the thumb stands on goes there.
+        // A first tap brings the time to the shot; a tap on the shot the thumb stands on opens
+        // the view from where to stand for it.
         if (shotAt(drawn.minutes, Number(timeInput.value)) === i) {
           row.go();
           invalidate();
@@ -258,7 +258,7 @@ function place() {
     const on = Number(card.dataset.index) === index;
     if (on) card.setAttribute('aria-current', 'true');
     else card.removeAttribute('aria-current');
-    card.querySelector('small').textContent = on ? 'Stand here ›' : cardWords(drawn.verdicts[Number(card.dataset.index)])[1];
+    card.querySelector('small').textContent = on ? 'View ›' : cardWords(drawn.verdicts[Number(card.dataset.index)])[1];
   }
   // The card the thumb has just come to stand on is brought into the row's view.
   if (index !== drawn.current) {
@@ -403,24 +403,32 @@ timeline.addEventListener('pointerup', endScrub);
 timeline.addEventListener('pointercancel', endScrub);
 
 // The keyboard's slider is the `#time` input itself: a minute a press, ten with Shift, an
-// hour with Page Up and Down. At eye level it is the browser's own slider again.
+// hour with Page Up and Down. At eye level the same keys work the ticket's scrubber, within
+// its range and to its step (5 seconds in fine timing), and it keeps its snap to the tower.
 timeInput.addEventListener('keydown', (event) => {
-  if (atEye()) return;
-  const now = Math.round(Number(timeInput.value));
+  const eye = atEye();
+  const fineStep = document.body.dataset.fine === 'true';
+  const one = fineStep ? 1 / 12 : 1;
+  const now = fineStep ? Number(timeInput.value) : Math.round(Number(timeInput.value));
+  const small = (event.shiftKey ? 10 : 1) * one;
   const to = {
-    ArrowLeft: now - (event.shiftKey ? 10 : 1),
-    ArrowDown: now - (event.shiftKey ? 10 : 1),
-    ArrowRight: now + (event.shiftKey ? 10 : 1),
-    ArrowUp: now + (event.shiftKey ? 10 : 1),
-    PageDown: now - 60,
-    PageUp: now + 60,
-    Home: 0,
-    End: DAY_MINUTES - 1,
+    ArrowLeft: now - small,
+    ArrowDown: now - small,
+    ArrowRight: now + small,
+    ArrowUp: now + small,
+    PageDown: now - 60 * one,
+    PageUp: now + 60 * one,
+    Home: Number(timeInput.min),
+    End: Number(timeInput.max),
   }[event.key];
   if (to === undefined) return;
   event.preventDefault();
   stopGlide();
-  setMinute(to);
+  const value = Math.min(Number(timeInput.max), Math.max(Number(timeInput.min), to));
+  if (!eye) return setMinute(value);
+  timeInput.value = String(value);
+  timeInput.dispatchEvent(new Event('input', { bubbles: true }));
+  invalidate();
 });
 
 // The buttons: a minute either way, and the shot before and after.

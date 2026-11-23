@@ -108,7 +108,7 @@ import '../miniature/miniature.css';
         </a>
       </div>
       <ol>
-        <li><b>Pick a day.</b> <span>Bars above the time slider show when something lines up; the panel lists the day.</span></li>
+        <li><b>Pick a day.</b> <span>The panel shows its light, its weather and its shots on one timeline; drag it to move the sun. Each shot says Go, Maybe or Skip, and why.</span></li>
         <li><b>Read the map.</b> <span><em class="sun">Tower lines</em>: stand on one and the sun or moon is behind the tower at that hour. <em class="street">Glowing streets</em> are lined up now.</span></li>
         <li><b>Stand there.</b> <span>Drag the photographer onto the map, or choose “View from here” on a line. Then see dates, timing and directions.</span></li>
       </ol>
@@ -178,7 +178,7 @@ import '../miniature/miniature.css';
             </div>
             <div class="shots">
               <div class="shots-head"><span id="shots-title">Shots</span><span id="shots-count" class="muted" aria-live="polite"></span></div>
-              <div class="shots-row" id="shots-row" role="list" aria-labelledby="shots-title"></div>
+              <div class="shots-row" id="shots-row" role="group" aria-labelledby="shots-title"></div>
             </div>
             <div class="timeline" id="timeline">
               <svg id="tl-plot" class="tl-plot" preserveAspectRatio="none" aria-hidden="true"></svg>

@@ -43,7 +43,7 @@ for (const [name, clip] of Object.entries(CLIPS)) {
   await page.goto(BASE + clip.url);
   await page.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   if (clip.pick) {
-    await page.click('#sheet-toggle');
+    await page.click('.tabs [data-mode="shoot"]');
     await page.locator('#daylist .dayrow', { hasText: clip.pick }).first().click();
     await page.waitForFunction(() => window.__mini.look.active, null, { timeout: 60000 });
     const now = await page.evaluate(() => Number(document.getElementById('time').value));

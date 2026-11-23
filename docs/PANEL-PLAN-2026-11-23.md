@@ -36,3 +36,35 @@ Tests for the pure parts go to `tests/unit/panel.test.ts`.
 - Thunder marks: the forecast request (`weather.js`, not this session's file) does not ask for it.
 - The icon set and the shared sun and moon module (icons session); this phase uses small inline
   marks and `mapBodyLook.ts` directly, to be swapped.
+
+## State at the end of phase 1 (2026-11-23)
+
+Built as planned, on branch `claude/planner-panel-2b8335`, not pushed. Differences from the plan:
+
+- A first tap on a shot card glides the time there; a second tap on the card the thumb stands
+  on opens the view from where to stand ("View"). Time and camera stay separate, as the spec
+  asks for the preview.
+- The credit line (OpenStreetMap, Open-Meteo) moved out of the panel to a small line riding on
+  its top edge, so it shows at every height.
+- Files touched outside this session's list, each a small change: `overlay.js` (the sun and moon
+  pills keep clear of the side panel), `forecast.js` (sunrise and sunset readings worded as
+  verdicts; notes whether the forecast failed), `dates.js` ("Go" on a row is now a chevron, since
+  "Go" is a verdict), `scripts/miniature/walkthrough.mjs` and `record_clips.mjs` (new selectors).
+
+How much of the screen the panel takes (measured in headless Chrome, 26 Nov 2026 data):
+
+| State | 390 x 844 | 1280 x 800 |
+|---|---:|---:|
+| Peek / rail | 6% (50 px) | 1% (56 x 212 px) |
+| Half (day view) | 46-47% (384-397 px) | |
+| Full / side panel open | 93% (leaves 56 px of map) | 28% (372 px wide) |
+| Eye-level ticket | 10% (88 px; the walk stick row above it on touch) | 4% (480 x 88 px) |
+| Eye-level ticket with More | 23% | 11% |
+
+Open points for the next phase:
+
+- Shots low on the horizon are graded on the cloud overhead only; the sunrise and sunset reading
+  (`readSky`) also knows the cloud on the horizon and can disagree with a card's "Maybe".
+- A busy day has 19-24 shots (every clear stretch of the tower path, and twelve streets); the
+  home grid should rank them, as the three-day list already does.
+- The half height is content-sized. Shot cards as rendered frames will need the same budget.
