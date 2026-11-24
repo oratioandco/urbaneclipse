@@ -65,7 +65,7 @@ Not tested, and nothing below should be read as covering it:
 - **Geolocation on a real device**, calendar import into a real calendar app, the directions
   link in Maps.
 - A first run with the software rasteriser drew the eye-level sky white with no tower. With the
-  GPU it draws correctly (`eye-desktop-gpu.png` in the scratch renders), so that is the
+  GPU it draws correctly (`eye-desktop-software-rasteriser.png`, `eye-desktop-gpu.png`), so that is the
   rasteriser, not the app, and is not a finding.
 
 ## Findings, by harm to a photographer
