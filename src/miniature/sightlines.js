@@ -82,7 +82,7 @@ const DECK_CELL_M = 64;
 
 let roadCells = null;
 /** The street points, by cell, for looking up the ones near a spot. */
-function roadsNear(x, z, radius) {
+export function roadsNear(x, z, radius) {
   if (!app.roadXZ) return [];
   if (!roadCells || roadCells.source !== app.roadXZ) {
     roadCells = { source: app.roadXZ, cells: new Map() };
@@ -106,18 +106,31 @@ function roadsNear(x, z, radius) {
   return found;
 }
 
+/** Which 3 m cells are on a deck, for the detail the city is drawn at now (`app.tileEpoch`). */
 const deckMemo = new Map();
+let deckEpoch = -1;
 /**
  * The top of a bridge deck at a point, as a scene height, or null where the point is on plain
  * ground, on a building, or under something (the rule is decks.js `deckTop`).
+ *
+ * Whether a place is a deck is remembered per 3 m cell; the height never is. It is read at the
+ * very point, from the buildings as they are drawn now, and both are asked again whenever a
+ * tile changes its detail: the coarse deck and the fine one differ by half a metre, and a
+ * height remembered from the first or from a neighbouring point put the eye inside the deck.
  */
 export function deckAt(x, z) {
+  if (deckEpoch !== app.tileEpoch) {
+    deckEpoch = app.tileEpoch;
+    deckMemo.clear();
+  }
   const key = `${Math.round(x / 3)},${Math.round(z / 3)}`;
   if (!deckMemo.has(key)) {
     if (deckMemo.size > 4000) deckMemo.clear();
-    deckMemo.set(key, app.roadXZ ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) : null);
+    deckMemo.set(key, app.roadXZ ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) !== null : false);
   }
-  return deckMemo.get(key);
+  if (!deckMemo.get(key)) return null;
+  const top = roofAt(x, z);
+  return top === -Infinity ? null : top;
 }
 
 /** The height one stands at: a bridge's deck where there is one, the ground everywhere else. */
@@ -162,6 +175,7 @@ export async function fineAlong(x, z, direction, distance) {
         mesh.scale.setScalar(lod.step);
         mesh.updateMatrixWorld(true);
         tile.fineMesh = mesh;
+        app.tileEpoch = (app.tileEpoch ?? 0) + 1;
       }),
   );
 }

@@ -184,6 +184,27 @@ heightInput.addEventListener('input', () => {
 // A bridge's deck is walked onto from the street that runs over it.
 const passable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && (roofAt(x, z) < app.groundAt(x, z) + EYE_HEIGHT + (look.lift ?? 0) - 0.5 || (look.mode !== 'drone' && deckAt(x, z) !== null));
 
+/**
+ * On foot, the feet stay on what is drawn under them. The city arrives in steps of detail, and
+ * a bridge's deck is half a metre higher or lower in each: when a tile changes, the height one
+ * stands at is read again (a deck's top; a roof's, once landed on one; else the ground).
+ */
+let footingEpoch = -1;
+export function settleFooting() {
+  if (footingEpoch === app.tileEpoch) return;
+  footingEpoch = app.tileEpoch;
+  if (!look.active && document.body.dataset.eye !== 'true') return;
+  if (look.mode === 'drone' || app.liftAnimation) return;
+  const before = look.lift ?? 0;
+  const deck = deckAt(look.x, look.z);
+  const next = deck !== null ? Math.max(0, deck - app.groundAt(look.x, look.z)) : before > 0.6 ? floorUnder(look.x, look.z) : 0;
+  if (Math.abs(next - before) < 0.02) return;
+  look.lift = next;
+  app.shadowsDirty = true;
+  updateEyeBar();
+  invalidate();
+}
+
 export function stepWalk(now) {
   const dt = Math.min(0.1, (now - lastStep) / 1000);
   lastStep = now;
