@@ -1,0 +1,145 @@
+import { describe, expect, it } from 'vitest';
+// @ts-expect-error plain JS module
+import { asShot, byMonth, countWords, DECENT, highlights, rank, shownShots, spectacle } from '../../src/miniature/fromHere.js';
+
+const DAY = 86_400_000;
+const NOW = Date.UTC(2026, 10, 24, 11, 0);
+/** A shot `days` from now with a score; other fields as given. */
+const shot = (days: number, score: number, more: Record<string, unknown> = {}) => ({ t: NOW + days * DAY, body: 'sun', kind: 'tower', score, series: `fernsehturm|sun|${days}`, ...more });
+
+describe('from here: a found date as a shot', () => {
+  it('turns a pass behind the tower into a card’s shot', () => {
+    const go = () => {};
+    const s = asShot({ t: NOW, until: NOW + 180_000, body: 'sun', kind: 'tower', target: 'fernsehturm', state: 'hidden', what: 'Sun behind the sphere', when: 'Tue, 24 Nov · 15:31–15:34', detail: 'Sun behind the sphere · 3° up · Golden hour', distanceM: 5400, altDeg: 3.2, go });
+    expect(s).toMatchObject({ kind: 'tower', landmark: 'fernsehturm', where: 'sphere', short: 'TV tower', body: 'sun', distanceM: 5400, until: NOW + 180_000 });
+    expect(s.title).toBe('TV tower: sun behind the sphere');
+    expect(s.detail).toBe('TV tower · Sun behind the sphere · 3° up · Golden hour');
+    expect(s.when).toBe('Tue, 24 Nov · 15:31–15:34');
+    expect(s.go).toBe(go);
+  });
+  it('frames the antenna, and keeps a sentence that already names the tower', () => {
+    expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'fernsehturm', state: 'antenna', what: 'Moon behind the antenna', detail: '' }).where).toBe('antenna');
+    expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'fernsehturm', state: 'ring', what: 'Big moon behind the TV tower, 1.4× the sphere', detail: '' }).title).toBe('Big moon behind the TV tower, 1.4× the sphere');
+  });
+  it('gives the other landmarks their sprite, and a part a link cannot mistake for the tower’s sphere', () => {
+    const gate = asShot({ t: NOW, body: 'sun', kind: 'tower', target: 'brandenburger-tor', state: 'ring', what: 'The gate’s quadriga in the sun', detail: 'x' });
+    expect(gate).toMatchObject({ landmark: 'brandenburger_tor', where: 'brandenburger-tor', short: 'Brandenburger Tor', title: 'The gate’s quadriga in the sun' });
+    expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'siegessaeule', state: 'ring', what: 'Big moon round the column', detail: 'x' }).landmark).toBe('siegessaeule');
+  });
+  it('makes a street date a street shot, its length as the card’s distance', () => {
+    const s = asShot({ t: NOW, body: 'moon', kind: 'street', place: 'Karl-Marx-Allee', lengthM: 2400, detail: 'Moon down the street · 4° up · Night', when: 'x' });
+    expect(s).toMatchObject({ kind: 'street', short: 'Karl-Marx-Allee', title: 'Moon down Karl-Marx-Allee', distanceM: 2400, series: 'street|moon' });
+    expect(s.landmark).toBeUndefined();
+    expect(s.detail).toBe('Karl-Marx-Allee · Moon down the street · 4° up · Night');
+  });
+});
+
+describe('from here: spectacle', () => {
+  it('ranks as a day’s rows do: big moon over a ring of sun over a plain pass', () => {
+    const moon = spectacle({ kind: 'tower', body: 'moon', state: 'ring', distanceM: 6000 });
+    const ring = spectacle({ kind: 'tower', body: 'sun', state: 'ring', distanceM: 6000 });
+    const plain = spectacle({ kind: 'tower', body: 'sun', state: 'hidden', distanceM: 1500 });
+    const edge = spectacle({ kind: 'tower', body: 'sun', state: 'edge', distanceM: 1500 });
+    expect(moon).toBeGreaterThan(ring);
+    expect(ring).toBeGreaterThan(plain);
+    expect(plain).toBeGreaterThan(edge);
+    expect(moon).toBeLessThanOrEqual(2.4);
+    expect(edge).toBeGreaterThanOrEqual(DECENT);
+  });
+  it('scores a street by its length, a short one under decent', () => {
+    expect(spectacle({ kind: 'street', body: 'sun', lengthM: 400 })).toBeLessThan(DECENT);
+    expect(spectacle({ kind: 'street', body: 'sun', lengthM: 3000 })).toBe(1.6);
+  });
+});
+
+describe('from here: the switches', () => {
+  const shots = [
+    { body: 'sun', kind: 'tower' },
+    { body: 'moon', kind: 'tower' },
+    { body: 'sun', kind: 'street' },
+    { body: 'moon', kind: 'street' },
+  ];
+  it('shows all with nothing switched off', () => {
+    expect(shownShots(shots)).toHaveLength(4);
+    expect(shownShots(shots, { sun: true, moon: true, tower: true, streets: true })).toHaveLength(4);
+  });
+  it('applies body and kind together, as the day list does', () => {
+    expect(shownShots(shots, { moon: false })).toEqual([shots[0], shots[2]]);
+    expect(shownShots(shots, { tower: false })).toEqual([shots[2], shots[3]]);
+    expect(shownShots(shots, { sun: false, streets: false })).toEqual([shots[1]]);
+  });
+});
+
+describe('from here: highlights', () => {
+  it('puts the next shot first when it is decent, then the best', () => {
+    const next = shot(2, 1.2);
+    const big = shot(200, 2.4);
+    const ring = shot(90, 1.8);
+    const plain = shot(40, 1.2);
+    expect(highlights([plain, big, next, ring], NOW)).toEqual([next, ring, big]);
+  });
+  it('does not force a weak next shot to the front', () => {
+    const weak = shot(1, 0.5, { kind: 'street' });
+    const a = shot(30, 1.8);
+    const b = shot(60, 2.4);
+    const c = shot(120, 1.2);
+    expect(highlights([weak, a, b, c], NOW)).toEqual([a, b, c]);
+  });
+  it('does not force a next shot the forecast says to skip', () => {
+    const cloudy = shot(1, 1.8);
+    const a = shot(30, 1.8);
+    const b = shot(60, 1.8);
+    const c = shot(120, 1.8);
+    const picked = highlights([cloudy, a, b, c], NOW, { gradeOf: (s: unknown) => (s === cloudy ? 'poor' : null) });
+    expect(picked).toEqual([a, b, c]);
+  });
+  it('prefers the sooner of two equal shots, and the bigger one even when later', () => {
+    expect(rank(shot(10, 1.8), NOW)).toBeGreaterThan(rank(shot(300, 1.8), NOW));
+    expect(rank(shot(330, 2.4), NOW)).toBeGreaterThan(rank(shot(3, 1.2), NOW));
+    expect(rank(shot(3, 1.8), NOW, 'poor')).toBeLessThan(rank(shot(3, 1.2), NOW, 'good'));
+  });
+  it('gives a run of the same shot on neighbouring days one card', () => {
+    const run = [0.5, 1.5, 2.5, 3.5].map((d) => shot(d, 1.6, { kind: 'street', series: 'street|sun' }));
+    const autumn = shot(190, 1.6, { kind: 'street', series: 'street|sun' });
+    expect(highlights([...run, autumn], NOW)).toEqual([run[0], autumn]);
+  });
+  it('leaves out what has passed, keeps a pass still running, and gives fewer than three when that is all', () => {
+    const gone = shot(-1, 2.4);
+    const running = shot(-0.001, 1.8, { until: NOW + 60_000 });
+    expect(highlights([gone, running], NOW)).toEqual([running]);
+    expect(highlights([], NOW)).toEqual([]);
+  });
+  it('returns at most max, in time order', () => {
+    const many = Array.from({ length: 9 }, (_, i) => shot(30 * (i + 1), 1 + (i % 3) * 0.5));
+    const picked = highlights(many, NOW, { max: 3 });
+    expect(picked).toHaveLength(3);
+    expect(picked.map((s: { t: number }) => s.t)).toEqual([...picked.map((s: { t: number }) => s.t)].sort((a, b) => a - b));
+    expect(highlights(many, NOW, { max: 2 })).toHaveLength(2);
+  });
+});
+
+describe('from here: the year by month', () => {
+  it('groups by Berlin’s month, in time order, without empty months', () => {
+    // 31 Jan 2027 23:30 UTC is 1 Feb 00:30 in Berlin.
+    const late = { t: Date.UTC(2027, 0, 31, 23, 30) };
+    const jan = { t: Date.UTC(2027, 0, 12, 7, 0) };
+    const may = { t: Date.UTC(2027, 4, 3, 18, 0) };
+    const dec = { t: Date.UTC(2026, 11, 2, 15, 0) };
+    const months = byMonth([may, late, jan, dec]);
+    expect(months.map((m: { key: string }) => m.key)).toEqual(['2026-12', '2027-01', '2027-02', '2027-05']);
+    expect(months.map((m: { label: string }) => m.label)).toEqual(['December 2026', 'January 2027', 'February 2027', 'May 2027']);
+    expect(months[2].shots).toEqual([late]);
+  });
+  it('keeps the same month of two years apart', () => {
+    const months = byMonth([{ t: Date.UTC(2026, 10, 25, 12) }, { t: Date.UTC(2027, 10, 20, 12) }]);
+    expect(months.map((m: { label: string }) => m.label)).toEqual(['November 2026', 'November 2027']);
+  });
+});
+
+describe('from here: the count in words', () => {
+  it('says how many, and how many the switches hide', () => {
+    expect(countWords(1)).toBe('1 date in the next twelve months');
+    expect(countWords(14)).toBe('14 dates in the next twelve months');
+    expect(countWords(5, 14)).toBe('5 dates of 14 shown');
+  });
+});
