@@ -14,7 +14,7 @@ import { dayStart } from './clock.js';
 import { BODY_NAME } from './eclipse.js';
 import { cloudNote } from './forecast.js';
 import { forecastReach } from './weather.js';
-import { shotVerdict } from './verdict.js';
+import { shotVerdict, verdict, verdictNote } from './verdict.js';
 import { dateInput } from './clock.js';
 import { toScene } from './plan.js';
 import { goViewHere } from './pointer.js';
@@ -69,6 +69,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           body: path.body,
           kind: 'tower',
           short: 'TV tower',
+          distanceM: mid.distanceM,
           // The closer the tower, the larger the body behind it: the spectacle, scored.
           score: path.body === 'moon' ? Math.min(2.4, 1.5 * discOverSphere(mid.distanceM)) : discOverSphere(mid.distanceM) > 1 ? 1.8 : 1.2,
           title:
@@ -112,6 +113,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           body: 'moon',
           kind: 'tower',
           short: 'TV antenna',
+          distanceM: (near + far) / 2,
           score: 2,
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
           detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
@@ -137,6 +139,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
         body: m.body,
         kind: 'street',
         short: m.view.name,
+        distanceM: m.view.lengthM,
         score: Math.min(1.6, m.view.lengthM / 800),
         title: `${m.view.name}`,
         detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
@@ -192,7 +195,7 @@ export function renderDayList() {
       item.dataset.kind = row.kind;
       item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">\u203a</i>`;
       item.querySelector('b').textContent = row.title;
-      showVerdict(item.querySelector('.verdict'), dayVerdict(row.t));
+      showVerdict(item.querySelector('.verdict'), dayVerdict(row));
       item.querySelector('small').textContent = row.detail + cloudNote(row.t);
       item.addEventListener('click', () => {
         row.go();
@@ -208,12 +211,16 @@ export function renderDayList() {
 export function showVerdict(el, verdict) {
   el.textContent = verdict.label;
   el.dataset.grade = verdict.grade ?? 'none';
+  const note = verdictNote(verdict);
+  if (note) el.title = `${verdict.label}: ${note}`;
+  else el.removeAttribute('title');
 }
 
-/** The verdict for an instant of the chosen day: its forecast, or why there is none. */
-export function dayVerdict(t) {
+/** The verdict for a row of the chosen day: its forecast, or why there is none (also for no row). */
+export function dayVerdict(row) {
   const missing = !forecastReach(dateInput.value).ok ? 'No forecast yet' : app.weather === null && app.weatherFailed ? 'No forecast' : 'Forecast loading';
-  return shotVerdict(app.weather, dayStart(), t, { now: Date.now(), missing });
+  if (!row) return verdict(null, missing);
+  return shotVerdict(app.weather, dayStart(), row.t, { body: row.body, distanceM: row.distanceM, now: Date.now(), missing });
 }
 
 /**

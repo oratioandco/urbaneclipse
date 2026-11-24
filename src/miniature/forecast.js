@@ -1,7 +1,7 @@
 /** The day's cloud forecast in the panel: loading it and reading sunrise and sunset for colour. */
-import { cloudsAt, cloudsFor, forecastReach, readSky, visibilityAt } from './weather.js';
+import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
 import { formatClock } from './time.js';
-import { readingVerdict } from './verdict.js';
+import { shotVerdict } from './verdict.js';
 import { layers, setCloudHint } from './chrome.js';
 import { dateInput, dayStart } from './clock.js';
 import { renderDayList } from './daylist.js';
@@ -57,14 +57,15 @@ function showWeather() {
   weatherLine.dataset.state = 'ok';
   weatherLine.replaceChildren(
     ...['rise', 'set'].map((which) => {
-      const reading = readSky(app.weather, which);
+      const event = app.weather[which];
       const part = document.createElement('span');
-      if (!reading) return part;
-      // The verdict as a word with its reason; the colour only backs the word up.
-      const said = readingVerdict(reading);
+      if (!event) return part;
+      // The same verdict a shot at that minute gets (verdict.js): the sun on the horizon, seen
+      // through the cloud out toward it. Whether clouds above may colour is a note, not a grade.
+      const said = shotVerdict(app.weather, dayStart(), event.t, { body: 'sun' });
       const word = Object.assign(document.createElement('em'), { className: 'verdict', textContent: said.word });
-      word.dataset.grade = reading.grade;
-      part.append(`${which === 'rise' ? 'Sunrise' : 'Sunset'} ${formatClock(reading.t)}: `, word, ` \u00b7 ${said.reason}`);
+      word.dataset.grade = said.grade;
+      part.append(`${which === 'rise' ? 'Sunrise' : 'Sunset'} ${formatClock(event.t)}: `, word, ` \u00b7 ${said.reason}${said.colour ? ' \u00b7 clouds above may catch the colour' : ''}`);
       return part;
     }),
   );

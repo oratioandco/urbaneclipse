@@ -129,7 +129,7 @@ function drawPlot() {
       nodes.push(el('rect', { class: 'tl-rain', x: (PAD_X + h * w + w * 0.2).toFixed(1), y: RAIN.y, width: (w * 0.6).toFixed(1), height: (rain.height * RAIN.h).toFixed(1), rx: 1, opacity: rain.strength.toFixed(2) }));
     });
   } else {
-    nodes.push(el('text', { class: 'tl-note', x: width / 2, y: BAND.y + BAND.h - 1, 'text-anchor': 'middle' }, dayVerdict(Infinity).label.toLowerCase()));
+    nodes.push(el('text', { class: 'tl-note', x: width / 2, y: BAND.y + BAND.h - 1, 'text-anchor': 'middle' }, dayVerdict(null).label.toLowerCase()));
   }
 
   // The light: the sun's curve, solid while it is up, and the moon's, dotted.
@@ -304,7 +304,7 @@ export function renderDayView() {
   drawn.rows = rows;
   drawn.from = dayStart();
   drawn.minutes = rows.map((row) => (row.t - drawn.from) / 60_000);
-  drawn.verdicts = rows.map((row) => dayVerdict(row.t));
+  drawn.verdicts = rows.map((row) => dayVerdict(row));
   drawPlot();
   drawShots();
   place();

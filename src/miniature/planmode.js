@@ -105,10 +105,10 @@ onPeek(() => {
 });
 
 /** The day's sky at an instant as a verdict in words; without a forecast, which kind of none. */
-function verdictAt(day, from, t) {
+function verdictAt(day, from, row) {
   const date = svDate(from);
   const missing = !forecastReach(date).ok ? 'No forecast yet' : retryAfter.has(date) ? 'No forecast' : 'Forecast loading';
-  return shotVerdict(day, from, t, { missing });
+  return shotVerdict(day, from, row.t, { body: row.body, distanceM: row.distanceM, missing });
 }
 
 /** The same reading as a short note, in the weather line's words. */
@@ -202,7 +202,7 @@ export function renderPlanCards() {
     // glancing at — but they earn no cards and no ticks.
     const picks = rows
       .map((row) => {
-        const verdict = verdictAt(day, from, row.t);
+        const verdict = verdictAt(day, from, row);
         return { ...row, verdict, grade: verdict.grade };
       })
       .filter((row) => row.grade !== 'poor')

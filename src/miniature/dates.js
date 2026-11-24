@@ -13,7 +13,8 @@ import { formatClock, formatDay } from './time.js';
 import { discOverSphere, gridConvergenceDeg } from './towerShots.js';
 import { cloudsAt, cloudsFor, forecastReach } from './weather.js';
 import { setDay, setFine, setMinute } from './clock.js';
-import { bodyIcon } from './daylist.js';
+import { bodyIcon, showVerdict } from './daylist.js';
+import { shotVerdict } from './verdict.js';
 import { look, turnTo } from './eyeLevel.js';
 import { TARGETS } from './targets.js';
 import { clearView, fineAlong } from './sightlines.js';
@@ -77,17 +78,12 @@ function berlinMidnight(day) {
 }
 
 /**
- * Whether direct sunlight is likely at that moment, from the forecast's clouds. Low and middle
- * cloud block the disc; high cirrus only dims it. The forecast is honest for about three days,
- * decent to a week, and a tendency beyond \u2014 so states only appear where the forecast reaches.
+ * Within the forecast's reach, the verdict for that moment, in the same words and from the same
+ * grade as every other list (verdict.js), and the cloud it was read from. The forecast is
+ * honest for about three days, decent to a week, and a tendency beyond; past its reach a row
+ * says nothing about the weather.
  */
-function sunState(c) {
-  const effective = Math.max(c.low, c.mid * 0.85, c.high * 0.4);
-  return effective < 0.25 ? ['likely', '#2e7d32'] : effective < 0.5 ? ['maybe', '#b07d10'] : ['unlikely', '#8a8a8a'];
-}
-
-/** Within the forecast's reach, say what the clouds will do, and whether the sun will be direct. */
-async function addClouds(small, t) {
+async function addClouds(small, t, body, distanceM) {
   const day = dayOf(t);
   if (t < Date.now() || !forecastReach(day).ok) return;
   const start = berlinMidnight(day);
@@ -95,14 +91,13 @@ async function addClouds(small, t) {
   if (!clouds) return;
   const c = cloudsAt(clouds, (t - start) / 60_000);
   const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
-  const [state, colour] = sunState(c);
-  const dot = document.createElement('i');
-  dot.className = 'sun-state';
-  dot.style.cssText = `display:inline-block;width:0.55em;height:0.55em;border-radius:50%;background:${colour};margin:0 0.15em 0 0.35em;vertical-align:baseline`;
-  small.append(dot, `sun ${state} \u00b7 forecast: ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`);
+  const said = document.createElement('em');
+  said.className = 'verdict';
+  showVerdict(said, shotVerdict(clouds, start, t, { body, distanceM }));
+  small.append(' \u00b7 ', said, ` \u00b7 ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`);
 }
 
-function row({ body, t, title, detail, go }) {
+function row({ body, t, title, detail, go, distanceM = null }) {
   const item = document.createElement('button');
   item.type = 'button';
   item.className = 'dayrow';
@@ -110,7 +105,7 @@ function row({ body, t, title, detail, go }) {
   item.innerHTML = `${bodyIcon(body, t)}<span><b></b><small></small></span><i class="chev" aria-hidden="true">›</i>`;
   item.querySelector('b').textContent = title;
   item.querySelector('small').textContent = detail;
-  addClouds(item.querySelector('small'), t);
+  addClouds(item.querySelector('small'), t, body, distanceM);
   item.addEventListener('click', () => {
     go();
     for (const other of list.querySelectorAll('.dayrow')) other.removeAttribute('aria-current');
@@ -230,6 +225,7 @@ async function refresh() {
               body: s.body,
               t: s.peak,
               title: `${dateLabel(s.peak)} · ${formatClock(s.peak)}`,
+              distanceM: flat,
               detail: `${what} · ${Math.round(s.alt)}° up · ${describeLight(s.body, s.peak, lat, lon)}`,
               go: () => {
                 setDay(dayOf(s.peak));
