@@ -420,6 +420,13 @@ days (finding 2) and between `/plan/` and `/map` (finding 6).
    screen**, where six of the map's buttons are bare icons (`dan-3-touch-toolbar.png`). The
    camera icon means "Stand here" and reads as "take a picture". On a phone "Go there" loses its
    words too. Suggested: a long press shows the tip, or the help sheet names the six buttons.
+   **Fixed on 2026-11-24** (`src/miniature/tips.js`): on a touch screen a long press on a
+   toolbar button shows its tip and does nothing else, and a tap does what the button does and
+   shows the tip beside it for two seconds (a button that opens a menu leaves the naming to the
+   menu's heading). Re-run with real touch events on a 390 px phone,
+   `scripts/adversarial/touchtips.mjs`: six of six map buttons show their tip on a long press
+   and none acts; a tap on Layers opens the menu. Not checked on a real phone: whether iOS or
+   Android puts its own long-press menu over the tip. The camera icon still means "Stand here".
 
 ## One product?
 

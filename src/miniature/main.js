@@ -16,6 +16,7 @@
  */
 import * as THREE from 'three';
 import { currentRows } from './daylist.js';
+import './tips.js';
 import { MeshoptDecoder } from 'meshoptimizer/decoder';
 import { decodeStreets } from '../lib/streets.ts';
 import { cityUniforms, makeTerrainTexture } from './shading.js';

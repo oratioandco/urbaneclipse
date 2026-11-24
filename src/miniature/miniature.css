@@ -100,6 +100,9 @@
       .tools [data-tip]::before { right: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
       .topleft [data-tip]::before { left: 0; top: calc(100% + 6px); }
       [data-tip]:focus-visible::before { opacity: 1; visibility: visible; }
+      .tools [data-tip], .topleft [data-tip] { -webkit-touch-callout: none; }
+      /* On a touch screen: shown by a tap or a long press (tips.js). */
+      [data-tip][data-tip-shown]::before { opacity: 1; visibility: visible; }
       @media (hover: hover) { [data-tip]:hover::before { opacity: 1; visibility: visible; } }
       .tools .round:focus-visible, .topleft .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       /* Top: map tools on the right; at eye level, the way back on the left. */

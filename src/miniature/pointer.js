@@ -2,6 +2,7 @@
  * The map under the pointer: dragging the photographer down, taps on pills and spots, and the
  * "View from here" button on lines and lit streets.
  */
+import { onlyAsked } from './tips.js';
 import * as THREE from 'three';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
@@ -47,6 +48,8 @@ function dragEnd(event) {
   invalidate();
   if (event.type === 'pointercancel') return;
   if (!moved) {
+    // A long press on a touch screen only asked what the button is (tips.js).
+    if (onlyAsked()) return;
     // A tap stands the photographer in the middle of the map.
     const spot = standable(controls.target.clone().setY(app.groundAt(controls.target.x, controls.target.z)));
     enterEye(spot.x, spot.z);
