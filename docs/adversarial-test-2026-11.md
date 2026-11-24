@@ -215,6 +215,11 @@ or inferred.
   reads the tower status only), `src/miniature/eclipse.js`.
 - Fix: put the shot's kind and name in the address, rebuild the ticket from it, and title the
   calendar entry "Moon down Weserstraße, 7:33".
+- **Fixed on 2026-11-24** (`link.js`, `share.js`, `daylist.js`): the address carries
+  `shot=street-moon:Weserstraße&here=1` while a shot's card is on the ticket; a reload or a
+  shared link shows the card again at the same spot; the link and the calendar entry are titled
+  with the shot and its time. Not changed: the status line under a street shot still speaks of
+  the tower, and the calendar entry still starts 20 minutes early (on purpose: be there first).
 
 ### 8. Switches you forgot make the app say nothing lines up. Medium. Verified.
 
@@ -227,6 +232,10 @@ or inferred.
 - File: `src/miniature/daylist.js` (`emptyDay` only names the switches when both of a pair are
   off), `src/miniature/planmode.js`, `src/miniature/chrome.js` (layers kept in `localStorage`).
 - Fix: when any switch is off and the list is empty, say which, with a button to show all.
+- **Fixed on 2026-11-24** (`daylist.js` `emptyNote`, `chrome.js` `switchedOff`): an empty list
+  with any switch off says "No shots to show with Sun and Streets switched off" with a "Show
+  all shots" button, in the day view, the day list and the three-day list; the peek line says
+  "No shots to show: … switched off".
 
 ### 9. At eye level the browser's back button leaves the planner, and Escape does nothing. Medium. Verified.
 

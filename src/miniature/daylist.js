@@ -2,7 +2,7 @@
 import { shotCard } from './shotCard.js';
 import { collectRows as collectShots } from './dayShots.js';
 import { icon } from './icons.js';
-import { layers, shownBody } from './chrome.js';
+import { layers, showAllShots, switchedOff } from './chrome.js';
 import { dayStart } from './clock.js';
 import { cloudNote } from './forecast.js';
 import { forecastReach } from './weather.js';
@@ -81,13 +81,19 @@ export function shotRow(shot, verdict, onClick) {
 const ticketShot = document.getElementById('ticket-shot');
 /** Open a shot: fly to where to stand for it, at its minute, and put its card on the ticket. */
 let ticketRow = null;
-export function openShot(row, verdict) {
+/** Put a shot's card on the ticket, without going anywhere: the view is already its own. */
+export function showTicket(row, verdict) {
   ticketRow = row;
   ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }));
   ticketShot.hidden = false;
+}
+export function openShot(row, verdict) {
+  showTicket(row, verdict);
   row.go();
   invalidate();
 }
+/** The shot on the ticket, or null: what the address, the calendar entry and a shared link name. */
+export const ticketShotRow = () => (ticketShot.hidden ? null : ticketRow);
 /** The ticket's card again, once the day's forecast is in: a shot opened from a link arrives before it. */
 function refreshTicket() {
   if (ticketRow && !ticketShot.hidden) ticketShot.replaceChildren(shotCard(ticketRow, dayVerdict(ticketRow), { size: 'ticket', tag: 'div' }));
@@ -100,15 +106,31 @@ new MutationObserver(() => {
   ticketShot.replaceChildren();
 }).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });
 
-/** Why a day shows no shots: the filters hide them all, or nothing lines up. */
-export const emptyDay = () => (!layers.tower && !layers.streets ? 'Tower and street shots are both switched off. Switch one on under \u201cThis day\u201d.' : !layers.sun && !layers.moon ? 'Sun and moon are both switched off. Switch one on under \u201cThis day\u201d.' : 'Nothing lines up on this day. Try another.');
+/**
+ * Why a list shows no shots, as a paragraph: with any of the four switches off it is the
+ * switches that are named, not the day, with a button that shows all again (adversarial test
+ * 2026-11, finding 8: switches kept from an earlier visit made the app say nothing lines up).
+ */
+export function emptyNote(nothing = 'Nothing lines up on this day. Try another.') {
+  const note = Object.assign(document.createElement('p'), { className: 'muted' });
+  const off = switchedOff();
+  if (!off) {
+    note.textContent = nothing;
+    return note;
+  }
+  note.textContent = `No shots to show with ${off} switched off. `;
+  const all = Object.assign(document.createElement('button'), { type: 'button', className: 'pill', textContent: 'Show all shots' });
+  all.addEventListener('click', showAllShots);
+  note.append(all);
+  return note;
+}
 
 /** The day as a list in planning: the same rows, in time order, each a tap from standing there. */
 export function renderDayList() {
   const rows = currentRows();
   refreshTicket();
   dayList.replaceChildren(...rows.map((row) => shotRow({ ...row, detail: row.detail + cloudNote(row.t) }, dayVerdict(row), () => openShot(row, dayVerdict(row)))));
-  if (!rows.length) dayList.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: emptyDay() }));
+  if (!rows.length) dayList.replaceChildren(emptyNote());
 }
 
 /**

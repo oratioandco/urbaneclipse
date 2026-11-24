@@ -15,11 +15,11 @@ import { formatClock } from './time.js';
 import { params } from './config.js';
 import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
 import { shotVerdict } from './verdict.js';
-import { layers } from './chrome.js';
+import { layers, switchedOff } from './chrome.js';
 import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js';
 import { iconEl } from './icons.js';
 import { moonSvg } from './bodies.js';
-import { collectRows, openShot, renderDayList, shotRow } from './daylist.js';
+import { collectRows, emptyNote, openShot, renderDayList, shotRow } from './daylist.js';
 import { computeDayPaths, getViewshed } from './plan.js';
 import { renderPeek } from './peek.js';
 import { onPeek } from './sheet.js';
@@ -239,7 +239,7 @@ export function renderPlanCards() {
   next = first ?? null;
   nextSentence = blocks.some((block) => block.rows > 0)
     ? 'Skip the next three days: too much cloud for a shot'
-    : 'Nothing lines up in the next three days';
+    : switchedOff() ? `No shots to show: ${switchedOff()} switched off` : 'Nothing lines up in the next three days';
   renderPeek(next, now, nextSentence);
   if (document.body.dataset.mode !== 'plan') return;
   const flyTo = (row, from) => {
@@ -268,7 +268,7 @@ export function renderPlanCards() {
     const text = cloudy
       ? `Skip: too much cloud for the ${blocks.reduce((sum, block) => sum + block.rows, 0)} ${what} that line up in the next three days. Open a day above to see them.`
       : `No ${what} line up in the next three days. Try another day.`;
-    panel.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: text }));
+    panel.replaceChildren(cloudy ? Object.assign(document.createElement('p'), { className: 'muted', textContent: text }) : emptyNote(text));
     return;
   }
   panel.replaceChildren(
