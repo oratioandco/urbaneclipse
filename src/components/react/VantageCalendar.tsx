@@ -19,8 +19,10 @@
  * per-minute refinement of the whole list, move it into a worker like SolverSearch's.
  *
  * Honesty rules carried over from the sketch panel: vantage names are the real OSM
- * standing points; needsSiteCheck points say so; the moon disclaimer states suncalc's
- * lunar accuracy limit instead of promising dates the ephemeris cannot back. The
+ * standing points; needsSiteCheck points say so; a pass so low that the skyline probably
+ * hides it is marked and never offered as the next date (lib/lowPass.ts). Times are Berlin
+ * time and say so. Sun and moon rows are equally exact: the audit of November 2026 measured
+ * both within 20 s of JPL DE421 (docs/accuracy-audit-2026-11.md). The
  * weather (Open-Meteo, next 3 days) only ANNOTATES the geometric list — a dead
  * forecast degrades the panel to its calendar, never the other way round.
  */
@@ -39,6 +41,8 @@ import type { Heightmap } from '../../lib/heightmap.js';
 import { loadHeightmap } from '../../cesium/loadHeightmap.js';
 import { sampleBody } from '../../lib/bodyPosition.js';
 import { moonLighting } from '../../lib/moonPhase.js';
+import { berlinZoneName, formatWhenDe } from '../../lib/berlinTime.js';
+import { LOW_PASS_CENTRE_DEG, formatAltitudeDe, isLowPass, lowPassNote } from '../../lib/lowPass.js';
 import {
   assessWindowWeather,
   formatAssessment,
@@ -67,6 +71,11 @@ interface CalendarRow {
   band: VantageWindow['band'] | ColumnBand;
   /** Horizon-gated targets only: does the disc clear the terrain skyline? */
   horizon?: 'frei' | 'verdeckt' | 'unsicher';
+  /**
+   * Targets without a horizon test only: the disc's centre is so low at the peak that the
+   * skyline probably hides it. Carries the apparent altitude, degrees.
+   */
+  lowAltitudeDeg?: number;
 }
 
 interface Target {
@@ -133,14 +142,8 @@ const BODY_LABEL: Record<VantageWindow['body'], string> = {
   moon: 'Mond',
 };
 
-/** "Fr, 3. Apr, 19:42" in the observer's own timezone — a photo plan is a local plan. */
-function formatWhen(d: Date): string {
-  return (
-    d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' }) +
-    ', ' +
-    d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  );
-}
+/** "Fr., 3. Apr., 19:42", always Berlin time: the light and the city are Berlin's. */
+const formatWhen = formatWhenDe;
 
 /** Distance from the sweep's "now" in the words a photographer plans with. */
 function formatIn(when: Date, now: Date): string {
@@ -201,6 +204,10 @@ export default function VantageCalendar() {
         end,
         stepMinutes: 5,
         refinePeaks: true,
+      }).map((w) => {
+        // No building or horizon test for this target, so a disc on the horizon is flagged.
+        const alt = bodyAt(w.peak, w.body).alt;
+        return isLowPass(alt) ? { ...w, lowAltitudeDeg: alt } : w;
       });
     }
     return enumerateHorizonGatedWindows({
@@ -269,8 +276,12 @@ export default function VantageCalendar() {
       });
   };
 
-  // A row whose disc is already behind the terrain is listed (honestly) but is not "next".
-  const next = windows.find((w) => w.horizon !== 'verdeckt');
+  // A row whose disc is behind the terrain, or so low that the skyline probably hides it, is
+  // listed (honestly) but is not "next".
+  const next = windows.find((w) => w.horizon !== 'verdeckt' && w.lowAltitudeDeg === undefined);
+  const lowCount = windows.filter((w) => w.lowAltitudeDeg !== undefined).length;
+  const sunCount = windows.filter((w) => w.body === 'sun').length;
+  const moonCount = windows.filter((w) => w.body === 'moon').length;
 
   return (
     <section className="pv-panel" data-testid="vantage-calendar">
@@ -351,11 +362,15 @@ export default function VantageCalendar() {
           {next && sweptAt && (
             <div className="pv-msg" role="status">
               <strong className="pv-msg__title">Nächster Termin</strong>
-              {formatWhen(next.peak)} · {BODY_LABEL[next.body]} · {BAND_LABEL[next.band]} ·{' '}
+              {formatWhen(next.peak)} {berlinZoneName(next.peak)} · {BODY_LABEL[next.body]} · {BAND_LABEL[next.band]} ·{' '}
               {formatIn(next.peak, sweptAt)}
               {assessmentFor(next) && ` · ${formatAssessment(assessmentFor(next)!)}`}
             </div>
           )}
+
+          <p className="pv-list__note" data-testid="vantage-zone-note">
+            Alle Uhrzeiten in Berliner Zeit (MEZ/MESZ), egal wo dein Gerät steht.
+          </p>
 
           <ul className="pv-list">
             {windows.map((w, i) => {
@@ -370,7 +385,7 @@ export default function VantageCalendar() {
                 <li key={`${w.body}-${w.peak.toISOString()}`}>
                   <button
                     type="button"
-                    className="pv-list__item"
+                    className={`pv-list__item${w.lowAltitudeDeg !== undefined ? ' pv-list__item--low' : ''}`}
                     aria-current={active}
                     onClick={() => {
                       // Same contract as SolverSearch's results: scrub the clock to the
@@ -385,6 +400,9 @@ export default function VantageCalendar() {
                       {BODY_LABEL[w.body]} · {BAND_LABEL[w.band]} · {Math.round(w.coveredFraction * 100)} %
                       {w.body === 'moon' &&
                         ` · ${Math.round(moonLighting(w.peak, point.lat, point.lon).fraction * 100)} % beleuchtet`}
+                      {w.lowAltitudeDeg !== undefined && (
+                        <span className="pv-list__low" data-testid="vantage-low">{lowPassNote(w.lowAltitudeDeg)}</span>
+                      )}
                       {w.horizon === 'verdeckt' && ' · hinter dem Horizont'}
                       {w.horizon === 'unsicher' && ' · Horizont unsicher'}
                       {a && (
@@ -406,15 +424,16 @@ export default function VantageCalendar() {
               {`${windows.filter((w) => w.body === 'sun').length} Sonnenfenster, ${windows.filter((w) => w.body === 'moon').length} Mondfenster; ${windows.filter((w) => w.horizon === 'frei').length} davon über dem Horizont.`}{' '}
               Horizont aus DGM1 bis 10 km hinter der Säule: nacktes Gelände, ohne Bäume und
               Häuser — die Bäume am Tiergarten können tiefe Scheiben trotzdem verdecken.
-              Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc).
             </div>
           ) : (
           <div className="pv-msg" role="status">
             <strong className="pv-msg__title">Ehrlich gelesen</strong>
-            {windows.filter((w) => w.body === 'sun').length === 0
+            {sunCount === 0
               ? 'In den nächsten 12 Monaten geht die Sonne auf dieser Linie nie hinter dem Turm unter — die Geometrie erlaubt es in diesem Zeitraum nicht.'
-              : `${windows.filter((w) => w.body === 'sun').length} Sonnenfenster, ${windows.filter((w) => w.body === 'moon').length} Mondfenster. Wo keine Zeile steht, passiert es nicht — das ist keine Lücke, sondern das Ergebnis.`}
-            {' '}Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc); die Spitzen-Treffer im Frühjahr/Spätsommer sind die verlässlichsten.
+              : `${sunCount} Sonnenfenster, ${moonCount} Mondfenster. Wo keine Zeile steht, passiert es nicht — das ist keine Lücke, sondern das Ergebnis.`}
+            {lowCount > 0 &&
+              ` ${lowCount} davon stehen tief am Horizont (Scheibenmitte unter ${formatAltitudeDe(LOW_PASS_CENTRE_DEG)}) und sind wahrscheinlich von Häusern verdeckt — die Liste prüft nur den Turm, keine Gebäude. Sie stehen blass in der Liste und zählen nicht als nächster Termin.`}
+            {' '}Sonnen- und Mondzeiten sind gleich genau, meist auf 20 Sekunden — wenn du auf dem gewählten Punkt stehst: ein Meter zur Seite sind 3 Sekunden.
           </div>
           )}
 

@@ -73,13 +73,18 @@ w = res('windows.json')
 column = [{'body': r['body'], 'appPeakWhenAudited': r['appPeak'], 'refPeak': r['refPeak'], 'refCovered': round(r['refCovered'], 3)} for r in w['rows']
           if r['set'].startswith('preview') and r['point'] == 'west' and r['refCovered'] > 0.999]
 
+# 7. Panel 05, all six bridge points: how high the reference puts the disc's centre (apparent, Bennett) at the
+#    moment of each listed window. The instant is the app's listed peak; the altitude is the reference's alone.
+#    Defect 3: the list must mark the ones the skyline probably hides (centre under 0.8 deg).
+altitudes = [{'point': r['point'], 'body': r['body'], 'peak': r['appPeak'], 'refAltApparent': round(r['refAltAtAppPeak'], 3)} for r in w['rows'] if r['set'].startswith('panel05')]
+
 out = {
     'source': 'Skyfield 1.55 with JPL DE421, topocentric apparent places; Bennett refraction at 10 degC / 1010 mbar; WGS84 geodesics (Vincenty). scripts/audit/make_fixture.py',
     'observer': {'lat': lm['lat'], 'lon': lm['lon']},
     'directions': directions, 'moonLit': moon_lit, 'bridge': bridge,
     'miniatureBridge': {'spot': {'lat': spot['lat'], 'lon': spot['lon'], 'eyeOrthometric': spot['groundM'] + 1.6, 'towerBaseOrthometric': lm['baseOrthometric']}, 'crossings': crossings},
-    'streets': streets, 'days': days, 'siegessaeuleWestFullCover': column,
+    'streets': streets, 'days': days, 'siegessaeuleWestFullCover': column, 'bridgeWindowAltitudes': altitudes,
 }
 path = os.path.join(HERE, '..', '..', 'tests', 'fixtures', 'accuracy-reference.json')
 json.dump(out, open(path, 'w'), indent=1, ensure_ascii=False)
-print(len(directions), 'directions', len(passes), 'bridge passes', len(crossings), 'crossings', len(streets), 'streets', len(days), 'days', len(column), 'column passes')
+print(len(directions), 'directions', len(passes), 'bridge passes', len(crossings), 'crossings', len(streets), 'streets', len(days), 'days', len(column), 'column passes', len(altitudes), 'bridge window altitudes,', sum(a['refAltApparent'] < 0.8 for a in altitudes), 'under 0.8 deg,', sum(a['refAltApparent'] < 0.5 for a in altitudes), 'under 0.5 deg')
