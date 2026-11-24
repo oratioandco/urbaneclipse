@@ -1,0 +1,116 @@
+{
+ "fernsehturm": [
+  {
+   "osm": "node/4948143723",
+   "nodes": 1,
+   "bboxCentre": [
+    52.5208599,
+    13.4093633
+   ],
+   "nodeMean": [
+    52.5208599,
+    13.4093633
+   ],
+   "appMinusBboxCentreM": [
+    3.77,
+    -4.99
+   ],
+   "tags": {
+    "name": "203 Bar im Fernsehturm"
+   }
+  },
+  {
+   "osm": "way/556435241",
+   "nodes": 37,
+   "bboxCentre": [
+    52.52081975,
+    13.4094213
+   ],
+   "nodeMean": [
+    52.52082115135135,
+    13.409422272972973
+   ],
+   "appMinusBboxCentreM": [
+    -0.16,
+    -0.53
+   ],
+   "tags": {
+    "building": "tower",
+    "ele": "40",
+    "height": "368",
+    "layer": "2",
+    "man_made": "communications_tower",
+    "name": "Berliner Fernsehturm",
+    "tourism": "attraction"
+   }
+  },
+  {
+   "osm": "relation/6610269",
+   "nodes": 2,
+   "bboxCentre": [
+    52.52081975,
+    13.4094213
+   ],
+   "nodeMean": [
+    52.52081975,
+    13.4094213
+   ],
+   "appMinusBboxCentreM": [
+    -0.16,
+    -0.53
+   ],
+   "tags": {
+    "name": "Fernsehturm mit Fußumbauung und Freiflächen"
+   }
+  }
+ ],
+ "siegessaeule": [
+  {
+   "osm": "way/718035022",
+   "nodes": 33,
+   "bboxCentre": [
+    52.5145112,
+    13.3501105
+   ],
+   "nodeMean": [
+    52.514512981818186,
+    13.350098496969698
+   ],
+   "appMinusBboxCentreM": [
+    -0.78,
+    0.2
+   ],
+   "tags": {
+    "building": "civic",
+    "historic": "monument",
+    "name": "Siegessäule",
+    "tourism": "attraction"
+   }
+  }
+ ],
+ "brandenburger-tor": [
+  {
+   "osm": "way/518071791",
+   "nodes": 40,
+   "bboxCentre": [
+    52.5162749,
+    13.377702450000001
+   ],
+   "nodeMean": [
+    52.5162721075,
+    13.377703209999998
+   ],
+   "appMinusBboxCentreM": [
+    0.11,
+    -0.21
+   ],
+   "tags": {
+    "building": "gate",
+    "height": "26",
+    "historic": "monument",
+    "name": "Brandenburger Tor",
+    "tourism": "attraction"
+   }
+  }
+ ]
+}

@@ -21,6 +21,7 @@ self.onmessage = ({ data }) => {
             bodyAt: (body, t) => sampleBody(body, new Date(t), data.lat, data.lon),
             moonLit: (t) => getMoonIllumination(new Date(t)).fraction,
             minMoonLit: MIN_MOON_ILLUMINATION,
+            northOffsetDeg: data.northOffsetDeg ?? 0,
           });
     self.postMessage({ id, result });
   } catch (error) {

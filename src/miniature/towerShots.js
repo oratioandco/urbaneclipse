@@ -25,6 +25,24 @@ export const EYE_HEIGHT = 1.6;
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
 
+const EARTH_RADIUS_M = 6_371_000;
+
+/**
+ * How far the scene's north is turned from true north at a place, degrees, positive east of
+ * the scene's meridian. The scene is a transverse Mercator centred on the tower (eye.js), so
+ * its grid north only matches true north on the tower's own meridian: 6 km east, at the
+ * Lichtenberger Brücke, it is 0.07° off, which is 8 m at the tower and 20 s of the sun.
+ * A body's azimuth from an ephemeris is from true north; take this off it before comparing
+ * it with a bearing measured in the scene.
+ */
+export const gridConvergenceDeg = (lat, lon, lon0) => (lon - lon0) * Math.sin(rad(lat));
+
+/**
+ * How much lower a landmark stands than a flat scene shows it, degrees: the earth curves
+ * away, by 2.9 m over 6.1 km (0.03°). Added to a body's height it gives the same picture.
+ */
+export const curvatureDropDeg = (distanceM) => deg(distanceM / (2 * EARTH_RADIUS_M));
+
 /** From this far the moon looks 1.25 times the sphere's width: about 4.4 km. */
 export const BIG_MOON_M = SPHERE_RADIUS_M / Math.tan(rad(DISC_DEG / 2 / 1.25));
 
@@ -150,6 +168,7 @@ export function bodyAgainstProfile(profile, x, z, topAGL, eye, base, body) {
   // past the disc, like a column, crosses at the edge instead.
   let coversDisc = h - discR >= 0 && h + discR <= topAGL;
   let fitsInDisc = true;
+  let touches = false;
   let rMax = 0;
   const sample = (hh) => {
     if (hh > topAGL) return; // nothing stands there to hide or fit
@@ -157,7 +176,11 @@ export function bodyAgainstProfile(profile, x, z, topAGL, eye, base, body) {
     rMax = Math.max(rMax, r);
     const dy = hh - h;
     if (Math.abs(dy) > discR) return;
-    if (r < perp + Math.sqrt(Math.max(0, discR * discR - dy * dy))) coversDisc = false;
+    const chord = Math.sqrt(Math.max(0, discR * discR - dy * dy));
+    // The outlines meet only where the disc is still wide enough at that height to reach the
+    // solid: under a tapering top the disc's own curve can pass clear of it.
+    if (r > 0 && perp <= r + chord) touches = true;
+    if (r < perp + chord) coversDisc = false;
     if (Math.hypot(dy, r) + perp > discR) fitsInDisc = false;
   };
   // The rim heights first: a solid still standing where the disc's circle passes, like a
@@ -172,7 +195,7 @@ export function bodyAgainstProfile(profile, x, z, topAGL, eye, base, body) {
   let state = 'near';
   if (coversDisc) state = 'hidden';
   else if (fitsInDisc && rMax > 0) state = 'ring';
-  else if (perp <= rMax + discR) state = 'edge';
+  else if (touches) state = 'edge';
   const ringRatio = DISC_DEG / deg(2 * Math.atan(Math.max(rMax, 0.5) / s));
   return { state, sepDeg, signedOff, ringRatio, dist: s, rise: body.alt };
 }
@@ -240,16 +263,27 @@ export function alignmentMinute(bodyAt, body, targetAz, start, end) {
  * @param targets [{ id, x, z, topAGL, wanted: { sun: states, moon: states }, rank: { state: score },
  *   offState (scored by |signedOff|, not sepDeg), stateAt(eye, base, body) → state }] in scene
  *   metres; outputs carry the target's id.
- * @param bodyAt (body, t) => { az, alt } seen from the spot
+ * @param bodyAt (body, t) => { az, alt } seen from the spot, azimuth from true north
+ * @param northOffsetDeg gridConvergenceDeg at the spot, when bodyAt is sampled there rather
+ *   than at the scene's origin; the shots come back in scene bearings, as before
  * @param moonLit t => lit fraction; moon passes below `minMoonLit` are left out
  * @returns [{ target, body, start, end, peak, align, state, az, alt }], with `peak` the best-looking
  *   minute by the quality score and `align` the geometric one, where the body\u0027s azimuth crosses
  *   the bearing from the eye to the target.
  */
-export function findShots({ eye, base, start, end, bodyAt, moonLit, minMoonLit = 0.25, targets }) {
+export function findShots({ eye, base, start, end, bodyAt: trueBodyAt, moonLit, minMoonLit = 0.25, targets, northOffsetDeg = 0 }) {
   const shots = [];
   for (const target of targets) {
     const flat = Math.hypot(target.x - eye.x, target.z - eye.z);
+    // The body as the flat scene has to show it against this target: its azimuth turned to
+    // the scene's north, and lifted by as much as the curved earth lowers the target.
+    const lift = northOffsetDeg ? curvatureDropDeg(flat) : 0;
+    const bodyAt = northOffsetDeg
+      ? (body, t) => {
+          const p = trueBodyAt(body, t);
+          return { ...p, az: (p.az - northOffsetDeg + 360) % 360, alt: p.alt + lift, trueAlt: p.alt };
+        }
+      : trueBodyAt;
     const targetAz = (deg(Math.atan2(target.x - eye.x, -(target.z - eye.z))) + 360) % 360;
     const angleTo = (h) => deg(Math.atan2(base + h - eye.y, flat));
     const low = Math.max(0, angleTo(0)) - 3;
@@ -269,7 +303,7 @@ export function findShots({ eye, base, start, end, bodyAt, moonLit, minMoonLit =
         for (let u = Math.max(t - COARSE, refinedTo + MINUTE, start); u <= Math.min(t + COARSE, end); u += MINUTE) {
           refinedTo = u;
           const q = bodyAt(body, u);
-          if (q.alt <= 0 || (body === 'moon' && moonLit(u) < minMoonLit)) continue;
+          if ((q.trueAlt ?? q.alt) <= 0 || (body === 'moon' && moonLit(u) < minMoonLit)) continue;
           const r = target.stateAt(eye, base, q);
           // A ring of moon round the solid only reads as a big moon from far enough out.
           if (!wanted.includes(r.state) || (body === 'moon' && r.state === 'ring' && (r.ringRatio ?? 1) < 1.25)) continue;
