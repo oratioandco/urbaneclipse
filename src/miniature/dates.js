@@ -185,7 +185,7 @@ async function refresh() {
           const what = s.body === 'moon' && s.state === 'ring' && target.id === 'fernsehturm' ? `Big moon behind the TV tower, ${discOverSphere(flat).toFixed(1)}× the sphere` : target.stateText[s.body][s.state];
           box.append(
             row({
-              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end },
+              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end, fromDeg: (THREE.MathUtils.radToDeg(Math.atan2(-dx, dz)) + 360) % 360 },
               body: s.body,
               t: s.peak,
               // A pass lasts two to four minutes: the row says so, and gives the moment the

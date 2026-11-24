@@ -118,8 +118,14 @@ app.openLandmarkSpot = (spot) => {
 export const ticketShotRow = () => (ticketShot.hidden ? null : ticketRow);
 /** The ticket's card again, once the day's forecast is in: a shot opened from a link arrives before it. */
 function refreshTicket() {
-  if (ticketRow && !ticketShot.hidden) ticketShot.replaceChildren(shotCard(ticketRow, dayVerdict(ticketRow), { size: 'ticket', tag: 'div' }));
+  if (ticketRow && !ticketShot.hidden) ticketShot.replaceChildren(shotCard(ticketRow, ticketVerdict(ticketRow), { size: 'ticket', tag: 'div' }));
 }
+/**
+ * The verdict the ticket shows for a shot. A shot of the year from this spot (fromHere.js) has
+ * none beyond the forecast's reach, on the ticket as in its list: nothing rather than "No
+ * forecast yet" a year ahead. The day's own shots say which kind of none it is, as their list does.
+ */
+export const ticketVerdict = (row) => (row?.fromHere && !forecastReach(dateInput.value).ok ? null : dayVerdict(row));
 // Back on the map the ticket's card goes: the next visit to eye level may be for no shot at all.
 new MutationObserver(() => {
   if (document.body.dataset.eye === 'true') return;

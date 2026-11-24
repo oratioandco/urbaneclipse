@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain JS module
-import { asShot, byMonth, countWords, DECENT, gatherNotes, highlights, rank, rowWhen, shotFromKey, shownShots, spectacle } from '../../src/miniature/fromHere.js';
+import { asShot, byMonth, countWords, DECENT, gatherNotes, highlights, rank, rowWhen, shotFromKey, shownShots, sideOf, spectacle, targetOfKey, weekdayApart } from '../../src/miniature/fromHere.js';
 
 const DAY = 86_400_000;
 const NOW = Date.UTC(2026, 10, 24, 11, 0);
@@ -21,10 +21,32 @@ describe('from here: a found date as a shot', () => {
     expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'fernsehturm', state: 'antenna', what: 'Moon behind the antenna', detail: '' }).where).toBe('antenna');
     expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'fernsehturm', state: 'ring', what: 'Big moon behind the TV tower, 1.4× the sphere', detail: '' }).title).toBe('Big moon behind the TV tower, 1.4× the sphere');
   });
-  it('gives the other landmarks their sprite, and a part a link cannot mistake for the tower’s sphere', () => {
-    const gate = asShot({ t: NOW, body: 'sun', kind: 'tower', target: 'brandenburger-tor', state: 'ring', what: 'The gate’s quadriga in the sun', detail: 'x' });
-    expect(gate).toMatchObject({ landmark: 'brandenburger_tor', where: 'brandenburger-tor', short: 'Brandenburger Tor', title: 'The gate’s quadriga in the sun' });
-    expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'siegessaeule', state: 'ring', what: 'Big moon round the column', detail: 'x' }).landmark).toBe('siegessaeule');
+  it('gives the column and the gate the fields their day rows carry', async () => {
+    const gate = asShot({ t: NOW, body: 'sun', kind: 'tower', target: 'brandenburger-tor', state: 'ring', what: 'The gate’s quadriga in the sun', detail: '2° up · Golden hour', distanceM: 640, fromDeg: 262, altDeg: 2.2 });
+    expect(gate).toMatchObject({ landmark: 'brandenburger_tor', target: 'brandenburger-tor', where: 'quadriga', short: 'Brandenburger Tor', title: 'The gate’s quadriga in the sun' });
+    expect(gate).toMatchObject({ stand: '640 m west', side: 'west', caution: 'trees unchecked', checked: { buildings: true, trees: false } });
+    expect(gate.detail).toBe('Brandenburger Tor · 2° up · Golden hour · buildings checked, trees not');
+    const column = asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'siegessaeule', state: 'ring', what: 'Big moon round the column', detail: 'x', distanceM: 1900, fromDeg: 84 });
+    expect(column).toMatchObject({ landmark: 'siegessaeule', where: 'viktoria', stand: '1.9 km east', caution: 'trees unchecked' });
+    // The same names and the same words as the day list's rows (landmarkShots.js, landmarkStands.ts).
+    // @ts-expect-error plain JS module
+    const { LANDMARK_CAUTION, LANDMARK_CHECK } = await import('../../src/miniature/landmarkShots.js');
+    const { FIGURE_TARGETS } = await import('../../src/lib/landmarkStands');
+    expect([gate.caution, gate.detail.endsWith(LANDMARK_CHECK)]).toEqual([LANDMARK_CAUTION, true]);
+    for (const target of FIGURE_TARGETS) {
+      const shot = asShot({ t: NOW, body: 'sun', kind: 'tower', target: target.id, state: 'ring', detail: 'x' });
+      expect([shot.where, shot.short], target.id).toEqual([target.where, target.short]);
+    }
+    // The tower's own shots carry no such caution: its viewshed and rules are its own.
+    expect(asShot({ t: NOW, body: 'sun', kind: 'tower', target: 'fernsehturm', state: 'ring', what: 'x', detail: 'x', distanceM: 5000, fromDeg: 90 }).caution).toBeUndefined();
+  });
+  it('says which side of a landmark a spot is on', () => {
+    expect([0, 44, 90, 135, 181, 262, 300, 359, -90].map(sideOf)).toEqual(['north', 'north-east', 'east', 'south-east', 'south', 'west', 'north-west', 'north', 'west']);
+  });
+  it('gives a row its small print in short: place, pass, height', () => {
+    expect(asShot({ t: NOW, body: 'moon', kind: 'tower', target: 'fernsehturm', state: 'antenna', what: 'Moon behind the antenna', detail: 'Moon behind the antenna · on the axis 01:35:26 · 6° up · Night · 68% lit', altDeg: 6.2 }).brief).toBe('TV tower · Moon behind the antenna · 6° up');
+    expect(asShot({ t: NOW, body: 'sun', kind: 'street', place: 'Karl-Marx-Allee', detail: 'x', altDeg: 1.4 }).brief).toBe('Karl-Marx-Allee · Sun down the street · 1° up');
+    expect(asShot({ t: NOW, body: 'sun', kind: 'street', place: 'Karl-Marx-Allee' }).brief).toBe('Karl-Marx-Allee · Sun down the street');
   });
   it('makes a street date a street shot, its length as the card’s distance', () => {
     const s = asShot({ t: NOW, body: 'moon', kind: 'street', place: 'Karl-Marx-Allee', lengthM: 2400, detail: 'Moon down the street · 4° up · Night', when: 'x' });
@@ -45,6 +67,7 @@ describe('from here: a shot again from a link', () => {
       { t: NOW, body: 'sun', kind: 'tower', target: 'brandenburger-tor', state: 'edge', what: 'Sun at the gate’s edge', detail: 'x' },
       { t: NOW, body: 'moon', kind: 'street', place: 'Karl-Marx-Allee', lengthM: 1695, detail: 'x' },
     ];
+    expect(await Promise.all(found.map((f) => keyOf(asShot(f))))).toEqual(['sphere-sun', 'antenna-moon', 'viktoria-moon', 'quadriga-sun', 'street-moon:Karl-Marx-Allee']);
     for (const f of found) {
       const shot = asShot(f);
       const again = shotFromKey(await keyOf(shot), NOW, 6000);
@@ -56,11 +79,14 @@ describe('from here: a shot again from a link', () => {
   it('names the card and the calendar entry from the link alone', () => {
     expect(shotFromKey('sphere-sun', NOW, 6000)).toMatchObject({ title: 'Sun behind the TV tower’s sphere', short: 'TV tower', detail: 'TV tower', distanceM: 6000 });
     expect(shotFromKey('antenna-moon', NOW)).toMatchObject({ title: 'Moon behind the TV tower’s antenna', where: 'antenna' });
-    expect(shotFromKey('siegessaeule-sun', NOW, 6000)).toMatchObject({ title: 'Sun behind the Siegessäule', distanceM: null });
+    expect(shotFromKey('viktoria-sun', NOW, 400, 84)).toMatchObject({ title: 'Sun behind the Siegessäule', stand: '400 m east', caution: 'trees unchecked' });
+    expect(shotFromKey('viktoria-sun', NOW).stand).toBeUndefined();
+    expect(['sphere-sun', 'antenna-moon', 'viktoria-sun', 'quadriga-moon', 'street-sun:Sonnenallee', 'x'].map(targetOfKey)).toEqual(['fernsehturm', 'fernsehturm', 'siegessaeule', 'brandenburger-tor', null, null]);
+    expect(shotFromKey('quadriga-moon', NOW)).toMatchObject({ short: 'Brandenburger Tor', where: 'quadriga' });
     expect(shotFromKey('street-sun:Straße des 17. Juni', NOW)).toMatchObject({ title: 'Sun down Straße des 17. Juni', kind: 'street' });
   });
   it('gives nothing for a name it cannot read', () => {
-    for (const key of ['', 'sphere', 'sphere-mars', 'street-sun', 'schloss-sun', null]) expect(shotFromKey(key, NOW)).toBeNull();
+    for (const key of ['', 'sphere', 'sphere-mars', 'street-sun', 'schloss-sun', 'siegessaeule-sun', null]) expect(shotFromKey(key, NOW)).toBeNull();
     expect(shotFromKey('sphere-sun', NaN)).toBeNull();
   });
 });
@@ -94,19 +120,25 @@ describe('from here: spectacle', () => {
 
 describe('from here: the switches', () => {
   const shots = [
-    { body: 'sun', kind: 'tower' },
-    { body: 'moon', kind: 'tower' },
+    { body: 'sun', kind: 'tower', target: 'fernsehturm' },
+    { body: 'moon', kind: 'tower', target: 'fernsehturm' },
     { body: 'sun', kind: 'street' },
     { body: 'moon', kind: 'street' },
+    { body: 'sun', kind: 'tower', target: 'siegessaeule' },
+    { body: 'moon', kind: 'tower', target: 'brandenburger-tor' },
   ];
   it('shows all with nothing switched off', () => {
-    expect(shownShots(shots)).toHaveLength(4);
-    expect(shownShots(shots, { sun: true, moon: true, tower: true, streets: true })).toHaveLength(4);
+    expect(shownShots(shots)).toHaveLength(6);
+    expect(shownShots(shots, { sun: true, moon: true, tower: true, landmarks: true, streets: true })).toHaveLength(6);
   });
   it('applies body and kind together, as the day list does', () => {
-    expect(shownShots(shots, { moon: false })).toEqual([shots[0], shots[2]]);
-    expect(shownShots(shots, { tower: false })).toEqual([shots[2], shots[3]]);
-    expect(shownShots(shots, { sun: false, streets: false })).toEqual([shots[1]]);
+    expect(shownShots(shots, { moon: false })).toEqual([shots[0], shots[2], shots[4]]);
+    expect(shownShots(shots, { tower: false })).toEqual([shots[2], shots[3], shots[4], shots[5]]);
+    expect(shownShots(shots, { sun: false, streets: false })).toEqual([shots[1], shots[5]]);
+  });
+  it('keeps the tower and the other landmarks apart, as the day list’s two switches do', () => {
+    expect(shownShots(shots, { landmarks: false })).toEqual(shots.slice(0, 4));
+    expect(shownShots(shots, { tower: false, streets: false })).toEqual([shots[4], shots[5]]);
   });
 });
 
@@ -192,6 +224,8 @@ describe('from here: the year by month', () => {
     expect(rowWhen('Thu, 14 Jan 2027 · 23:34–23:37')).toBe('Thu, 14 Jan · 23:34–23:37');
     expect(rowWhen('Mon, 30 Nov · 11:43')).toBe('Mon, 30 Nov · 11:43');
     expect(rowWhen(undefined)).toBe('');
+    expect(weekdayApart('Thu, 14 Jan · 23:34–23:37')).toEqual(['Thu, ', '14 Jan · 23:34–23:37']);
+    expect(weekdayApart('14 Jan · 23:34')).toEqual(['', '14 Jan · 23:34']);
   });
   it('keeps the same month of two years apart', () => {
     const months = byMonth([{ t: Date.UTC(2026, 10, 25, 12) }, { t: Date.UTC(2027, 10, 20, 12) }]);

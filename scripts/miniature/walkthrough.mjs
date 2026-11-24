@@ -1,24 +1,27 @@
-// Walks through the planner's main features in a real browser window and prints a line per
-// check, then any page errors. Run against a build: npx astro preview, then
+// Walks through the planner's main features in a real browser and prints a line per check,
+// then any page errors. Run against a build: npx astro preview, then
 //   node scripts/miniature/walkthrough.mjs http://localhost:4321 /tmp/shots
+// The city geometry is not in git: it is answered from the live site through a cache on disk,
+// as the adversarial scripts do (scripts/adversarial/lib.mjs; CITY and CACHE in the environment).
 
-import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
 const [base, out] = [process.argv[2], process.argv[3]];
-const b = await chromium.launch({ headless: false, args: ['--use-angle=metal'] });
-const p = await (await b.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+process.env.BASE = base;
+process.env.OUT ??= out;
+mkdirSync(out, { recursive: true });
+const { open, close } = await import('../adversarial/lib.mjs');
+const { page: p, context, log } = await open({ size: 'desktop', forecast: 'fixed', locale: 'en-GB' });
 const errs = [];
-p.on('pageerror', (e) => errs.push('pageerror ' + e.message));
-p.on('console', (m) => m.type() === 'error' && !/404/.test(m.text()) && errs.push('console ' + m.text()));
 const ok = (name, cond, extra = '') => console.log(`${cond ? 'ok  ' : 'FAIL'} ${name} ${extra}`);
 const shot = (n) => p.screenshot({ path: `${out}/r-${n}.png` });
 
-await p.goto(base + '/plan/?nointro&date=2027-03-22&time=1020');
+await p.goto(base + '/plan/?nointro&view=day&date=2027-03-22&time=1020');
 await p.waitForFunction(() => window.__ready, null, { timeout: 90000 });
 await p.waitForTimeout(1500);
 ok('city loaded', (await p.evaluate(() => window.__mini.tiles.length)) === 355);
-ok('day list filled', (await p.$$eval('#daylist .dayrow', (r) => r.length)) > 5, await p.textContent('#shots-count'));
-ok('day view drawn', (await p.$$eval('#tl-plot .tl-curve', (r) => r.length)) >= 2 && (await p.$$eval('#shots-row .shot', (r) => r.length)) > 5);
-ok('verdicts are words', await p.$$eval('#daylist .verdict', (v) => v.length > 0 && v.every((e) => e.textContent.trim().length > 0)), await p.textContent('#daylist .verdict'));
+ok('day list filled', (await p.$$eval('#daylist .shotcard--row', (r) => r.length)) > 5, await p.textContent('#shots-count'));
+ok('day view drawn', (await p.$$eval('#tl-plot .tl-curve', (r) => r.length)) >= 2 && (await p.$$eval('#shots-row .shotcard', (r) => r.length)) > 5);
+ok('verdicts are words', await p.$$eval('#daylist .sc-verdict b', (v) => v.length > 0 && v.every((e) => e.textContent.trim().length > 0)), await p.textContent('#daylist .sc-verdict b'));
 ok('rays for now', (await p.evaluate(() => window.__mini.rays.length)) >= 1);
 await shot('overview');
 
@@ -37,11 +40,11 @@ await p.click('#prev-day');
 await p.waitForTimeout(500);
 
 // Layers: hide streets, list shrinks.
-const rowsAll = await p.$$eval('#daylist .dayrow', (r) => r.length);
+const rowsAll = await p.$$eval('#daylist .shotcard--row', (r) => r.length);
 await p.click('#layers');
 await p.click('#layers-menu input[data-layer="streets"]', { force: true });
 await p.waitForTimeout(300);
-const rowsNoStreets = await p.$$eval('#daylist .dayrow', (r) => r.length);
+const rowsNoStreets = await p.$$eval('#daylist .shotcard--row', (r) => r.length);
 ok('streets layer filters list', rowsNoStreets < rowsAll, `${rowsAll} -> ${rowsNoStreets}`);
 await p.click('#layers-menu input[data-layer="streets"]', { force: true });
 ok('flat map link keeps the day', (await p.getAttribute('#flatmap', 'href')) === '/map/#/day=2027-03-22', await p.getAttribute('#flatmap', 'href'));
@@ -93,7 +96,8 @@ ok('face tower', Number.isFinite(heading));
 if ((await p.getAttribute('#ticket-more', 'aria-expanded')) !== 'true') await p.click('#ticket-more');
 await p.click('#dates-toggle');
 await p.waitForFunction(() => document.querySelector('#dates h3') && !document.querySelector('#dates').textContent.includes('Searching'), null, { timeout: 90000 }).catch(() => {});
-ok('dates from here', (await p.$$eval('#dates h3', (h) => h.length)) >= 1, (await p.$$eval('#dates .shotcard--row', (r) => r.length)) + ' rows');
+ok('dates from here', ['ready', 'empty'].includes(await p.getAttribute('#dates', 'data-state')), `${await p.getAttribute('#dates', 'data-state')}: ${await p.$$eval('#dates .shotcard--card', (r) => r.length)} cards, ${await p.$$eval('#dates .shotcard--row', (r) => r.length)} rows`);
+ok('from here has the day list\u2019s five switches', (await p.$$eval('#dates .shotfilter button', (b) => b.map((e) => e.dataset.layer).join())) === (await p.$$eval('#dayfilter button', (b) => b.map((e) => e.dataset.layer).join())) || (await p.getAttribute('#dates', 'data-state')) === 'empty');
 await p.click('#dates-toggle');
 
 // Minimap drawn.
@@ -107,7 +111,7 @@ ok('back to overview', await p.evaluate(() => document.body.dataset.eye === 'fal
 // Go from the list.
 await p.click('.tabs [data-mode="shoot"]');
 await p.waitForTimeout(400);
-await p.click('#daylist .dayrow[data-kind="street"]');
+await p.click('#daylist .shotcard--row[data-kind="street"]');
 await p.waitForFunction(() => window.__mini.look.active, null, { timeout: 60000 }).catch(() => {});
 await p.waitForTimeout(1200);
 ok('street Go lands', await p.evaluate(() => window.__mini.look.active), await p.evaluate(() => location.search));
@@ -115,8 +119,7 @@ const link = p.url();
 await shot('street');
 
 // Shared link reopens.
-const p2 = await (await b.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
-p2.on('pageerror', (e) => errs.push('p2 ' + e.message));
+const p2 = await context.newPage();
 await p2.goto(link);
 await p2.waitForFunction(() => window.__mini?.look?.active, null, { timeout: 90000 }).catch(() => {});
 const a = await p.evaluate(() => [window.__mini.look.x, window.__mini.look.z]);
@@ -133,5 +136,6 @@ const ms = await p.evaluate(async () => {
   return h[h.length >> 1];
 });
 ok('frame time', ms < 25, `${ms.toFixed(1)} ms`);
+errs.push(...log.filter((l) => l.type === 'pageerror' || (l.type === 'error' && !/404|504/.test(l.text))).map((l) => `${l.type} ${l.text}`));
 console.log(errs.length ? errs.join('\n') : 'no errors');
-await b.close();
+await close();

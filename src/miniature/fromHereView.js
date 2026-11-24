@@ -15,7 +15,7 @@
  * picking a shot does what its date did before (`go`: day, time, turn to face it) and puts
  * its card on the ticket, so the link and the calendar entry name it.
  */
-import { asShot, byMonth, countWords, gatherNotes, highlights, rowWhen, shownShots } from './fromHere.js';
+import { asShot, byMonth, countWords, gatherNotes, highlights, rowWhen, shownShots, weekdayApart } from './fromHere.js';
 import { shotCard } from './shotCard.js';
 import { emptyNote, shotRow, showTicket } from './daylist.js';
 import { layers, wireSwitches } from './chrome.js';
@@ -23,7 +23,7 @@ import { bodyIcon } from './bodyAt.js';
 import { berlinDayStart } from './berlinClock.js';
 import { berlinDate } from './dayMath.js';
 import { icon } from './icons.js';
-import { formatDay } from './time.js';
+import { formatClock, formatDay } from './time.js';
 import { shotVerdict } from './verdict.js';
 import { cloudsFor, forecastReach } from './weather.js';
 import { invalidate } from './state.js';
@@ -99,6 +99,8 @@ function pick(shot) {
 function mark(card, shot) {
   card.dataset.key = keyOf(shot);
   card.dataset.heading = shot.group;
+  // The date in full, year and all: a row under its month's name shows it without (scripts read it here).
+  card.dataset.when = shot.when ?? '';
   if (search.picked === card.dataset.key) card.setAttribute('aria-current', 'true');
   return card;
 }
@@ -133,12 +135,14 @@ function best(shots) {
   return row;
 }
 
-/** The four switches of the day list, the same buttons on the same state. */
+/** The five switches of the day list, the same buttons on the same state. */
 function switches() {
   const group = el('div', 'shotfilter');
   group.setAttribute('role', 'group');
   group.setAttribute('aria-label', 'Show');
-  group.innerHTML = '<button type="button" data-layer="sun">Sun</button><button type="button" data-layer="moon">Moon</button><span class="sep"></span><button type="button" data-layer="tower">Tower</button><button type="button" data-layer="streets">Streets</button>';
+  group.innerHTML =
+    '<button type="button" data-layer="sun">Sun</button><button type="button" data-layer="moon">Moon</button><span class="sep"></span>' +
+    '<button type="button" data-layer="tower">Tower</button><button type="button" data-layer="landmarks" title="The sun or moon behind the Siegessäule and the Brandenburger Tor">Landmarks</button><button type="button" data-layer="streets">Streets</button>';
   wireSwitches(group);
   return group;
 }
@@ -182,6 +186,7 @@ function searching() {
 
 function render() {
   if (!search) return;
+  queueMicrotask(nameNext);
   if (pending().length) {
     list.dataset.state = 'searching';
     body.replaceChildren(searching());
@@ -238,8 +243,14 @@ function render() {
       const rows = el('div', 'fh-month');
       for (const shot of month.shots) {
         const row = shotRow({ ...shot, title: rowWhen(shot.when) }, search.verdicts.get(shot) ?? null, () => pick(shot));
-        // The canonical sun or moon of that minute (the moon in its phase) before the date.
-        row.querySelector('.sc-title').insertAdjacentHTML('afterbegin', bodyIcon(shot.body, shot.t, { size: 14 }));
+        // The canonical sun or moon of that minute (the moon in its phase) before the date; the
+        // weekday apart, and the small print in short beside it, for a screen too narrow for
+        // either (fromhere.css shows one or the other).
+        const [weekday, rest] = weekdayApart(rowWhen(shot.when));
+        const title = row.querySelector('.sc-title');
+        title.replaceChildren(el('span', 'fh-weekday', weekday), rest);
+        title.insertAdjacentHTML('afterbegin', bodyIcon(shot.body, shot.t, { size: 14 }));
+        row.querySelector('.sc-detail').after(el('span', 'fh-brief', shot.brief));
         rows.append(mark(row, shot));
       }
       parts.push(el('h4', 'plan-day', month.label), rows);
@@ -248,6 +259,34 @@ function render() {
   parts.push(notes());
   body.replaceChildren(...parts);
 }
+
+/*
+ * The ticket's line says what lines up at the chosen minute, and "nothing with the tower" when
+ * nothing does. With the year's list open under it that reads as if the list were empty, so
+ * while the list is open the idle line names the next date from here instead (or says that
+ * its nothing is about this minute). Only the idle line, only while the list is open: what
+ * eclipse.js says of the minute itself is left as it is.
+ */
+const statusLine = document.getElementById('eclipse');
+let theirs = null;
+let ours = null;
+function nameNext() {
+  if (document.body.dataset.dates !== 'open') {
+    // Closed: the line is the minute's own again.
+    if (ours !== null && statusLine.textContent === ours) statusLine.textContent = theirs;
+    ours = null;
+    return;
+  }
+  if (statusLine.dataset.state !== 'idle' || !search || pending().length) return;
+  const now = Date.now();
+  const next = shownShots(allShots(), layers).filter((s) => (s.until ?? s.t) >= now).sort((a, b) => a.t - b.t)[0];
+  const text = next ? `Next from here: ${formatDay(next.t)}, ${formatClock(next.t)}` : 'Nothing lines up right now';
+  if (statusLine.textContent === text) return;
+  theirs = statusLine.textContent;
+  statusLine.textContent = ours = text;
+}
+new MutationObserver(nameNext).observe(statusLine, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['data-state'] });
+new MutationObserver(nameNext).observe(document.body, { attributes: true, attributeFilter: ['data-dates'] });
 
 document.addEventListener('layerchange', () => {
   if (search && !pending().length) render();

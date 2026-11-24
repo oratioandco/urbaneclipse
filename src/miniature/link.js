@@ -8,8 +8,9 @@ import { cityUniforms } from './shading.js';
 import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromLatLon } from './eye.js';
 import { dateInput, instant, setFine, timeInput } from './clock.js';
 import { findShot, shotKey } from './dayShots.js';
-import { currentRows, dayVerdict, openShot, showTicket, ticketShotRow } from './daylist.js';
-import { shotFromKey } from './fromHere.js';
+import { currentRows, dayVerdict, openShot, showTicket, ticketShotRow, ticketVerdict } from './daylist.js';
+import { shotFromKey, targetOfKey } from './fromHere.js';
+import { TARGETS } from './targets.js';
 import { getViewshed, landmarksSettled } from './plan.js';
 import { setPanelMode } from './planmode.js';
 import { params } from './config.js';
@@ -76,9 +77,12 @@ async function nameLinkedShot(key) {
   if (params.get('here') === 'year') {
     // A shot of the year from this spot: its card is made from the link, which says all of it.
     const at = (params.get('at') ?? '').split(',').map(Number);
-    const [x, z] = at.length === 2 && at.every(Number.isFinite) ? sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon) : [0, 0];
-    const shot = shotFromKey(key, instant().getTime(), Math.hypot(x, z) || null);
-    if (shot) showTicket(shot, dayVerdict(shot));
+    const [x, z] = at.length === 2 && at.every(Number.isFinite) ? sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon) : [NaN, NaN];
+    // How far the spot is from the shot's landmark, and on which bearing from it: the card's "400 m east".
+    const target = TARGETS.find((entry) => entry.id === targetOfKey(key));
+    const [dx, dz] = target ? [x - target.x, z - target.z] : [NaN, NaN];
+    const shot = shotFromKey(key, instant().getTime(), Math.hypot(dx, dz) || null, (THREE.MathUtils.radToDeg(Math.atan2(dx, -dz)) + 360) % 360);
+    if (shot) showTicket(shot, ticketVerdict(shot));
     return;
   }
   for (let i = 0; i < 40 && !(app.dayReady && getViewshed() && landmarksSettled()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
