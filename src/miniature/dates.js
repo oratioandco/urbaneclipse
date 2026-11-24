@@ -38,19 +38,46 @@ const pending = new Map();
 let searched = null;
 let watch = 0;
 
+/** A worker that has said nothing for this long is taken for lost, ms: a year's search posts every few hundred. */
+const SILENT_MS = 15_000;
+let silence = 0;
+
+/** The worker is gone (it did not load, it threw, it went silent): every search waiting on it fails, and the next starts a new one. */
+function lost(why) {
+  clearTimeout(silence);
+  worker?.terminate();
+  worker = null;
+  for (const [id, done] of pending) {
+    pending.delete(id);
+    done.reject(new Error(why));
+  }
+}
+
 function search(job) {
-  worker ??= new Worker(new URL('./dates.worker.js', import.meta.url), { type: 'module' });
+  if (!worker) {
+    worker = new Worker(new URL('./dates.worker.js', import.meta.url), { type: 'module' });
+    // A worker whose file does not arrive (offline, blocked) only ever says so here.
+    worker.onerror = (event) => lost(event?.message || 'the search could not be loaded');
+    worker.onmessageerror = () => lost('the search\u2019s answer could not be read');
+  }
+  const listen = () => {
+    clearTimeout(silence);
+    if (pending.size) silence = setTimeout(() => lost('the search did not answer'), SILENT_MS);
+  };
   worker.onmessage = ({ data }) => {
     // The year's search says how far it is while it runs.
-    if (data.progress !== undefined) return fromHere.progress(data.progress);
+    if (data.progress !== undefined) return listen(), fromHere.progress(data.progress);
     const done = pending.get(data.id);
     pending.delete(data.id);
+    listen();
     if (data.error) done?.reject(new Error(data.error));
     else done?.resolve(data.result);
   };
   const id = nextId++;
   worker.postMessage({ id, ...job });
-  return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+  const answer = new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+  listen();
+  return answer;
 }
 
 /** The street you stand in, facing the way you look if both directions are near. */
@@ -179,13 +206,13 @@ async function refresh() {
         // Stop the check short of the landmark, which would otherwise count as in the way.
         const open = mine.filter((s) => clearView(spot.x, spot.z, toDirection(direction, s.az, s.alt), Math.max(20, flat - 40) / Math.cos(THREE.MathUtils.degToRad(s.alt)), spot.lift));
         const box = section(target.heading);
-        if (!mine.length) box.append(paragraph(target.none));
+        if (!mine.length) box.append(paragraph(typeof target.none === 'function' ? target.none(flat) : target.none));
         else if (!open.length) box.append(paragraph(`Buildings hide it from here. Try a few steps along, or take off.`));
         for (const s of open.slice(0, MAX_ROWS)) {
           const what = s.body === 'moon' && s.state === 'ring' && target.id === 'fernsehturm' ? `Big moon behind the TV tower, ${discOverSphere(flat).toFixed(1)}× the sphere` : target.stateText[s.body][s.state];
           box.append(
             row({
-              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end, fromDeg: (THREE.MathUtils.radToDeg(Math.atan2(-dx, dz)) + 360) % 360 },
+              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end, fromDeg: (THREE.MathUtils.radToDeg(Math.atan2(-dx, dz)) + 360) % 360, at: [lat, lon], look: [s.az, Math.max(0, s.alt)] },
               body: s.body,
               t: s.peak,
               // A pass lasts two to four minutes: the row says so, and gives the moment the

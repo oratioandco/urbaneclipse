@@ -18,6 +18,7 @@
 import { asShot, byMonth, countWords, gatherNotes, highlights, rowWhen, shownShots, weekdayApart } from './fromHere.js';
 import { shotCard } from './shotCard.js';
 import { emptyNote, shotRow, showTicket } from './daylist.js';
+import { SHORTEST_NAME } from './landmarkShots.js';
 import { layers, wireSwitches } from './chrome.js';
 import { bodyIcon } from './bodyAt.js';
 import { berlinDayStart } from './berlinClock.js';
@@ -107,6 +108,8 @@ function mark(card, shot) {
 
 /** A card's width where there is room: three side by side in the desktop ticket, two and a bit on a phone. */
 const CARD_PX = 132;
+/** Under this width of the list (a 320 px phone) the cards and rows take their narrow form. */
+const NARROW_PX = 300;
 
 /** The row of cards fades at an edge that has more, as the day view's does. */
 function showEdges(row) {
@@ -119,8 +122,11 @@ function best(shots) {
   const row = el('div', 'shots-row shotcards-dated fh-best');
   row.setAttribute('role', 'group');
   row.setAttribute('aria-label', 'The best shots from here');
+  // A narrow phone: two cards in view, a little taller, and a long name in its short form, so
+  // the words leave the picture its disc.
+  const narrow = list.clientWidth > 0 && list.clientWidth < NARROW_PX;
   for (const shot of shots) {
-    const card = shotCard(shot, search.verdicts.get(shot) ?? null, { size: 'card', day: formatDay(shot.t) });
+    const card = shotCard(narrow ? { ...shot, short: SHORTEST_NAME[shot.target] ?? shot.short } : shot, search.verdicts.get(shot) ?? null, { size: 'card', day: formatDay(shot.t), pixels: [300, 400] });
     card.addEventListener('click', () => pick(shot));
     row.append(mark(card, shot));
   }
@@ -129,7 +135,7 @@ function best(shots) {
     const width = row.clientWidth;
     if (!width) return;
     const gap = 6;
-    row.style.setProperty('--card', `${Math.min(CARD_PX, (width - 2 * gap) / 2.35).toFixed(1)}px`);
+    row.style.setProperty('--card', `${(width < NARROW_PX ? (width - gap) / 2.05 : Math.min(CARD_PX, (width - 2 * gap) / 2.35)).toFixed(1)}px`);
     showEdges(row);
   });
   return row;

@@ -16,7 +16,8 @@
  */
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
-import { LANDMARK_CAUTION, LANDMARK_CHECK } from './landmarkShots.js';
+import { FIGURE_TARGETS, discShare } from '../lib/landmarkStands.ts';
+import { LANDMARK_CAUTION, LANDMARK_CHECK, figureWord, landmarkScore, lensFor } from './landmarkShots.js';
 import { discOverSphere } from './towerShots.js';
 
 const DAY_MS = 86_400_000;
@@ -41,10 +42,10 @@ const WEATHER = { good: 1.1, fair: 0.9, poor: 0.5 };
  */
 const LANDMARK = {
   fernsehturm: { sprite: 'fernsehturm', short: 'TV tower' },
-  'brandenburger-tor': { sprite: 'brandenburger_tor', short: 'Brandenburger Tor', where: 'quadriga' },
-  siegessaeule: { sprite: 'siegessaeule', short: 'Siegessäule', where: 'viktoria' },
+  'brandenburger-tor': { sprite: 'brandenburger_tor', short: 'Brandenburger Tor' },
+  siegessaeule: { sprite: 'siegessaeule', short: 'Siegessäule' },
 };
-const TARGET_OF_PART = { quadriga: 'brandenburger-tor', viktoria: 'siegessaeule' };
+const TARGET_OF_PART = Object.fromEntries(FIGURE_TARGETS.map((item) => [item.where, item.id]));
 
 const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 const SIDES = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
@@ -70,9 +71,9 @@ function picture({ kind, body, target, state, distanceM, lengthM }) {
     if (body === 'moon') return Math.min(2.4, 1.5 * (distanceM ? discOverSphere(distanceM) : 1));
     return state === 'ring' ? 1.8 : 1.2;
   }
-  // The other landmarks: the disc round the figure or the quadriga is the picture.
-  if (state === 'ring') return body === 'moon' ? 2 : 1.8;
-  return 1.2;
+  // The Viktoria and the quadriga, scored as their day rows are: by the disc against the figure.
+  const figure = FIGURE_TARGETS.find((item) => item.id === target);
+  return landmarkScore(body, figure && distanceM ? discShare(figure, distanceM) : 1);
 }
 
 /**
@@ -94,10 +95,16 @@ export function asShot(found) {
   const mark = LANDMARK[found.target] ?? LANDMARK.fernsehturm;
   const short = street ? found.place : mark.short;
   const bodyName = found.body === 'moon' ? 'Moon' : 'Sun';
-  const what = street ? `${bodyName} down ${found.place}` : (found.what ?? `${bodyName} behind the ${short}`);
   const target = street ? null : (found.target ?? 'fernsehturm');
-  const figure = target !== null && target !== 'fernsehturm';
-  const detail = found.detail ? `${short} · ${found.detail}` : short;
+  const figure = FIGURE_TARGETS.find((item) => item.id === target) ?? null;
+  // A figure's sentence is its day row's (landmarkRows): "Sun behind the Siegessäule’s Viktoria",
+  // and a disc a quarter larger than the figure is a big one.
+  const share = figure && found.distanceM ? discShare(figure, found.distanceM) : null;
+  const behind = figure ? `${bodyName} behind the ${short}’s ${figureWord(figure)}` : `${bodyName} behind the ${short}`;
+  const what = street ? `${bodyName} down ${found.place}` : figure && share >= 1.25 ? `Big ${found.body} behind the ${short}’s ${figureWord(figure)}, ${share.toFixed(1)}× the figure` : (figure ? behind : (found.what ?? behind));
+  // The search words a figure's date with the plain sentence first: the row says the same as the card.
+  const said = figure && found.detail?.startsWith(behind) ? what + found.detail.slice(behind.length) : found.detail;
+  const detail = figure ? (said ?? what) : found.detail ? `${short} · ${found.detail}` : short;
   const up = Number.isFinite(found.altDeg) ? ` · ${Math.round(found.altDeg)}° up` : '';
   const shot = {
     t: found.t,
@@ -109,7 +116,8 @@ export function asShot(found) {
     title: street || figure || what.includes('TV tower') ? what : `TV tower: ${what[0].toLowerCase()}${what.slice(1)}`,
     when: found.when,
     detail: figure ? `${detail} · ${LANDMARK_CHECK}` : detail,
-    brief: `${short} · ${street ? `${bodyName} down the street` : what}${up}`,
+    // A figure's sentence names its landmark; what is not checked stays at every width.
+    brief: figure ? `${behind}${up} · ${LANDMARK_CAUTION}` : `${short} · ${street ? `${bodyName} down the street` : what}${up}`,
     distanceM: street ? (found.lengthM ?? null) : (found.distanceM ?? null),
     altDeg: found.altDeg ?? null,
     score: spectacle({ ...found, kind: street ? 'street' : 'tower' }),
@@ -123,12 +131,16 @@ export function asShot(found) {
   if (!street) {
     shot.target = target;
     shot.landmark = mark.sprite;
-    shot.where = figure ? mark.where : found.state === 'antenna' ? 'antenna' : 'sphere';
+    shot.where = figure ? figure.where : found.state === 'antenna' ? 'antenna' : 'sphere';
   }
   if (figure) {
     shot.caution = LANDMARK_CAUTION;
     shot.checked = { buildings: true, trees: false };
-    if (Number.isFinite(found.fromDeg)) shot.side = sideOf(found.fromDeg);
+    // The rest of a day row's shape (landmarkShots.js), which the eye-level line and caption read.
+    if (Array.isArray(found.at)) Object.assign(shot, { at: found.at, openAt: found.t });
+    if (Array.isArray(found.look)) shot.look = found.look;
+    if (shot.distanceM) Object.assign(shot, { discShare: share, lens: lensFor(figure, shot.distanceM), standDistanceM: shot.distanceM });
+    if (Number.isFinite(found.fromDeg)) Object.assign(shot, { side: sideOf(found.fromDeg), standBearingDeg: found.fromDeg });
     if (shot.side && shot.distanceM) shot.stand = `${distanceText(shot.distanceM)} ${shot.side}`;
   }
   return shot;
@@ -142,7 +154,7 @@ export function asShot(found) {
  * on which bearing. Enough for the ticket's card and the calendar entry's name; null for a
  * name it cannot read.
  */
-export function shotFromKey(key, t, distanceM = null, fromDeg = null) {
+export function shotFromKey(key, t, { distanceM = null, fromDeg = null, at = null } = {}) {
   const [head, ...rest] = String(key ?? '').split(':');
   const match = /^(.+)-(sun|moon)$/.exec(head);
   if (!match || !Number.isFinite(t)) return null;
@@ -152,7 +164,7 @@ export function shotFromKey(key, t, distanceM = null, fromDeg = null) {
   const figure = TARGET_OF_PART[part];
   if (!tower && !figure) return null;
   const what = tower ? `${body === 'moon' ? 'Moon' : 'Sun'} behind the TV tower’s ${part}` : undefined;
-  return asShot({ t, body, kind: 'tower', target: tower ? 'fernsehturm' : figure, state: part === 'antenna' ? 'antenna' : 'hidden', what, distanceM, fromDeg });
+  return asShot({ t, body, kind: 'tower', target: tower ? 'fernsehturm' : figure, state: part === 'antenna' ? 'antenna' : 'hidden', what, distanceM, fromDeg, at });
 }
 
 /** The landmark a link's `shot=` is of, by its id in targets.js, or null for a street or an unknown name. */
