@@ -102,7 +102,10 @@ function drawPill({ text, moon, x, y, ux, uy, night, body }) {
   // ink behind and the body's colour in front, so the coloured end is the one that points.
   // At 28 px it is as long as the pill is high, which is what makes the tip plain on a phone.
   const reach = Math.min(Math.abs(ux) > 1e-3 ? width / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? PILL_H / 2 / Math.abs(uy) : Infinity);
-  const out = reach + NEEDLE_GAP + NEEDLE / 2;
+  // Leaving through an edge at a slant, the tail's wings would lean back over the pill: stand
+  // further off by the wing's half width, as much as the slant.
+  const throughSide = Math.abs(ux) * PILL_H > Math.abs(uy) * width;
+  const out = reach + NEEDLE_GAP + NEEDLE / 2 + NEEDLE * 0.3 * Math.abs(throughSide ? uy : ux);
   drawNeedle(ctx, x + ux * out, y + uy * out, Math.atan2(uy, ux), NEEDLE, {
     kind: moon ? 'moon' : 'sun',
     ink: night ? '#ece8df' : '#24221f',

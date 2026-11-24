@@ -16,6 +16,9 @@ const head = document.getElementById('sheet-head');
 const body = document.getElementById('sheet-body');
 const dayview = document.getElementById('dayview');
 const planning = document.getElementById('planning');
+const overview = document.getElementById('overview');
+const tabs = document.querySelector('.tabs');
+const stepper = document.querySelector('.dv-nav');
 const toggle = document.getElementById('sheet-toggle');
 const grab = document.getElementById('sheet-grab');
 const step = document.getElementById('sheet-step');
@@ -48,10 +51,15 @@ function measure() {
   const pad = (el, side) => parseFloat(getComputedStyle(el)[side]) || 0;
   const foot = pad(panel, 'paddingBottom');
   const under = pad(body, 'paddingBottom');
+  const gap = pad(body, 'rowGap');
+  const innerGap = pad(dayview, 'rowGap');
   sizes = sheetSizes({
     viewport: innerHeight,
     head: head.offsetHeight + foot,
-    day: dayview.offsetHeight + under,
+    // Half is the top of whichever view is up: the tabs, then the day view or the overview.
+    // The day view's step buttons lie just under the fold: half ends at its line of text, so
+    // the sheet stays near half the screen; full (one step up) shows them.
+    day: [tabs, dayview, overview].reduce((sum, el) => sum + (el.offsetHeight ? el.offsetHeight + gap : 0), 0) - gap + (stepper.offsetHeight ? under / 2 - stepper.offsetHeight - innerGap : under),
     all: body.scrollHeight,
   });
 }
@@ -60,7 +68,7 @@ function show() {
   sheet.style.setProperty('--sheet-h', `${Math.round(sizes[height])}px`);
   document.body.dataset.sheet = height;
   toggle.setAttribute('aria-expanded', String(wide.matches || height !== 'peek'));
-  step.setAttribute('aria-label', height === 'full' ? 'Hide planning' : height === 'half' ? 'Show planning' : 'Open the panel');
+  step.setAttribute('aria-label', height === 'full' ? 'Hide the list of shots' : height === 'half' ? 'Show the list of shots' : 'Open the panel');
   step.setAttribute('aria-expanded', String(height === 'full'));
   invalidate();
 }
@@ -113,6 +121,7 @@ function refresh() {
   if (!sheet.classList.contains('dragging')) show();
 }
 new ResizeObserver(refresh).observe(dayview);
+new ResizeObserver(refresh).observe(overview);
 new ResizeObserver(refresh).observe(planning);
 new ResizeObserver(refresh).observe(head);
 addEventListener('resize', refresh);
@@ -239,8 +248,15 @@ document.getElementById('rail-next').addEventListener('click', () => {
   openPanel(dayview);
   peekAction?.();
 });
-document.getElementById('rail-day').addEventListener('click', () => openPanel(dayview));
-document.getElementById('rail-plan').addEventListener('click', () => openPanel(planning));
+const showView = (mode) => document.querySelector(`.tabs [data-mode="${mode}"]`).click();
+document.getElementById('rail-day').addEventListener('click', () => {
+  showView('shoot');
+  openPanel(dayview);
+});
+document.getElementById('rail-plan').addEventListener('click', () => {
+  showView('plan');
+  openPanel(overview);
+});
 setPanel(params.get('panel') ?? stored(PANEL_KEY), false);
 
 measure();

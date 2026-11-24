@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { camera as cameraFormat, EYE_HEIGHT, sceneFromLatLon, setFormat, setLens } from './eye.js';
+import { applyControl } from './chrome.js';
 import { look, updateEyeBar } from './eyeLevel.js';
 import { roofAt } from './sightlines.js';
 import { app, invalidate, smooth } from './state.js';
@@ -91,7 +92,6 @@ let padSide = 0;
 }
 
 const takeoffButton = document.getElementById('takeoff');
-const DRONE_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/><circle cx="5.5" cy="18.5" r="3"/><circle cx="18.5" cy="18.5" r="3"/><path d="M7.6 7.6l2.4 2.4M16.4 7.6 14 10M7.6 16.4l2.4-2.4M16.4 16.4 14 14"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg>';
 const heightInput = document.getElementById('height');
 const heightLabel = document.getElementById('height-label');
 const airspace = document.getElementById('airspace');
@@ -125,8 +125,12 @@ const edr146 = sceneFromLatLon(ED_R_146.lat, ED_R_146.lon, FERNSEHTURM.lat, FERN
 export function showFlight() {
   const flying = look.mode === 'drone';
   document.body.dataset.drone = String(flying);
-  takeoffButton.innerHTML = `${DRONE_ICON}${flying ? 'Land' : 'Take off'}`;
-  takeoffButton.setAttribute('aria-label', flying ? 'Land' : 'Take off as a drone');
+  // The drone from the icon set for taking off, the walker for landing; tip and name with them.
+  if (takeoffButton.dataset.flying !== String(flying)) {
+    takeoffButton.dataset.flying = String(flying);
+    takeoffButton.textContent = flying ? 'Land' : 'Take off';
+    applyControl(takeoffButton, flying ? 'land' : 'takeoff');
+  }
   heightInput.value = String(Math.round(look.lift ?? 0));
   heightLabel.textContent = `${Math.round(look.lift ?? 0)} m`;
   updateEyeBar();

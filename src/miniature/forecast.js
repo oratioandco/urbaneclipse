@@ -4,7 +4,7 @@ import { formatClock } from './time.js';
 import { shotVerdict } from './verdict.js';
 import { layers, setCloudHint } from './chrome.js';
 import { dateInput, dayStart } from './clock.js';
-import { renderDayList } from './daylist.js';
+import { renderDayList, showVerdict } from './daylist.js';
 import { renderPlanCards } from './planmode.js';
 import { updateSun } from './lighting.js';
 import { updateTracks } from './plan.js';
@@ -63,8 +63,8 @@ function showWeather() {
       // The same verdict a shot at that minute gets (verdict.js): the sun on the horizon, seen
       // through the cloud out toward it. Whether clouds above may colour is a note, not a grade.
       const said = shotVerdict(app.weather, dayStart(), event.t, { body: 'sun' });
-      const word = Object.assign(document.createElement('em'), { className: 'verdict', textContent: said.word });
-      word.dataset.grade = said.grade;
+      const word = Object.assign(document.createElement('em'), { className: 'verdict' });
+      showVerdict(word, said, { reason: false });
       part.append(`${which === 'rise' ? 'Sunrise' : 'Sunset'} ${formatClock(event.t)}: `, word, ` \u00b7 ${said.reason}${said.colour ? ' \u00b7 clouds above may catch the colour' : ''}`);
       return part;
     }),

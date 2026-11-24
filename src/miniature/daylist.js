@@ -4,8 +4,8 @@ import { getMoonIllumination } from 'suncalc';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { compassPoint } from '../lib/dailyPaths.ts';
-import { cssRgb, moonLook, sunLook } from '../lib/mapBodyLook.ts';
-import { litDiscPath } from '../lib/moonPhase.ts';
+import { shotPicture } from './shotPicture.js';
+import { icon } from './icons.js';
 import { formatClock } from './time.js';
 import { EYE_HEIGHT } from './eye.js';
 import { alignmentMinute, discOverSphere, SPHERE_TOP_AGL, TIP_AGL } from './towerShots.js';
@@ -29,7 +29,8 @@ const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m /
  * `from` is the day's start; `flags` carry the layer switches and, when given, a instant
  * before which the day's chances have already passed. Each row also carries a spectacle
  * score, so the plan can rank the big moon over a short henge, and a short name for the day
- * view's cards: the place, since the card's disc already says sun or moon.
+ * view's cards (the place: the card's picture says sun or moon, tower or street), and the
+ * shot in a few words (`brief`) for the peek line.
  */
 export function collectRows(dayPaths, moments, from, flags = {}) {
   const { tower = true, streets = true, moon = true } = flags;
@@ -69,6 +70,8 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           body: path.body,
           kind: 'tower',
           short: 'TV tower',
+          where: 'sphere',
+          brief: path.body === 'moon' ? 'Moon behind TV tower' : discOverSphere(mid.distanceM) > 1 ? 'Sun ring at TV tower' : 'Sun behind TV tower',
           distanceM: mid.distanceM,
           // The closer the tower, the larger the body behind it: the spectacle, scored.
           score: path.body === 'moon' ? Math.min(2.4, 1.5 * discOverSphere(mid.distanceM)) : discOverSphere(mid.distanceM) > 1 ? 1.8 : 1.2,
@@ -113,6 +116,8 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           body: 'moon',
           kind: 'tower',
           short: 'TV antenna',
+          where: 'antenna',
+          brief: `${rising ? 'Moonrise' : 'Moonset'} on TV antenna`,
           distanceM: (near + far) / 2,
           score: 2,
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
@@ -139,9 +144,11 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
         body: m.body,
         kind: 'street',
         short: m.view.name,
+        brief: `${BODY_NAME[m.body]} down ${m.view.name}`,
+        compact: `${BODY_NAME[m.body]} \u00b7 ${m.view.name}`,
         distanceM: m.view.lengthM,
         score: Math.min(1.6, m.view.lengthM / 800),
-        title: `${m.view.name}`,
+        title: `${BODY_NAME[m.body]} down ${m.view.name}`,
         detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
         go: () => goViewHere({ kind: 'street', body: m.body, t: m.peak, x: m.view.a[0], z: m.view.a[1], moment: m }),
       });
@@ -193,7 +200,7 @@ export function renderDayList() {
       item.className = 'dayrow';
       item.dataset.body = row.body;
       item.dataset.kind = row.kind;
-      item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">\u203a</i>`;
+      item.innerHTML = `${shotPicture(row, { size: 28 })}<span><b></b><em class="verdict"></em><small></small></span>${icon('chevron-right', { size: 16, className: 'chev' })}`;
       item.querySelector('b').textContent = row.title;
       showVerdict(item.querySelector('.verdict'), dayVerdict(row));
       item.querySelector('small').textContent = row.detail + cloudNote(row.t);
@@ -207,9 +214,16 @@ export function renderDayList() {
   if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up on this day. Try another.</p>';
 }
 
-/** A verdict into its element: the word and the reason as text, the grade for the colour. */
-export function showVerdict(el, verdict) {
-  el.textContent = verdict.label;
+/**
+ * A verdict into its element: the set's sign for it (a tick, a wave, a bar: three shapes, so it
+ * reads without colour), the word and, unless `reason` is off, the reason; the grade backs the
+ * word up with colour.
+ */
+const VERDICT_ICON = { good: 'verdict-go', fair: 'verdict-maybe', poor: 'verdict-skip' };
+export function showVerdict(el, verdict, { reason = true } = {}) {
+  const sign = VERDICT_ICON[verdict.grade];
+  el.innerHTML = sign ? icon(sign, { size: 14 }) : '';
+  el.append(reason ? verdict.label : verdict.word);
   el.dataset.grade = verdict.grade ?? 'none';
   const note = verdictNote(verdict);
   if (note) el.title = `${verdict.label}: ${note}`;
@@ -223,36 +237,5 @@ export function dayVerdict(row) {
   return shotVerdict(app.weather, dayStart(), row.t, { body: row.body, distanceM: row.distanceM, now: Date.now(), missing });
 }
 
-/**
- * The mark for a kind of event, the same on the timeline, the strip and the cards, and told
- * apart by shape and fill, not by colour alone (Dan's feedback): behind the tower is a ring,
- * white inside for the sun and dark inside for the moon; a street henge is a solid bar, the
- * moon's dark with a rim. Each has a halo, so two that overlap stay two. Interim, until the
- * icons session's mark family (marks.js) is merged.
- */
-export function markShape(kind, body, x = 0, y = 0) {
-  const colour = `var(--${body})`;
-  if (kind === 'tower') {
-    return `<circle class="mark-halo" cx="${x}" cy="${y}" r="4.6"/><circle cx="${x}" cy="${y}" r="3" fill="${body === 'sun' ? '#fff' : '#20263a'}" stroke="${colour}" stroke-width="1.9"/>`;
-  }
-  return `<rect class="mark-halo" x="${x - 3.2}" y="${y - 5.5}" width="6.4" height="11" rx="3.2"/><rect x="${x - 1.7}" y="${y - 4}" width="3.4" height="8" rx="1.7" fill="${body === 'sun' ? colour : '#20263a'}" stroke="${colour}" stroke-width="${body === 'sun' ? 0 : 1.3}"/>`;
-}
-export const MARK_WORD = { tower: 'behind the tower', street: 'street henge' };
-export const markIcon = (kind, body) => `<svg class="mark" viewBox="-6 -6 12 12" aria-hidden="true">${markShape(kind, body)}</svg>`;
-
-/**
- * A small sun, or the moon in its phase, as it looks at that time. The colours are the map's
- * own (mapBodyLook.ts): one sun and one moon everywhere, redder when low.
- */
-export function bodyIcon(body, t) {
-  const when = new Date(t);
-  const sun = sampleBody('sun', when, FERNSEHTURM.lat, FERNSEHTURM.lon);
-  if (body === 'sun') {
-    const look = sunLook(Math.max(0, sun.alt));
-    return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="${cssRgb(look.limb)}"/><circle r="0.6" fill="${cssRgb(look.core)}"/></svg>`;
-  }
-  const moon = getMoonIllumination(when);
-  const alt = sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).alt;
-  const look = moonLook(Math.max(0, alt), sun.alt, moon.fraction);
-  return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="${cssRgb(look.core)}"/><circle r="0.92" fill="none" stroke="var(--moon)" stroke-width="0.12"/></svg>`;
-}
+/** The mark of a row (marks.js): `tower-sun`, `henge-sun`, `tower-moon` or `henge-moon`. */
+export const markKind = (row) => `${row.kind === 'tower' ? 'tower' : 'henge'}-${row.body}`;
