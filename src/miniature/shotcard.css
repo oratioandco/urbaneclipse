@@ -63,6 +63,9 @@ button.shotcard { cursor: pointer; }
 .shotcard--card[aria-current='true']::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2.5px var(--accent); pointer-events: none; }
 .shotcard--card[aria-current='true'] .sc-what { display: none; }
 .shotcard--card[aria-current='true'] .sc-go { display: flex; align-items: center; opacity: 1; font-weight: 700; }
+/* The selected card trades its line for "View from here": what is unchecked stays said. */
+.shotcard--card .sc-unchecked { display: none; font-size: var(--text-xs); line-height: 1.25; opacity: 0.9; }
+.shotcard--card[aria-current='true'] .sc-unchecked { display: block; }
 
 /* row: the frame as a thumbnail, the words beside it on the panel's surface. */
 .shotcard--row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; grid-template-areas: 'frame title chev' 'frame verdict chev' 'frame detail chev'; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; padding: 8px 6px; border-top: 1px solid var(--line); }
@@ -86,6 +89,8 @@ button.shotcard { cursor: pointer; }
 .shotcard--ticket .sc-time { flex: none; }
 .shotcard--ticket .sc-name { font-weight: 600; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .shotcard--ticket .sc-what { font-size: var(--text-s); color: var(--muted); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.shotcard--ticket .sc-caution { font-size: var(--text-s); color: var(--muted); white-space: nowrap; }
+.shotcard--ticket .sc-caution::before { content: '\00b7\00a0'; }
 .shotcard--ticket .sc-verdict { order: 2; flex: none; }
 .shotcard--ticket .sc-why, .shotcard--ticket .sc-title, .shotcard--ticket .sc-detail { display: none; }
 

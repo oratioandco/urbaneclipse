@@ -102,11 +102,13 @@ export function lensFor(target, distanceM) {
 
 /**
  * The spectacle of a pass, on the scale the tower's and the streets' rows use (dayShots.js):
- * the further out, the larger the disc against the figure. A sun smaller than the figure is a
- * modest shot (1.1, under the tower's plain 1.2); one that holds the whole figure 1.5. The
- * moon runs from 0.6 at half the figure to 2.0, under the tower's big moon (2.4).
+ * the further out, the larger the disc against the figure. The sun runs from 1.1 at half the
+ * figure (under the tower's plain 1.2) to 1.7 once it is as wide as the figure is tall: over
+ * the longest street's 1.6, under the tower's ring of sun (1.8). The moon runs from 0.6 at half
+ * the figure to 2.0, under the tower's big moon (2.4). By day the moon counts 0.6 times, as
+ * every row's does (spectacle.js, applied in dayShots.js `collectRows`).
  */
-export const landmarkScore = (body, share) => (body === 'moon' ? Math.min(2, 1.2 * share) : share >= 1 ? 1.5 : 1.1);
+export const landmarkScore = (body, share) => (body === 'moon' ? Math.min(2, 1.2 * share) : Math.min(1.7, Math.max(1.1, 1.1 + 1.2 * (share - 0.5))));
 
 /**
  * The passes as rows, in time order. `flags` switch bodies off (`sun`, `moon`; both on by
@@ -146,7 +148,7 @@ export function landmarkRows(passes, flags = {}) {
       score: landmarkScore(body, best.discShare),
       title: big ? `Big ${body} behind the ${place}, ${best.discShare.toFixed(1)}× the figure` : `${BODY_NAME[body]} behind the ${place}`,
       detail:
-        `${formatClock(first.t)}–${formatClock(last.t)} · ` +
+        `${formatClock(best.t)} · ${formatClock(first.t)}–${formatClock(last.t)} · ` +
         `on ${corridor.street}, ${distanceText(best.distanceM)} ${corridor.side} of ${target.noun}, looking ${corridor.looking} · ` +
         `${Math.round(best.bodyAlt)}° up${body === 'moon' ? ` · ${Math.round(lit * 100)}% lit` : ''} · ${LANDMARK_CHECK}`,
       checked: { buildings: true, trees: false },

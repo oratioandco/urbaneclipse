@@ -15,6 +15,10 @@ import { LANDMARK_CHECK, figureView, landmarkRows, landmarkScore, lensFor } from
 import { sceneFromLatLon } from '../../src/miniature/eye.js';
 import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { SPRITE } from '../../src/miniature/shotCard.js';
+import { PALE_MOON, PALE_MOON_SUN_DEG, paleMoon } from '../../src/miniature/spectacle.js';
+import { spectacle } from '../../src/miniature/fromHere.js';
+import { decodeStreets } from '../../src/lib/streets';
+import { formatClock } from '../../src/miniature/time.js';
 
 const load = (id: string) => {
   const header = JSON.parse(readFileSync(`public/viewshed/${id}.json`, 'utf8'));
@@ -178,7 +182,11 @@ describe('switches and honesty', () => {
 describe('rank and lens', () => {
   it('a landmark shot never outranks the tower’s best of its kind', () => {
     // dayShots.js: tower sun 1.2 plain and 1.8 as a ring, big moon up to 2.4, antenna 2, street up to 1.6.
-    expect(landmarkScore('sun', 0.6)).toBeLessThan(1.2);
+    expect(landmarkScore('sun', 0.5)).toBeCloseTo(1.1, 9);
+    expect(landmarkScore('sun', 0.5)).toBeLessThan(1.2);
+    // As wide as the figure is tall: over the longest street (1.6), under the tower's ring (1.8).
+    expect(landmarkScore('sun', 1)).toBeCloseTo(1.7, 9);
+    expect(landmarkScore('sun', 1)).toBeGreaterThan(1.6);
     expect(landmarkScore('sun', 1.9)).toBeLessThan(1.8);
     expect(landmarkScore('sun', 1.9)).toBeGreaterThan(landmarkScore('sun', 0.6));
     expect(landmarkScore('moon', 0.5)).toBeCloseTo(0.6, 9);
@@ -261,5 +269,49 @@ describe('at eye level: the open landmark shot seen in the planner’s scene (fi
 
   it('every row carries a name short enough for the ticket', () => {
     expect(cases.map((row) => row.shortest).sort()).toEqual(['Brandenb. Tor', 'Siegessäule']);
+  });
+});
+
+describe('one rule for the moon by day, and one form for a row’s small print', () => {
+  const views = decodeStreets(JSON.parse(readFileSync('public/streets/berlin.json', 'utf8')));
+
+  it('a moon in a bright sky counts 0.6 times; the sun and a night moon count whole', () => {
+    const noon = Date.UTC(2027, 2, 17, 11, 0);
+    const night = Date.UTC(2027, 2, 17, 23, 0);
+    expect(sampleBody('sun', new Date(noon), FERNSEHTURM.lat, FERNSEHTURM.lon).alt).toBeGreaterThan(PALE_MOON_SUN_DEG);
+    expect(paleMoon('moon', noon)).toBe(PALE_MOON);
+    expect(paleMoon('moon', night)).toBe(1);
+    expect(paleMoon('sun', noon)).toBe(1);
+    // "From here" ranks a year of dates by the same two numbers (fromHere.js `spectacle`).
+    const found = { kind: 'street', body: 'moon', lengthM: 800 };
+    expect(spectacle({ ...found, t: noon }) / spectacle({ ...found, t: night })).toBeCloseTo(PALE_MOON, 9);
+    expect(spectacle({ ...found, t: noon })).toBeCloseTo(paleMoon('moon', noon) * 1, 9);
+  });
+
+  it('in a day’s rows a midday moon henge ranks under the evening sun on the Viktoria', () => {
+    // 16 March 2027: the moon rises late in the morning down several long streets (1.6 each
+    // before the rule) while "Big sun behind the Viktoria, 1.4×" waits for the evening.
+    const from = berlinDayStart('2027-03-16');
+    const rows: Row[] = dayShots(from, { shed: tower, views, sheds });
+    const viktoria = rows.find((row) => row.target === 'siegessaeule' && row.body === 'sun')!;
+    expect(viktoria.title).toMatch(/^Big sun behind the Siegessäule’s Viktoria, 1\.4× the figure$/);
+    expect(viktoria.score).toBeCloseTo(1.7, 9);
+    const dayMoonStreets = rows.filter((row) => row.kind === 'street' && row.body === 'moon' && paleMoon('moon', row.t) < 1);
+    expect(dayMoonStreets.length).toBeGreaterThan(0);
+    for (const row of dayMoonStreets) expect(row.score).toBeLessThanOrEqual(1.6 * PALE_MOON + 1e-9);
+    // The three a day's cards show, by score: the night's big moon and moonset at the tower stay.
+    const top = [...rows].sort((a, b) => b.score - a.score).slice(0, 3).map((row) => row.title);
+    expect(top[0]).toMatch(/^Big moon behind the TV tower/);
+    expect(top[1]).toBe('Moonset behind the TV tower’s antenna');
+    expect(top[2]).toBe(viktoria.title);
+  });
+
+  it('every row’s small print starts with its own minute, whatever its kind', () => {
+    for (const date of ['2027-03-16', '2026-12-16']) {
+      const rows: Row[] = dayShots(berlinDayStart(date), { shed: tower, views, sheds });
+      const kinds = new Set(rows.map((row) => (row.target ? 'landmark' : row.kind === 'street' ? 'street' : row.where)));
+      expect(kinds.has('landmark') && kinds.has('street') && kinds.has('sphere')).toBe(true);
+      for (const row of rows) expect(row.detail.startsWith(`${formatClock(row.t)} · `), row.title).toBe(true);
+    }
   });
 });

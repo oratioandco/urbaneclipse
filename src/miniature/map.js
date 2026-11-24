@@ -19,7 +19,13 @@ const blend = {
   blendDstAlpha: THREE.OneFactor,
 };
 
-export const ribbonUniforms = { uViewportH: { value: 1 }, uDay: { value: 1 }, uBeams: { value: 1 } };
+// uEye: 0 on the map, 1 standing in the street (main.js). The pool of light is drawn 1.6 m above
+// the street so that it clears the terrain's coarse grid from above, and once more through the
+// buildings so a street stays traceable. Standing in that street, the eye is at 1.6 m too: the
+// pool became a sheet at eye height, and the copy drawn through everything laid a pale slab
+// over the lower half of the view (any street shot, and any landmark shot down a lit street).
+// At eye level the pool lies on the road and the see-through copy is off.
+export const ribbonUniforms = { uViewportH: { value: 1 }, uDay: { value: 1 }, uBeams: { value: 1 }, uEye: { value: 0 } };
 
 const rayVertex = /* glsl */ `
   attribute vec2 aAcross;
@@ -29,6 +35,7 @@ const rayVertex = /* glsl */ `
   attribute float aSeed;
   attribute vec3 aColour;
   uniform float uViewportH;
+  uniform float uEye;
   varying float vSide;
   varying float vAlong;
   varying float vStanding;
@@ -45,6 +52,8 @@ const rayVertex = /* glsl */ `
       float depth = projectionMatrix[3][3] == 1.0 ? 1.0 : -view.z;
       float metresPerPixel = 2.0 * depth / (projectionMatrix[1][1] * uViewportH);
       world += vec3(aAcross.x, 0.0, aAcross.y) * aSide * max(POOL_HALF_M, POOL_MIN_PX * metresPerPixel);
+      // Down onto the road for an eye in the street: 0.2 m above it, not at the eye's own height.
+      world.y -= uEye * 1.4;
     }
     gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
     vSide = aSide;
@@ -57,6 +66,7 @@ const rayVertex = /* glsl */ `
 
 const rayFragment = (strength) => /* glsl */ `
   uniform float uDay;
+  uniform float uEye;
   varying float vSide;
   varying float vAlong;
   varying float vStanding;
@@ -91,7 +101,7 @@ const rayFragment = (strength) => /* glsl */ `
 const rayOptions = { ...blend, side: THREE.DoubleSide, uniforms: ribbonUniforms, vertexShader: rayVertex };
 const rays = new THREE.ShaderMaterial({ ...rayOptions, fragmentShader: rayFragment('1.0') });
 // Faintly through buildings, so a street stays traceable in the angled views.
-const raysGhost = new THREE.ShaderMaterial({ ...rayOptions, depthTest: false, fragmentShader: rayFragment('0.2') });
+const raysGhost = new THREE.ShaderMaterial({ ...rayOptions, depthTest: false, fragmentShader: rayFragment('0.2 * (1.0 - uEye)') });
 
 /** A pool of light on the street, and a curtain of lit air rising along its middle. */
 function rayGeometry(lines, groundAt) {

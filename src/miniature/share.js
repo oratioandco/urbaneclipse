@@ -100,7 +100,10 @@ document.getElementById('calendar').addEventListener('click', () => {
   const { lat, lon } = spot();
   const what = title();
   const heading = Math.round(((look.heading % 360) + 360) % 360);
-  const description = `${what} at ${formatClock(t)}. Facing ${compassName(heading)} ${heading}\u00b0, ${Math.round(look.lens)} mm. Be there ${EARLY_MIN} minutes early. Open the view: ${location.href}`;
+  // The shot's own sentence, once with its time; and what the plan has not checked.
+  const shot = ticketShotRow();
+  const caution = shot?.caution ? ` ${shot.caution[0].toUpperCase()}${shot.caution.slice(1)}: look along the line of sight when you get there.` : '';
+  const description = `${shot ? shot.title : what} at ${formatClock(t)}.${caution} Facing ${compassName(heading)} ${heading}\u00b0, ${Math.round(look.lens)} mm. Be there ${EARLY_MIN} minutes early. Open the view: ${location.href}`;
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',

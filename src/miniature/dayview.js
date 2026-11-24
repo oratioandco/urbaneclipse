@@ -233,6 +233,9 @@ function drawShots() {
       const go = Object.assign(document.createElement('span'), { className: 'sc-go', textContent: 'View from here' });
       go.insertAdjacentHTML('beforeend', icon('chevron-right', { size: 12 }));
       card.querySelector('.sc-meta').append(go);
+      // "View from here" takes the place of the card's line once it is selected: a shot with
+      // something unchecked keeps saying so (shotcard.css `.sc-unchecked`).
+      if (row.caution) card.querySelector('.sc-meta').append(Object.assign(document.createElement('span'), { className: 'sc-unchecked', textContent: row.caution }));
       card.addEventListener('click', () => {
         // A first tap brings the time to the shot; a tap on the shot the thumb stands on opens
         // the view from where to stand for it.
