@@ -217,6 +217,7 @@ renderer.domElement.addEventListener('pointerup', (event) => {
   const inside = (t) => event.clientX >= t.x && event.clientX <= t.x + t.w && event.clientY >= t.y && event.clientY <= t.y + t.h;
   // A path lies under everything else, so it only takes a tap nothing else wants.
   const hit = app.taps.find((t) => t.kind !== 'path' && inside(t)) ?? app.taps.find((t) => t.kind === 'path' && inside(t));
+  if (hit?.kind === 'landmark') app.openLandmarkSpot?.(hit);
   if (hit?.kind === 'spot') {
     const spot = app.spots.find((s) => s.body === hit.body);
     goViewHere({ kind: 'tower', body: spot.body, t: spot.t, x: spot.x, z: spot.z });

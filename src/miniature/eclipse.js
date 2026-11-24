@@ -12,6 +12,7 @@ import { bodyAgainstTower, DISC_RADIUS_DEG, SPHERE_RADIUS_M } from './towerShots
 import { orbitTo } from './camera.js';
 import { instant, setFine, setMinute } from './clock.js';
 import { look, turnTo } from './eyeLevel.js';
+import { landmarkStatus } from './landmarkView.js';
 import { goViewHere } from './pointer.js';
 import { eyeCamera } from './render.js';
 import { app, invalidate, toDirection } from './state.js';
@@ -82,6 +83,22 @@ export function showEclipseStatus(now) {
   let state = 'soon';
   let body = 'sun';
   eclipseAction = null;
+  // With a landmark's shot open (the Viktoria, the quadriga) the line is about that landmark:
+  // "nothing lines up with the tower" is true there and beside the point.
+  const landmark = landmarkStatus({ x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z }, t);
+  if (landmark) {
+    if (landmark.at !== null && landmark.state === 'soon') {
+      eclipseAction = () => {
+        setMinute(landmark.at);
+        setFine(true);
+      };
+    }
+    eclipseButton.hidden = false;
+    eclipseButton.textContent = landmark.text;
+    eclipseButton.dataset.state = landmark.state;
+    eclipseButton.style.setProperty('--dot', landmark.body === 'moon' ? '#5b82ff' : '#f26a12');
+    return here;
+  }
   if (covering) {
     body = covering.body;
     state = 'now';

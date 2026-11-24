@@ -88,7 +88,19 @@ The sun or moon behind the Viktoria on the column and the quadriga on the gate a
 day like the tower's (`landmarkShots.js`, hooked into `collectRows`): `kind: 'tower'`, their
 own `landmark` (the sprite) and `target` (the landmark's id), `where: 'viktoria' | 'quadriga'`,
 and `at`, `look`, `lens`, `openAt`, `stand`, `score` as a tower row has them. The list's
-Landmarks switch (`layers.landmarks`) is theirs; Tower is the TV tower's alone.
+Landmarks switch (`layers.landmarks`: the chip above the list and the "Landmark alignments"
+row of the layers menu, one switch) is theirs; Tower is the TV tower's alone.
+
+On the map they are drawn as the tower's day path is (`plan.js` `app.landmarkPaths` and
+`app.landmarkSpots`, `overlay.js`): the stretch of street the stand point runs along during
+the pass as a path in the body's colour, and the tower mark of `marks.js` on the spot of the
+row's own minute. A tap on the mark opens that shot. At eye level, with such a shot open
+(`app.ticketShot`), `landmarkView.js` gives the status line ("Sun behind the Viktoria in 4 min
+(17:49)", "… now", or how many degrees beside it from where one has walked to) and the
+viewfinder's caption ("Siegessäule 1.1 km · sun 1.2× the Viktoria, in frame: Viktoria 7.4%, sun
+9.1%"), where both otherwise speak of the TV tower. The ticket names the landmark by its
+`shortest` name ("Brandenb. Tor") and puts what follows the name on a second line when one line
+is too narrow, so nothing is cut by an ellipsis.
 
 The geometry is `src/lib/landmarkStands.ts`, and it is narrow by nature:
 
@@ -149,6 +161,7 @@ card.addEventListener('click', () => openShot(shot, verdict));   // openShot is 
 | `shot.distanceM` | distance to the landmark: sizes the disc against the tower's sphere. For a street, its length: the longer, the narrower the gap at its far end | no |
 | `shot.title`, `shot.short` | the shot in a sentence; the place alone | one of them |
 | `shot.stand` | where to stand, short ("5.3 km SE"; "1.1 km east" at a landmark) | no |
+| `shot.shortest` | the place where one line has no room for `short` ("Brandenb. Tor"): the ticket's name | no |
 | `shot.caution` | what is not checked, in two words ("trees unchecked"): added to the card's line, where no small print shows | no |
 | `shot.detail` | the row's small print | rows |
 | `verdict` | what `shotVerdict` returns; its `sky` draws the frame's cloud and rain. `null`: no pill, clear sky | no |

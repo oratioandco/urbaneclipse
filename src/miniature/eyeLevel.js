@@ -10,6 +10,7 @@ import { deckAt, sightline, standLift } from './sightlines.js';
 import { app, invalidate, invalidateShadows, smooth } from './state.js';
 import { nudgeKeys, showFlight } from './walk.js';
 import { DISC_DEG, SPHERE_CENTRE_AGL, SPHERE_RADIUS_M } from './towerShots.js';
+import { landmarkCaption } from './landmarkView.js';
 
 /** A full-frame focal length on the current format, for the same framing. */
 export const fullFrame = (mm) => (mm * cameraFormat.format.width) / 36;
@@ -239,6 +240,10 @@ export function shotCaption() {
     const pct = (100 * deg) / frameDeg;
     return pct >= 10 ? `${Math.round(pct)}%` : `${pct.toFixed(1)}%`;
   };
+  // With a landmark's shot open the caption is that landmark's: its distance, the disc against
+  // its figure, and both in the frame.
+  const landmark = landmarkCaption(eye, instant().getTime(), frameDeg);
+  if (landmark) return landmark;
   const sphereDeg = (2 * Math.asin(Math.min(1, SPHERE_RADIUS_M / toSphere)) * 180) / Math.PI;
   const flat = Math.hypot(eye.x, eye.z);
   const heights = [`sphere ${share(sphereDeg)}`];

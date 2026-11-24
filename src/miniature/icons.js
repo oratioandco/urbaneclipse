@@ -87,6 +87,7 @@ export const ICONS = {
   // Map layers and landmarks
   tower: { d: TOWER, mass: c(12, 10.5, 3.25), use: 'The TV tower; turn to it' },
   'tower-line': { d: TOWER, mass: c(12, 10.5, 3.25), soft: 'M3 19.5L21 12', use: 'Layer: tower alignments' },
+  'landmark-line': { d: `M4.5 10.5h15M6.25 10.5V21M17.75 10.5V21M10.1 10.5V21M13.9 10.5V21${rr(7, 7.75, 10, 2.75, 0.6)}${c(12, 4.6, 1.6)}`, mass: rr(7, 7.75, 10, 2.75, 0.6), soft: 'M3 19.5L21 12', use: 'Layer: landmark alignments (Siegessäule, Brandenburger Tor)' },
   henge: { d: 'M6 21L9.75 3.5M18 21L14.25 3.5', soft: 'M12 20.5v-3M12 14v-2.5M12 8.5V7', mass: 'M9.75 3.5h4.5L18 21H6z', use: 'Layer: street henges' },
   tree: { d: `${c(12, 9.25, 6.25)}M12 21.25V10.5M12 15.25L9.25 12.5M12 13l2.5-2.5`, mass: c(12, 9.25, 6.25), use: 'Layer: trees' },
   names: { d: `M3.75 18.5L8.5 6l4.75 12.5M5.5 14.25h6${c(17.5, 15.25, 3)}M20.5 12v6.5`, use: 'Layer: street names' },

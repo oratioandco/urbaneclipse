@@ -104,6 +104,7 @@ would rather not repeat paths.
 | Back, go, opens another site | `arrow-left`, `arrow-right`, `external` |
 | Close, more, filters, help | `close`, `more`, `tune`, `help` |
 | TV tower, layer: tower alignments | `tower`, `tower-line` |
+| Layer: landmark alignments (Siegessäule, Brandenburger Tor) | `landmark-line` |
 | Layer: street henges, trees, street names | `henge`, `tree`, `names` |
 | Layer: weather, clouds on the map | `cloud`, `cloud-map` |
 | Clear | `weatherIcon('clear', { body })`: the body of that minute, nothing else |
@@ -289,6 +290,7 @@ Found in `src/pages/plan.astro`, `src/miniature/*.js` and `src/miniature/miniatu
 | `#tilt` | text `2D` / `3D` | flat or angled view | keep as text: it is a word, not a picture |
 | `#photographer` | filled figure with camera | drag to stand there | `camera` (the map marker is already a camera badge) |
 | layer row: tower | tower and orange line | layer: tower alignments | `tower-line` |
+| layer row: landmarks | a gate with its figure and the same line | layer: landmark alignments | `landmark-line` |
 | layer row: streets | two lines and a yellow bar | layer: street henges | `henge` |
 | layer row: weather | filled cloud | layer: weather | `cloud` |
 | layer row: clouds | cloud outline and line | layer: clouds on the map | `cloud-map` |

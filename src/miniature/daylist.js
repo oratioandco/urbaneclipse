@@ -99,6 +99,8 @@ let ticketRow = null;
 /** Put a shot's card on the ticket, without going anywhere: the view is already its own. */
 export function showTicket(row, verdict) {
   ticketRow = row;
+  // For the status line and the caption, which speak of the open shot's landmark (landmarkView.js).
+  app.ticketShot = row;
   ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }));
   ticketShot.hidden = false;
 }
@@ -107,6 +109,11 @@ export function openShot(row, verdict) {
   row.go();
   invalidate();
 }
+/** A tap on a landmark's stand point on the map (plan.js, pointer.js) opens that row's shot. */
+app.openLandmarkSpot = (spot) => {
+  const row = currentRows().find((r) => r.target === spot.target && r.body === spot.body && r.t === spot.t);
+  if (row) openShot(row, dayVerdict(row));
+};
 /** The shot on the ticket, or null: what the address, the calendar entry and a shared link name. */
 export const ticketShotRow = () => (ticketShot.hidden ? null : ticketRow);
 /** The ticket's card again, once the day's forecast is in: a shot opened from a link arrives before it. */
@@ -117,6 +124,7 @@ function refreshTicket() {
 new MutationObserver(() => {
   if (document.body.dataset.eye === 'true') return;
   ticketRow = null;
+  app.ticketShot = null;
   ticketShot.hidden = true;
   ticketShot.replaceChildren();
 }).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });

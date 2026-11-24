@@ -24,7 +24,7 @@ const SPRITE_OF = { siegessaeule: 'siegessaeule', 'brandenburger-tor': 'brandenb
 const BODY_NAME = { sun: 'Sun', moon: 'Moon' };
 const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
-const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
+const distanceText = (m) => (m < 995 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
 /** What every one of these rows has and has not been checked against: in full, and for a card's one line. */
 export const LANDMARK_CHECK = 'buildings checked, trees not';
@@ -54,6 +54,39 @@ export function computeLandmarkPasses(from, sheds = {}) {
     }
   }
   return passes;
+}
+
+/** Each landmark's name where a line has no room for it whole: shortened on purpose, never cut by an ellipsis. */
+export const SHORTEST_NAME = { siegessaeule: 'Siegess\u00e4ule', 'brandenburger-tor': 'Brandenb. Tor' };
+/** The figure as a sentence names it. */
+export const figureWord = (target) => (target.figure === 'Quadriga' ? 'quadriga' : target.figure);
+/** The scene's zero is the TV tower's foot, 34.6 m DHHN2016 (scripts/miniature/build_city.mjs). */
+const SCENE_ZERO_M = 34.6;
+
+/**
+ * How a body stands against a target's figure from an eye point in the planner's scene (x east,
+ * z south, y up, metres; azimuths from the scene's north): for the line and the caption at eye
+ * level. `axis` is the landmark's axis in the scene, `{ x, z }`.
+ *
+ * @returns distanceM along the ground; figureDeg, the figure's height as seen; discShare, the
+ *   disc's width as a share of the figure's height; across and up, degrees from the middle of
+ *   the figure to the disc's centre (positive: right, above); covered, whether the disc
+ *   overlaps the figure (its outline taken as a third as wide as it is tall, either side).
+ */
+export function figureView(target, eye, axis, body) {
+  const dx = axis.x - eye.x;
+  const dz = axis.z - eye.z;
+  const distanceM = Math.hypot(dx, dz);
+  const base = target.landmark.baseOrthometric - SCENE_ZERO_M;
+  const angleTo = (h) => deg(Math.atan2(base + h - eye.y, distanceM));
+  const mid = angleTo((target.fromAgl + target.toAgl) / 2);
+  const figureDeg = angleTo(target.toAgl) - angleTo(target.fromAgl);
+  const bearing = (deg(Math.atan2(dx, -dz)) + 360) % 360;
+  const across = (((((body.az - bearing) % 360) + 540) % 360) - 180) * Math.cos(rad(body.alt));
+  const up = body.alt - mid;
+  const halfWide = deg(Math.atan2(figureHeight(target) / 3, distanceM));
+  const covered = body.alt > 0 && Math.abs(up) < figureDeg / 2 + DISC_DEG / 2 && Math.abs(across) < halfWide + DISC_DEG / 2;
+  return { distanceM, figureDeg, discShare: DISC_DEG / figureDeg, across, up, covered };
 }
 
 const LENSES = [85, 105, 135, 200, 300, 400, 500, 600];
@@ -89,7 +122,7 @@ export function landmarkRows(passes, flags = {}) {
     const first = pass.points[0];
     const last = pass.points[pass.points.length - 1];
     const big = best.discShare >= 1.25;
-    const place = `${target.short}’s ${target.figure === 'Quadriga' ? 'quadriga' : target.figure}`;
+    const place = `${target.short}’s ${figureWord(target)}`;
     const lit = body === 'moon' ? getMoonIllumination(new Date(best.t)).fraction : 1;
     rows.push({
       t: best.t,
@@ -98,6 +131,8 @@ export function landmarkRows(passes, flags = {}) {
       landmark: SPRITE_OF[target.id],
       target: target.id,
       short: target.short,
+      // For the eye-level ticket's one line (shotCard.js).
+      shortest: SHORTEST_NAME[target.id],
       where: target.where,
       side: corridor.side,
       // Where to stand, as short as the tower's "5.3 km SE": the side in a word, since east or
