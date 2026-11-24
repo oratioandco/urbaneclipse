@@ -32,6 +32,7 @@ import { loadStreets, type StreetMoment, type StreetView } from '../../../lib/st
 import type { Body } from '../../../lib/bodyPosition.js';
 import LightRibbon, { LightLegend } from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
+import ShotRows from './ShotRows.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, formatTime, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
@@ -495,40 +496,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               {view ? 'No shot at the tower on this day. Try the next day.' : viewFailed ? 'Building data could not be loaded, so no tower shot is offered.' : 'Checking buildings…'}
             </p>
           ) : (
-            highlights.map((row) => {
-              const inner = (
-                <>
-                  <i className={`ue-dot ue-dot--${row.body}`} />
-                  <span className="ue-row__time">{formatTime(new Date(row.t))}</span>
-                  <span className="ue-row__main">
-                    <strong>{row.title}</strong>
-                    <small>
-                      {row.target ? `${row.stand} of it · ${row.caution ?? ''}` : `${row.stand} of the tower`} ·{' '}
-                      {LIGHT_PHASE_NAMES[lightPhaseOf(row.t, FERNSEHTURM.lat, FERNSEHTURM.lon)]}
-                    </small>
-                  </span>
-                </>
-              );
-              const past = (row.until ?? row.t) < Date.now();
-              // The preview here is of the sphere; the antenna's stretch opens in the planner.
-              // So does a shot of the Siegessäule or the Brandenburger Tor: the preview here knows only the tower.
-              return row.where === 'antenna' || row.target || !row.at ? (
-                <a key={`${row.target ?? 'tower'}-${row.body}-${row.t}`} className="ue-row ue-row--cta" data-past={past} href={planLink(row)}>
-                  {inner}
-                  <span className="ue-row__go">Plan</span>
-                </a>
-              ) : (
-                <button
-                  key={`${row.body}-${row.t}`}
-                  type="button"
-                  className="ue-row ue-row--cta"
-                  data-past={past}
-                  onClick={() => onOpenSpot({ lat: row.at![0], lon: row.at![1], t: row.openAt, body: row.body, label: `${row.stand} of the tower` })}
-                >
-                  {inner}
-                </button>
-              );
-            })
+            <ShotRows rows={highlights} now={Math.floor(Date.now() / 60_000) * 60_000} />
           )}
           {layers.streets && (
             <div className="ue-list" data-testid="streets-today">
@@ -539,25 +507,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               {!streetsFailed && streetViews && moments.length === 0 && (
                 <p className="ue-empty">No street lines up on this day.</p>
               )}
-              {topStreets.map(({ moment }) => moment!).map((m) => (
-                <button
-                  key={`${m.body}-${m.view.bearingDeg}-${m.view.from.lat}`}
-                  type="button"
-                  className="ue-row ue-row--cta"
-                  data-past={m.peak < Date.now()}
-                  onClick={() => openStreet(m)}
-                >
-                  {m.body === 'moon' ? <MoonGlyph {...moonToday} /> : <i className="ue-dot ue-dot--sun" />}
-                  <span className="ue-row__time">{formatTime(new Date(m.peak))}</span>
-                  <span className="ue-row__main">
-                    <strong>{m.view.name}</strong>
-                    <small>
-                      looking {compassPoint(m.view.bearingDeg)} · {(m.view.lengthM / 1000).toFixed(1)} km ·{' '}
-                      {LIGHT_PHASE_NAMES[lightPhaseOf(m.peak, m.view.from.lat, m.view.from.lon)]}
-                    </small>
-                  </span>
-                </button>
-              ))}
+              <ShotRows rows={topStreets} now={Math.floor(Date.now() / 60_000) * 60_000} />
               {layers.streets && liveStreets.length === 0 && nextStreet && (
                 <p className="ue-note">
                   Next street lines up at{' '}

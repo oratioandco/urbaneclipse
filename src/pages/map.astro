@@ -16,6 +16,27 @@ import '../styles/daily.css';
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Urban Eclipse</title>
     <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
+    <script is:inline>
+      // The sheet is paper by Berlin's day and dark by its night, as the planner and the home
+      // page are (src/miniature/README.md, "Light and dark"): the sun more than 3 degrees down
+      // is night. The same short formula as on the home page, good to a degree.
+      (function () {
+        function set() {
+          var now = new Date(), rad = Math.PI / 180;
+          var day = (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - Date.UTC(now.getUTCFullYear(), 0, 0)) / 864e5;
+          var hours = now.getUTCHours() + now.getUTCMinutes() / 60;
+          var g = (2 * Math.PI / 365) * (day - 1 + (hours - 12) / 24);
+          var decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g);
+          var eqTime = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+          var hourAngle = ((hours * 60 + eqTime + 4 * 13.4094) / 4 - 180) * rad;
+          var lat = 52.5208 * rad;
+          var alt = Math.asin(Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(hourAngle)) / rad;
+          document.documentElement.dataset.theme = alt < -3 ? 'dark' : 'light';
+        }
+        set();
+        setInterval(set, 60000);
+      })();
+    </script>
   </head>
   <body>
     <DailyApp client:only="react" />

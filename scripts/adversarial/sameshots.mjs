@@ -34,14 +34,15 @@ for (const day of days) {
     }),
   );
   await page.goto(`${BASE}/map/#/day=${day}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('[data-testid="streets-today"] .ue-row', { timeout: 60_000 });
+  await page.waitForSelector('[data-testid="streets-today"] .shotcard', { timeout: 60_000 });
   // The tower's and the landmarks' rows come once the building data is in.
   await page.waitForFunction(() => !/Checking buildings/.test(document.querySelector('[data-testid="highlights"]')?.textContent ?? 'Checking buildings'), null, { timeout: 60_000 });
   await page.waitForTimeout(4000);
   const mapRows = await page.evaluate(() => {
-    const read = (row, list) => ({ list, line: `${row.querySelector('.ue-row__time')?.textContent ?? ''} ${row.querySelector('strong')?.textContent ?? ''}` });
-    const streets = [...document.querySelectorAll('[data-testid="streets-today"] > .ue-row')];
-    const shots = [...document.querySelectorAll('[data-testid="highlights"] > .ue-row')].filter((row) => !streets.includes(row));
+    // A row here is the shared shot card: the sentence for a tower or landmark shot, the street's name for a henge.
+    const read = (row, list) => ({ list, line: `${row.querySelector('.sc-time')?.textContent ?? ''} ${(row.querySelector('.sc-title')?.textContent ?? '').replace(list === 'street' ? /^(Sun|Moon) down / : /^$/, '')}` });
+    const streets = [...document.querySelectorAll('[data-testid="streets-today"] .shotcard')];
+    const shots = [...document.querySelectorAll('[data-testid="highlights"] .shotcard')].filter((row) => !streets.includes(row));
     return [...shots.map((row) => read(row, 'shot')), ...streets.map((row) => read(row, 'street'))];
   });
   const lines = (rows, list) => rows.filter((row) => row.list === list).map((row) => row.line.replace(/­/g, '')).sort();

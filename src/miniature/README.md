@@ -349,8 +349,9 @@ under the horizon. The planner goes by the minute its clock shows (`lighting.js`
 `body[data-night]`), the home page by now (`src/home/grid.js` `isNight`, set as
 `html[data-theme]` by a few lines in `src/pages/index.astro` before the first paint and then by
 `src/home/home.js` from the ephemeris). The device's dark setting is not asked on either, so the
-home page is not dark at noon beside a planner in daylight. `/map` is always dark and
-`/classic` always light; they are not part of this rule.
+home page is not dark at noon beside a planner in daylight. `/map`'s sheet follows the same
+rule (a few lines in `src/pages/map.astro`); its map keeps a night look at all hours, since its
+lines are drawn as light on dark. `/classic` is always light and not part of this rule.
 
 ## Map, light and night (second pass)
 
