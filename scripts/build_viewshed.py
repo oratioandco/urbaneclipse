@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """Work out where in Berlin a landmark's sphere can be seen from eye height.
 
-Output: ``public/viewshed/fernsehturm.bin`` + ``.json``, a run-length-encoded grid the
+Output: ``public/viewshed/<landmark>.bin`` + ``.json``, a run-length-encoded grid the
 browser samples to split the daily eclipse paths into usable and blocked stretches.
+The default landmark is the Fernsehturm (its sphere). ``--landmark siegessaeule`` and
+``--landmark brandenburger-tor`` aim at the figure on top (the Viktoria, the quadriga) and
+also ask what stands BEHIND it: a low sun or moon behind a 23 m quadriga can itself be behind
+the houses further down the street, so a cell only counts as visible when the sight line,
+carried on past the figure, reaches the sky (value 3 marks cells that see the figure against
+buildings).
 
 Method
 ------
@@ -22,6 +28,10 @@ Run::
 
     .venv/bin/python scripts/build_viewshed.py              # reuses the cached model
     .venv/bin/python scripts/build_viewshed.py --rebuild
+    .venv/bin/python scripts/build_viewshed.py --landmark siegessaeule
+    .venv/bin/python scripts/build_viewshed.py --landmark brandenburger-tor
+    # the LoD2 zips and the cache can live elsewhere (another checkout's data/):
+    .venv/bin/python scripts/build_viewshed.py --citygml ../main/data/citygml --cache data/viewshed
 """
 from __future__ import annotations
 
@@ -65,7 +75,22 @@ ORIGIN_E = X_MIN * 1000.0
 ORIGIN_N = Y_MIN * 1000.0
 SIZE = int(((X_MAX + 1 - X_MIN) * 1000) / CELL)
 
-BLOCKED, VISIBLE, BUILDING = 0, 1, 2
+BLOCKED, VISIBLE, BUILDING, NO_SKY = 0, 1, 2, 3
+
+# What each landmark's viewshed aims at. `const` is its model in src/lib/landmarks.ts (axis
+# and base height are read from there); `aim` the height above its base the eye must see
+# (the tower's sphere centre, the middle of the figure on top: keep in step with
+# src/lib/landmarkStands.ts); `range` how far out stand points are checked; `own` the
+# radius round the axis inside which LoD2 is ignored, since that is the landmark's own
+# coarse block; `sky` whether the sight line must also reach the sky behind the figure.
+LANDMARKS = {
+    "fernsehturm": {"const": "FERNSEHTURM", "aim": SPHERE_CENTRE_AGL, "range": MAX_RANGE_M, "own": 0.0, "sky": False},
+    "siegessaeule": {"const": "SIEGESSAEULE", "aim": 62.85, "range": 2600.0, "own": 32.0, "sky": True},
+    "brandenburger-tor": {"const": "BRANDENBURGER_TOR", "aim": 23.15, "range": 2000.0, "own": 26.0, "sky": True},
+}
+# How far behind the figure buildings are looked for, and the disc's radius plus a hair.
+SKYLINE_RANGE_M = 9500.0
+DISC_RADIUS_TAN = float(np.tan(np.radians(0.27)))
 
 
 def rasterise_tile(path: str):
@@ -194,48 +219,101 @@ def apply_dgm(ground: np.ndarray) -> np.ndarray:
     return out
 
 
-def sweep(roofs: np.ndarray, ground: np.ndarray, east: float, north: float, target_h: float) -> np.ndarray:
+def sweep(
+    roofs: np.ndarray,
+    ground: np.ndarray,
+    east: float,
+    north: float,
+    target_h: float,
+    max_range: float = MAX_RANGE_M,
+    own_radius: float = 0.0,
+    sky: bool = False,
+) -> np.ndarray:
     """Per-cell verdict from rays swept out of the target."""
+    origin_c, origin_r = (east - ORIGIN_E) / CELL, (north - ORIGIN_N) / CELL
+    if own_radius > 0:
+        # The landmark's own LoD2 block is not an obstacle to seeing the landmark.
+        roofs = roofs.copy()
+        half = int(np.ceil(own_radius / CELL)) + 1
+        r0, c0 = int(origin_r), int(origin_c)
+        rr_, cc_ = np.mgrid[r0 - half : r0 + half + 1, c0 - half : c0 + half + 1]
+        near = np.hypot((rr_ + 0.5 - origin_r) * CELL, (cc_ + 0.5 - origin_c) * CELL) <= own_radius
+        roofs[rr_[near], cc_[near]] = np.nan
     surface = np.fmax(roofs, ground)
     state = np.where(np.isnan(roofs), BLOCKED, BUILDING).astype(np.uint8)
     step = CELL * 0.8
-    samples = int(MAX_RANGE_M / step)
-    n_rays = int(2 * np.pi * MAX_RANGE_M / (CELL * 0.8))
+    samples = int(max_range / step)
+    n_rays = int(2 * np.pi * max_range / (CELL * 0.8))
+    if sky:
+        n_rays += n_rays % 2  # each ray needs its opposite
     r = (np.arange(samples) + 1) * step
     print(f"sweeping {n_rays} rays of {samples} samples")
-    origin_c, origin_r = (east - ORIGIN_E) / CELL, (north - ORIGIN_N) / CELL
     drop = CURVATURE * r * r
-    for start in range(0, n_rays, 2000):
-        angles = np.arange(start, min(start + 2000, n_rays)) * (2 * np.pi / n_rays)
-        cols = (origin_c + np.outer(np.sin(angles), r) / CELL).astype(np.int32)
-        rows = (origin_r + np.outer(np.cos(angles), r) / CELL).astype(np.int32)
+
+    def cells(angles: np.ndarray, radii: np.ndarray):
+        cols = (origin_c + np.outer(np.sin(angles), radii) / CELL).astype(np.int32)
+        rows = (origin_r + np.outer(np.cos(angles), radii) / CELL).astype(np.int32)
         inside = (cols >= 0) & (cols < SIZE) & (rows >= 0) & (rows < SIZE)
-        c = np.where(inside, cols, 0)
-        rr = np.where(inside, rows, 0)
+        return np.where(inside, rows, 0), np.where(inside, cols, 0), inside
+
+    # The skyline seen from the figure, per direction: the steepest roof out to the edge of
+    # the data. A sight line from the far side that rises less than this ends on a building.
+    skyline = None
+    if sky:
+        far = (np.arange(int(SKYLINE_RANGE_M / step)) + 1) * step
+        far_drop = CURVATURE * far * far
+        skyline = np.empty(n_rays, dtype=np.float64)
+        for start in range(0, n_rays, 1000):
+            angles = np.arange(start, min(start + 1000, n_rays)) * (2 * np.pi / n_rays)
+            rr, c, inside = cells(angles, far)
+            roof = roofs[rr, c]
+            top = np.where(inside & ~np.isnan(roof), (roof - far_drop - target_h) / far, -np.inf)
+            skyline[start : start + len(angles)] = top.max(axis=1)
+        # The disc is half a degree wide: the worst skyline within its width counts.
+        spread = int(np.ceil(np.radians(0.3) / (2 * np.pi / n_rays)))
+        skyline = np.max(np.stack([np.roll(skyline, k) for k in range(-spread, spread + 1)]), axis=0)
+        print(
+            f"skyline behind the figure: median {np.degrees(np.arctan(np.median(skyline))):.2f} deg, "
+            f"max {np.degrees(np.arctan(skyline.max())):.2f} deg"
+        )
+
+    for start in range(0, n_rays, 2000):
+        index = np.arange(start, min(start + 2000, n_rays))
+        angles = index * (2 * np.pi / n_rays)
+        rr, c, inside = cells(angles, r)
         top = np.where(inside, (surface[rr, c] - drop - target_h) / r, -np.inf)
         eye = (ground[rr, c] + EYE_M - drop - target_h) / r
         steepest = np.maximum.accumulate(top, axis=1)
         # The eye's own cell is excluded: bare ground there must not block the eye above it.
         before = np.concatenate([np.full((top.shape[0], 1), -np.inf), steepest[:, :-1]], axis=1)
         seen = inside & (eye >= before) & np.isnan(roofs[rr, c])
-        state[rr[seen], c[seen]] = VISIBLE
+        if skyline is None:
+            state[rr[seen], c[seen]] = VISIBLE
+            continue
+        # Looking up at the figure from here, the line carries on past it at the same slope
+        # (-eye): the whole disc has to stand above what is built in that direction.
+        behind = skyline[(index + n_rays // 2) % n_rays][:, None]
+        open_sky = (-eye - DISC_RADIUS_TAN) > behind
+        state[rr[seen & ~open_sky], c[seen & ~open_sky]] = NO_SKY
+        state[rr[seen & open_sky], c[seen & open_sky]] = VISIBLE
     return state
 
 
-def encode(state: np.ndarray, target_lat: float, target_lon: float) -> None:
+def encode(state: np.ndarray, target_lat: float, target_lon: float, name: str = "fernsehturm") -> None:
     """Resample to a regular lat/lon grid and write it run-length encoded."""
     to_utm = Transformer.from_crs("EPSG:4326", "EPSG:25833", always_xy=True)
     to_wgs = Transformer.from_crs("EPSG:25833", "EPSG:4326", always_xy=True)
     dlat = OUTPUT_CELL_M / 111_320.0
     dlon = OUTPUT_CELL_M / (111_320.0 * np.cos(np.radians(target_lat)))
-    half = MAX_RANGE_M
+    spec = LANDMARKS[name]
+    half = spec["range"]
     lat_min = target_lat - half / 111_320.0
     lon_min = target_lon - half / (111_320.0 * np.cos(np.radians(target_lat)))
     height = int(2 * half / OUTPUT_CELL_M)
     width = height
     packed = bytearray()
     lon_axis = lon_min + (np.arange(width) + 0.5) * dlon
-    counts = [0, 0, 0]
+    counts = [0, 0, 0, 0]
     for row in range(height):
         lat = lat_min + (row + 0.5) * dlat
         e, n = to_utm.transform(lon_axis, np.full(width, lat))
@@ -251,8 +329,11 @@ def encode(state: np.ndarray, target_lat: float, target_lon: float) -> None:
             VISIBLE,
             np.where((block == BUILDING).sum(axis=0) >= 2, BUILDING, BLOCKED),
         )
+        # The figure in view from most of the cell, but not against the sky from enough of it.
+        figure = ((block == VISIBLE) | (block == NO_SKY)).sum(axis=0) >= 2
+        line = np.where((line == BLOCKED) & figure, NO_SKY, line)
         line = np.where(ok, line, BLOCKED)
-        for v in range(3):
+        for v in range(4):
             counts[v] += int((line == v).sum())
         edges = np.concatenate([[0], np.nonzero(np.diff(line))[0] + 1, [width]])
         for a, b in zip(edges[:-1], edges[1:]):
@@ -264,12 +345,12 @@ def encode(state: np.ndarray, target_lat: float, target_lon: float) -> None:
                 packed.append(value | (part - 1))
                 length -= part
     OUT.mkdir(parents=True, exist_ok=True)
-    bin_path = OUT / "fernsehturm.bin"
+    bin_path = OUT / f"{name}.bin"
     bin_path.write_bytes(bytes(packed))
     header = {
         "format": "urban-eclipse-viewshed",
         "version": 1,
-        "landmark": "fernsehturm",
+        "landmark": name,
         "binary": bin_path.name,
         "byteLength": bin_path.stat().st_size,
         "encoding": "one byte per run: value in the top 2 bits, length - 1 in the low 6",
@@ -282,24 +363,41 @@ def encode(state: np.ndarray, target_lat: float, target_lon: float) -> None:
         "rowOrder": "south-to-north",
         "values": {"blocked": BLOCKED, "visible": VISIBLE, "building": BUILDING},
         "eyeHeightM": EYE_M,
-        "aimHeightAglM": SPHERE_CENTRE_AGL,
+        "aimHeightAglM": spec["aim"],
         "limits": "LoD2 buildings only: no trees, street furniture or raised walkways.",
     }
-    (OUT / "fernsehturm.json").write_text(json.dumps(header, indent=2) + "\n")
+    if spec["sky"]:
+        header["values"]["noSky"] = NO_SKY
+        header["rangeM"] = spec["range"]
+        header["skylineRangeM"] = SKYLINE_RANGE_M
+        header["sky"] = (
+            "visible: the figure is in view and the sight line, carried on past it, clears every LoD2 "
+            "roof by the disc's radius. noSky: the figure is in view against buildings."
+        )
+    (OUT / f"{name}.json").write_text(json.dumps(header, indent=2) + "\n")
     total = sum(counts)
     print(
         f"wrote {bin_path.stat().st_size / 1024:.0f} KB; "
         f"visible {counts[VISIBLE] / total:.1%}, blocked {counts[BLOCKED] / total:.1%}, building {counts[BUILDING] / total:.1%}"
+        + (f", no sky behind {counts[NO_SKY] / total:.1%}" if spec["sky"] else "")
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    global CITYGML, CACHE
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--rebuild", action="store_true", help="Re-rasterise the building tiles.")
+    parser.add_argument("--landmark", choices=sorted(LANDMARKS), default="fernsehturm")
+    parser.add_argument("--citygml", type=Path, default=CITYGML, help="Folder of LoD2_*.zip tiles.")
+    parser.add_argument("--cache", type=Path, default=CACHE.parent, help="Folder for the cached surface model.")
     args = parser.parse_args()
+    CITYGML = args.citygml.resolve()
+    CACHE = args.cache.resolve() / "surface.npz"
+    spec = LANDMARKS[args.landmark]
+    tower = args.landmark == "fernsehturm"
 
     source = (ROOT / "src" / "lib" / "landmarks.ts").read_text()
-    block = source[source.index("export const FERNSEHTURM") :]
+    block = source[source.index(f"export const {spec['const']}") :]
     lat = float(re.search(r"lat:\s*([\d.]+)", block).group(1))
     lon = float(re.search(r"lon:\s*([\d.]+)", block).group(1))
     base = float(re.search(r"baseOrthometric:\s*([\d.]+)", block).group(1))
@@ -317,10 +415,13 @@ def main() -> None:
     print(f"surface ready in {time.time() - started:.0f}s; {len(bases)} buildings, roofs {np.nanmin(roofs):.0f}..{np.nanmax(roofs):.0f} m")
 
     ground = apply_dgm(ground_from_bases(bases))
-    np.savez_compressed(CACHE.with_name("ground.npz"), ground=ground)
-    state = sweep(roofs, ground, east, north, base + SPHERE_CENTRE_AGL)
-    np.savez_compressed(CACHE.with_name("state.npz"), state=state)
-    encode(state, lat, lon)
+    # The terrain build (scripts/miniature/build_terrain.py) reads the tower run's ground.
+    if tower:
+        np.savez_compressed(CACHE.with_name("ground.npz"), ground=ground)
+    state = sweep(roofs, ground, east, north, base + spec["aim"], spec["range"], spec["own"], spec["sky"])
+    if tower:
+        np.savez_compressed(CACHE.with_name("state.npz"), state=state)
+    encode(state, lat, lon, args.landmark)
     print(f"done in {time.time() - started:.0f}s")
 
 

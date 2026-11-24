@@ -1,0 +1,27 @@
+{
+  "format": "urban-eclipse-viewshed",
+  "version": 1,
+  "landmark": "brandenburger-tor",
+  "binary": "brandenburger-tor.bin",
+  "byteLength": 70599,
+  "encoding": "one byte per run: value in the top 2 bits, length - 1 in the low 6",
+  "width": 800,
+  "height": 800,
+  "latMin": 52.49830677650018,
+  "lonMin": 13.34818032155101,
+  "dLat": 4.4915558749550845e-05,
+  "dLon": 7.38091961224724e-05,
+  "rowOrder": "south-to-north",
+  "values": {
+    "blocked": 0,
+    "visible": 1,
+    "building": 2,
+    "noSky": 3
+  },
+  "eyeHeightM": 1.5,
+  "aimHeightAglM": 23.15,
+  "limits": "LoD2 buildings only: no trees, street furniture or raised walkways.",
+  "rangeM": 2000.0,
+  "skylineRangeM": 9500.0,
+  "sky": "visible: the figure is in view and the sight line, carried on past it, clears every LoD2 roof by the disc's radius. noSky: the figure is in view against buildings."
+}

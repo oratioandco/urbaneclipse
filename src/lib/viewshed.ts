@@ -7,8 +7,14 @@
 export const VIEW_BLOCKED = 0;
 export const VIEW_VISIBLE = 1;
 export const VIEW_BUILDING = 2;
+/**
+ * Only in the viewsheds of the low landmarks (Siegessäule, Brandenburger Tor): the figure is
+ * in view from here, but the sight line carried on past it ends on a building, so a disc
+ * behind the figure would itself be behind houses. Not a place to stand for a shot.
+ */
+export const VIEW_NO_SKY = 3;
 
-export type ViewState = typeof VIEW_BLOCKED | typeof VIEW_VISIBLE | typeof VIEW_BUILDING;
+export type ViewState = typeof VIEW_BLOCKED | typeof VIEW_VISIBLE | typeof VIEW_BUILDING | typeof VIEW_NO_SKY;
 
 export interface ViewshedHeader {
   format: string;
@@ -54,20 +60,28 @@ export function sampleViewshed(view: Viewshed, lat: number, lon: number): ViewSt
   return cells[row * header.width + col] as ViewState;
 }
 
-let loading: Promise<Viewshed> | null = null;
+const loading = new Map<string, Promise<Viewshed>>();
 
-/** Fetch once and share. A failure clears the cache so a later attempt can succeed. */
-export function loadViewshed(): Promise<Viewshed> {
-  loading ??= (async () => {
-    const headerResponse = await fetch('/viewshed/fernsehturm.json');
-    if (!headerResponse.ok) throw new Error(`viewshed header: HTTP ${headerResponse.status}`);
-    const header = (await headerResponse.json()) as ViewshedHeader & { binary: string };
-    const dataResponse = await fetch(`/viewshed/${header.binary}`);
-    if (!dataResponse.ok) throw new Error(`viewshed data: HTTP ${dataResponse.status}`);
-    return decodeViewshed(header, new Uint8Array(await dataResponse.arrayBuffer()));
-  })().catch((err: unknown) => {
-    loading = null;
-    throw err;
-  });
-  return loading;
+/**
+ * A landmark's viewshed (`fernsehturm`, `siegessaeule`, `brandenburger-tor`: the files in
+ * public/viewshed). Fetched once and shared; a failure clears the cache so a later attempt
+ * can succeed.
+ */
+export function loadViewshed(landmark = 'fernsehturm'): Promise<Viewshed> {
+  let pending = loading.get(landmark);
+  if (!pending) {
+    pending = (async () => {
+      const headerResponse = await fetch(`/viewshed/${landmark}.json`);
+      if (!headerResponse.ok) throw new Error(`viewshed header: HTTP ${headerResponse.status}`);
+      const header = (await headerResponse.json()) as ViewshedHeader & { binary: string };
+      const dataResponse = await fetch(`/viewshed/${header.binary}`);
+      if (!dataResponse.ok) throw new Error(`viewshed data: HTTP ${dataResponse.status}`);
+      return decodeViewshed(header, new Uint8Array(await dataResponse.arrayBuffer()));
+    })().catch((err: unknown) => {
+      loading.delete(landmark);
+      throw err;
+    });
+    loading.set(landmark, pending);
+  }
+  return pending;
 }
