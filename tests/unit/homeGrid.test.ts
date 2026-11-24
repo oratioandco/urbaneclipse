@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays } from '../../src/home/grid.js';
+import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
 import { dayShots } from '../../src/home/shots.js';
 import { decodeStreets } from '../../src/lib/streets';
 import { decodeViewshed } from '../../src/lib/viewshed';
@@ -77,6 +77,21 @@ describe('the home grid: grouping and order', () => {
     expect(next?.day.name).toBe('Tomorrow');
     expect(nextWorth([groupDay(today, [shotAt(today, 15, 'p only')], rate, now)])).toBeNull();
   });
+  it('drops a row at midnight that only continues the evening before', () => {
+    const evening = [
+      { t: tomorrow.from - 45 * 60_000, until: tomorrow.from, kind: 'tower', body: 'moon', short: 'TV antenna' },
+      { t: tomorrow.from - 2 * 60_000, until: tomorrow.from - 60_000, kind: 'street', body: 'moon', short: 'Seestraße' },
+    ];
+    const morning = [
+      { t: tomorrow.from, kind: 'tower', body: 'moon', short: 'TV antenna' },
+      { t: tomorrow.from, kind: 'street', body: 'moon', short: 'Seestraße' },
+      { t: tomorrow.from, kind: 'street', body: 'moon', short: 'Sonnenallee' },
+      { t: tomorrow.from + 5 * HOUR, kind: 'tower', body: 'moon', short: 'TV antenna' },
+    ];
+    expect(withoutContinued(morning, tomorrow.from, evening).map((r) => `${(r.t - tomorrow.from) / HOUR} ${r.short}`)).toEqual(['0 Sonnenallee', '5 TV antenna']);
+    // With no evening before it, a pass that starts at midnight is a shot of its own.
+    expect(withoutContinued(morning, tomorrow.from)).toHaveLength(4);
+  });
   it('words a day’s heading count', () => {
     const group = groupDay(today, [shotAt(today, 13, 'g'), shotAt(today, 14, 'g'), shotAt(today, 15, 'f'), shotAt(today, 16, 'p')], rate, now);
     expect(countsLine(group)).toBe('2 go · 1 maybe · 1 skipped');
@@ -111,6 +126,7 @@ describe('the home grid: what an empty day says', () => {
       groupDay(c, z.map((n, i) => shotAt(c, 8 + i, n)), rate, now),
     ];
     expect(answer(groups(['g'], ['g', 'f'], ['p']))).toBe('Yes: 2 go, 1 maybe, today and tomorrow.');
+    expect(answer(groups(['g'], ['p'], ['f']))).toBe('Yes: 1 go, 1 maybe, today and on Thursday.');
     expect(answer(groups(['f'], ['g'], ['g']))).toBe('Yes: 2 go, 1 maybe, on all three days.');
     expect(answer(groups(['p'], ['r', 'r'], []))).toBe('Nothing worth shooting in the next three days: rain likely and overcast.');
     expect(answer(groups([], [], []))).toBe('Nothing lines up in the next three days.');

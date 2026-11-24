@@ -46,6 +46,17 @@ export function threeDays(now) {
   });
 }
 
+/**
+ * A day's shots without those that only continue a pass from the evening before. The planner
+ * works a day at a time, so a moon that is low across midnight is one row late in the evening
+ * and a second at 00:00 the next day: side by side in a grid of days that reads as two shots.
+ * A row at its day's very start is dropped when the day before has the same shot (place, body,
+ * kind) still running at midnight (`until`).
+ */
+export function withoutContinued(shots, from, dayBefore = []) {
+  return shots.filter((shot) => shot.t !== from || !dayBefore.some((b) => b.kind === shot.kind && b.body === shot.body && b.short === shot.short && (b.until ?? b.t) >= from - 60_000));
+}
+
 /** Whether a rated shot is worth taking: anything but Skip. */
 export const worthTaking = (rated) => rated.verdict?.grade !== 'poor';
 
@@ -126,7 +137,7 @@ export function answer(groups, forecast = 'ok') {
     const why = listed(skipReasons({ skipped: groups.flatMap((g) => g.skipped) }).slice(0, 3));
     return `Nothing worth shooting in the next three days${why ? `: ${why}` : ''}.`;
   }
-  const days = groups.filter((g) => g.counts.go + g.counts.maybe > 0).map((g) => g.name.toLowerCase());
+  const days = groups.filter((g) => g.counts.go + g.counts.maybe > 0).map((g) => (g.i < 2 ? g.name.toLowerCase() : `on ${g.name}`));
   const what = [go ? `${go} go` : '', maybe ? `${maybe} maybe` : ''].filter(Boolean).join(', ');
   return `Yes: ${what}, ${days.length === DAYS ? 'on all three days' : listed(days)}.`;
 }

@@ -117,6 +117,7 @@ function antennaRows(from) {
     const spot = offsetGeodetic(FERNSEHTURM.lat, FERNSEHTURM.lon, 0, bearing, (reach(SPHERE_TOP_AGL, mid.alt) + reach(TIP_AGL, mid.alt)) / 2);
     rows.push({
       t: w.start,
+      until: w.end,
       body: 'moon',
       kind: 'tower',
       landmark: 'fernsehturm',
@@ -147,6 +148,7 @@ function streetRows(moments) {
     seen.add(key);
     rows.push({
       t: m.peak,
+      until: m.to,
       body: m.body,
       kind: 'street',
       short: m.view.name,

@@ -15,7 +15,7 @@ import { drawShotFrame, shotCard } from '../miniature/shotCard.js';
 import { formatClock } from '../miniature/time.js';
 import { countdown, shotVerdict } from '../miniature/verdict.js';
 import { cloudsFor, forecastReach } from '../miniature/weather.js';
-import { answer, countsLine, dayLine, dayLink, groupDay, nextWorth, parseNow, planLink, threeDays } from './grid.js';
+import { answer, countsLine, dayLine, dayLink, groupDay, nextWorth, parseNow, planLink, threeDays, withoutContinued } from './grid.js';
 import { dayShots } from './shots.js';
 
 const root = document.getElementById('next-shots');
@@ -181,8 +181,11 @@ function loadForecasts() {
 const nextFrame = () => new Promise((resolve) => setTimeout(resolve, 0));
 async function computeShots() {
   state.days = threeDays(clock());
+  let before = [];
   for (const day of state.days) {
-    state.shots.set(day.date, dayShots(day.from, { shed: state.shed, views: state.views ?? [] }));
+    const rows = dayShots(day.from, { shed: state.shed, views: state.views ?? [] });
+    state.shots.set(day.date, withoutContinued(rows, day.from, before));
+    before = rows;
     await nextFrame();
   }
 }
