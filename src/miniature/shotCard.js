@@ -5,7 +5,8 @@
  * (layout and content from there; type and tokens are the app's, from miniature.css).
  *
  *   shotCard(shot, verdict, { size, tag })  ->  element
- *   drawShotFrame(canvas, shot, verdict)    ->  draws the frame alone
+ *   drawShotFrame(canvas, shot, verdict, { words })  ->  draws the frame alone; `words: true`
+ *     keeps the disc in the band a card's words leave free
  *
  * `shot` (the rows of `collectRows` in daylist.js are shots):
  *   t          instant, ms                                   required
@@ -44,8 +45,21 @@ import { discOverSphere } from './towerShots.js';
 export const FRAME_PIXELS = { card: [320, 400], row: [176, 132], ticket: [88, 88] };
 const VERDICT_ICON = { good: 'verdict-go', fair: 'verdict-maybe', poor: 'verdict-skip' };
 
-/** Where things are on a sprite, as shares of its height from the top (fernsehturm.png). */
-const SPRITE = { fernsehturm: { sphere: 0.415, sphereR: 0.052, antenna: 0.2 } };
+/**
+ * How each landmark is framed, measured on its sprite (shares of the sprite's own height,
+ * from its top): `at` is where the disc goes, `discR` the disc's radius there, `scale` how
+ * tall the sprite stands against the frame (over 1: a close crop of its upper part).
+ * The Fernsehturm has two places, and its disc is sized against the sphere from the shot's
+ * distance. Measured on the PNGs in public/landmark-sprites/ (640 px, 2026-11-24).
+ */
+export const SPRITE = {
+  // Sphere centre and radius, and the middle of the red-and-white antenna.
+  fernsehturm: { scale: 1.2, at: 0.415, discR: 0.052, places: { sphere: 0.415, antenna: 0.2 } },
+  // Viktoria on the column's top: the disc stands behind the figure.
+  siegessaeule: { scale: 1.35, at: 0.07, discR: 0.085 },
+  // The quadriga on the gate: the disc behind it, the gate's whole width in frame.
+  brandenburger_tor: { scale: 0.78, at: 0.1, discR: 0.11 },
+};
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -113,7 +127,7 @@ function blob(x, cx, cy, rx, ry, col, a) {
  * Draw one frame: the picture you would take at the shot's minute, weather included.
  * Pure drawing on the canvas it is given; the same shot always gives the same frame.
  */
-export function drawShotFrame(canvas, shot, verdict = null) {
+export function drawShotFrame(canvas, shot, verdict = null, { words = false } = {}) {
   const x = canvas.getContext('2d');
   const w = canvas.width;
   const h = canvas.height;
@@ -125,7 +139,8 @@ export function drawShotFrame(canvas, shot, verdict = null) {
   const clear = 1 - step(0.45, 0.95, Math.max(low, mid * 0.85, high * 0.4));
   const sunAlt = sampleBody('sun', new Date(shot.t), FERNSEHTURM.lat, FERNSEHTURM.lon).alt;
   const body = bodyState(shot.body, shot.t);
-  let seed = 17 + (Math.floor(shot.t / 60_000) % 100_000);
+  // The same shot always draws the same frame; a street's houses are its own on every day.
+  let seed = 17 + (shot.kind === 'street' ? [...String(shot.short ?? '')].reduce((sum, ch) => (sum * 31 + ch.charCodeAt(0)) % 99_991, 7) : Math.floor(shot.t / 60_000) % 100_000);
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 
   // The sky of that minute, from the app's own palette; cloud greys it.
@@ -153,18 +168,25 @@ export function drawShotFrame(canvas, shot, verdict = null) {
     }
   }
 
-  // Where the body stands in the frame, and how large: a long lens on the tower, so the disc
-  // has its true size against the sphere; down a street, at the far end, just over the roofs.
+  // Where the body stands in the frame, and how large. With words lying on the frame (the
+  // card) the disc keeps to the band between the verdict above and the time below.
   const street = shot.kind === 'street';
   const name = shot.landmark ?? 'fernsehturm';
-  const marks = SPRITE[name] ?? SPRITE.fernsehturm;
-  const towerH = h * 1.7;
-  // On a card the words lie over the lower half: the subject stands in the upper one.
-  const horizon = h * 0.56;
+  const framing = SPRITE[name] ?? SPRITE.fernsehturm;
+  const spriteH = h * framing.scale * (words ? 1 : 1.25);
+  const band = h * (words ? 0.37 : 0.42);
+  const most = h * (words ? 0.13 : 0.2);
+  // A street: the longer it is, the narrower the gap its houses leave at the far end, and
+  // the higher the body, the further it stands over the roofs. Both are the shot's own.
+  const reach = clamp(((shot.distanceM ?? 1500) - 600) / 2400, 0, 1);
+  const gap = w * lerp(0.085, 0.03, reach);
+  const lift = h * clamp(body.altitudeDeg, 0, 8) * 0.011;
   let at;
-  if (street) at = { x: w / 2, y: horizon - h * (0.07 + clamp(body.altitudeDeg, 0, 6) * 0.012), r: w * 0.085 };
-  else if (shot.where === 'antenna') at = { x: w / 2, y: h * 0.3, r: towerH * marks.sphereR * 1.5 };
-  else at = { x: w / 2, y: h * 0.4, r: towerH * marks.sphereR * clamp(shot.distanceM ? discOverSphere(shot.distanceM) : 1.3, 0.8, 2.6) };
+  if (street) at = { x: w / 2, y: band, r: Math.min(most, w * 0.062) };
+  else if (name === 'fernsehturm' && shot.where === 'antenna') at = { x: w / 2, y: band, r: Math.min(most, spriteH * framing.discR * 1.5) };
+  else if (name === 'fernsehturm') at = { x: w / 2, y: band, r: Math.min(most, spriteH * framing.discR * clamp(shot.distanceM ? discOverSphere(shot.distanceM) : 1.3, 0.8, 2.6)) };
+  else at = { x: w / 2, y: band, r: Math.min(most, spriteH * framing.discR) };
+  const horizon = at.y + at.r * 0.7 + lift;
 
   const glow = bytes(palette.glowColor);
   x.globalCompositeOperation = 'lighter';
@@ -191,14 +213,15 @@ export function drawShotFrame(canvas, shot, verdict = null) {
     const vx = w / 2;
     const wall = (side) => {
       x.beginPath();
-      x.moveTo(vx + side * w * 0.035, horizon);
-      let px = vx + side * w * 0.035;
+      x.moveTo(vx + side * gap, horizon);
+      let px = vx + side * gap;
       let roof = horizon - h * 0.035;
       x.lineTo(px, roof);
-      for (let k = 0; k < 5; k++) {
+      const houses = Math.round(lerp(4, 7, reach));
+      for (let k = 0; k < houses; k++) {
         // Houses of uneven width and height, so the two sides are a street and not a funnel.
-        const nx = px + side * w * (0.045 + k * 0.035) * (0.7 + rnd() * 0.7);
-        const rise = h * (0.05 + k * 0.045) * (0.45 + rnd() * 1.0);
+        const nx = px + side * w * (0.045 + k * 0.035) * (0.7 + rnd() * 0.7) * lerp(1, 0.72, reach);
+        const rise = h * (0.04 + k * 0.04) * (0.45 + rnd() * 1.0);
         x.lineTo(px, roof - rise * 0.25);
         roof -= rise;
         x.lineTo(nx, roof + rise * 0.1);
@@ -225,10 +248,10 @@ export function drawShotFrame(canvas, shot, verdict = null) {
     beam.addColorStop(1, rgb(light, 0.12 * clear));
     x.fillStyle = beam;
     x.beginPath();
-    x.moveTo(vx - w * 0.012, horizon);
-    x.lineTo(vx + w * 0.012, horizon);
-    x.lineTo(vx + w * 0.2, h);
-    x.lineTo(vx - w * 0.2, h);
+    x.moveTo(vx - gap * 0.4, horizon);
+    x.lineTo(vx + gap * 0.4, horizon);
+    x.lineTo(vx + gap * 5, h);
+    x.lineTo(vx - gap * 5, h);
     x.closePath();
     x.fill();
     wall(-1);
@@ -236,10 +259,10 @@ export function drawShotFrame(canvas, shot, verdict = null) {
   } else {
     const sp = sprite(name);
     if (sp.image) {
-      // The tower's upper half, close: scaled so the sphere sits where the disc is.
+      // The landmark, scaled and placed so that the part the body is behind sits on the disc.
       const [bx, by, bw, bh] = sp.box;
-      const scale = towerH / bh;
-      const anchor = shot.where === 'antenna' ? marks.antenna : marks.sphere;
+      const scale = spriteH / bh;
+      const anchor = framing.places?.[shot.where] ?? framing.at;
       const tinted = document.createElement('canvas');
       tinted.width = bw;
       tinted.height = bh;
@@ -249,8 +272,8 @@ export function drawShotFrame(canvas, shot, verdict = null) {
       tx.fillStyle = shade;
       tx.fillRect(0, 0, bw, bh);
       x.imageSmoothingQuality = 'high';
-      x.drawImage(tinted, w / 2 - (bw * scale) / 2, at.y - anchor * towerH, bw * scale, towerH);
-    } else sp.waiting.add(() => drawShotFrame(canvas, shot, verdict));
+      x.drawImage(tinted, w / 2 - (bw * scale) / 2, at.y - anchor * spriteH, bw * scale, spriteH);
+    } else sp.waiting.add(() => drawShotFrame(canvas, shot, verdict, { words }));
   }
   puffs(low, 0.5, 0.86, 6, 0.08, 0.62);
   if ((sky?.rain ?? 0) >= 0.45) {
@@ -269,19 +292,25 @@ export function drawShotFrame(canvas, shot, verdict = null) {
 
 const span = (className, text = '') => Object.assign(document.createElement('span'), { className, textContent: text });
 
-/** What the card says of the body and the kind of shot, in a few words. */
+/**
+ * What the card says under the place, in a few words: which body, and what tells this shot
+ * from the next one like it. At the tower that is where to stand; down a street, how high the
+ * body stands over it.
+ */
 export function shotWhat(shot) {
   const body = shot.body === 'moon' ? 'Moon' : 'Sun';
-  if (shot.kind === 'street') return `${body} down the street`;
-  if (shot.where === 'antenna') return `${body} on the antenna${shot.stand ? ` · ${shot.stand}` : ''}`;
-  return `${body}${shot.stand ? ` · ${shot.stand}` : ' behind the sphere'}`;
+  if (shot.stand) return `${body} \u00b7 ${shot.stand}`;
+  if (shot.kind === 'street') return `${body} \u00b7 ${Math.round(bodyState(shot.body, shot.t).altitudeDeg)}\u00b0 up`;
+  return `${body} ${shot.where === 'antenna' ? 'on the antenna' : 'behind it'}`;
 }
 
 /**
  * The card as an element. `size` is 'card', 'row' or 'ticket'; `tag` the element ('button'
- * where the card does something, 'div' where it only shows). The caller adds the click.
+ * where the card does something, 'div' where it only shows); `pixels` the frame's drawing size
+ * when the card is given another shape than its size's own (a card is 4:5 unless its container
+ * sets `--shot-aspect`). The caller adds the click.
  */
-export function shotCard(shot, verdict = null, { size = 'card', tag = 'button' } = {}) {
+export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', pixels = FRAME_PIXELS[size] ?? FRAME_PIXELS.card } = {}) {
   const card = document.createElement(tag);
   if (tag === 'button') card.type = 'button';
   card.className = `shotcard shotcard--${size}`;
@@ -291,10 +320,10 @@ export function shotCard(shot, verdict = null, { size = 'card', tag = 'button' }
 
   const frame = span('sc-frame');
   const canvas = document.createElement('canvas');
-  [canvas.width, canvas.height] = FRAME_PIXELS[size] ?? FRAME_PIXELS.card;
+  [canvas.width, canvas.height] = pixels;
   canvas.setAttribute('aria-hidden', 'true');
   frame.append(canvas);
-  drawShotFrame(canvas, shot, verdict);
+  drawShotFrame(canvas, shot, verdict, { words: size === 'card' });
 
   // The verdict: its sign and word in a pill, the reason beside it. Without a forecast the
   // pill says which kind of none, and there is no reason to give.
