@@ -41,6 +41,13 @@ a.shotcard:hover { transform: translateY(-2px); }
 .home-hero .sc-meta { padding: 64px 16px 14px; }
 .home-hero .sc-time { font-size: clamp(30px, 7vw, 44px); line-height: 1.1; }
 .home-eta { margin-left: 10px; font-size: 13.5px; font-weight: 600; opacity: 0.9; white-space: nowrap; }
+/* "Tomorrow 7:54 AM" stays on one line; on a phone the countdown goes under it. */
+.home-hero .sc-time { white-space: nowrap; }
+@media (max-width: 560px) {
+  .home-hero .sc-time { font-size: clamp(24px, 6.6vw, 30px); }
+  .home-eta { display: block; margin-left: 0; }
+}
+.home-more { margin-top: 8px; }
 .home-hero .sc-name { font-size: clamp(17px, 3.4vw, 22px); }
 .shotcard--card.home-hero .sc-title { display: block; font-size: 13.5px; line-height: 1.3; opacity: 0.92; }
 .home-hero .sc-what { font-size: 12.5px; }
