@@ -190,12 +190,15 @@ describe('audit: known errors, not fixed here', () => {
     expect(shown.rise).toBeDefined();
   });
 
-  it.fails('blue hour starts when the sun is 4 deg down (the bands run 3.5 to 5 min late: below the horizon the app still adds 0.48 deg of refraction)', () => {
+  it('blue hour starts when the sun is 4 deg down (fixed: the bands ran 3.5 to 5 min late while the app still added 0.48 deg of refraction below the horizon)', () => {
     // The reference instant is the sun's centre 4.00 deg under the true horizon, no refraction.
+    // Measured after the fix: 2 to 4 s on all twelve days, whatever the sampling step.
     for (const day of ref.days) {
       const from = Date.parse(day.sunCentre4DegDownEvening) - 1_800_000;
-      const blue = lightBands(from, from + 3_600_000, ref.observer.lat, ref.observer.lon).find((b) => b.phase === 'blue')!;
-      expect(Math.abs(seconds(blue.from, day.sunCentre4DegDownEvening)), day.day).toBeLessThan(60);
+      for (const stepMs of [60_000, 300_000, 600_000]) {
+        const blue = lightBands(from, from + 3_600_000, ref.observer.lat, ref.observer.lon, stepMs).find((b) => b.phase === 'blue')!;
+        expect(Math.abs(seconds(blue.from, day.sunCentre4DegDownEvening)), `${day.day} step ${stepMs}`).toBeLessThan(10);
+      }
     }
   });
 
