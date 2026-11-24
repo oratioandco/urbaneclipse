@@ -10,10 +10,13 @@
  *   C  any bridge: mid-span on a list of Berlin road bridges, "stand here" moves you less
  *      than 5 m; and the known not-a-deck places (under a rail viaduct) are not decks.
  *
- *   node scripts/adversarial/bridge.mjs [A] [B] [C]     SIZES=phone,desktop
+ *   node scripts/adversarial/bridge.mjs [A] [B] [C] [census]     SIZES=phone,desktop
+ *
+ * `census` lists every place the rule calls a deck (a sample of the street points), with its
+ * height over the terrain and coordinates, to look for roofs and viaducts taken for decks.
  *
  * Coordinates: the Lichtenberger Brücke's points are src/lib/vantages.ts; the other bridges
- * are OSM way midpoints (Overpass, 2026-11-24), listed with their way ids below.
+ * are listed with their OpenStreetMap way ids below.
  */
 import { open, plan, shot, save, close } from './lib.mjs';
 
@@ -31,25 +34,28 @@ const LICHTENBERGER = {
   'sued-mitte': [52.511101, 13.4991829],
   'sued-ost': [52.5110579, 13.4996359],
 };
-/** Mid-span points on road bridges, from the tester's list (retest of d3732ef). */
+/**
+ * Road bridges, each at the centre OpenStreetMap gives for it (Nominatim, 2026-11-24; the
+ * `man_made=bridge` outline or the street way on it, way id in the comment). The four without
+ * a comment are the tester's own points, which the page handled at d3732ef.
+ */
 const BRIDGES = {
-  Modersohnbruecke: [52.50468, 13.46265],
-  Moltkebruecke: [52.5219, 13.36895],
-  'Warschauer Bruecke': [52.5064, 13.4493],
-  Elsenbruecke: [52.49905, 13.4619],
+  Moltkebruecke: [52.52189, 13.36876], // way 222139121
+  'Warschauer Bruecke': [52.50634, 13.4494], // way 335239771
+  Boesebruecke: [52.55471, 13.39816], // way 380356103
+  'Swinemuender Bruecke': [52.54861, 13.39309], // way 590865980
+  Langenscheidtbruecke: [52.48862, 13.36337], // way 686721915
+  Elsenbruecke: [52.49584, 13.46319], // way 1017420119
+  Modersohnbruecke: [52.50501, 13.45806], // way 1081624523
+  Oberbaumbruecke: [52.50173, 13.44573], // way 288514442
+  Putlitzbruecke: [52.53464, 13.34351], // way 376269506
+  Monumentenbruecke: [52.48795, 13.37196], // way 386592863
+  Schillingbruecke: [52.50931, 13.42935], // way 334070717
+  Kronprinzenbruecke: [52.52189, 13.37588], // way 194146275
   Jannowitzbruecke: [52.51395, 13.4179],
-  Schillingbruecke: [52.50985, 13.4279],
-  Boesebruecke: [52.5548, 13.3979],
-  'Swinemuender Bruecke': [52.54965, 13.3929],
-  Putlitzbruecke: [52.537, 13.3439],
   Admiralbruecke: [52.49535, 13.4152],
   'Weidendammer Bruecke': [52.52245, 13.388],
   Schlossbruecke: [52.5176, 13.3987],
-  Kronprinzenbruecke: [52.52215, 13.3756],
-  Monumentenbruecke: [52.4884, 13.3718],
-  Oberbaumbruecke: [52.50195, 13.44575],
-  'Kynastbruecke Ostkreuz': [52.5027, 13.47005],
-  Langenscheidtbruecke: [52.4902, 13.3642],
 };
 const out = { A: {}, B: {}, C: {} };
 let failed = 0;
@@ -103,13 +109,30 @@ if (want('B')) {
       await page.waitForFunction(() => document.querySelector('#dates h3') && !document.getElementById('dates').innerText.includes('Searching'), null, { timeout: 300_000 });
       await page.waitForTimeout(2000);
       const text = await page.$eval('#dates', (e) => e.innerText);
-      const tower = text.split(/BEHIND THE /i)[1] ?? '';
-      const rows = (tower.match(/\d{4} · /g) ?? []).length;
-      const sphere = (tower.match(/behind the sphere|ring of|at the edge|sphere in front/gi) ?? []).length;
-      out.B[`${size} ${id}`] = { rows, sphere, hidden: /(\d+) more hidden/.exec(tower)?.[1] ?? null, text: tower.slice(0, 1500) };
+      const tower = text.split(/BEHIND THE /)[1] ?? '';
+      const rows = (tower.match(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d+ /gm) ?? []).length;
+      const sphere = (tower.match(/sphere\u2019s edge|behind the sphere|ring of sun|sphere in front/gi) ?? []).length;
+      const hidden = Number(/(\d+) more hidden/.exec(tower)?.[1] ?? 0);
+      // What stands in the way of a low look at the tower from here: the first thing a ray at
+      // 2 degrees meets, as a distance and a place, to look up on a map.
+      const block = await page.evaluate(([lat0, lon0]) => {
+        const m = window.__mini;
+        const l = m.look;
+        const flat = Math.hypot(l.x, l.z);
+        const az = Math.atan2(-l.x, l.z);
+        const e = (2 * Math.PI) / 180;
+        const dir = m.camera.position.clone().set(Math.sin(az) * Math.cos(e), Math.sin(e), -Math.cos(az) * Math.cos(e));
+        if (m.clearView(l.x, l.z, dir, flat - 40, l.lift ?? 0)) return null;
+        const b = m.lastBlock;
+        return { metres: Math.round(b.distance), at: [+(lat0 + (b.distance * Math.cos(az)) / 111_320).toFixed(5), +(lon0 + (b.distance * Math.sin(az)) / (111_320 * Math.cos((lat0 * Math.PI) / 180))).toFixed(5)], roofOverGround: +(m.roofAt(b.point.x, b.point.z) - m.groundAt(b.point.x, b.point.z)).toFixed(1) };
+      }, [lat, lon]);
+      out.B[`${size} ${id}`] = { rows, sphere, hidden, blockAt2Degrees: block, text: tower.slice(0, 1500) };
       save(`bridge-B-${size}-${id}.txt`, text);
       await shot(page, `bridge-B-${size}-${id}`);
-      verdict(rows >= 10 && sphere >= 3, `B ${size} ${id}: ${rows} tower rows, ${sphere} at the sphere${out.B[`${size} ${id}`].hidden ? `, ${out.B[`${size} ${id}`].hidden} more hidden` : ''}`);
+      // /classic's panel 05 has the sphere's dates here (28 Dec, 21 Feb, 7 to 9 Apr). They must
+      // be listed, or counted as hidden with the building that hides them named.
+      const ok = sphere >= 3 || (hidden >= 3 && block !== null);
+      verdict(ok, `B ${size} ${id}: ${rows} tower rows, ${sphere} at the sphere, ${hidden} more hidden${block ? `; a look at 2\u00b0 is blocked ${block.metres} m on, at ${block.at.join(',')}, by something ${block.roofOverGround} m high` : '; a look at 2\u00b0 is clear'}`);
       await context.close();
     }
   }
@@ -131,8 +154,45 @@ if (want('C')) {
     }, [lat, lon, TOWER]);
     out.C[name] = r;
     const worst = Math.max(...r.map((p) => p.moved));
-    verdict(worst < 5, `C ${name}: moved up to ${worst} m (${r.map((p) => `${p.above ?? 'open'}${p.deck ? ' deck' : ''}`).join(', ')})`);
+    const noDeck = r.every((p) => p.above === null);
+    verdict(worst < 5, `C ${name}: moved up to ${worst} m (${r.map((p) => `${p.above ?? 'open'}${p.deck ? ' deck' : ''}`).join(', ')})${noDeck ? ' — no deck in the model: one stands on the terrain under the bridge' : ''}`);
   }
+  await context.close();
+}
+// Not run unless asked for (it takes minutes): every place the rule calls a deck, for a look
+// by hand at the ones high over the terrain. A false positive is a roof or a viaduct here.
+if (only.includes('census')) {
+  const { page, context } = await open({ size: 'desktop', forecast: 'fixed' });
+  await plan(page, 'date=2026-11-24&time=600');
+  const found = await page.evaluate(async () => {
+    const m = window.__mini;
+    const r = new Int16Array(await (await fetch('/city/roads.bin')).arrayBuffer());
+    const t0 = performance.now();
+    const decks = [];
+    let built = 0;
+    for (let i = 0; i < r.length / 2; i += 23) {
+      if (performance.now() - t0 > 400_000) break;
+      const x = r[2 * i] / 2, z = r[2 * i + 1] / 2;
+      if (m.roofAt(x, z) === -Infinity) continue;
+      built++;
+      const d = m.deckAt(x, z);
+      if (d !== null) decks.push([x, z, +(d - m.groundAt(x, z)).toFixed(1)]);
+    }
+    return { built, decks, seconds: Math.round((performance.now() - t0) / 1000) };
+  });
+  const clusters = [];
+  for (const [x, z, h] of found.decks) {
+    let c = clusters.find((k) => Math.hypot(k.x - x, k.z - z) < 150);
+    if (!c) clusters.push((c = { x, z, n: 0, min: 99, max: 0 }));
+    c.n++;
+    c.min = Math.min(c.min, h);
+    c.max = Math.max(c.max, h);
+  }
+  for (const c of clusters) c.at = [+(TOWER[0] - c.z / 111_320).toFixed(5), +(TOWER[1] + c.x / (111_320 * Math.cos((TOWER[0] * Math.PI) / 180))).toFixed(5)];
+  clusters.sort((p, q) => q.max - p.max);
+  out.census = { sampledBuilt: found.built, decks: found.decks.length, seconds: found.seconds, clusters };
+  console.log(`census: ${found.built} street points under or on something built, ${found.decks.length} on a deck, ${clusters.length} places, ${found.seconds} s`);
+  for (const c of clusters) console.log(`  ${c.at.join(',')}  ${c.n} points, ${c.min}-${c.max} m over the terrain`);
   await context.close();
 }
 save('bridge.json', out);

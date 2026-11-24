@@ -287,6 +287,7 @@ async function start() {
   ]);
   const roadPoints = new Int16Array(roadBytes);
   app.roadXZ = roadPoints;
+  app.roadRuns = mapData.runs;
   const terrain = new Int16Array(terrainBytes);
   const { size, half } = terrainInfo;
   const plane = new THREE.PlaneGeometry(half * 2, half * 2, size - 1, size - 1);

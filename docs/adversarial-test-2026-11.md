@@ -109,6 +109,39 @@ or inferred.
   Not checked: that the list equals panel 05's 203 windows, and the model's deck height against
   the surveyed 47.7 to 48.2 m (the scene's vertical datum was not tied down here; the deck may
   sit a few metres low in the model, which moves a pass by seconds, not minutes).
+- **That fix was not enough; corrected on 2026-11-24 after an independent re-test** (retest
+  of d3732ef). Re-run with `scripts/adversarial/bridge.mjs` (checks A, B, C, and `census`):
+  - **A, the eye was inside the deck.** The deck's height was remembered per 3 m cell, from
+    whichever point asked first and from the coarse tiles, so the eye stood 0.55 m under to
+    1.45 m over the deck (reproduced: sued-mitte -0.47, sued-ost -0.55). The height is now
+    read at the very point from the buildings as drawn, and read again when a tile refines
+    (`sightlines.js` `deckAt`, `walk.js` `settleFooting`). Result: 1.6 m over the deck at all
+    six points, desktop and phone; render `bridge-A-desktop-sued-mitte.png` opened.
+  - **B, Dates against `/classic`.** With the eye out of the deck, sued-mitte lists 11 passes,
+    7 of them at the sphere (28 Dec, 21 Feb, 7 to 9 Apr, 3 and 4 Sept), as panel 05 has them.
+    Panel 05 counts 34 "Fenster" because it also lists the shaft, the foot and moons that are
+    not lit; `/plan/` lists the sphere and the antenna only. At nord-mitte 4 antenna rows show
+    and 8 are "hidden by buildings": a look at 2 degrees along 279.7 degrees meets a building
+    17.8 m high 307 m on, at 52.5120, 13.4938, which OpenStreetMap (Nominatim) has as
+    Frankfurter Allee 221; at 2.5 degrees and above the view is clear. `/classic` does not
+    check buildings there. Whether that building really hides the sphere from the north
+    footway needs a look on site.
+  - **C, not any bridge.** A straight bridge has no corner point of a street on it, so its
+    deck had no street. Street points are now taken every 12 m along each street line
+    (`roadsNear`), and "stand here" looks among those. Of 16 road bridges, at the coordinates
+    OpenStreetMap gives them (the tester's were 50 to 350 m off for six), 14 stand where you
+    put them, Moltkebrücke and Warschauer Brücke among them. **Not fixed: Bösebrücke and
+    Swinemünder Brücke** (moved 21 and 14 m). The model has their spans without the
+    approaches: the deck ends 6 m in the air, exactly as a viaduct over a street does. A rule
+    for such decks (long and narrow along its street) was tried and taken out again, because
+    the census showed it also took the Stadtbahn viaduct and the halls of Hauptbahnhof,
+    Ostbahnhof and Friedrichstraße for decks. It needs OpenStreetMap's `bridge` tag in the
+    street data (`scripts/miniature/build_map.py`), which means rebuilding and deploying the
+    city data. **Also not fixed:** Langenscheidtbrücke, Elsenbrücke and Oberbaumbrücke have
+    no deck in the building model at all, so one stands on the terrain under them. The two
+    deck cells near Hardenbergstraße (52.50465, 13.32633, 4 m, and 52.50509, 13.32914,
+    1.8 m) are decks by the first rule (their street comes down without a step); what they
+    are was not looked up.
 
 ### 2. Clock-change days: the day view sets and reads the time one hour off. High on two days a year. Verified.
 
