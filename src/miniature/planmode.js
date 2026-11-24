@@ -190,7 +190,8 @@ function rowsFor(from, now) {
     if (rowsMemo.size > 8) rowsMemo.delete(rowsMemo.keys().next().value);
   }
   const rows = rowsMemo.get(key);
-  return now === null ? rows : rows.filter((row) => row.t > now);
+  // Still to come: a shot with a stretch counts until the stretch ends.
+  return now === null ? rows : rows.filter((row) => (row.until ?? row.t) > now);
 }
 
 const weekday = (from) => new Date(from).toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', weekday: 'short' });

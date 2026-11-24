@@ -150,7 +150,9 @@ async function refresh() {
   const spot = { x: look.x, z: look.z, lift: look.lift ?? 0 };
   searched = spot;
   const [lat, lon] = latLonFromScene(spot.x, spot.z, FERNSEHTURM.lat, FERNSEHTURM.lon);
-  const now = Date.now();
+  // From the whole minute: the search steps a minute at a time from its start, so a start on
+  // the second of the click moved every row's minute with it (adversarial finding 3).
+  const now = Math.floor(Date.now() / 60_000) * 60_000;
   const street = streetHere();
   const streetBox = street ? section(`Down ${street.name}`, 'Searching the next 12 months…') : null;
   const pending = TARGETS.map((target) => {
@@ -239,7 +241,8 @@ async function refresh() {
               detail: `${what}${crossingText(s)} · ${Math.round(s.alt)}° up · ${describeLight(s.body, s.peak, lat, lon)}`,
               go: () => {
                 setDay(dayOf(s.peak));
-                setMinute(s.peak);
+                // Open at the moment the body crosses the landmark's axis, which the search knows to the second.
+                setMinute(s.align ?? s.peak);
                 setFine(true);
                 turnTo(s.az, Math.max(0, s.alt));
               },

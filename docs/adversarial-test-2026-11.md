@@ -149,6 +149,10 @@ or inferred.
   `src/miniature/towerShots.js` (`findShots`), `src/lib/streets.ts`.
 - Fix: start the search on a whole minute; set the scene to the shot's `align` instant, which
   `findShots` already returns; print the pass as a range, as the audit's defect 4 asks.
+- **Fixed on 2026-11-24** (`src/miniature/dates.js`): the search starts on the whole minute, a
+  tower row opens at the axis crossing (`align`), and the row prints the pass as a range with
+  the crossing to the second. Not re-measured against the reference (`reference.py` needs the
+  ephemeris file, which is not on this machine); street rows still open at their one-minute peak.
 
 ### 4. Antenna rows show the start of an hour-long window as the shot's time. Medium. Verified.
 
@@ -162,6 +166,11 @@ or inferred.
   `mid.t`).
 - Fix: give the row the instant it opens at, show the window as a range, and call it passed at
   its end.
+- **Fixed on 2026-11-24** (`src/miniature/dayShots.js`, `verdict.js`): the row's time is the
+  minute it opens at (8:20 for 24 December), the stretch stays in its small print as a range,
+  it is "Passed" only after the stretch ends and stays the next shot until then, and a stretch
+  across midnight is one row in lists of days. Test: `tests/unit/homeGrid.test.ts`, "antenna
+  rows". Not changed: where on the 1.6 to 9 km stretch you are put (its middle).
 
 ### 5. A low moon looks like the sun. Medium, and on the first screen. Verified.
 

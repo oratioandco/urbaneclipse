@@ -131,7 +131,7 @@ export function showVerdict(el, verdict, { reason = true } = {}) {
 export function dayVerdict(row) {
   const missing = !forecastReach(dateInput.value).ok ? 'No forecast yet' : app.weather === null && app.weatherFailed ? 'No forecast' : 'Forecast loading';
   if (!row) return verdict(null, missing);
-  return shotVerdict(app.weather, dayStart(), row.t, { body: row.body, distanceM: row.distanceM, now: Date.now(), missing });
+  return shotVerdict(app.weather, dayStart(), row.t, { body: row.body, distanceM: row.distanceM, now: Date.now(), until: row.until, missing });
 }
 
 /** The mark of a row (marks.js): `tower-sun`, `henge-sun`, `tower-moon` or `henge-moon`. */

@@ -235,3 +235,37 @@ describe('one row logic for the planner and the home page', () => {
     for (const row of all) expect(row.go).toBeUndefined();
   });
 });
+
+// Adversarial test 2026-11, finding 4: 24 December 2026, "Moonset behind the TV tower's
+// antenna" was listed at 7:50 (the stretch's start) and opened at 8:20.
+describe('antenna rows', () => {
+  const from = Date.UTC(2026, 11, 23, 23);
+  const rows = collectRows([], [], from).filter((r) => r.where === 'antenna');
+  it('carry the minute they open at, with the stretch around it', () => {
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.t).toBe(row.openAt);
+      expect(row.start).toBeLessThan(row.t);
+      expect(row.until).toBeGreaterThan(row.t);
+    }
+    const morning = rows.find((r) => /Moonset/.test(r.title))!;
+    const clock = (t: number) => new Date(t).toLocaleTimeString('en-GB', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' });
+    expect(clock(morning.start)).toBe('07:50');
+    expect(clock(morning.t)).toBe('08:20');
+  });
+  it('have passed at the stretch\u2019s end, not at its start or middle', async () => {
+    const { shotVerdict, PASSED } = await import('../../src/miniature/verdict.js');
+    const row = rows[0];
+    const at = (now: number) => shotVerdict(null, from, row.t, { body: 'moon', now, until: row.until, missing: 'No forecast' });
+    expect(at(row.t + 60_000)).not.toBe(PASSED);
+    expect(at(row.until - 60_000)).not.toBe(PASSED);
+    expect(at(row.until + 60_000)).toBe(PASSED);
+  });
+  it('are one shot across midnight in a list of days', () => {
+    const evening = [{ kind: 'tower', body: 'moon', short: 'TV antenna', t: from - 20 * 60_000, start: from - 40 * 60_000, until: from }];
+    const next = [{ kind: 'tower', body: 'moon', short: 'TV antenna', t: from + 30 * 60_000, start: from, until: from + 60 * 60_000 }];
+    expect(withoutContinued(next, from, evening)).toEqual([]);
+    expect(withoutContinued(next, from)).toHaveLength(1);
+  });
+});
+
