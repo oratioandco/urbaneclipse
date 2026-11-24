@@ -10,8 +10,11 @@ import { TARGETS } from '../../src/miniature/targets.js';
 import { BRANDENBURGER_TOR, SIEGESSAEULE, landmarkHeight, profileRadius } from '../../src/lib/landmarks.ts';
 // @ts-expect-error plain JS module
 import { latLonFromScene, sceneFromLatLon } from '../../src/miniature/eye.js';
+// @ts-expect-error plain JS module
+import { FEET, MOLECULE_MAN, OUTLINE, RIM, WEB, edgeDistance, moleculeHoles } from '../../src/miniature/moleculeManShape.js';
 
 const TOWER = { lat: 52.520815, lon: 13.409419 };
+const DEG = 180 / Math.PI;
 const flat24 = (v: number) => Array.from({ length: 24 }, () => v);
 
 describe('parseTime', () => {
@@ -357,5 +360,54 @@ describe('dynamic resolution', () => {
     for (let k = 0; k < 30; k++) for (let i = 0; i < 30; i++) sampleFrame(12, 400_000 + k * 1000 + i * 12, { main: 4, shadowed: i % 2 === 0 });
     expect(quality.ratio).toBe(2);
     expect(quality.shadowEvery).toBe(1);
+  });
+});
+
+describe('Molecule Man', () => {
+  // Independent check, OpenStreetMap way 166268035 read through Overpass on 2026-11-23: a
+  // three-armed star whose junction nodes are 52.4969618/13.4590427, 52.4969624/13.4590453 and
+  // 52.4969633/13.4590433, and whose arm tips are the three points below. Wikidata Q522248
+  // puts the sculpture at 52.496972, 13.459056, within 2 m of that junction.
+  const ARM_TIPS = [[52.4970586, 13.4591895], [52.4968683, 13.4591059], [52.49699, 13.4588535]];
+
+  it('stands on the junction of the three plates OpenStreetMap draws', () => {
+    const [x, z] = sceneFromLatLon(MOLECULE_MAN.lat, MOLECULE_MAN.lon, TOWER.lat, TOWER.lon);
+    expect(Math.hypot(x - MOLECULE_MAN.centre[0], z - MOLECULE_MAN.centre[1])).toBeLessThan(0.1);
+    const [wx, wz] = sceneFromLatLon(52.496972, 13.459056, TOWER.lat, TOWER.lon);
+    expect(Math.hypot(wx - MOLECULE_MAN.centre[0], wz - MOLECULE_MAN.centre[1])).toBeLessThan(2);
+  });
+
+  it('turns its figures onto the mapped arms, 120 degrees apart, and reaches as far', () => {
+    const reach = Math.max(...OUTLINE.map(([u]: number[]) => u));
+    ARM_TIPS.forEach(([lat, lon], i) => {
+      const [x, z] = sceneFromLatLon(lat, lon, TOWER.lat, TOWER.lon);
+      const dx = x - MOLECULE_MAN.centre[0];
+      const dz = z - MOLECULE_MAN.centre[1];
+      const bearing = (DEG * Math.atan2(dx, -dz) + 360) % 360;
+      expect(Math.abs(bearing - MOLECULE_MAN.bearings[i])).toBeLessThan(4); // the mapped arms are 116-124 degrees apart
+      expect(Math.abs(Math.hypot(dx, dz) - reach)).toBeLessThan(2.2); // mapped 11.3, 13.3 and 14.6 m
+    });
+    expect(MOLECULE_MAN.bearings[1] - MOLECULE_MAN.bearings[0]).toBeCloseTo(120, 6);
+    expect(MOLECULE_MAN.bearings[2] - MOLECULE_MAN.bearings[1]).toBeCloseTo(120, 6);
+  });
+
+  it('is 30 m of profile from the feet to the crown, the hand on the shared axis', () => {
+    const ys = OUTLINE.map(([, y]: number[]) => y);
+    expect(Math.min(...ys)).toBe(0);
+    expect(Math.max(...ys)).toBe(30);
+    expect(MOLECULE_MAN.top - MOLECULE_MAN.terrain).toBe(30); // "30 m, ab Wasserfläche"
+    expect(OUTLINE.filter(([u]: number[]) => u === 0).length).toBe(2); // the hand's two corners
+    expect(OUTLINE.every(([u]: number[]) => u >= 0)).toBe(true); // no figure crosses the axis
+    for (const [from, to] of FEET) expect(OUTLINE.filter(([u, y]: number[]) => y === 0 && (u === from || u === to)).length).toBe(2);
+  });
+
+  it('scatters the same holes every time, each clear of the rim and of its neighbours', () => {
+    const holes = moleculeHoles();
+    expect(holes).toEqual(moleculeHoles());
+    expect(holes.length).toBe(200); // "hundreds of holes" over three figures
+    for (const [i, h] of holes.entries()) {
+      expect(edgeDistance(OUTLINE, h.x, h.y)).toBeGreaterThanOrEqual(h.r + RIM);
+      for (const o of holes.slice(i + 1)) expect(Math.hypot(h.x - o.x, h.y - o.y)).toBeGreaterThanOrEqual(h.r + o.r + WEB);
+    }
   });
 });
