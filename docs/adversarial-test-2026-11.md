@@ -294,7 +294,7 @@ or inferred.
 | h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro` |
 | i | The landing page's hero clip still shows the old small triangle arrow and old pills | verified, `views-home-desktop-dark.png` | `public/media`, re-record with `record_clips.mjs` |
 | j | `/classic` at 390 px: panels overlap and are cut off | verified, `views-classic-phone-light.png` | `src/styles/global.css` |
-| k | Server addresses in a public repository (already on `main`) | verified by grep | `src/miniature/README.md:20`, `docs/HANDOFF-2026-11-08.md:20`, `scripts/README.md:321`, `scripts/sync_tiles_hetzner.sh:23` |
+| k | Server addresses in a public repository (already on `main`). **Fixed on 2026-11-24** in the four files: a placeholder in the notes, and `sync_tiles_hetzner.sh` now requires `PLASTERVOID_HOST` from the environment. Git history still holds the address; it was not rewritten | verified by grep | `src/miniature/README.md:20`, `docs/HANDOFF-2026-11-08.md:20`, `scripts/README.md:321`, `scripts/sync_tiles_hetzner.sh:23` |
 
 ## The five use cases
 

@@ -17,7 +17,7 @@ upload it to the server volume that nginx serves at `/city/`:
     python scripts/miniature/build_terrain.py data/viewshed/ground.npz   # needs numpy, pyproj
     python scripts/miniature/build_map.py <checkout with data/streets/osm>
     node scripts/miniature/build_trees.mjs          # the tree register, cached in data/trees
-    rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519_hetzner" public/city/ root@100.82.42.52:/data/plastervoid/city/
+    rsync -az --delete -e "ssh -i ~/.ssh/id_ed25519_hetzner" public/city/ "$PLASTERVOID_HOST":/data/plastervoid/city/
 
 After a rebuild, bump `CITY_VERSION` in `main.js`, since the files are cached for 30 days.
 

@@ -318,7 +318,7 @@ The daily map, which is now the home page, uses `data/berlin-9km` the same way: 
 `/data/plastervoid/tiles/berlin-9km`, mount path `/usr/share/nginx/html/berlin-9km`. The
 Dockerfile bakes its URL in through `PUBLIC_DAILY_TILESET_URL`, so upload the tiles and create
 the volume before deploying. The sync script's default host predates the move to the current
-server: set `PLASTERVOID_HOST=root@100.82.42.52`.
+server: set `PLASTERVOID_HOST=root@<server>`.
 This Coolify version refuses `--host-path`, so the mount is a directory storage: `--type file
 --is-directory --fs-path <host path> --mount-path <mount path>`.
 
