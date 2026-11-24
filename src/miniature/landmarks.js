@@ -13,8 +13,8 @@
  * 288514442, 373626457/59/62, 1547500040, 1013505135/36 and 373626454-61 for the bridge;
  * 288230369, 316933471 and 288230373-76 for the towers; 518071791 for the gate; 718035022 for
  * the column) and from the LoD2 tiles: the towers' cornice is at 44 m scene height, which is
- * where the LoD2 pyramid starts; the gate's ground sits at −2.4 m scene, the column's at +0.3 m
- * (scripts/miniature/check_landmark_lod.mjs). Heights the data does not give (arch rise, arcade,
+ * where the LoD2 pyramid starts; the gate's ground sits at +0.3 m scene (DGM1, see GATE), the
+ * column's at +0.3 m (scripts/miniature/check_landmark_lod.mjs). Heights the data does not give (arch rise, arcade,
  * drum and dome, the quadriga's pose) are read from photographs and are approximate. The
  * Hauptbahnhof (2026-11-10) rebuilds the station the tiles flatten to slabs: both glass roofs
  * and the DB tower, from ways 11345963, 226048335, 128280629/30 and 402787665/66.
@@ -260,14 +260,19 @@ function frankfurterTor() {
 }
 
 // --- Brandenburger Tor ----------------------------------------------------------------------
-// Frame: x along the gate's face (34.8 m, OSM way 518071791), y up from its ground (−2.4 m
+// Frame: x along the gate's face (34.8 m, OSM way 518071791), y up from its ground (+0.3 m
 // scene), z through the five passages toward Pariser Platz. The face's half-width 17.4 and the
 // half-depth 8.3; the passages run 6.54 m in the middle, 4.44 m either side of it, with 1.75 m
 // piers between, and the chariot looks east. LoD2 has the whole thing as a solid block: cut it
 // away above its plinth inside a square turned with the gate.
+// The ground is DGM1's: 34.9 m DHHN2016 in the passages (src/lib/landmarks.ts), 0.3 m above
+// the scene's zero at 34.6 m. It was −2.4 m, the lowest point of the LoD2 block, which reaches
+// below the pavement: that stood the whole gate 2.7 m too low, and its quadriga 0.4° too low
+// from 370 m. The check: the LoD2 block's roof is at 55.0-55.6 m DHHN2016 (20.4-21.0 m scene),
+// which is this ground plus the attic's 20.5 m, and the published 20.3 m above the pavement.
 const GATE = {
   centre: [-2153.0, 505.0],
-  ground: -2.4,
+  ground: 0.3,
   along: [0.108, 0.994],
   across: [0.994, -0.108],
   half: 17.6,
