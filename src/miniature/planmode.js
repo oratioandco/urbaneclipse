@@ -10,8 +10,9 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { phaseName } from '../lib/moonPhase.ts';
 import { getMoonIllumination } from 'suncalc';
 import { dayEndOf, daysFrom, moonOfDay, wallMinute } from './dayMath.js';
-import { withoutContinued } from './dayShots.js';
-import { formatClock } from './time.js';
+import { streetMomentsOfDay, withoutContinued } from './dayShots.js';
+import { moreStreets, pickTop } from './spectacle.js';
+import { formatClock, weekdayShort } from './time.js';
 import { params } from './config.js';
 import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
 import { shotVerdict } from './verdict.js';
@@ -190,10 +191,7 @@ function rowsFor(from, now) {
     const to = dayEndOf(from);
     // The selected day's paths are already built for the map; only the other days need solving.
     const paths = from === dayStart() && app.dayPaths.length ? app.dayPaths : computeDayPaths(from, shed);
-    const moments = [
-      ...streetMoments(views, 'sun', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
-      ...streetMoments(views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
-    ];
+    const moments = streetMomentsOfDay(views, from);
     rowsMemo.set(key, collectRows(paths, moments, from, { tower: layers.tower, streets: layers.streets, moon: layers.moon }));
     // Keep the memo from growing across day changes and layer flips.
     if (rowsMemo.size > 8) rowsMemo.delete(rowsMemo.keys().next().value);
@@ -203,7 +201,7 @@ function rowsFor(from, now) {
   return now === null ? rows : rows.filter((row) => (row.until ?? row.t) > now);
 }
 
-const weekday = (from) => new Date(from).toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', weekday: 'short' });
+const weekday = (from) => weekdayShort(from);
 const dayName = (from, i) =>
   i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : new Date(from).toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', weekday: 'long' });
 
@@ -232,14 +230,18 @@ export function renderPlanCards() {
     // A poor sky is not a shot: over 75% cloud or grey soup hides the disc entirely. The
     // strip still shows those days — light and cloud are exactly what a covered week is for
     // glancing at — but they earn no cards and no ticks.
-    const picks = rows
-      .map((row) => {
-        const verdict = verdictAt(day, from, row);
-        return { ...row, verdict, grade: verdict.grade };
-      })
-      .filter((row) => row.grade !== 'poor')
-      .sort((a, b) => GRADE_WEIGHT[b.grade ?? 'fair'] * b.score - GRADE_WEIGHT[a.grade ?? 'fair'] * a.score)
-      .slice(0, PER_DAY);
+    // The day's few: henges on parallel streets as one, kinds mixed where scores are close
+    // (spectacle.js `pickTop`). A henge that stands for others says so in its small print.
+    const picks = pickTop(
+      rows
+        .map((row) => {
+          const verdict = verdictAt(day, from, row);
+          return { ...row, verdict, grade: verdict.grade };
+        })
+        .filter((row) => row.grade !== 'poor'),
+      PER_DAY,
+      (row) => GRADE_WEIGHT[row.grade ?? 'fair'] * row.score,
+    ).map((row) => (row.more ? { ...row, detail: `${row.detail} \u00b7 ${moreStreets(row)}` } : row));
     total += picks.length;
     blocks.push({ from, to, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }

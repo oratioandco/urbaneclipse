@@ -13,7 +13,7 @@ import { antennaRange } from './towerShots.js';
 import { layers, shownBody } from './chrome.js';
 import { dayEnd, dayStart, instant, showPhases } from './clock.js';
 import { FIGURE_TARGETS } from '../lib/landmarkStands.ts';
-import { computeDayPaths as towerPaths, computeLandmarkPasses } from './dayShots.js';
+import { computeDayPaths as towerPaths, computeLandmarkPasses, streetMomentsOfDay } from './dayShots.js';
 import { renderDayList } from './daylist.js';
 import { renderDayView } from './dayview.js';
 import { renderPlanCards } from './planmode.js';
@@ -46,10 +46,8 @@ export function updateDay() {
   const from = dayStart();
   const to = dayEnd();
   showPhases();
-  app.moments = [
-    ...streetMoments(app.views, 'sun', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
-    ...streetMoments(app.views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
-  ].sort((a, b) => a.peak - b.peak);
+  // Whole across midnight, each on the day of its peak (dayShots.js).
+  app.moments = streetMomentsOfDay(app.views, from);
   app.shownKey = null;
   loadWeather();
   computePaths();

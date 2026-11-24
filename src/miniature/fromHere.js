@@ -18,6 +18,7 @@ import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { FIGURE_TARGETS, discShare } from '../lib/landmarkStands.ts';
 import { LANDMARK_CAUTION, LANDMARK_CHECK, figureWord, landmarkScore, lensFor } from './landmarkShots.js';
+import { paleMoon } from './spectacle.js';
 import { discOverSphere } from './towerShots.js';
 
 const DAY_MS = 86_400_000;
@@ -27,9 +28,6 @@ export const DECENT = 1;
 const LATER_COSTS = 0.35;
 /** Dates of one kind this close together are one run (a henge comes back several days in a row). */
 const RUN_MS = 21 * DAY_MS;
-/** With the sun this high the moon is a pale disc in a blue sky: less of a picture. */
-const PALE_MOON_SUN_DEG = 6;
-const PALE_MOON = 0.6;
 /** Days of one run follow each other this closely (a pass comes back a day later, a little changed). */
 const NEXT_DAY_MS = 1.5 * DAY_MS;
 /** A forecast that says Skip halves a shot's rank; one that says Go lifts it a little. */
@@ -59,7 +57,8 @@ export const sideOf = (bearingDeg) => SIDES[Math.round((((bearingDeg % 360) + 36
  * list never has to weigh: the moon by day, which counts for less (`t` given).
  */
 export function spectacle({ kind, body, target = 'fernsehturm', state = 'hidden', distanceM = null, lengthM = null, t = null }) {
-  const pale = body === 'moon' && t !== null && sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon).alt > PALE_MOON_SUN_DEG ? PALE_MOON : 1;
+  // The moon by day: the day rows' own rule (spectacle.js).
+  const pale = t !== null ? paleMoon(body, t) : 1;
   return pale * picture({ kind, body, target, state, distanceM, lengthM });
 }
 

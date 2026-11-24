@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain JS module
 import { asShot, byMonth, countWords, DECENT, gatherNotes, highlights, rank, rowWhen, shotFromKey, shownShots, sideOf, spectacle, targetOfKey, weekdayApart } from '../../src/miniature/fromHere.js';
+import { paleMoon } from '../../src/miniature/spectacle.js';
 
 const DAY = 86_400_000;
 const NOW = Date.UTC(2026, 10, 24, 11, 0);
@@ -118,7 +119,9 @@ describe('from here: spectacle', () => {
     const night = Date.UTC(2027, 5, 21, 23, 0);
     const antenna = { kind: 'tower', body: 'moon', state: 'antenna' };
     expect(spectacle({ ...antenna, t: night })).toBe(2);
-    expect(spectacle({ ...antenna, t: noon })).toBeCloseTo(1.2);
+    // The day rows' rule (spectacle.js `paleMoon`): a ramp on the sun's height and the moon's contrast.
+    expect(spectacle({ ...antenna, t: noon })).toBeCloseTo(2 * paleMoon('moon', noon), 9);
+    expect(spectacle({ ...antenna, t: noon })).toBeLessThan(1.5);
     expect(spectacle({ ...antenna })).toBe(2);
     expect(spectacle({ kind: 'tower', body: 'sun', state: 'ring', t: noon })).toBe(1.8);
   });

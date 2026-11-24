@@ -1,6 +1,7 @@
 /** Street preview: looking down a street at the sun or moon, with its dates this year. */
 import { useEffect, useMemo, useState } from 'react';
-import { formatLongDay, formatTime } from '../../../lib/berlinTime.js';
+import { formatLongDay } from '../../../lib/berlinTime.js';
+import { formatTime } from './shared.js';
 import { sampleBody } from '../../../lib/bodyPosition.js';
 import { LIGHT_PHASE_NAMES, lightBands, lightPhaseOf } from '../../../lib/lightPhases.js';
 import { MOON_VISIBILITY_LABELS, moonLighting, moonVisibilityAt, phaseLabel } from '../../../lib/moonPhase.js';

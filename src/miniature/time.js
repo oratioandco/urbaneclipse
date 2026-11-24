@@ -17,12 +17,20 @@ export const formatSeconds = (t) => clockSeconds.format(new Date(t));
 /** Minutes after local midnight, with seconds on request. */
 export const formatMinutes = (minutes, seconds = false) =>
   (seconds ? dayClockSeconds : dayClock).format(new Date(Date.UTC(2000, 0, 1) + Math.round(minutes * 60) * 1000));
-/** A day, short: "Mon, 22 Mar", with the year when it is not this one. Takes an instant or 2027-03-22. */
+/**
+ * A weekday, short, for a line that also names the sun or the moon: "Mon", "Sat", and "Sunday"
+ * in full, since "Sun, 27 Dec … Moon" reads as the sun.
+ */
+export function weekdayShort(t) {
+  const word = new Date(t).toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', weekday: 'short' });
+  return word === 'Sun' ? 'Sunday' : word;
+}
+/** A day, short: "Mon, 22 Mar" ("Sunday, 27 Dec"), with the year when it is not this one. Takes an instant or 2027-03-22. */
 export function formatDay(day) {
   const date = typeof day === 'string' ? new Date(`${day}T12:00:00Z`) : new Date(day);
   const part = (options) => date.toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', ...options });
   const year = part({ year: 'numeric' });
-  return `${part({ weekday: 'short' })}, ${part({ day: 'numeric' })} ${part({ month: 'short' })}${Number(year) === new Date().getFullYear() ? '' : ` ${year}`}`;
+  return `${weekdayShort(date)}, ${part({ day: 'numeric' })} ${part({ month: 'short' })}${Number(year) === new Date().getFullYear() ? '' : ` ${year}`}`;
 }
 /** A whole hour, short: 07 or 7 AM. */
 export const formatHour = (hour) => hourOnly.format(new Date(Date.UTC(2000, 0, 1, hour))).replace(/\s?Uhr$/, '');

@@ -17,6 +17,7 @@ import { MIN_MOON_ILLUMINATION } from '../lib/dailyPaths.ts';
 import { DISC_DEG, FIGURE_TARGETS, figureHeight, figurePasses } from '../lib/landmarkStands.ts';
 import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
+import { litPercent } from './spectacle.js';
 import { formatClock } from './time.js';
 
 /** Each landmark's picture in public/landmark-sprites (shotCard.js `SPRITE`). */
@@ -125,7 +126,6 @@ export function landmarkRows(passes, flags = {}) {
     const last = pass.points[pass.points.length - 1];
     const big = best.discShare >= 1.25;
     const place = `${target.short}’s ${figureWord(target)}`;
-    const lit = body === 'moon' ? getMoonIllumination(new Date(best.t)).fraction : 1;
     rows.push({
       t: best.t,
       body,
@@ -150,7 +150,7 @@ export function landmarkRows(passes, flags = {}) {
       detail:
         `${formatClock(best.t)} · ${formatClock(first.t)}–${formatClock(last.t)} · ` +
         `on ${corridor.street}, ${distanceText(best.distanceM)} ${corridor.side} of ${target.noun}, looking ${corridor.looking} · ` +
-        `${Math.round(best.bodyAlt)}° up${body === 'moon' ? ` · ${Math.round(lit * 100)}% lit` : ''} · ${LANDMARK_CHECK}`,
+        `${Math.round(best.bodyAlt)}° up${body === 'moon' ? ` · ${litPercent(best.t)}% lit` : ''} · ${LANDMARK_CHECK}`,
       checked: { buildings: true, trees: false },
       discShare: best.discShare,
       openAt: best.t,

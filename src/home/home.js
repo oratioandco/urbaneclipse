@@ -149,7 +149,8 @@ function render() {
     const small = el('small', '', [group.name === group.weekday ? '' : group.weekday, countsLine(group)].filter(Boolean).join(' · '));
     heading.append(small);
     section.append(heading);
-    const shown = state.showSkipped ? group.all : group.worth;
+    // The shot that is "Up next" above is not shown a second time as its day's first card.
+    const shown = (state.showSkipped ? group.all : group.worth).filter((rated) => rated.shot !== next?.shot);
     if (shown.length) {
       const grid = el('div', 'home-grid');
       grid.append(...shown.map((rated) => card(rated, group)));

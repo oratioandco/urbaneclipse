@@ -48,9 +48,11 @@ function flightTo(row) {
   if (row.where === 'antenna') {
     // The middle of the antenna stretch; the search finds a clear view near it.
     const a = (row.standBearingDeg * Math.PI) / 180;
-    return { kind: 'tower', body: 'moon', t: row.openAt, x: Math.sin(a) * row.standDistanceM, z: -Math.cos(a) * row.standDistanceM, lens: row.lens, range: row.standRange };
+    const at = (d) => ({ x: Math.sin(a) * d, z: -Math.cos(a) * d });
+    return { kind: 'tower', body: 'moon', t: row.openAt, ...at(row.standDistanceM), lens: row.lens, range: row.standRange, exact: true, others: (row.standOthers ?? []).map(([lat, lon]) => toScene({ lat, lon })) };
   }
-  return { kind: 'tower', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }) };
+  // The sphere: the row's spot at its minute, then the spots of other minutes of the same pass.
+  return { kind: 'tower', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }), exact: true, others: (row.alternates ?? []).map((p) => ({ ...toScene({ lat: p.at[0], lon: p.at[1] }), t: p.t })) };
 }
 
 /** The chosen day's rows, collected once per day, data and layer state. */
@@ -110,7 +112,17 @@ export function openShot(row, verdict) {
   showTicket(row, verdict);
   // Until the flight to the shot's spot has been set off, where one stands says nothing.
   ticketPending = true;
-  Promise.resolve(row.go()).finally(() => (ticketPending = false));
+  Promise.resolve(row.go())
+    .then((arrived) => {
+      // No clear spot was found (pointer.js says so): the card of a shot one is not looking at goes.
+      if (arrived === false && ticketRow === row) {
+        ticketRow = null;
+        app.ticketShot = null;
+        ticketShot.hidden = true;
+        ticketShot.replaceChildren();
+      }
+    })
+    .finally(() => (ticketPending = false));
   invalidate();
 }
 /** Where one stood when the ticket's card went up; null until one stands there. */

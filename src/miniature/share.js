@@ -38,7 +38,9 @@ function title() {
   // The shot this view was opened for names the link and the calendar entry, with its time:
   // the entry itself starts early, to be there in time.
   const shot = ticketShotRow();
-  if (shot) return `${shot.title}, ${formatClock(shot.t)}`;
+  // With the clock's own minute: nudged two minutes on, the entry's name and its time agree
+  // (the name said 8:33, the line under it 8:35).
+  if (shot) return `${shot.title}, ${formatClock(instant().getTime())}`;
   const status = document.getElementById('eclipse');
   if (status.dataset.state === 'now') return status.textContent.replace(/ now$/, '');
   return `Photo facing ${compassName(look.heading)}`;

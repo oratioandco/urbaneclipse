@@ -5,7 +5,6 @@ import {
   berlinInstant,
   berlinDayOf,
   formatDay,
-  formatTime,
   shiftDay,
   type BerlinDay,
 } from '../../../lib/berlinTime.js';
@@ -29,14 +28,14 @@ import {
   type Viewshed,
 } from '../../../lib/viewshed.js';
 import type { Viewpoint } from '../../../lib/viewpoints.js';
-import { loadStreets, streetMoments, type StreetMoment, type StreetView } from '../../../lib/streets.js';
+import { loadStreets, type StreetMoment, type StreetView } from '../../../lib/streets.js';
 import type { Body } from '../../../lib/bodyPosition.js';
 import LightRibbon, { LightLegend } from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
-import { coverageLabel, type SpotTarget } from './shared.js';
+import { coverageLabel, formatTime, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
-import { collectRows, computeDayPaths, computeLandmarkPasses, towerSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
+import { collectRows, computeDayPaths, computeLandmarkPasses, streetMomentsOfDay, towerSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
 import { FIGURE_TARGETS } from '../../../lib/landmarkStands.js';
 import { planLink } from '../../../home/grid.js';
 
@@ -145,9 +144,8 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   const paths = useMemo(() => allPaths.filter((p) => shown[p.body]), [allPaths, shown]);
   const allMoments = useMemo(() => {
     if (!streetViews) return [];
-    return (['sun', 'moon'] as const).flatMap((body) =>
-      streetMoments(streetViews, body, bounds.start.getTime(), bounds.end.getTime(), FERNSEHTURM.lat, FERNSEHTURM.lon),
-    );
+    // Whole across midnight, each on the day of its peak, as `/plan/` has them.
+    return streetMomentsOfDay(streetViews, bounds.start.getTime());
   }, [streetViews, bounds]);
   const moments = useMemo(
     () => (layers.streets ? allMoments.filter((m) => shown[m.body]) : []),

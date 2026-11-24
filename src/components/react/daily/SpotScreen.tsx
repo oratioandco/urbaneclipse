@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import { findOccultationsAtPosition } from '../../../lib/areaSolver.js';
-import { formatLongDay, formatTime } from '../../../lib/berlinTime.js';
+import { formatLongDay } from '../../../lib/berlinTime.js';
+import { formatTime } from './shared.js';
 import { sampleBody } from '../../../lib/bodyPosition.js';
 import { MOON_VISIBILITY_LABELS, moonLighting, moonVisibilityAt, phaseLabel } from '../../../lib/moonPhase.js';
 import { LIGHT_PHASE_NAMES, lightBands, lightPhaseOf } from '../../../lib/lightPhases.js';

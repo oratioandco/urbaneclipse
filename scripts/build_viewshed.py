@@ -366,6 +366,10 @@ def encode(state: np.ndarray, target_lat: float, target_lon: float, name: str = 
         "aimHeightAglM": spec["aim"],
         "limits": "LoD2 buildings only: no trees, street furniture or raised walkways.",
     }
+    # Places the planner's own scene refuses although no LoD2 roof hides the landmark from them,
+    # measured by scripts/adversarial/rows.mjs --mask and applied when the viewshed is loaded.
+    if (OUT / f"{name}-scene.json").exists():
+        header["sceneMask"] = f"{name}-scene.json"
     if spec["sky"]:
         header["values"]["noSky"] = NO_SKY
         header["rangeM"] = spec["range"]

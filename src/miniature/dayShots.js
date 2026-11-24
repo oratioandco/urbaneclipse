@@ -29,8 +29,8 @@ import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
 import { formatClock } from './time.js';
 import { computeLandmarkPasses, landmarkRows } from './landmarkShots.js';
-import { paleMoon } from './spectacle.js';
-import { alignmentMinute, discOverSphere, EYE_HEIGHT, SPHERE_TOP_AGL, TIP_AGL, visibleMoon } from './towerShots.js';
+import { litPercent, paleMoon } from './spectacle.js';
+import { alignmentMinute, bodyAgainstTower, discOverSphere, EYE_HEIGHT, SPHERE_TOP_AGL, TIP_AGL, towerSentence, visibleMoon } from './towerShots.js';
 
 export { computeLandmarkPasses };
 
@@ -100,6 +100,13 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
         const align = Math.round((alignmentMinute(bodyAt, path.body, (mid.bearingDeg + 180) % 360, first.t, lastPoint.t) ?? mid.t) / 1000) * 1000;
         const over = discOverSphere(mid.distanceM);
         const sky = bodyAt(path.body, align);
+        // What the pass is from that spot at that instant, by the rule the eye-level line and
+        // "From here" use (bodyAgainstTower): behind the sphere, a ring round it, or only at its
+        // edge. One sentence for it everywhere (towerSentence). The ground there is not known
+        // here and is taken level with the tower's foot.
+        const rad0 = rad(mid.bearingDeg);
+        const seen = bodyAgainstTower({ x: Math.sin(rad0) * mid.distanceM, y: EYE_HEIGHT, z: -Math.cos(rad0) * mid.distanceM }, 0, sky).state;
+        const state = ['hidden', 'ring', 'edge'].includes(seen) && !(path.body === 'moon' && seen === 'hidden') ? seen : path.body === 'moon' || over > 1 ? 'ring' : 'hidden';
         rows.push({
           t: align,
           body: path.body,
@@ -108,17 +115,26 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           short: 'TV tower',
           where: 'sphere',
           stand: `${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)}`,
-          brief: path.body === 'moon' ? 'Moon behind TV tower' : over > 1 ? 'Sun ring at TV tower' : 'Sun behind TV tower',
+          brief: state === 'edge' ? `${BODY_NAME[path.body]} at TV tower\u2019s edge` : path.body === 'moon' ? 'Moon behind TV tower' : state === 'ring' ? 'Sun ring at TV tower' : 'Sun behind TV tower',
           distanceM: mid.distanceM,
           // The closer the tower, the larger the body behind it: the spectacle, scored.
-          score: path.body === 'moon' ? Math.min(2.4, 1.5 * over) : over > 1 ? 1.8 : 1.2,
-          title: path.body === 'moon' ? `Big moon behind the TV tower, ${over.toFixed(1)}\u00d7 the sphere` : over > 1 ? 'Ring of sun round the TV tower\u2019s sphere' : 'Sun behind the TV tower\u2019s sphere',
+          // A pass that only touches the sphere's edge counts as From here counts it: 1.3 and 1.
+          score: state === 'edge' ? (path.body === 'moon' ? 1.3 : 1) : path.body === 'moon' ? Math.min(2.4, 1.5 * over) : state === 'ring' ? 1.8 : 1.2,
+          title: towerSentence(path.body, state, over),
           // Every row's small print starts with its own minute; a stretch follows it.
           detail: `${formatClock(align)} \u00b7 ${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
           openAt: align,
           at: [mid.lat, mid.lon],
           look: [sky.az, Math.max(0, sky.alt)],
           lens: 200,
+          // Other minutes of the same pass, each with the spot the disc is behind the sphere
+          // from at that minute: for the planner to try, nearest in time first, when its
+          // full-detail check finds the row's own spot blocked (pointer.js).
+          alternates: w.points
+            .filter((p, i) => i % 4 === 0 && Math.abs(p.t - mid.t) >= 45_000)
+            .sort((a, b) => Math.abs(a.t - mid.t) - Math.abs(b.t - mid.t))
+            .slice(0, 10)
+            .map((p) => ({ t: p.t, at: [p.lat, p.lon] })),
         });
       }
     }
@@ -126,8 +142,9 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
   // Moonrise and moonset behind the antenna: the moon low, more than half lit, and visible
   // round the thin mast from a few kilometres out.
   if (tower && moon) {
-    const lit = getMoonIllumination(new Date(from + 43_200_000)).fraction;
-    if (lit >= 0.5) {
+    // Which days have the shot goes by the moon at the day's noon; what a row prints is the
+    // moon of its own minute (litPercent), as every other list prints it.
+    if (getMoonIllumination(new Date(from + 43_200_000)).fraction >= 0.5) {
       let open = null;
       const windows = [];
       // A pass across midnight is one shot: looked for from two hours before the day to two
@@ -165,22 +182,36 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           if (to - from < 50) continue;
           const bearing = (sample.az + 180) % 360;
           const place = (d) => offsetGeodetic(FERNSEHTURM.lat, FERNSEHTURM.lon, 0, bearing, d);
-          if (!seesTower) {
-            stand = { sample, bearing, range: [from, to], out: (from + to) / 2, spot: place((from + to) / 2) };
-            break;
-          }
+          // On the mast, and off the sphere: what the eye-level line will call "behind the
+          // antenna" (bodyAgainstTower), with the ground there taken 10 m either way since the
+          // row does not know it. A spot near the stretch's inner end had the moon's edge on
+          // the sphere: the row said antenna, the line "at the edge of the sphere".
+          const onMast = (d) => {
+            const x = Math.sin(rad(bearing)) * d;
+            const z = -Math.cos(rad(bearing)) * d;
+            return [-10, 0, 10].every((lift) => bodyAgainstTower({ x, y: EYE_HEIGHT + lift, z }, 0, sample).state === 'antenna');
+          };
           // From the middle of the stretch outward both ways, so the moon sits well on the mast.
+          const spots = [];
           const steps = Math.floor((to - from) / 2 / 40);
-          for (let k = 0; k <= steps && !stand; k++) {
+          for (let k = 0; k <= steps; k++) {
             for (const d of k ? [(from + to) / 2 - k * 40, (from + to) / 2 + k * 40] : [(from + to) / 2]) {
+              if (!onMast(d)) continue;
               const spot = place(d);
-              if (seesTower(spot.lat, spot.lon)) {
-                stand = { sample, bearing, range: [from, to], out: d, spot };
-                break;
-              }
+              if (!seesTower || seesTower(spot.lat, spot.lon)) spots.push({ d, spot });
             }
           }
-          if (stand) break;
+          if (!spots.length) continue;
+          // The first is where the row stands. The others, well apart, are for the planner to
+          // try when its full-detail check finds that one blocked (pointer.js): the viewshed
+          // knows buildings on a 5 m grid, the scene knows more.
+          const others = [];
+          for (const c of spots.slice(1)) {
+            if (others.length < 11 && [spots[0], ...others].every((o) => Math.abs(o.d - c.d) >= 120)) others.push(c);
+          }
+          const ds = spots.map((c) => c.d);
+          stand = { sample, bearing, range: [Math.min(...ds), Math.max(...ds)], out: spots[0].d, spot: spots[0].spot, others };
+          break;
         }
         if (!stand || stand.sample.t < from || stand.sample.t >= dayEndOf(from)) continue;
         const { sample: mid, bearing } = stand;
@@ -200,7 +231,7 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           distanceM: (near + far) / 2,
           score: 2,
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
-          detail: `${formatClock(mid.t)} \u00b7 ${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
+          detail: `${formatClock(mid.t)} \u00b7 ${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${litPercent(mid.t)}% lit`,
           openAt: mid.t,
           at: [stand.spot.lat, stand.spot.lon],
           look: [mid.az, Math.max(0, mid.alt)],
@@ -209,6 +240,9 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           standDistanceM: stand.out,
           // Where along the line the moon is behind the antenna at `openAt`, metres from the tower.
           standRange: stand.range,
+          // Other spots on the same line at the same minute (lat, lon), for the planner to try
+          // if this one turns out blocked.
+          standOthers: stand.others.map((c) => [c.spot.lat, c.spot.lon]),
         });
       }
     }
@@ -325,6 +359,21 @@ export function streetStatus(row, t) {
 }
 
 /**
+ * The street henges of the day that starts at `from`, sun and moon, by time. A henge that runs
+ * across midnight is one moment: it is looked for from two hours before the day to two after,
+ * whole, and belongs to the day its peak falls in. Cut at midnight it was a row at 23:59 on
+ * one day and the same street again at 00:00 on the next (12 and 13 February 2027).
+ */
+export function streetMomentsOfDay(views, from) {
+  const to = dayEndOf(from);
+  const pad = 2 * 3_600_000;
+  return ['sun', 'moon']
+    .flatMap((body) => streetMoments(views, body, from - pad, to + pad, FERNSEHTURM.lat, FERNSEHTURM.lon))
+    .filter((m) => m.peak >= from && m.peak < to)
+    .sort((a, b) => a.peak - b.peak);
+}
+
+/**
  * Every shot of the day that starts at `from`, from the city data alone: `shed` is the tower's
  * viewshed (src/lib/viewshed.ts), `views` the street views (src/lib/streets.ts), `sheds` the
  * other landmarks' viewsheds by id (`siegessaeule`, `brandenburger-tor`). Without a viewshed
@@ -332,7 +381,6 @@ export function streetStatus(row, t) {
  * standing point is not offered as a shot.
  */
 export function dayShots(from, { shed = null, views = [], sheds = {} } = {}) {
-  const to = dayEndOf(from);
-  const moments = [...streetMoments(views, 'sun', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon), ...streetMoments(views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon)];
+  const moments = streetMomentsOfDay(views, from);
   return collectRows(shed ? computeDayPaths(from, shed) : [], moments, from, { seesTower: towerSeenFrom(shed) }, computeLandmarkPasses(from, sheds));
 }
