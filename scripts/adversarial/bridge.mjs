@@ -106,13 +106,18 @@ if (want('B')) {
       if ((await page.evaluate(() => document.body.dataset.more)) !== 'open') await page.click('#ticket-more');
       await page.waitForTimeout(500);
       await page.click('#dates-toggle');
-      await page.waitForFunction(() => document.querySelector('#dates h3') && !document.getElementById('dates').innerText.includes('Searching'), null, { timeout: 300_000 });
+      // "From here" (fromHereView.js): the list says `searching` until the year is in, then
+      // `ready`, `empty` or `failed`; its dates are shot cards, each with the shot's sentence.
+      // (This read the earlier list: an h3 per landmark and lines starting with a weekday.)
+      await page.waitForFunction(() => ['ready', 'empty', 'failed'].includes(document.getElementById('dates').dataset.state), null, { timeout: 300_000 });
       await page.waitForTimeout(2000);
       const text = await page.$eval('#dates', (e) => e.innerText);
-      const tower = text.split(/BEHIND THE /)[1] ?? '';
-      const rows = (tower.match(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d+ /gm) ?? []).length;
-      const sphere = (tower.match(/sphere\u2019s edge|behind the sphere|ring of sun|sphere in front/gi) ?? []).length;
-      const hidden = Number(/(\d+) more hidden/.exec(tower)?.[1] ?? 0);
+      const titles = await page.$$eval('#dates .shotcard--row', (cards) => cards.map((card) => `${card.dataset.when ?? ''} | ${card.querySelector('.sc-title')?.textContent ?? ''} | ${card.getAttribute('aria-label') ?? ''}`));
+      const towerRows = titles.filter((title) => /TV tower/.test(title));
+      const tower = towerRows.join('\n');
+      const rows = towerRows.length;
+      const sphere = towerRows.filter((title) => /sphere/i.test(title)).length;
+      const hidden = Number(/(\d+) more hidden/.exec(text)?.[1] ?? /All (\d+) dates are hidden/.exec(text)?.[1] ?? 0);
       // What stands in the way of a low look at the tower from here: the first thing a ray at
       // 2 degrees meets, as a distance and a place, to look up on a map.
       const block = await page.evaluate(([lat0, lon0]) => {
