@@ -4,9 +4,11 @@
  * strip: the best few are shot cards, and under them the whole twelve months as a list by
  * month, every entry the one shot card (shotCard.js) with the frame drawn for its minute.
  *
- *   begin(groups)          a search has started: `[{ id, heading }]`, one per thing searched
+ *   begin(groups, again)   a search has started: `[{ id, heading }]`, one per thing searched;
+ *                          `again` starts it over
  *   progress(share)        how far the year's search is, 0 to 1
- *   result(id, found)      a group is done: `{ heading, shots, notes }` (shots as dates.js finds them)
+ *   result(id, found)      a group is done: `{ heading, shots, notes }` (shots as dates.js finds
+ *                          them), or `{ heading, failed }` with why it could not be searched
  *
  * The order and the choice are fromHere.js's (pure, tested). The switches are the day list's
  * own four (chrome.js), a verdict is given in words and only within the forecast's reach, and
@@ -28,7 +30,6 @@ import { invalidate } from './state.js';
 
 const list = document.getElementById('dates');
 const body = Object.assign(document.createElement('div'), { className: 'fh-body' });
-list.classList.add('fromhere');
 list.append(body);
 
 /** The search under way or done: its groups by id, how far it is, and the shot last picked. */
@@ -40,8 +41,8 @@ const pending = () => [...search.groups.values()].filter((g) => !g.done);
 const allShots = () => [...search.groups.values()].flatMap((g) => g.shots);
 
 /** A search has started: show that, and what is being looked for. */
-export function begin(groups) {
-  search = { groups: new Map(groups.map((g) => [g.id, { ...g, done: false, shots: [], notes: [] }])), share: 0, picked: null, verdicts: new Map() };
+export function begin(groups, again = null) {
+  search = { groups: new Map(groups.map((g) => [g.id, { ...g, done: false, shots: [], notes: [] }])), again, share: 0, picked: null, verdicts: new Map() };
   list.querySelector('.dates-again')?.remove();
   list.scrollTop = 0;
   render();
@@ -61,7 +62,7 @@ export function progress(share) {
 export function result(id, found) {
   const group = search?.groups.get(id);
   if (!group) return;
-  Object.assign(group, { done: true, heading: found.heading ?? group.heading, notes: found.notes ?? [], shots: (found.shots ?? []).map((s) => asShot({ ...s, group: found.heading ?? group.heading })) });
+  Object.assign(group, { done: true, failed: found.failed ?? null, heading: found.heading ?? group.heading, notes: found.failed ? [`Could not search: ${found.failed}`] : (found.notes ?? []), shots: (found.shots ?? []).map((s) => asShot({ ...s, group: found.heading ?? group.heading })) });
   render();
   if (!pending().length) forecasts(search);
 }
@@ -208,10 +209,21 @@ function render() {
   }
 
   if (!all.length) {
-    // Nothing in the whole year: say so, and what the search knows about why.
-    list.dataset.state = 'empty';
     const none = el('p', 'fh-none');
-    none.append(el('b', '', 'Nothing lines up from here in the next twelve months.'), ' Try a few steps along.');
+    if ([...search.groups.values()].some((g) => g.failed)) {
+      // No answer is not "nothing": say the search failed, and offer it again.
+      list.dataset.state = 'failed';
+      none.append(el('b', '', 'The search did not finish.'), ' ');
+      if (search.again) {
+        const retry = Object.assign(el('button', 'pill', 'Search again'), { type: 'button' });
+        retry.addEventListener('click', search.again);
+        none.append(retry);
+      }
+    } else {
+      // Nothing in the whole year: say so, and what the search knows about why.
+      list.dataset.state = 'empty';
+      none.append(el('b', '', 'Nothing lines up from here in the next twelve months.'), ' Try a few steps along.');
+    }
     body.replaceChildren(head, none, notes());
     return;
   }

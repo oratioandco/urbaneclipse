@@ -152,11 +152,13 @@ What a photographer sees:
 | Searching | "Searching the next 12 months from this spot…", a bar that follows the search, and each thing looked for with its count once it is done |
 | Found | "Best from here": up to three cards in the day view's row of cards (4:5, the day over the time; they scroll sideways on a phone). Under it every date by month as shot rows: the body's disc, date and time, the verdict, then place, pass, height and light |
 | Nothing | "Nothing lines up from here in the next twelve months. Try a few steps along." and what the search knows of why (hidden by buildings, or no pass at all) |
+| Failed | "The search did not finish." with "Search again" and the error: no answer is not the same as nothing |
 | Switched off | The day list's own sentence and its "Show all shots" |
 | Moved | "You have moved: search from here" stays at the top of the list |
 
 The highlights: the next shot in time comes first when it is decent (a score of 1 or more, and
-no forecast saying Skip); the others are the best by score, a shot a year off losing a third
+no forecast saying Skip), on the best of its days when it comes back on the days after (the
+edge of the sphere today, a ring round it tomorrow); the others are the best by score, a shot a year off losing a third
 against the same shot today; one of each kind (a body at a place) before a second of any, since
 the moon comes round every month; a run of the same henge on neighbouring days gives one card.
 Cards are in time order.
@@ -170,8 +172,10 @@ the date's `go` (day, time, fine timing, turn to face it) and puts the shot on t
 after it. `here=year` tells `link.js` that the day's own rows do not hold this shot (they are
 for other spots): it makes the ticket's card again from the link alone (`shotFromKey`). A pass
 behind the gate or the column names itself in `where`, so its `shot=` is never read as the
-tower's sphere. The list opens at about a third of the screen; the chevron beside the
-count gives it the ticket's whole height and folds the camera's rows away meanwhile.
+tower's sphere. The list opens a third of the screen high (250 to 300 px); the chevron beside
+the count gives it the ticket's whole height. The horizon strip and the lens row fold away
+meanwhile, and on a phone for as long as the list is open: the ticket is then 51 % of a
+390 x 844 screen, 77 % with the whole list.
 
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.

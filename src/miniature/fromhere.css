@@ -4,13 +4,16 @@
  * Nothing here draws a card: the cards are shotcard.css's, the row of cards and its fading
  * edges, the month names (.plan-day) and the switches are miniature.css's. Colours and sizes
  * are the planner's tokens.
+ *
+ * Open, the list is a third of the screen high, and never less than its head, the switches and
+ * the cards need (--half).
  */
-#dates { display: none; max-height: min(34dvh, 300px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 2px 0 4px; }
+#dates { --half: clamp(250px, 34dvh, 300px); display: none; max-height: var(--half); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 2px 0 4px; }
 body[data-eye='true'][data-dates='open'] #dates { display: block; }
 /* "Show more": the list takes the ticket's height. The horizon strip and the lens wait under
    it meanwhile, and on a phone for as long as the list is open, so the ticket stays at about
    half the screen. The row with the Dates button stays: it closes the list. */
-body[data-dates='open'][data-dates-size='full'] #dates { max-height: calc(100dvh - 2 * var(--gutter) - 310px); }
+body[data-dates='open'][data-dates-size='full'] #dates { max-height: max(var(--half), calc(100dvh - 2 * var(--gutter) - 310px)); }
 body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > :is(#horizon, .lens) { display: none; }
 @media (max-width: 899px) {
   body[data-eye='true'][data-dates='open'] .camera-rows > :is(#horizon, .lens) { display: none; }

@@ -168,3 +168,19 @@ disc: its entries are dates, mostly beyond the forecast, and were not asked for.
    navigation share one bar, the typed clock sits on the readout line, and the strip's cards are
    6:5 with two and a half in view. `?view=day` opens the day view.
 7. **Glass and frames.** See the session's report: the card canvases draw nothing during a scrub.
+
+## From here: the date list as shot cards (2026-11-24, branch `claude/from-here-cards`)
+
+The date list at eye level ("Dates"), left with plain rows above, is now "From here": up to
+three highlight cards and the twelve months as shot rows by month, all the one shot card. What
+it shows in each state, how the highlights are chosen and how a picked shot reaches the link
+are in `src/miniature/README.md` ("From here: the year from where you stand"). The search in
+`dates.js` is unchanged; it hands what it finds to `fromHereView.js`.
+
+- Open, the list is about a third of the screen high (34 % of the height, 250 to 300 px); the
+  chevron beside the count gives it the ticket's height. On a phone the horizon strip and the
+  lens row fold away while the list is open, so the ticket stays near half the screen: 51 % of
+  390 x 844 (77 % with the whole list), 31 to 34 % while searching or with nothing found.
+- A link to a shot picked here says `here=year`; the ticket's card is then made from the link.
+- The chosen card's ring in `shotcard.css` was an inset outline that the frame painted over; it
+  is drawn on top now, which the day view's strip shows too.

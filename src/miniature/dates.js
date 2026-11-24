@@ -113,7 +113,7 @@ async function refresh() {
   // the second of the click moved every row's minute with it (adversarial finding 3).
   const now = Math.floor(Date.now() / 60_000) * 60_000;
   const street = streetHere();
-  fromHere.begin([...(street ? [{ id: STREET, heading: `Down ${street.name}` }] : []), ...TARGETS.map((target) => ({ id: target.id, heading: target.heading }))]);
+  fromHere.begin([...(street ? [{ id: STREET, heading: `Down ${street.name}` }] : []), ...TARGETS.map((target) => ({ id: target.id, heading: target.heading }))], refresh);
 
   const base = app.groundAt(0, 0);
   const eye = { x: spot.x, y: app.groundAt(spot.x, spot.z) + EYE_HEIGHT + spot.lift, z: spot.z };
@@ -164,7 +164,7 @@ async function refresh() {
         if (open.length && open.length < passes.length) box.append(paragraph(`${passes.length - open.length} more hidden by buildings from this spot.`));
         fromHere.result(STREET, box);
       },
-      (error) => searched === spot && fromHere.result(STREET, section(`Down ${street.name}`, `Could not search: ${error.message}`)),
+      (error) => searched === spot && fromHere.result(STREET, { heading: `Down ${street.name}`, failed: error.message }),
     );
   }
 
@@ -210,7 +210,7 @@ async function refresh() {
     },
     (error) => {
       if (searched !== spot) return;
-      for (const target of TARGETS) fromHere.result(target.id, section(target.heading, `Could not search: ${error.message}`));
+      for (const target of TARGETS) fromHere.result(target.id, { heading: target.heading, failed: error.message });
     },
   );
 }
