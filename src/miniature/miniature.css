@@ -1,4 +1,5 @@
       @import './shotcard.css';
+      @import './fromhere.css';
       /*
        * Chrome: two zones. Map tools stand top right; everything about the moment and, at eye
        * level, about the camera docks to the bottom sheet as one block. Every surface shares
@@ -346,23 +347,16 @@
       .verdict[data-grade='fair'] { color: var(--fair); }
       .verdict[data-grade='poor'] { color: var(--poor); }
       .peek-line .verdict { flex: none; margin-left: auto; }
-      #dayfilter, .plan-filter { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-      #dayfilter button, .plan-filter button { height: var(--control-s); padding: 0 12px; border: 1px solid var(--line); border-radius: calc(var(--control-s) / 2); background: none; font-size: var(--text-s); font-weight: 600; color: var(--muted); cursor: pointer; }
-      #dayfilter button[aria-pressed='true'], .plan-filter button[aria-pressed='true'] { background: var(--field); color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
-      #dayfilter .sep { width: 1px; height: 18px; background: var(--line); }
+      #dayfilter, .shotfilter, .plan-filter { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+      #dayfilter button, .shotfilter button, .plan-filter button { height: var(--control-s); padding: 0 12px; border: 1px solid var(--line); border-radius: calc(var(--control-s) / 2); background: none; font-size: var(--text-s); font-weight: 600; color: var(--muted); cursor: pointer; }
+      #dayfilter button[aria-pressed='true'], .shotfilter button[aria-pressed='true'], .plan-filter button[aria-pressed='true'] { background: var(--field); color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+      #dayfilter .sep, .shotfilter .sep { width: 1px; height: 18px; background: var(--line); }
       /* Five switches (Sun, Moon, Tower, Landmarks, Streets) on one line of the side panel. */
-      #dayfilter { gap: 5px; }
-      #dayfilter button { padding: 0 9px; }
+      #dayfilter, .shotfilter { gap: 5px; }
+      #dayfilter button, .shotfilter button { padding: 0 9px; }
       #daylist, #plancards { display: grid; margin: 0 -6px; }
       #daylist > p, #plancards > p { margin: 4px 6px; }
       .shots-row:has(> p) { min-height: 40px; }
-      .dayrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 6px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; text-align: left; cursor: pointer; }
-      .dayrow:first-child { border-top: 0; }
-      .dayrow:hover { background: var(--field); }
-      .dayrow span { flex: 1; min-width: 0; display: grid; gap: 2px; }
-      .dayrow b { font-weight: 600; }
-      .dayrow small { color: var(--muted); font-size: var(--text-s); }
-      .dayrow .chev { color: var(--muted); }
       #plan-head { display: flex; align-items: center; gap: var(--gap); flex-wrap: wrap; }
       #moon-head { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; }
       #moon-head-text .ue-icon { display: inline-block; vertical-align: -3px; margin-right: 1px; }
@@ -454,12 +448,6 @@
       #dates-toggle b { font-weight: 500; color: var(--muted); }
       body[data-dates='open'] #dates-toggle { background: var(--ink); color: var(--surface-solid); }
       body[data-dates='open'] #dates-toggle b { color: inherit; opacity: 0.75; }
-      #dates { display: none; max-height: 34vh; overflow-y: auto; margin: 2px -6px 4px; }
-      body[data-eye='true'][data-dates='open'] #dates { display: block; }
-      #dates h3 { margin: 8px 6px 2px; font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-      #dates p { margin: 4px 6px 8px; font-size: var(--text-s); }
-      #dates .dayrow[aria-current='true'] { background: var(--field); }
-      .dates-again { display: block; height: var(--control-s); margin: 6px 6px 2px; padding: 0 12px; border: 0; border-radius: calc(var(--control-s) / 2); background: var(--accent); color: #fff; font: 600 var(--text-s) ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
       #airspace { display: inline-flex; align-items: center; min-height: var(--control-s); padding: 0 12px; border-radius: calc(var(--control-s) / 2); background: var(--field); color: var(--muted); font: 600 var(--text-s) ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
       #airspace[data-inside='true'] { background: #fde8e4; color: #b4321f; }
       body[data-night='true'] #airspace[data-inside='true'] { background: #4a2228; color: #ffb3a6; }

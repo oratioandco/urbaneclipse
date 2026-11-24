@@ -172,14 +172,23 @@ function setLayer(name, on) {
     localStorage.setItem('miniature.layers', JSON.stringify(layers));
   } catch {}
   for (const input of document.querySelectorAll(`input[data-layer="${name}"]`)) input.checked = on;
-  for (const chip of document.querySelectorAll(`#dayfilter [data-layer="${name}"]`)) chip.setAttribute('aria-pressed', String(on));
+  for (const chip of document.querySelectorAll(`button[data-layer="${name}"]`)) chip.setAttribute('aria-pressed', String(on));
   if (name === 'clouds') refreshCloudHint();
   app.shownKey = null;
   updateDay();
   updateSun();
   invalidate();
+  // Lists that are not the day's own (the year from where you stand) follow the switches too.
+  document.dispatchEvent(new CustomEvent('layerchange', { detail: name }));
 }
-for (const chip of document.querySelectorAll('#dayfilter [data-layer]')) {
-  chip.setAttribute('aria-pressed', String(layers[chip.dataset.layer]));
-  chip.addEventListener('click', () => setLayer(chip.dataset.layer, !layers[chip.dataset.layer]));
+/**
+ * The four shot switches as buttons (`data-layer`: sun, moon, tower, streets) inside `root`:
+ * the day list's row, and any other list's copy of it. All of them show and set the one state.
+ */
+export function wireSwitches(root) {
+  for (const chip of root.querySelectorAll('button[data-layer]')) {
+    chip.setAttribute('aria-pressed', String(layers[chip.dataset.layer]));
+    chip.addEventListener('click', () => setLayer(chip.dataset.layer, !layers[chip.dataset.layer]));
+  }
 }
+wireSwitches(document.getElementById('dayfilter'));

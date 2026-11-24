@@ -127,13 +127,15 @@ close for the disc to count), and any stand point off the four strips.
 ### The shot card
 
 `shotCard.js` is the one way a shot is shown in `/plan/`: the day view's strip, the rows of
-"This day" and "Next 3 days", and the line on the eye-level ticket. Its styles are its own file,
+"This day" and "Next 3 days", the line on the eye-level ticket, and the cards and rows of
+"From here" (below). Its styles are its own file,
 `shotcard.css`, which also holds the sizes it is built from as tokens; `miniature.css` imports
 it, and so does the home page, which loads nothing else of the planner's styles.
 
 ```js
 import { shotCard, drawShotFrame } from './shotCard.js';
 const card = shotCard(shot, verdict, { size: 'card' });   // 'card' | 'row' | 'ticket'; tag: 'button' | 'a' | 'div'; pixels: [w, h]; day: 'Tomorrow'
+// `day` is said in the card's name; a container with the class `shotcards-dated` also shows it over the time
 card.addEventListener('click', () => openShot(shot, verdict));   // openShot is in daylist.js
 ```
 
@@ -172,10 +174,55 @@ The card's words: the verdict's pill and reason, the time, the place (`short`), 
 what tells this shot from its neighbours (`shotWhat`): "Sun · 5.3 km SE" at the tower,
 "Sun · 2° up" down a street.
 
+### From here: the year from where you stand
+
+At eye level, "Dates" (behind "More" on the ticket) searches the next twelve months from the
+spot you stand on: the street you are in, and the sun and moon behind each landmark of
+`targets.js`. Three files, so the search and what is shown of it stay apart:
+
+- `dates.js` and `dates.worker.js` search (a street's henges; passes by the `towerShots.js`
+  rules), check every date against the buildings and word it. The worker posts how far the year
+  is (`{ id, progress }`), read off the instants the search asks `bodyAt` for.
+- `fromHere.js` (pure, tested in `tests/unit/fromHere.test.ts`) decides what to show: `asShot`
+  makes a found date a shot for the card, `spectacle` scores it on `collectRows`' scale (the moon
+  by day counts for less), `highlights` picks up to three, `byMonth` groups the year,
+  `shownShots` applies the switches, `gatherNotes` says each of the search's remarks once.
+- `fromHereView.js` and `fromhere.css` show it in `#dates`, with the shot card throughout.
+
+What a photographer sees:
+
+| State | Shown |
+|---|---|
+| Searching | "Searching the next 12 months from this spot…", a bar that follows the search, and each thing looked for with its count once it is done |
+| Found | "Best from here": up to three cards in the day view's row of cards (4:5, the day over the time; they scroll sideways on a phone). Under it every date by month as shot rows: the body's disc, date and time, the verdict, then place, pass, height and light |
+| Nothing | "Nothing lines up from here in the next twelve months. Try a few steps along." and what the search knows of why (hidden by buildings, or no pass at all) |
+| Failed | "The search did not finish." with "Search again" and the error: no answer is not the same as nothing |
+| Switched off | The day list's own sentence and its "Show all shots" |
+| Moved | "You have moved: search from here" stays at the top of the list |
+
+The highlights: the next shot in time comes first when it is decent (a score of 1 or more, and
+no forecast saying Skip), on the best of its days when it comes back on the days after (the
+edge of the sphere today, a ring round it tomorrow); the others are the best by score, a shot a year off losing a third
+against the same shot today; one of each kind (a body at a place) before a second of any, since
+the moon comes round every month; a run of the same henge on neighbouring days gives one card.
+Cards are in time order.
+
+A verdict is shown only for a date the forecast reaches (16 days), in the words of `verdict.js`;
+beyond that a card has no pill at all. The switches are the day list's four (`wireSwitches` in
+`chrome.js`: any `button[data-layer]` shows and sets the one state, and `layerchange` on
+`document` tells other lists); "Tower" stands for every landmark. Picking a card or a row calls
+the date's `go` (day, time, fine timing, turn to face it) and puts the shot on the ticket
+(`showTicket`), so the address carries `shot=…&here=year` and the calendar entry is named
+after it. `here=year` tells `link.js` that the day's own rows do not hold this shot (they are
+for other spots): it makes the ticket's card again from the link alone (`shotFromKey`). A pass
+behind the gate or the column names itself in `where`, so its `shot=` is never read as the
+tower's sphere. The list opens a third of the screen high (250 to 300 px); the chevron beside
+the count gives it the ticket's whole height. The horizon strip and the lens row fold away
+meanwhile, and on a phone for as long as the list is open: the ticket is then 51 % of a
+390 x 844 screen, 77 % with the whole list.
+
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
-More dates from where you stand (the Dates button at eye level) search a year in
-`dates.worker.js`: a street's henges, and passes behind the tower by the `towerShots.js` rules.
 A browser walk-through of the main features: `node scripts/miniature/walkthrough.mjs <url> <shots dir>`.
 `#time` holds minutes on the Berlin wall clock. A Berlin day is 23 or 25 hours long when the
 clocks change, so never add those minutes to midnight: use `instantOfMinute`, `minuteOf` and `dayEnd`

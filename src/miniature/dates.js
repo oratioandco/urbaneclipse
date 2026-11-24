@@ -3,6 +3,9 @@
  * with the street you are in ("Down this street"), and when it passes behind the TV tower from
  * this very spot ("Behind the tower from here"). Each date is checked against the buildings
  * before it is listed. Picking one sets the day and time and turns you to face it.
+ *
+ * This file searches and words the dates; fromHereView.js shows them ("From here": the best
+ * as shot cards, the year by month).
  */
 import * as THREE from 'three';
 import { getMoonIllumination } from 'suncalc';
@@ -11,20 +14,17 @@ import { LIGHT_PHASE_NAMES, lightPhaseOf } from '../lib/lightPhases.ts';
 import { EYE_HEIGHT, latLonFromScene } from './eye.js';
 import { formatClock, formatDay, formatSeconds } from './time.js';
 import { discOverSphere, gridConvergenceDeg } from './towerShots.js';
-import { wallMinutesOf } from './berlinClock.js';
-import { cloudsAt, cloudsFor, forecastReach } from './weather.js';
 import { setDay, setFine, setMinute } from './clock.js';
-import { bodyIcon } from './bodyAt.js';
-import { icon } from './icons.js';
-import { showVerdict } from './daylist.js';
-import { shotVerdict } from './verdict.js';
+import * as fromHere from './fromHereView.js';
 import { look, turnTo } from './eyeLevel.js';
 import { TARGETS } from './targets.js';
 import { clearView, fineAlong } from './sightlines.js';
-import { app, invalidate, toDirection } from './state.js';
+import { app, toDirection } from './state.js';
 
 const YEAR_MS = 365 * 86_400_000;
 const MAX_ROWS = 40;
+/** The street you stand in, as one of the things searched (the landmarks go by their ids). */
+const STREET = 'street';
 /** Standing this close to a street's centre line counts as standing in it, metres. */
 const IN_STREET_M = 30;
 /** Walking further than this makes the list out of date, metres. */
@@ -41,6 +41,8 @@ let watch = 0;
 function search(job) {
   worker ??= new Worker(new URL('./dates.worker.js', import.meta.url), { type: 'module' });
   worker.onmessage = ({ data }) => {
+    // The year's search says how far it is while it runs.
+    if (data.progress !== undefined) return fromHere.progress(data.progress);
     const done = pending.get(data.id);
     pending.delete(data.id);
     if (data.error) done?.reject(new Error(data.error));
@@ -71,73 +73,30 @@ function streetHere() {
 const dayOf = (t) => new Date(t).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
 const dateLabel = formatDay;
 
-/** Midnight in Berlin at the start of a day, as an instant. */
-function berlinMidnight(day) {
-  const [y, m, d] = day.split('-').map(Number);
-  const guess = new Date(Date.UTC(y, m - 1, d));
-  const local = new Date(guess.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
-  const utc = new Date(guess.toLocaleString('en-US', { timeZone: 'UTC' }));
-  return guess.getTime() - (local - utc);
-}
-
-/**
- * Within the forecast's reach, the verdict for that moment, in the same words and from the same
- * grade as every other list (verdict.js), and the cloud it was read from. The forecast is
- * honest for about three days, decent to a week, and a tendency beyond; past its reach a row
- * says nothing about the weather.
- */
-async function addClouds(small, t, body, distanceM) {
-  const day = dayOf(t);
-  if (t < Date.now() || !forecastReach(day).ok) return;
-  const start = berlinMidnight(day);
-  const clouds = await cloudsFor(day, start);
-  if (!clouds) return;
-  const c = cloudsAt(clouds, wallMinutesOf(day, t));
-  const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
-  const said = document.createElement('em');
-  said.className = 'verdict';
-  showVerdict(said, shotVerdict(clouds, start, t, { body, distanceM }));
-  small.append(' \u00b7 ', said, ` \u00b7 ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`);
-}
-
 /** A pass as its span on the clock: "19:32\u201319:35", or one time when it is a single minute. */
 export const passText = (s) => (s.end > s.start ? `${formatClock(s.start)}\u2013${formatClock(s.end)}` : formatClock(s.peak));
 /** When the body crosses the landmark's axis, to the second, where the search found it. */
 const crossingText = (s) => (Number.isFinite(s.align) && s.end > s.start ? ` \u00b7 on the axis ${formatSeconds(s.align)}` : '');
 
-function row({ body, t, title, detail, go, distanceM = null }) {
-  const item = document.createElement('button');
-  item.type = 'button';
-  item.className = 'dayrow';
-  item.dataset.body = body;
-  item.innerHTML = `${bodyIcon(body, t)}<span><b></b><small></small></span>${icon('chevron-right', { size: 16, className: 'chev' })}`;
-  item.querySelector('b').textContent = title;
-  item.querySelector('small').textContent = detail;
-  addClouds(item.querySelector('small'), t, body, distanceM);
-  item.addEventListener('click', () => {
-    go();
-    for (const other of list.querySelectorAll('.dayrow')) other.removeAttribute('aria-current');
-    item.setAttribute('aria-current', 'true');
-    invalidate();
-  });
-  return item;
-}
+/**
+ * A date as fromHereView.js takes it: when (`title`, the date and the time), the small print,
+ * `go`, and under `shot` what tells the card which picture it is.
+ */
+const row = ({ body, t, title, detail, go, distanceM = null, shot }) => ({ body, t, when: title, detail, go, distanceM, ...shot });
 
+/** What one search found, gathered before it is shown: its dates, and what there is to say. */
 function section(heading, note) {
-  const box = document.createElement('section');
-  const h = document.createElement('h3');
-  h.textContent = heading;
-  box.append(h);
-  if (note) box.append(paragraph(note));
-  return box;
+  return {
+    heading,
+    shots: [],
+    notes: note ? [note] : [],
+    append(item) {
+      (typeof item === 'string' ? this.notes : this.shots).push(item);
+    },
+  };
 }
 
-function paragraph(text) {
-  const p = document.createElement('p');
-  p.className = 'muted';
-  p.textContent = text;
-  return p;
-}
+const paragraph = (text) => text;
 
 const describeLight = (body, t, lat, lon) => {
   const parts = [LIGHT_PHASE_NAMES[lightPhaseOf(t, lat, lon)]];
@@ -154,14 +113,7 @@ async function refresh() {
   // the second of the click moved every row's minute with it (adversarial finding 3).
   const now = Math.floor(Date.now() / 60_000) * 60_000;
   const street = streetHere();
-  const streetBox = street ? section(`Down ${street.name}`, 'Searching the next 12 months…') : null;
-  const pending = TARGETS.map((target) => {
-    const box = section(target.heading, 'Searching the next 12 months…');
-    box.dataset.target = target.id;
-    return box;
-  });
-  list.replaceChildren(...[streetBox, ...pending].filter(Boolean));
-  const targetBox = (id) => list.querySelector(`section[data-target="${id}"]`);
+  fromHere.begin([...(street ? [{ id: STREET, heading: `Down ${street.name}` }] : []), ...TARGETS.map((target) => ({ id: target.id, heading: target.heading }))], refresh);
 
   const base = app.groundAt(0, 0);
   const eye = { x: spot.x, y: app.groundAt(spot.x, spot.z) + EYE_HEIGHT + spot.lift, z: spot.z };
@@ -194,6 +146,7 @@ async function refresh() {
         for (const p of open.slice(0, MAX_ROWS)) {
           box.append(
             row({
+              shot: { kind: 'street', place: street.name, lengthM: street.lengthM, altDeg: p.bodyAlt },
               body: p.body,
               t: p.peak,
               title: `${dateLabel(p.peak)} · ${formatClock(p.peak)}`,
@@ -209,9 +162,9 @@ async function refresh() {
         }
         if (open.length > MAX_ROWS) box.append(paragraph(`The next ${MAX_ROWS} of ${open.length} dates.`));
         if (open.length && open.length < passes.length) box.append(paragraph(`${passes.length - open.length} more hidden by buildings from this spot.`));
-        streetBox.replaceWith(box);
+        fromHere.result(STREET, box);
       },
-      (error) => streetBox.replaceWith(section(`Down ${street.name}`, `Could not search: ${error.message}`)),
+      (error) => searched === spot && fromHere.result(STREET, { heading: `Down ${street.name}`, failed: error.message }),
     );
   }
 
@@ -232,6 +185,7 @@ async function refresh() {
           const what = s.body === 'moon' && s.state === 'ring' && target.id === 'fernsehturm' ? `Big moon behind the TV tower, ${discOverSphere(flat).toFixed(1)}× the sphere` : target.stateText[s.body][s.state];
           box.append(
             row({
+              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end },
               body: s.body,
               t: s.peak,
               // A pass lasts two to four minutes: the row says so, and gives the moment the
@@ -251,12 +205,12 @@ async function refresh() {
         }
         if (open.length > MAX_ROWS) box.append(paragraph(`The next ${MAX_ROWS} of ${open.length} dates.`));
         if (open.length && open.length < mine.length) box.append(paragraph(`${mine.length - open.length} more hidden by buildings from this spot.`));
-        targetBox(target.id).replaceWith(box);
+        fromHere.result(target.id, box);
       }
     },
     (error) => {
       if (searched !== spot) return;
-      for (const target of TARGETS) targetBox(target.id).replaceWith(section(target.heading, `Could not search: ${error.message}`));
+      for (const target of TARGETS) fromHere.result(target.id, { heading: target.heading, failed: error.message });
     },
   );
 }

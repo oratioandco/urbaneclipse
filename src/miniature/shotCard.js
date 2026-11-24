@@ -310,7 +310,9 @@ export function shotWhat(shot) {
  * where the card does something, 'div' where it only shows); `pixels` the frame's drawing size
  * when the card is given another shape than its size's own (a card is 4:5 unless its container
  * sets `--shot-aspect`); `day` a day's name to say before the time in the card's accessible name
- * ("Tomorrow"), for lists of several days. The caller adds the click, or for `tag: 'a'` the href.
+ * ("Tomorrow"), for lists of several days; a list whose cards are days apart shows it over the
+ * time too, with the class `shotcards-dated` on the cards' container. The caller adds the click,
+ * or for `tag: 'a'` the href.
  * Styles: shotcard.css.
  */
 export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', pixels = FRAME_PIXELS[size] ?? FRAME_PIXELS.card, day = '' } = {}) {
@@ -349,6 +351,8 @@ export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', 
   const name = span('sc-name', breakable(shortStreet(shot.short ?? shot.title ?? '')));
   name.lang = 'de';
   const meta = span('sc-meta');
+  // The day, where a list runs over more than one: unseen unless the list asks for it (shotcard.css).
+  if (day) meta.append(span('sc-day', day));
   meta.append(span('sc-time', formatClock(shot.t)), name, span('sc-title', shot.title ?? ''), what, span('sc-detail', shot.detail ?? ''));
 
   card.append(frame, said, meta);

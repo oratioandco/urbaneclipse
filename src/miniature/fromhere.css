@@ -1,0 +1,66 @@
+/*
+ * "From here" at eye level (fromHereView.js): the year's shots from where you stand. The best
+ * few as shot cards in the day view's row, the twelve months as shot rows under month names.
+ * Nothing here draws a card: the cards are shotcard.css's, the row of cards and its fading
+ * edges, the month names (.plan-day) and the switches are miniature.css's. Colours and sizes
+ * are the planner's tokens.
+ *
+ * Open, the list is a third of the screen high, and never less than its head, the switches and
+ * the cards need (--half).
+ */
+#dates { --half: clamp(250px, 34dvh, 300px); display: none; max-height: var(--half); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 2px 0 4px; }
+body[data-eye='true'][data-dates='open'] #dates { display: block; }
+/* "Show more": the list takes the ticket's height. The horizon strip and the lens wait under
+   it meanwhile, and on a phone for as long as the list is open, so the ticket stays at about
+   half the screen. The row with the Dates button stays: it closes the list. */
+body[data-dates='open'][data-dates-size='full'] #dates { max-height: max(var(--half), calc(100dvh - 2 * var(--gutter) - 310px)); }
+body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > :is(#horizon, .lens) { display: none; }
+@media (max-width: 899px) {
+  body[data-eye='true'][data-dates='open'] .camera-rows > :is(#horizon, .lens) { display: none; }
+}
+
+#dates .fh-head { display: flex; align-items: center; gap: var(--gap); min-height: var(--control-s); margin: 2px 0 0; }
+#dates h3 { margin: 0; font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+#dates .fh-head .muted { flex: 1; min-width: 0; font-size: var(--text-s); }
+#dates .fh-size { width: var(--control-s); height: var(--control-s); }
+#dates .shotfilter { margin: 2px 0 6px; }
+#dates p { margin: 4px 0 8px; font-size: var(--text-s); line-height: 1.35; }
+#dates .plan-day { margin: 10px 0 4px; }
+
+/* The best few: the day view's row of cards, upright (4:5) so the day fits over the time. */
+#dates .fh-best { --shot-aspect: 4 / 5; padding-bottom: 2px; min-height: 0; }
+#dates .fh-best .shotcard--card .sc-what { white-space: normal; }
+#dates .shotcard--card[aria-current='true'] .sc-what { display: flex; }
+
+/* The year: shot rows by month. The body's own disc stands before the date. */
+/* Nothing in the list reaches past the ticket's own edges: a row's frame starts where the month's name does. */
+#dates .fh-month { display: grid; }
+#dates .shotcard--row { padding: 8px 0; }
+#dates .shotcard--row .sc-title svg { display: inline-block; vertical-align: -2px; margin-right: 6px; }
+#dates .shotcard--row[aria-current='true'] { background: var(--field); }
+#dates .fh-notes { margin-top: 6px; border-top: 1px solid var(--line); }
+#dates .fh-notes:empty { display: none; }
+#dates .fh-notes b { font-weight: 600; color: var(--ink); }
+#dates .fh-none { font-size: var(--text); }
+#dates .fh-none b { display: block; }
+
+/* Searching: a bar that moves with the year searched, and what is being looked for. */
+#dates .fh-search { margin: 2px 0 8px; }
+#dates .fh-search p { margin: 6px 0; font-size: var(--text); }
+#dates .fh-bar { height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+#dates .fh-bar i { display: block; height: 100%; min-width: 4px; border-radius: 2px; background: var(--accent); transition: width 0.25s linear; }
+#dates .fh-steps { display: grid; gap: 4px; margin: 10px 0 0; padding: 0; list-style: none; font-size: var(--text-s); color: var(--muted); }
+#dates .fh-steps li { display: flex; align-items: baseline; gap: 7px; }
+#dates .fh-steps li::before { content: ''; flex: none; align-self: center; box-sizing: border-box; width: 8px; height: 8px; border: 1.5px solid var(--muted); border-radius: 50%; animation: fh-wait 1.2s ease-in-out infinite; }
+#dates .fh-steps li[data-done] { color: var(--ink); }
+#dates .fh-steps li[data-done]::before { border-color: var(--accent); background: var(--accent); animation: none; }
+#dates .fh-steps .muted { margin-left: -4px; }
+@keyframes fh-wait { 50% { opacity: 0.35; } }
+
+/* "You have moved": stays in sight over the list it puts out of date. */
+.dates-again { position: sticky; top: 0; z-index: 1; display: block; height: var(--control-s); margin: 6px 0 2px; padding: 0 12px; border: 0; border-radius: calc(var(--control-s) / 2); background: var(--accent); color: #fff; font: 600 var(--text-s) ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  #dates .fh-bar i { transition: none; }
+  #dates .fh-steps li::before { animation: none; }
+}

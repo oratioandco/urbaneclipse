@@ -93,7 +93,7 @@ ok('face tower', Number.isFinite(heading));
 if ((await p.getAttribute('#ticket-more', 'aria-expanded')) !== 'true') await p.click('#ticket-more');
 await p.click('#dates-toggle');
 await p.waitForFunction(() => document.querySelector('#dates h3') && !document.querySelector('#dates').textContent.includes('Searching'), null, { timeout: 90000 }).catch(() => {});
-ok('dates from here', (await p.$$eval('#dates h3', (h) => h.length)) >= 1, (await p.$$eval('#dates .dayrow', (r) => r.length)) + ' rows');
+ok('dates from here', (await p.$$eval('#dates h3', (h) => h.length)) >= 1, (await p.$$eval('#dates .shotcard--row', (r) => r.length)) + ' rows');
 await p.click('#dates-toggle');
 
 // Minimap drawn.
