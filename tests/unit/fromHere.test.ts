@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain JS module
-import { asShot, byMonth, countWords, DECENT, highlights, rank, shownShots, spectacle } from '../../src/miniature/fromHere.js';
+import { asShot, byMonth, countWords, DECENT, gatherNotes, highlights, rank, rowWhen, shotFromKey, shownShots, spectacle } from '../../src/miniature/fromHere.js';
 
 const DAY = 86_400_000;
 const NOW = Date.UTC(2026, 10, 24, 11, 0);
@@ -34,6 +34,37 @@ describe('from here: a found date as a shot', () => {
   });
 });
 
+describe('from here: a shot again from a link', () => {
+  // @ts-expect-error plain JS module
+  const keyOf = async (shot: unknown) => (await import('../../src/miniature/dayShots.js')).shotKey(shot);
+  it('reads back the name the link gave each kind of shot', async () => {
+    const found = [
+      { t: NOW, body: 'sun', kind: 'tower', target: 'fernsehturm', state: 'ring', what: 'Ring of sun round the sphere', detail: 'x', distanceM: 6000 },
+      { t: NOW, body: 'moon', kind: 'tower', target: 'fernsehturm', state: 'antenna', what: 'Moon behind the antenna', detail: 'x', distanceM: 6000 },
+      { t: NOW, body: 'moon', kind: 'tower', target: 'siegessaeule', state: 'ring', what: 'Big moon round the column', detail: 'x' },
+      { t: NOW, body: 'sun', kind: 'tower', target: 'brandenburger-tor', state: 'edge', what: 'Sun at the gate’s edge', detail: 'x' },
+      { t: NOW, body: 'moon', kind: 'street', place: 'Karl-Marx-Allee', lengthM: 1695, detail: 'x' },
+    ];
+    for (const f of found) {
+      const shot = asShot(f);
+      const again = shotFromKey(await keyOf(shot), NOW, 6000);
+      expect(again, shot.title).toMatchObject({ t: NOW, body: shot.body, kind: shot.kind, short: shot.short, fromHere: true });
+      expect([again.landmark, again.where], shot.title).toEqual([shot.landmark, shot.where]);
+      expect(await keyOf(again)).toBe(await keyOf(shot));
+    }
+  });
+  it('names the card and the calendar entry from the link alone', () => {
+    expect(shotFromKey('sphere-sun', NOW, 6000)).toMatchObject({ title: 'Sun behind the TV tower’s sphere', short: 'TV tower', detail: 'TV tower', distanceM: 6000 });
+    expect(shotFromKey('antenna-moon', NOW)).toMatchObject({ title: 'Moon behind the TV tower’s antenna', where: 'antenna' });
+    expect(shotFromKey('siegessaeule-sun', NOW, 6000)).toMatchObject({ title: 'Sun behind the Siegessäule', distanceM: null });
+    expect(shotFromKey('street-sun:Straße des 17. Juni', NOW)).toMatchObject({ title: 'Sun down Straße des 17. Juni', kind: 'street' });
+  });
+  it('gives nothing for a name it cannot read', () => {
+    for (const key of ['', 'sphere', 'sphere-mars', 'street-sun', 'schloss-sun', null]) expect(shotFromKey(key, NOW)).toBeNull();
+    expect(shotFromKey('sphere-sun', NaN)).toBeNull();
+  });
+});
+
 describe('from here: spectacle', () => {
   it('ranks as a day’s rows do: big moon over a ring of sun over a plain pass', () => {
     const moon = spectacle({ kind: 'tower', body: 'moon', state: 'ring', distanceM: 6000 });
@@ -45,6 +76,15 @@ describe('from here: spectacle', () => {
     expect(plain).toBeGreaterThan(edge);
     expect(moon).toBeLessThanOrEqual(2.4);
     expect(edge).toBeGreaterThanOrEqual(DECENT);
+  });
+  it('counts the moon for less by day, and the sun the same at any hour', () => {
+    const noon = Date.UTC(2027, 5, 21, 11, 0);
+    const night = Date.UTC(2027, 5, 21, 23, 0);
+    const antenna = { kind: 'tower', body: 'moon', state: 'antenna' };
+    expect(spectacle({ ...antenna, t: night })).toBe(2);
+    expect(spectacle({ ...antenna, t: noon })).toBeCloseTo(1.2);
+    expect(spectacle({ ...antenna })).toBe(2);
+    expect(spectacle({ kind: 'tower', body: 'sun', state: 'ring', t: noon })).toBe(1.8);
   });
   it('scores a street by its length, a short one under decent', () => {
     expect(spectacle({ kind: 'street', body: 'sun', lengthM: 400 })).toBeLessThan(DECENT);
@@ -103,6 +143,14 @@ describe('from here: highlights', () => {
     const autumn = shot(190, 1.6, { kind: 'street', series: 'street|sun' });
     expect(highlights([...run, autumn], NOW)).toEqual([run[0], autumn]);
   });
+  it('shows one of each kind before a second of any', () => {
+    const moons = [20, 50, 80, 110].map((d) => shot(d, 2, { body: 'moon', series: 'fernsehturm|moon' }));
+    const sun = shot(130, 1.2, { series: 'fernsehturm|sun' });
+    const street = shot(200, 1.1, { kind: 'street', series: 'street|sun' });
+    expect(highlights([...moons, sun, street], NOW)).toEqual([moons[0], sun, street]);
+    // With one kind only, the cards are its best three.
+    expect(highlights(moons, NOW)).toEqual(moons.slice(0, 3));
+  });
   it('leaves out what has passed, keeps a pass still running, and gives fewer than three when that is all', () => {
     const gone = shot(-1, 2.4);
     const running = shot(-0.001, 1.8, { until: NOW + 60_000 });
@@ -130,9 +178,31 @@ describe('from here: the year by month', () => {
     expect(months.map((m: { label: string }) => m.label)).toEqual(['December 2026', 'January 2027', 'February 2027', 'May 2027']);
     expect(months[2].shots).toEqual([late]);
   });
+  it('leaves the year to the month’s heading in a row’s date', () => {
+    expect(rowWhen('Thu, 14 Jan 2027 · 23:34–23:37')).toBe('Thu, 14 Jan · 23:34–23:37');
+    expect(rowWhen('Mon, 30 Nov · 11:43')).toBe('Mon, 30 Nov · 11:43');
+    expect(rowWhen(undefined)).toBe('');
+  });
   it('keeps the same month of two years apart', () => {
     const months = byMonth([{ t: Date.UTC(2026, 10, 25, 12) }, { t: Date.UTC(2027, 10, 20, 12) }]);
     expect(months.map((m: { label: string }) => m.label)).toEqual(['November 2026', 'November 2027']);
+  });
+});
+
+describe('from here: what the search said', () => {
+  it('says the same thing once, under every name it holds for', () => {
+    const hidden = 'Buildings hide it from here. Try a few steps along, or take off.';
+    const said = gatherNotes([
+      { id: 'street', heading: 'Down Karl-Marx-Allee', notes: ['3 more hidden by buildings from this spot.'] },
+      { id: 'fernsehturm', heading: 'Behind the TV tower from here', notes: [hidden] },
+      { id: 'brandenburger-tor', heading: 'Behind the Brandenburger Tor from here', notes: [hidden] },
+      { id: 'siegessaeule', heading: 'Behind the Siegessäule from here', notes: [] },
+    ]);
+    expect(said).toEqual([
+      { names: ['Down Karl-Marx-Allee'], note: '3 more hidden by buildings from this spot.' },
+      { names: ['TV tower', 'Brandenburger Tor'], note: hidden },
+    ]);
+    expect(gatherNotes([])).toEqual([]);
   });
 });
 

@@ -6,6 +6,25 @@ import { findStreetPasses } from '../lib/streets.ts';
 import { TARGETS } from './targets.js';
 import { findShots } from './towerShots.js';
 
+/**
+ * `bodyAt` for the search, saying how far the search is as it is asked: findShots sweeps the
+ * year once for each landmark and body, in time order, so the instants asked for tell how much
+ * of the `sweeps` is behind it. Posts `{ id, progress }` (0 to 1) a hundred times at most.
+ */
+function watched(id, start, end, sweeps, bodyAt) {
+  let sweep = 0;
+  let last = -Infinity;
+  let said = 0;
+  return (body, t) => {
+    // A step back by more than a day is the next sweep starting over at the year's start.
+    if (t < last - 86_400_000) sweep++;
+    last = t;
+    const share = Math.min(1, (sweep + (t - start) / (end - start)) / sweeps);
+    if (share - said >= 0.01) self.postMessage({ id, progress: (said = share) });
+    return bodyAt(body, t);
+  };
+}
+
 self.onmessage = ({ data }) => {
   const { id, kind, start, end } = data;
   try {
@@ -18,7 +37,7 @@ self.onmessage = ({ data }) => {
             start,
             end,
             targets: TARGETS,
-            bodyAt: (body, t) => sampleBody(body, new Date(t), data.lat, data.lon),
+            bodyAt: watched(id, start, end, TARGETS.length * 2, (body, t) => sampleBody(body, new Date(t), data.lat, data.lon)),
             moonLit: (t) => getMoonIllumination(new Date(t)).fraction,
             minMoonLit: MIN_MOON_ILLUMINATION,
             northOffsetDeg: data.northOffsetDeg ?? 0,

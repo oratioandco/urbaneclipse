@@ -9,6 +9,7 @@ import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromL
 import { dateInput, instant, setFine, timeInput } from './clock.js';
 import { findShot, shotKey } from './dayShots.js';
 import { currentRows, dayVerdict, openShot, showTicket, ticketShotRow } from './daylist.js';
+import { shotFromKey } from './fromHere.js';
 import { getViewshed } from './plan.js';
 import { setPanelMode } from './planmode.js';
 import { params } from './config.js';
@@ -32,11 +33,13 @@ function linkQuery() {
     q.set('cam', cameraFormat.format.id);
     if (look.mode === 'drone') q.set('fly', String(Math.round(look.lift ?? 0)));
     // Which shot this view was opened for, so a reload or a shared link shows its card again.
-    // `here` says the spot in `at` is the one to stand on (it was searched for, or walked to).
+    // `here` says the spot in `at` is the one to stand on (it was searched for, or walked to);
+    // `here=year` that the shot is one of the year's from this spot (fromHere.js), which the
+    // day's own rows do not hold.
     const shot = ticketShotRow();
     if (shot) {
       q.set('shot', shotKey(shot));
-      q.set('here', '1');
+      q.set('here', shot.fromHere ? 'year' : '1');
     }
   }
   // Developer options stay put.
@@ -70,6 +73,14 @@ async function openLinkedShot(key) {
 
 /** The card of a link's shot on the ticket, once the day's rows are there; the view is the link's own. */
 async function nameLinkedShot(key) {
+  if (params.get('here') === 'year') {
+    // A shot of the year from this spot: its card is made from the link, which says all of it.
+    const at = (params.get('at') ?? '').split(',').map(Number);
+    const [x, z] = at.length === 2 && at.every(Number.isFinite) ? sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon) : [0, 0];
+    const shot = shotFromKey(key, instant().getTime(), Math.hypot(x, z) || null);
+    if (shot) showTicket(shot, dayVerdict(shot));
+    return;
+  }
   for (let i = 0; i < 40 && !(app.dayReady && getViewshed()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
   const row = findShot(currentRows(), key, instant().getTime());
   if (row) showTicket(row, dayVerdict(row));
