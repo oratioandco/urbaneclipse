@@ -152,7 +152,7 @@ or inferred.
 - **Fixed on 2026-11-24** (`src/miniature/dates.js`): the search starts on the whole minute, a
   tower row opens at the axis crossing (`align`), and the row prints the pass as a range with
   the crossing to the second. Not re-measured against the reference (`reference.py` needs the
-  ephemeris file, which is not on this machine); street rows still open at their one-minute peak.
+  ephemeris file, which is not on this machine); street rows still open at their one-minute peak. Left so on 2026-11-24, read in the code and not re-measured: a street's search runs from a whole minute in one-minute steps, so the row's label and the clock it opens at are the same whole minute, and a street's gap is 0.5 to 1 degree wide, several minutes of sun, so seconds would be false precision.
 
 ### 4. Antenna rows show the start of an hour-long window as the shot's time. Medium. Verified.
 
@@ -231,6 +231,11 @@ or inferred.
   shared link shows the card again at the same spot; the link and the calendar entry are titled
   with the shot and its time. Not changed: the status line under a street shot still speaks of
   the tower, and the calendar entry still starts 20 minutes early (on purpose: be there first).
+  **Status line fixed on 2026-11-24** (`streetStatus` in `dayShots.js`, used by `eclipse.js`):
+  under a street's card it says "Sun down Sonnenallee now", "… in 26 min (08:08)" or
+  "Sun was down Sonnenallee 30 min ago", and a tap goes to the peak; a tower alignment at that
+  very minute still comes first. Checked in the page at 08:07 and 07:40; test in
+  `tests/unit/homeGrid.test.ts`.
 
 ### 8. Switches you forgot make the app say nothing lines up. Medium. Verified.
 
@@ -288,6 +293,10 @@ or inferred.
   model" for a dropped `at`.
 - **Fixed on 2026-11-24** for the date (`berlinClock.js` `startDate`, tested): `?date=garbage`
   opens today and the page builds. A dropped `at` is still dropped without a word.
+  **Fixed on 2026-11-24** for `at` too (`link.js` `linkSpotProblem`): the map opens with
+  "This link's standing point is outside the model, which reaches 9 km from the TV tower"
+  or "… could not be read", for six seconds. Checked in the page with `at=48.137,11.575`
+  and `at=abc`; a link without `at` says nothing.
 
 ### 12. Small phones: the picture at eye level shrinks to a stamp. Medium on 320 px, low on 390. Verified.
 
@@ -322,8 +331,8 @@ or inferred.
 | e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back. **Fixed on 2026-11-24** (`link.js` keeps it) | verified, `edges.json` | `link.js` list of kept options |
 | f | "Next 3 days" lists a day's shots out of time order (tomorrow: 4:20 PM, 8:54 AM, 8:00 AM) with no word on why | verified | `planmode.js` |
 | g | Times are 12-hour in `/plan/` and on the landing page with an English device, 24-hour in `/map`, UTC in `/classic` | verified | `time.js`, `daily/`, `ControlPanel.tsx` |
-| h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro` |
-| i | The landing page's hero clip still shows the old small triangle arrow and old pills | verified, `views-home-desktop-dark.png` | `public/media`, re-record with `record_clips.mjs` |
+| h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro`. **Fixed on 2026-11-24**: "Trees are drawn, not checked", which is what the code does (the tree register is drawn; `sightlines.js` checks buildings only) |
+| i | The landing page's hero clip still shows the old small triangle arrow and old pills | verified, `views-home-desktop-dark.png` | `public/media`, re-record with `record_clips.mjs`. **Fixed on 2026-11-24**: `berlin-day.mp4` and its poster re-recorded from the present planner (the pill with the time, the kite needle); frames at 2, 6 and 10 s and the poster opened. The recorder can now run against a local preview (`CITY`, `HEADLESS`). The three eye-level clips were not re-recorded: they show no controls |
 | j | `/classic` at 390 px: panels overlap and are cut off | verified, `views-classic-phone-light.png` | `src/styles/global.css` |
 | k | Server addresses in a public repository (already on `main`). **Fixed on 2026-11-24** in the four files: a placeholder in the notes, and `sync_tiles_hetzner.sh` now requires `PLASTERVOID_HOST` from the environment. Git history still holds the address; it was not rewritten | verified by grep | `src/miniature/README.md:20`, `docs/HANDOFF-2026-11-08.md:20`, `scripts/README.md:321`, `scripts/sync_tiles_hetzner.sh:23` |
 
