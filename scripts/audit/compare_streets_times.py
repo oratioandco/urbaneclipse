@@ -113,6 +113,19 @@ for day in app['dayTimes']:
         if day['moon'].get(key):
             near = min(refs, key=lambda x: abs(x - unix(day['moon'][key])), default=None)
             row[f'moon{key}_minusNearestRefS'] = (unix(day['moon'][key]) - near) if near is not None else 'not in this Berlin day'
+    # The Berlin day's own rises and sets (lib/moonTimes.ts, since the fix of defect 13) against the reference's.
+    t1 = unix(day['berlinMidnightNext'])
+    mine = day.get('berlinDayMoon')
+    if mine:
+        for key, refs, found in (('rises', mr, mine['rises']), ('sets', ms, mine['sets'])):
+            inday = [x for x in refs if t0 <= x < t1]
+            row[f'berlinDay_{key}_refCount'] = len(inday)
+            row[f'berlinDay_{key}_appCount'] = len(found)
+            row[f'berlinDay_{key}_maxAbsS'] = max((min(abs(unix(f) - x) for f in found) for x in inday), default=0.0) if found or not inday else 'missed'
+    for key, refs in (('rise', mr), ('set', ms)):
+        inday = [x for x in refs if t0 <= x < t1]
+        shown = day['moon'].get(key)
+        row[f'headerBefore_{key}'] = 'ok' if (not inday and not shown) or (inday and shown and min(abs(unix(shown) - x) for x in inday) < 120) else ('missed' if inday else 'shows one from another day')
     days.append(row)
     print(json.dumps(row))
 out['days'] = days

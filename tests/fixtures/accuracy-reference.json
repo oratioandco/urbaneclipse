@@ -1007,61 +1007,91 @@
    "body": "moon",
    "appPeakWhenAudited": "2027-01-12T20:24:00.000Z",
    "refPeak": "2027-01-12T20:25:40Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-01-12T20:26:20Z",
+   "refPlateauStart": "2027-01-12T20:23:35Z",
+   "refPlateauEnd": "2027-01-12T20:27:45Z"
   },
   {
    "body": "moon",
    "appPeakWhenAudited": "2027-01-26T08:13:00.000Z",
    "refPeak": "2027-01-26T08:13:15Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-01-26T08:10:32Z",
+   "refPlateauStart": "2027-01-26T08:13:05Z",
+   "refPlateauEnd": "2027-01-26T08:13:25Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-03-10T16:57:00.000Z",
    "refPeak": "2027-03-10T16:57:00Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-03-10T16:59:15Z",
+   "refPlateauStart": "2027-03-10T16:56:30Z",
+   "refPlateauEnd": "2027-03-10T16:57:30Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-03-11T16:55:30.000Z",
    "refPeak": "2027-03-11T16:57:25Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-03-11T16:57:48Z",
+   "refPlateauStart": "2027-03-11T16:55:35Z",
+   "refPlateauEnd": "2027-03-11T16:59:15Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-03-12T16:56:30.000Z",
    "refPeak": "2027-03-12T16:58:10Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-03-12T16:56:20Z",
+   "refPlateauStart": "2027-03-12T16:56:20Z",
+   "refPlateauEnd": "2027-03-12T16:59:05Z"
   },
   {
    "body": "moon",
    "appPeakWhenAudited": "2027-04-04T14:59:30.000Z",
    "refPeak": "2027-04-04T14:59:40Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-04-04T15:01:53Z",
+   "refPlateauStart": "2027-04-04T14:59:00Z",
+   "refPlateauEnd": "2027-04-04T15:00:20Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-10-01T16:36:30.000Z",
    "refPeak": "2027-10-01T16:37:45Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-10-01T16:36:28Z",
+   "refPlateauStart": "2027-10-01T16:36:15Z",
+   "refPlateauEnd": "2027-10-01T16:39:15Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-10-02T16:35:00.000Z",
    "refPeak": "2027-10-02T16:36:30Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-10-02T16:37:20Z",
+   "refPlateauStart": "2027-10-02T16:34:40Z",
+   "refPlateauEnd": "2027-10-02T16:38:20Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-10-03T16:35:30.000Z",
    "refPeak": "2027-10-03T16:35:45Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-10-03T16:38:12Z",
+   "refPlateauStart": "2027-10-03T16:35:25Z",
+   "refPlateauEnd": "2027-10-03T16:36:00Z"
   },
   {
    "body": "moon",
    "appPeakWhenAudited": "2027-11-09T00:34:30.000Z",
    "refPeak": "2027-11-09T00:36:25Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-11-09T00:35:22Z",
+   "refPlateauStart": "2027-11-09T00:34:35Z",
+   "refPlateauEnd": "2027-11-09T00:38:15Z"
   }
  ],
  "bridgeWindowAltitudes": [

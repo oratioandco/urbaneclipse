@@ -5004,12 +5004,12 @@
    "day": "2026-12-21",
    "suncalc_sunrise_minusRefS": 0.1270594596862793,
    "suncalc_sunset_minusRefS": 2.0131213665008545,
-   "weatherLine_sunrise_minusRefS": 306.3250594139099,
-   "weatherLine_sunset_minusRefS": 65.35812139511108,
-   "band_day_to_golden_minusRefS": 18.343894958496094,
-   "band_golden_to_blue_minusRefS": 243.1322684288025,
-   "band_blue_to_twilight_minusRefS": 253.27224111557007,
-   "band_twilight_to_night_minusRefS": 240.39986491203308,
+   "weatherLine_sunrise_minusRefS": 0.1270594596862793,
+   "weatherLine_sunset_minusRefS": 2.0131213665008545,
+   "band_day_to_golden_minusRefS": 3.3438949584960938,
+   "band_golden_to_blue_minusRefS": 2.195268392562866,
+   "band_blue_to_twilight_minusRefS": 2.9602410793304443,
+   "band_twilight_to_night_minusRefS": 2.274864912033081,
    "refMoonrise": [
     "2026-12-21T12:07:49Z"
    ],
@@ -5021,18 +5021,26 @@
     "set": "2026-12-21T04:15:04.012Z"
    },
    "moonrise_minusNearestRefS": -1.7734878063201904,
-   "moonset_minusNearestRefS": 3.941110849380493
+   "moonset_minusNearestRefS": 3.941110849380493,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.7734878063201904,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 3.941110849380493,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-01-14",
    "suncalc_sunrise_minusRefS": -0.02580857276916504,
    "suncalc_sunset_minusRefS": 1.9565913677215576,
-   "weatherLine_sunrise_minusRefS": 243.25319147109985,
-   "weatherLine_sunset_minusRefS": -5.541408538818359,
-   "band_day_to_golden_minusRefS": 30.154910564422607,
-   "band_golden_to_blue_minusRefS": 245.94975304603577,
-   "band_blue_to_twilight_minusRefS": 263.5410532951355,
-   "band_twilight_to_night_minusRefS": 238.90645289421082,
+   "weatherLine_sunrise_minusRefS": -0.02580857276916504,
+   "weatherLine_sunset_minusRefS": 1.9565913677215576,
+   "band_day_to_golden_minusRefS": 2.9679105281829834,
+   "band_golden_to_blue_minusRefS": 2.1997530460357666,
+   "band_blue_to_twilight_minusRefS": 2.916053295135498,
+   "band_twilight_to_night_minusRefS": 2.6564528942108154,
    "refMoonrise": [
     "2027-01-14T09:18:40Z"
    ],
@@ -5044,18 +5052,26 @@
     "set": "2027-01-14T23:01:53.104Z"
    },
    "moonrise_minusNearestRefS": -1.2351868152618408,
-   "moonset_minusNearestRefS": 3.4226694107055664
+   "moonset_minusNearestRefS": 3.4226694107055664,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.2351868152618408,
+   "berlinDay_sets_refCount": 0,
+   "berlinDay_sets_appCount": 0,
+   "berlinDay_sets_maxAbsS": 0.0,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "shows one from another day"
   },
   {
    "day": "2027-03-20",
    "suncalc_sunrise_minusRefS": 0.004064083099365234,
    "suncalc_sunset_minusRefS": 1.9265875816345215,
-   "weatherLine_sunrise_minusRefS": 310.7060639858246,
-   "weatherLine_sunset_minusRefS": 58.809587478637695,
-   "band_day_to_golden_minusRefS": 8.65412974357605,
-   "band_golden_to_blue_minusRefS": 246.1520311832428,
-   "band_blue_to_twilight_minusRefS": 211.0590696334839,
-   "band_twilight_to_night_minusRefS": 207.4270622730255,
+   "weatherLine_sunrise_minusRefS": 0.004064083099365234,
+   "weatherLine_sunset_minusRefS": 1.9265875816345215,
+   "band_day_to_golden_minusRefS": 3.02912974357605,
+   "band_golden_to_blue_minusRefS": 2.402031183242798,
+   "band_blue_to_twilight_minusRefS": 2.9340696334838867,
+   "band_twilight_to_night_minusRefS": 2.1150622367858887,
    "refMoonrise": [
     "2027-03-20T15:00:20Z"
    ],
@@ -5067,18 +5083,26 @@
     "set": "2027-03-20T04:18:09.758Z"
    },
    "moonrise_minusNearestRefS": -1.5214664936065674,
-   "moonset_minusNearestRefS": 2.8951575756073
+   "moonset_minusNearestRefS": 2.8951575756073,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.5214664936065674,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 2.8951575756073,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-03-27",
    "suncalc_sunrise_minusRefS": 0.16079020500183105,
    "suncalc_sunset_minusRefS": 2.761223077774048,
-   "weatherLine_sunrise_minusRefS": 400.32179021835327,
-   "weatherLine_sunset_minusRefS": -80.35677695274353,
-   "band_day_to_golden_minusRefS": 45.309993505477905,
-   "band_golden_to_blue_minusRefS": 217.59502387046814,
-   "band_blue_to_twilight_minusRefS": 219.19611716270447,
-   "band_twilight_to_night_minusRefS": 236.9789867401123,
+   "weatherLine_sunrise_minusRefS": 0.16079020500183105,
+   "weatherLine_sunset_minusRefS": 2.761223077774048,
+   "band_day_to_golden_minusRefS": 4.059993505477905,
+   "band_golden_to_blue_minusRefS": 2.9080238342285156,
+   "band_blue_to_twilight_minusRefS": 3.5711171627044678,
+   "band_twilight_to_night_minusRefS": 3.5419867038726807,
    "refMoonrise": [
     "2027-03-26T23:18:49Z"
    ],
@@ -5088,18 +5112,26 @@
    "suncalcMoon": {
     "set": "2027-03-27T06:19:25.932Z"
    },
-   "moonset_minusNearestRefS": 4.407881021499634
+   "moonset_minusNearestRefS": 4.407881021499634,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.7931079864501953,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.407881021499634,
+   "headerBefore_rise": "missed",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-03-28",
    "suncalc_sunrise_minusRefS": 0.18346738815307617,
    "suncalc_sunset_minusRefS": 2.804030418395996,
-   "weatherLine_sunrise_minusRefS": 241.55346727371216,
-   "weatherLine_sunset_minusRefS": 114.37103033065796,
-   "band_day_to_golden_minusRefS": 60.8036789894104,
-   "band_golden_to_blue_minusRefS": 230.31854343414307,
-   "band_blue_to_twilight_minusRefS": 227.65345191955566,
-   "band_twilight_to_night_minusRefS": 238.76546454429626,
+   "weatherLine_sunrise_minusRefS": 0.18346738815307617,
+   "weatherLine_sunset_minusRefS": 2.804030418395996,
+   "band_day_to_golden_minusRefS": 3.6166789531707764,
+   "band_golden_to_blue_minusRefS": 3.4435434341430664,
+   "band_blue_to_twilight_minusRefS": 3.59145188331604,
+   "band_twilight_to_night_minusRefS": 3.4534645080566406,
    "refMoonrise": [
     "2027-03-28T00:26:38Z"
    ],
@@ -5111,18 +5143,26 @@
     "set": "2027-03-28T07:00:08.796Z"
    },
    "moonrise_minusNearestRefS": -2.335064649581909,
-   "moonset_minusNearestRefS": 4.58090877532959
+   "moonset_minusNearestRefS": 4.58090877532959,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 2.335064649581909,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.58090877532959,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-03-29",
    "suncalc_sunrise_minusRefS": 0.2023172378540039,
    "suncalc_sunset_minusRefS": 2.8219382762908936,
-   "weatherLine_sunrise_minusRefS": 382.6563172340393,
-   "weatherLine_sunset_minusRefS": 9.142938375473022,
-   "band_day_to_golden_minusRefS": 16.675468921661377,
-   "band_golden_to_blue_minusRefS": 242.9189260005951,
-   "band_blue_to_twilight_minusRefS": 235.74696469306946,
-   "band_twilight_to_night_minusRefS": 239.88190054893494,
+   "weatherLine_sunrise_minusRefS": 0.2023172378540039,
+   "weatherLine_sunset_minusRefS": 2.8219382762908936,
+   "band_day_to_golden_minusRefS": 3.550468921661377,
+   "band_golden_to_blue_minusRefS": 3.8569259643554688,
+   "band_blue_to_twilight_minusRefS": 3.246964693069458,
+   "band_twilight_to_night_minusRefS": 3.6319005489349365,
    "refMoonrise": [
     "2027-03-29T01:21:27Z"
    ],
@@ -5134,18 +5174,26 @@
     "set": "2027-03-29T07:53:13.084Z"
    },
    "moonrise_minusNearestRefS": -2.623497486114502,
-   "moonset_minusNearestRefS": 4.4724249839782715
+   "moonset_minusNearestRefS": 4.4724249839782715,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 2.623497486114502,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.4724249839782715,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-06-21",
    "suncalc_sunrise_minusRefS": 0.514883279800415,
    "suncalc_sunset_minusRefS": 3.0720136165618896,
-   "weatherLine_sunrise_minusRefS": 417.8988833427429,
-   "weatherLine_sunset_minusRefS": 107.44801354408264,
-   "band_day_to_golden_minusRefS": 51.781062602996826,
-   "band_golden_to_blue_minusRefS": 311.8896994590759,
-   "band_blue_to_twilight_minusRefS": 396.1665053367615,
-   "band_twilight_to_night_minusRefS": 665.5588204860687,
+   "weatherLine_sunrise_minusRefS": 0.514883279800415,
+   "weatherLine_sunset_minusRefS": 3.0720136165618896,
+   "band_day_to_golden_minusRefS": 3.969062566757202,
+   "band_golden_to_blue_minusRefS": 3.4526994228363037,
+   "band_blue_to_twilight_minusRefS": 4.291505336761475,
+   "band_twilight_to_night_minusRefS": 5.558820486068726,
    "refMoonrise": [
     "2027-06-21T21:22:15Z"
    ],
@@ -5157,18 +5205,26 @@
     "set": "2027-06-21T04:36:30.233Z"
    },
    "moonrise_minusNearestRefS": -1.9733994007110596,
-   "moonset_minusNearestRefS": 4.424973011016846
+   "moonset_minusNearestRefS": 4.424973011016846,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.9733994007110596,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.424973011016846,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-09-23",
    "suncalc_sunrise_minusRefS": 1.6241822242736816,
    "suncalc_sunset_minusRefS": 2.1284968852996826,
-   "weatherLine_sunrise_minusRefS": 399.6141822338104,
-   "weatherLine_sunset_minusRefS": 104.95149683952332,
-   "band_day_to_golden_minusRefS": 47.6610894203186,
-   "band_golden_to_blue_minusRefS": 236.1544258594513,
-   "band_blue_to_twilight_minusRefS": 206.6366400718689,
-   "band_twilight_to_night_minusRefS": 209.69445705413818,
+   "weatherLine_sunrise_minusRefS": 1.6241822242736816,
+   "weatherLine_sunset_minusRefS": 2.1284968852996826,
+   "band_day_to_golden_minusRefS": 2.6610894203186035,
+   "band_golden_to_blue_minusRefS": 2.71742582321167,
+   "band_blue_to_twilight_minusRefS": 2.2616400718688965,
+   "band_twilight_to_night_minusRefS": 2.5074570178985596,
    "refMoonrise": [
     "2027-09-23T20:46:09Z"
    ],
@@ -5180,18 +5236,26 @@
     "set": "2027-09-23T13:49:05.104Z"
    },
    "moonrise_minusNearestRefS": -1.7134134769439697,
-   "moonset_minusNearestRefS": 4.391240119934082
+   "moonset_minusNearestRefS": 4.391240119934082,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.7134134769439697,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.391240119934082,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-09-27",
    "suncalc_sunrise_minusRefS": 1.3485264778137207,
    "suncalc_sunset_minusRefS": 2.113013982772827,
-   "weatherLine_sunrise_minusRefS": 294.61652636528015,
-   "weatherLine_sunset_minusRefS": 74.45501399040222,
-   "band_day_to_golden_minusRefS": 27.343570709228516,
-   "band_golden_to_blue_minusRefS": 207.17918372154236,
-   "band_blue_to_twilight_minusRefS": 245.5235447883606,
-   "band_twilight_to_night_minusRefS": 203.92371225357056,
+   "weatherLine_sunrise_minusRefS": 1.3485264778137207,
+   "weatherLine_sunset_minusRefS": 2.113013982772827,
+   "band_day_to_golden_minusRefS": 2.9685707092285156,
+   "band_golden_to_blue_minusRefS": 2.8041837215423584,
+   "band_blue_to_twilight_minusRefS": 2.7115447521209717,
+   "band_twilight_to_night_minusRefS": 2.3617122173309326,
    "refMoonrise": [
     "2027-09-27T01:09:08Z"
    ],
@@ -5203,18 +5267,26 @@
     "set": "2027-09-27T15:39:39.136Z"
    },
    "moonrise_minusNearestRefS": -1.185652256011963,
-   "moonset_minusNearestRefS": 3.2825558185577393
+   "moonset_minusNearestRefS": 3.2825558185577393,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.185652256011963,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 3.2825558185577393,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-10-30",
    "suncalc_sunrise_minusRefS": 0.7698254585266113,
    "suncalc_sunset_minusRefS": 2.0996298789978027,
-   "weatherLine_sunrise_minusRefS": 398.265825510025,
-   "weatherLine_sunset_minusRefS": -55.75937008857727,
-   "band_day_to_golden_minusRefS": 23.93150568008423,
-   "band_golden_to_blue_minusRefS": 238.00853037834167,
-   "band_blue_to_twilight_minusRefS": 226.04686903953552,
-   "band_twilight_to_night_minusRefS": 246.42767667770386,
+   "weatherLine_sunrise_minusRefS": 0.7698254585266113,
+   "weatherLine_sunset_minusRefS": 2.0996298789978027,
+   "band_day_to_golden_minusRefS": 3.3065056800842285,
+   "band_golden_to_blue_minusRefS": 2.696530342102051,
+   "band_blue_to_twilight_minusRefS": 2.9218690395355225,
+   "band_twilight_to_night_minusRefS": 2.6776766777038574,
    "refMoonrise": [
     "2027-10-30T07:24:49Z"
    ],
@@ -5226,18 +5298,26 @@
     "set": "2027-10-30T15:26:02.747Z"
    },
    "moonrise_minusNearestRefS": -1.715409278869629,
-   "moonset_minusNearestRefS": 3.8343212604522705
+   "moonset_minusNearestRefS": 3.8343212604522705,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.715409278869629,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 3.8343212604522705,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-10-31",
    "suncalc_sunrise_minusRefS": 0.6367366313934326,
    "suncalc_sunset_minusRefS": 2.0552785396575928,
-   "weatherLine_sunrise_minusRefS": 287.9457366466522,
-   "weatherLine_sunset_minusRefS": 59.640278577804565,
-   "band_day_to_golden_minusRefS": 35.050113677978516,
-   "band_golden_to_blue_minusRefS": 228.6963722705841,
-   "band_blue_to_twilight_minusRefS": 212.49064826965332,
-   "band_twilight_to_night_minusRefS": 230.18951535224915,
+   "weatherLine_sunrise_minusRefS": 0.6367366313934326,
+   "weatherLine_sunset_minusRefS": 2.0552785396575928,
+   "band_day_to_golden_minusRefS": 3.1751136779785156,
+   "band_golden_to_blue_minusRefS": 2.7593722343444824,
+   "band_blue_to_twilight_minusRefS": 2.4906482696533203,
+   "band_twilight_to_night_minusRefS": 2.3775153160095215,
    "refMoonrise": [
     "2027-10-31T08:44:47Z"
    ],
@@ -5249,18 +5329,26 @@
     "set": "2027-10-31T15:58:48.917Z"
    },
    "moonrise_minusNearestRefS": -1.9386701583862305,
-   "moonset_minusNearestRefS": 4.111673831939697
+   "moonset_minusNearestRefS": 4.111673831939697,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 1.9386701583862305,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.111673831939697,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   },
   {
    "day": "2027-11-01",
    "suncalc_sunrise_minusRefS": 0.5148961544036865,
    "suncalc_sunset_minusRefS": 2.013070821762085,
-   "weatherLine_sunrise_minusRefS": 177.5438961982727,
-   "weatherLine_sunset_minusRefS": -126.45192909240723,
-   "band_day_to_golden_minusRefS": 45.03754472732544,
-   "band_golden_to_blue_minusRefS": 217.77988815307617,
-   "band_blue_to_twilight_minusRefS": 257.20747327804565,
-   "band_twilight_to_night_minusRefS": 212.10755515098572,
+   "weatherLine_sunrise_minusRefS": 0.5148961544036865,
+   "weatherLine_sunset_minusRefS": 2.013070821762085,
+   "band_day_to_golden_minusRefS": 2.8505446910858154,
+   "band_golden_to_blue_minusRefS": 2.154888153076172,
+   "band_blue_to_twilight_minusRefS": 2.2074732780456543,
+   "band_twilight_to_night_minusRefS": 2.1075551509857178,
    "refMoonrise": [
     "2027-11-01T09:54:55Z"
    ],
@@ -5272,7 +5360,15 @@
     "set": "2027-11-01T16:42:56.845Z"
    },
    "moonrise_minusNearestRefS": -2.010376214981079,
-   "moonset_minusNearestRefS": 4.307629108428955
+   "moonset_minusNearestRefS": 4.307629108428955,
+   "berlinDay_rises_refCount": 1,
+   "berlinDay_rises_appCount": 1,
+   "berlinDay_rises_maxAbsS": 2.010376214981079,
+   "berlinDay_sets_refCount": 1,
+   "berlinDay_sets_appCount": 1,
+   "berlinDay_sets_maxAbsS": 4.307629108428955,
+   "headerBefore_rise": "ok",
+   "headerBefore_set": "ok"
   }
  ]
 }

@@ -171,6 +171,7 @@ const dayTimes = days.map((day) => {
   return {
     day,
     berlinMidnight: iso(berlinDayBounds(day).start),
+    berlinMidnightNext: iso(berlinDayBounds(day).end),
     weatherLine: shownRiseSet(berlinDayBounds(day).start.getTime()),
     sun: Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v instanceof Date ? iso(v) : v])),
     moon: Object.fromEntries(Object.entries(m).map(([k, v]) => [k, v instanceof Date ? iso(v) : v])),

@@ -70,7 +70,9 @@ for day, row in zip(app['dayTimes'], st['days']):
 
 # 6. The Siegessaeule from the "west" point: passes where the whole disc goes behind the column's hall, with the true axis crossing.
 w = res('windows.json')
-column = [{'body': r['body'], 'appPeakWhenAudited': r['appPeak'], 'refPeak': r['refPeak'], 'refCovered': round(r['refCovered'], 3)} for r in w['rows']
+audited = {(c['body'], c['refPeak']): c['appPeakWhenAudited'] for c in json.load(open(os.path.join(HERE, '..', '..', 'tests', 'fixtures', 'accuracy-reference.json'))).get('siegessaeuleWestFullCover', [])}
+column = [{'body': r['body'], 'appPeakWhenAudited': audited.get((r['body'], r['refPeak']), r['appPeak']), 'refPeak': r['refPeak'], 'refCovered': round(r['refCovered'], 3),
+           'refAxisCrossing': r['refAxisCrossing'], 'refPlateauStart': r['refPlateauStart'], 'refPlateauEnd': r['refPlateauEnd']} for r in w['rows']
           if r['set'].startswith('preview') and r['point'] == 'west' and r['refCovered'] > 0.999]
 
 # 7. Panel 05, all six bridge points: how high the reference puts the disc's centre (apparent, Bennett) at the

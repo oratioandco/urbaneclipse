@@ -77,7 +77,7 @@
    },
    "nord-mitte": {
     "point": "nord-mitte",
-    "distanceM": 6120.023246484884,
+    "distanceM": 6120.023246484885,
     "bearingDeg": 279.74858804818786,
     "appBearingDeg": 279.7485880445856,
     "appDistanceM": 6120.022311186389,
@@ -175,7 +175,7 @@
    },
    "sued-ost": {
     "point": "sued-ost",
-    "distanceM": 6219.930650780651,
+    "distanceM": 6219.930650780653,
     "bearingDeg": 280.088761786858,
     "appBearingDeg": 280.08876178301114,
     "appDistanceM": 6219.929668915596,
@@ -205,7 +205,7 @@
     "peakAbsS": {
      "median": 4.136500000953674,
      "p90": 36.90090007781984,
-     "max": 115.0
+     "max": 100.0
     },
     "startAbsS": {
      "median": 10.0,
@@ -216,7 +216,7 @@
      "max": 465.0
     },
     "offAtAppPeakDeg": {
-     "median": 0.07342458526609888,
+     "median": 0.04656898346486557,
      "max": 1.9639725900797784
     },
     "coveredDiff": {
@@ -233,8 +233,8 @@
     "n": 65,
     "peakAbsS": {
      "median": 4.645999908447266,
-     "p90": 27.97180004119873,
-     "max": 115.0
+     "p90": 31.808599948883064,
+     "max": 60.85899996757507
     },
     "startAbsS": {
      "median": 10.0,
@@ -245,7 +245,7 @@
      "max": 150.0
     },
     "offAtAppPeakDeg": {
-     "median": 0.12303971301213619,
+     "median": 0.08311150648329371,
      "max": 1.4846993860313662
     },
     "coveredDiff": {
@@ -297,7 +297,7 @@
    },
    "mitte": {
     "point": "mitte",
-    "distanceM": 1088.7752411785018,
+    "distanceM": 1088.775241178502,
     "bearingDeg": 264.0483918556232,
     "appBearingDeg": 264.048391855668,
     "appDistanceM": 1088.7752359116967,
@@ -311,7 +311,7 @@
    },
    "ost": {
     "point": "ost",
-    "distanceM": 1349.2639203027893,
+    "distanceM": 1349.2639203027895,
     "bearingDeg": 264.0550444690885,
     "appBearingDeg": 264.05504446920645,
     "appDistanceM": 1349.2639102798444,
@@ -342,7 +342,11 @@
    "offAtAppPeakDeg": 0.010359008561858372,
    "offAtAppPeakM": 1.1075565084543086,
    "refAltAtAppPeak": 1.7115972415532605,
-   "refCrossHeightAgl": 202.0005733397567
+   "refCrossHeightAgl": 202.0005733397567,
+   "refAxisCrossing": "2026-12-28T09:35:23Z",
+   "refPlateauStart": "2026-12-28T09:35:20Z",
+   "refPlateauEnd": "2026-12-28T09:35:20Z",
+   "dPeakFromAxisCrossingS": 3.303870677947998
   },
   {
    "set": "panel05-fernsehturm",
@@ -360,7 +364,11 @@
    "offAtAppPeakDeg": 0.15434858002517782,
    "offAtAppPeakM": 16.502522742089383,
    "refAltAtAppPeak": 3.2761739267846086,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-01-14T22:33:09Z",
+   "refPlateauStart": "2027-01-14T22:33:50Z",
+   "refPlateauEnd": "2027-01-14T22:33:50Z",
+   "dPeakFromAxisCrossingS": 48.04050827026367
   },
   {
    "set": "panel05-fernsehturm",
@@ -378,7 +386,11 @@
    "offAtAppPeakDeg": 0.0014002452867813593,
    "offAtAppPeakM": 0.1497103483935095,
    "refAltAtAppPeak": 1.3277875636614243,
-   "refCrossHeightAgl": 160.2290112108652
+   "refCrossHeightAgl": 160.2290112108652,
+   "refAxisCrossing": "2027-02-10T20:37:45Z",
+   "refPlateauStart": "2027-02-10T20:37:50Z",
+   "refPlateauEnd": "2027-02-10T20:37:50Z",
+   "dPeakFromAxisCrossingS": 0.43279099464416504
   },
   {
    "set": "panel05-fernsehturm",
@@ -396,7 +408,11 @@
    "offAtAppPeakDeg": 0.013558027398240914,
    "offAtAppPeakM": 1.4495867434662775,
    "refAltAtAppPeak": 1.8959057625134235,
-   "refCrossHeightAgl": 221.98542522586854
+   "refCrossHeightAgl": 221.98542522586854,
+   "refAxisCrossing": "2027-02-21T05:56:13Z",
+   "refPlateauStart": "2027-02-21T05:56:20Z",
+   "refPlateauEnd": "2027-02-21T05:56:20Z",
+   "dPeakFromAxisCrossingS": 4.336445331573486
   },
   {
    "set": "panel05-fernsehturm",
@@ -414,7 +430,11 @@
    "offAtAppPeakDeg": -0.276087400527876,
    "offAtAppPeakM": -29.51850030154085,
    "refAltAtAppPeak": -0.23192882420100347,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-02T17:43:03Z",
+   "refPlateauStart": "2027-04-02T17:42:25Z",
+   "refPlateauEnd": "2027-04-02T17:42:25Z",
+   "dPeakFromAxisCrossingS": -83.24533891677856
   },
   {
    "set": "panel05-fernsehturm",
@@ -432,7 +452,11 @@
    "offAtAppPeakDeg": -0.09855179362389459,
    "offAtAppPeakM": -10.536884856904573,
    "refAltAtAppPeak": 0.05093324080818562,
-   "refCrossHeightAgl": 17.03677529784839
+   "refCrossHeightAgl": 17.03677529784839,
+   "refAxisCrossing": "2027-04-03T17:41:36Z",
+   "refPlateauStart": "2027-04-03T17:41:15Z",
+   "refPlateauEnd": "2027-04-03T17:41:20Z",
+   "dPeakFromAxisCrossingS": -29.742015838623047
   },
   {
    "set": "panel05-fernsehturm",
@@ -450,7 +474,11 @@
    "offAtAppPeakDeg": 0.014887054471964197,
    "offAtAppPeakM": 1.5916826377426827,
    "refAltAtAppPeak": 0.37989586278175214,
-   "refCrossHeightAgl": 59.77418510464415
+   "refCrossHeightAgl": 59.77418510464415,
+   "refAxisCrossing": "2027-04-04T17:40:09Z",
+   "refPlateauStart": "2027-04-04T17:40:10Z",
+   "refPlateauEnd": "2027-04-04T17:40:10Z",
+   "dPeakFromAxisCrossingS": 4.497290372848511
   },
   {
    "set": "panel05-fernsehturm",
@@ -468,7 +496,11 @@
    "offAtAppPeakDeg": 0.014223376384303571,
    "offAtAppPeakM": 1.520724014519461,
    "refAltAtAppPeak": 0.7907721263862492,
-   "refCrossHeightAgl": 103.69521723735528
+   "refCrossHeightAgl": 103.69521723735528,
+   "refAxisCrossing": "2027-04-05T17:38:42Z",
+   "refPlateauStart": "2027-04-05T17:38:40Z",
+   "refPlateauEnd": "2027-04-05T17:38:40Z",
+   "dPeakFromAxisCrossingS": 4.301764011383057
   },
   {
    "set": "panel05-fernsehturm",
@@ -486,7 +518,11 @@
    "offAtAppPeakDeg": 0.1546125142456979,
    "offAtAppPeakM": 16.53074185804003,
    "refAltAtAppPeak": 3.1266573344220467,
-   "refCrossHeightAgl": 364.4584271831633
+   "refCrossHeightAgl": 364.4584271831633,
+   "refAxisCrossing": "2027-04-06T17:10:30Z",
+   "refPlateauStart": "2027-04-06T17:10:30Z",
+   "refPlateauEnd": "2027-04-06T17:10:30Z",
+   "dPeakFromAxisCrossingS": 48.12881016731262
   },
   {
    "set": "panel05-fernsehturm",
@@ -504,7 +540,11 @@
    "offAtAppPeakDeg": 0.015429390265081224,
    "offAtAppPeakM": 1.649667678863909,
    "refAltAtAppPeak": 1.2098750040910433,
-   "refCrossHeightAgl": 148.63441635920697
+   "refCrossHeightAgl": 148.63441635920697,
+   "refAxisCrossing": "2027-04-06T17:37:16Z",
+   "refPlateauStart": "2027-04-06T17:37:25Z",
+   "refPlateauEnd": "2027-04-06T17:37:25Z",
+   "dPeakFromAxisCrossingS": 4.672130823135376
   },
   {
    "set": "panel05-fernsehturm",
@@ -522,7 +562,11 @@
    "offAtAppPeakDeg": -0.04125695425236951,
    "offAtAppPeakM": -4.411079296667373,
    "refAltAtAppPeak": 1.6765163861164598,
-   "refCrossHeightAgl": 194.3850425431687
+   "refCrossHeightAgl": 194.3850425431687,
+   "refAxisCrossing": "2027-04-07T17:35:51Z",
+   "refPlateauStart": "2027-04-07T17:35:35Z",
+   "refPlateauEnd": "2027-04-07T17:35:35Z",
+   "dPeakFromAxisCrossingS": -12.509356021881104
   },
   {
    "set": "panel05-fernsehturm",
@@ -540,7 +584,11 @@
    "offAtAppPeakDeg": 0.10354509868479411,
    "offAtAppPeakM": 11.070755206163652,
    "refAltAtAppPeak": 2.008292339619532,
-   "refCrossHeightAgl": 240.74840173834627
+   "refCrossHeightAgl": 240.74840173834627,
+   "refAxisCrossing": "2027-04-08T17:34:25Z",
+   "refPlateauStart": "2027-04-08T17:34:55Z",
+   "refPlateauEnd": "2027-04-08T17:34:55Z",
+   "dPeakFromAxisCrossingS": 31.431936264038086
   },
   {
    "set": "panel05-fernsehturm",
@@ -558,7 +606,11 @@
    "offAtAppPeakDeg": 0.024907172544584882,
    "offAtAppPeakM": 2.6630059135698403,
    "refAltAtAppPeak": 2.500325259756404,
-   "refCrossHeightAgl": 287.5527617683141
+   "refCrossHeightAgl": 287.5527617683141,
+   "refAxisCrossing": "2027-04-09T17:33:01Z",
+   "refPlateauStart": "2027-04-09T17:33:05Z",
+   "refPlateauEnd": "2027-04-09T17:33:05Z",
+   "dPeakFromAxisCrossingS": 7.57180380821228
   },
   {
    "set": "panel05-fernsehturm",
@@ -576,7 +628,11 @@
    "offAtAppPeakDeg": 0.04638189670086963,
    "offAtAppPeakM": 4.95902395086812,
    "refAltAtAppPeak": 2.924147815325675,
-   "refCrossHeightAgl": 334.6572422176353
+   "refCrossHeightAgl": 334.6572422176353,
+   "refAxisCrossing": "2027-04-10T17:31:36Z",
+   "refPlateauStart": "2027-04-10T17:31:45Z",
+   "refPlateauEnd": "2027-04-10T17:31:45Z",
+   "dPeakFromAxisCrossingS": 14.119935274124146
   },
   {
    "set": "panel05-fernsehturm",
@@ -594,7 +650,11 @@
    "offAtAppPeakDeg": 0.15890012044520777,
    "offAtAppPeakM": 16.989160839316003,
    "refAltAtAppPeak": 3.282893425813006,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-11T17:30:13Z",
+   "refPlateauStart": "2027-04-11T17:30:55Z",
+   "refPlateauEnd": "2027-04-11T17:30:55Z",
+   "dPeakFromAxisCrossingS": 48.438647508621216
   },
   {
    "set": "panel05-fernsehturm",
@@ -612,7 +672,11 @@
    "offAtAppPeakDeg": 0.017059116343886203,
    "offAtAppPeakM": 1.8239134780443629,
    "refAltAtAppPeak": 0.7647154783352902,
-   "refCrossHeightAgl": 101.15835488322398
+   "refCrossHeightAgl": 101.15835488322398,
+   "refAxisCrossing": "2027-04-17T02:30:00Z",
+   "refPlateauStart": "2027-04-17T02:30:00Z",
+   "refPlateauEnd": "2027-04-17T02:30:00Z",
+   "dPeakFromAxisCrossingS": 5.423320293426514
   },
   {
    "set": "panel05-fernsehturm",
@@ -630,7 +694,11 @@
    "offAtAppPeakDeg": 0.025818211077390664,
    "offAtAppPeakM": 2.760411630578022,
    "refAltAtAppPeak": 0.2734234925954204,
-   "refCrossHeightAgl": 49.070660953927174
+   "refCrossHeightAgl": 49.070660953927174,
+   "refAxisCrossing": "2027-05-03T15:10:30Z",
+   "refPlateauStart": "2027-05-03T15:10:30Z",
+   "refPlateauEnd": "2027-05-03T15:10:30Z",
+   "dPeakFromAxisCrossingS": 7.961546897888184
   },
   {
    "set": "panel05-fernsehturm",
@@ -648,7 +716,11 @@
    "offAtAppPeakDeg": 0.0410637839552041,
    "offAtAppPeakM": 4.390426063436797,
    "refAltAtAppPeak": 2.7755252268022463,
-   "refCrossHeightAgl": 318.43634037009633
+   "refCrossHeightAgl": 318.43634037009633,
+   "refAxisCrossing": "2027-05-14T00:22:01Z",
+   "refPlateauStart": "2027-05-14T00:21:55Z",
+   "refPlateauEnd": "2027-05-14T00:21:55Z",
+   "dPeakFromAxisCrossingS": 13.131948471069336
   },
   {
    "set": "panel05-fernsehturm",
@@ -666,7 +738,11 @@
    "offAtAppPeakDeg": -0.05543324961257022,
    "offAtAppPeakM": -5.926769538470222,
    "refAltAtAppPeak": 1.5064379362733746,
-   "refCrossHeightAgl": 175.28390113777618
+   "refCrossHeightAgl": 175.28390113777618,
+   "refAxisCrossing": "2027-06-27T11:36:07Z",
+   "refPlateauStart": "2027-06-27T11:35:55Z",
+   "refPlateauEnd": "2027-06-27T11:35:55Z",
+   "dPeakFromAxisCrossingS": -17.144210815429688
   },
   {
    "set": "panel05-fernsehturm",
@@ -684,7 +760,11 @@
    "offAtAppPeakDeg": 0.046625300028265176,
    "offAtAppPeakM": 4.985047960581652,
    "refAltAtAppPeak": 0.15848811490298742,
-   "refCrossHeightAgl": 38.356077416275035
+   "refCrossHeightAgl": 38.356077416275035,
+   "refAxisCrossing": "2027-07-07T21:08:02Z",
+   "refPlateauStart": "2027-07-07T21:08:20Z",
+   "refPlateauEnd": "2027-07-07T21:08:20Z",
+   "dPeakFromAxisCrossingS": 14.82300066947937
   },
   {
    "set": "panel05-fernsehturm",
@@ -702,7 +782,11 @@
    "offAtAppPeakDeg": 0.16157152637809064,
    "offAtAppPeakM": 17.27478016379285,
    "refAltAtAppPeak": 3.413552707655386,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-31T17:29:08Z",
+   "refPlateauStart": "2027-08-31T17:29:45Z",
+   "refPlateauEnd": "2027-08-31T17:29:50Z",
+   "dPeakFromAxisCrossingS": 49.350364208221436
   },
   {
    "set": "panel05-fernsehturm",
@@ -720,7 +804,11 @@
    "offAtAppPeakDeg": -0.0009091541578479085,
    "offAtAppPeakM": -0.09720424485604492,
    "refAltAtAppPeak": 0.15297580038277037,
-   "refCrossHeightAgl": 34.42816234358045
+   "refCrossHeightAgl": 34.42816234358045,
+   "refAxisCrossing": "2027-08-31T17:31:51Z",
+   "refPlateauStart": "2027-08-31T17:32:05Z",
+   "refPlateauEnd": "2027-08-31T17:32:10Z",
+   "dPeakFromAxisCrossingS": -0.2895636558532715
   },
   {
    "set": "panel05-fernsehturm",
@@ -738,7 +826,11 @@
    "offAtAppPeakDeg": 0.11666950615420227,
    "offAtAppPeakM": 12.473980507653472,
    "refAltAtAppPeak": 3.0115947471429996,
-   "refCrossHeightAgl": 349.5330137425756
+   "refCrossHeightAgl": 349.5330137425756,
+   "refAxisCrossing": "2027-09-01T17:29:57Z",
+   "refPlateauStart": "2027-09-01T17:30:05Z",
+   "refPlateauEnd": "2027-09-01T17:30:05Z",
+   "dPeakFromAxisCrossingS": 35.585071325302124
   },
   {
    "set": "panel05-fernsehturm",
@@ -756,7 +848,11 @@
    "offAtAppPeakDeg": 0.029237791414381317,
    "offAtAppPeakM": 3.1260236904387906,
    "refAltAtAppPeak": 2.640873025485315,
-   "refCrossHeightAgl": 302.9614902265937
+   "refCrossHeightAgl": 302.9614902265937,
+   "refAxisCrossing": "2027-09-02T17:30:45Z",
+   "refPlateauStart": "2027-09-02T17:30:35Z",
+   "refPlateauEnd": "2027-09-02T17:30:35Z",
+   "dPeakFromAxisCrossingS": 8.90601634979248
   },
   {
    "set": "panel05-fernsehturm",
@@ -774,7 +870,11 @@
    "offAtAppPeakDeg": 0.14755835319152752,
    "offAtAppPeakM": 15.776530493064605,
    "refAltAtAppPeak": 2.1249581865332265,
-   "refCrossHeightAgl": 256.6522139227366
+   "refCrossHeightAgl": 256.6522139227366,
+   "refAxisCrossing": "2027-09-03T17:31:33Z",
+   "refPlateauStart": "2027-09-03T17:32:15Z",
+   "refPlateauEnd": "2027-09-03T17:32:15Z",
+   "dPeakFromAxisCrossingS": 44.879843950271606
   },
   {
    "set": "panel05-fernsehturm",
@@ -792,7 +892,11 @@
    "offAtAppPeakDeg": 0.0018222345196947216,
    "offAtAppPeakM": 0.19482826857090044,
    "refAltAtAppPeak": 1.799398688356649,
-   "refCrossHeightAgl": 210.73097664275073
+   "refCrossHeightAgl": 210.73097664275073,
+   "refAxisCrossing": "2027-09-04T17:32:21Z",
+   "refPlateauStart": "2027-09-04T17:32:20Z",
+   "refPlateauEnd": "2027-09-04T17:32:20Z",
+   "dPeakFromAxisCrossingS": 0.5536019802093506
   },
   {
    "set": "panel05-fernsehturm",
@@ -810,7 +914,11 @@
    "offAtAppPeakDeg": 0.015354496949640245,
    "offAtAppPeakM": 1.641660292977407,
    "refAltAtAppPeak": 1.366060004309499,
-   "refCrossHeightAgl": 165.35153073884237
+   "refCrossHeightAgl": 165.35153073884237,
+   "refAxisCrossing": "2027-09-05T17:33:09Z",
+   "refPlateauStart": "2027-09-05T17:33:20Z",
+   "refPlateauEnd": "2027-09-05T17:33:20Z",
+   "dPeakFromAxisCrossingS": 4.6587769985198975
   },
   {
    "set": "panel05-fernsehturm",
@@ -828,7 +936,11 @@
    "offAtAppPeakDeg": 0.01488934335391265,
    "offAtAppPeakM": 1.5919273586620601,
    "refAltAtAppPeak": 0.94914984637543,
-   "refCrossHeightAgl": 120.69591176976667
+   "refCrossHeightAgl": 120.69591176976667,
+   "refAxisCrossing": "2027-09-06T17:33:57Z",
+   "refPlateauStart": "2027-09-06T17:33:55Z",
+   "refPlateauEnd": "2027-09-06T17:33:55Z",
+   "dPeakFromAxisCrossingS": 4.512208938598633
   },
   {
    "set": "panel05-fernsehturm",
@@ -846,7 +958,11 @@
    "offAtAppPeakDeg": 0.013750358867707875,
    "offAtAppPeakM": 1.4701502915622833,
    "refAltAtAppPeak": 0.5412247444843413,
-   "refCrossHeightAgl": 76.96298792897485
+   "refCrossHeightAgl": 76.96298792897485,
+   "refAxisCrossing": "2027-09-07T17:34:44Z",
+   "refPlateauStart": "2027-09-07T17:34:45Z",
+   "refPlateauEnd": "2027-09-07T17:34:45Z",
+   "dPeakFromAxisCrossingS": 4.162237167358398
   },
   {
    "set": "panel05-fernsehturm",
@@ -864,7 +980,11 @@
    "offAtAppPeakDeg": 0.012510814959391867,
    "offAtAppPeakM": 1.3376216895274187,
    "refAltAtAppPeak": 0.1436049983361582,
-   "refCrossHeightAgl": 34.33372144041499
+   "refCrossHeightAgl": 34.33372144041499,
+   "refAxisCrossing": "2027-09-08T17:35:32Z",
+   "refPlateauStart": "2027-09-08T17:35:40Z",
+   "refPlateauEnd": "2027-09-08T17:35:50Z",
+   "dPeakFromAxisCrossingS": 3.7828617095947266
   },
   {
    "set": "panel05-fernsehturm",
@@ -882,7 +1002,11 @@
    "offAtAppPeakDeg": -0.12569774769732747,
    "offAtAppPeakM": -13.439255091729308,
    "refAltAtAppPeak": -0.1590455027292026,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-09T17:36:20Z",
+   "refPlateauStart": "2027-09-09T17:35:40Z",
+   "refPlateauEnd": "2027-09-09T17:35:40Z",
+   "dPeakFromAxisCrossingS": -37.97121000289917
   },
   {
    "set": "panel05-fernsehturm",
@@ -900,7 +1024,11 @@
    "offAtAppPeakDeg": -0.06305690271889862,
    "offAtAppPeakM": -6.741869416580293,
    "refAltAtAppPeak": 1.576696029648013,
-   "refCrossHeightAgl": 182.24024073750476
+   "refCrossHeightAgl": 182.24024073750476,
+   "refAxisCrossing": "2027-09-17T06:13:53Z",
+   "refPlateauStart": "2027-09-17T06:13:35Z",
+   "refPlateauEnd": "2027-09-17T06:13:35Z",
+   "dPeakFromAxisCrossingS": -19.503577947616577
   },
   {
    "set": "panel05-fernsehturm",
@@ -918,7 +1046,11 @@
    "offAtAppPeakDeg": 0.04383402782696225,
    "offAtAppPeakM": 4.686612866628412,
    "refAltAtAppPeak": 2.9141343315494175,
-   "refCrossHeightAgl": 333.2936025232954
+   "refCrossHeightAgl": 333.2936025232954,
+   "refAxisCrossing": "2027-11-11T02:43:08Z",
+   "refPlateauStart": "2027-11-11T02:43:20Z",
+   "refPlateauEnd": "2027-11-11T02:43:20Z",
+   "dPeakFromAxisCrossingS": 13.628171443939209
   },
   {
    "set": "panel05-fernsehturm",
@@ -936,7 +1068,11 @@
    "offAtAppPeakDeg": 0.018332487448305443,
    "offAtAppPeakM": 1.9600587902096587,
    "refAltAtAppPeak": 1.164077723088805,
-   "refCrossHeightAgl": 143.99826306769052
+   "refCrossHeightAgl": 143.99826306769052,
+   "refAxisCrossing": "2027-11-21T11:55:01Z",
+   "refPlateauStart": "2027-11-21T11:54:55Z",
+   "refPlateauEnd": "2027-11-21T11:54:55Z",
+   "dPeakFromAxisCrossingS": 5.835456848144531
   },
   {
    "set": "panel05-fernsehturm",
@@ -952,9 +1088,13 @@
    "refCovered": 0.42429216249487073,
    "refCoveredAtAppPeak": 0.42429216249487073,
    "offAtAppPeakDeg": -0.020433088233138653,
-   "offAtAppPeakM": -2.182551246304843,
+   "offAtAppPeakM": -2.1825512463048433,
    "refAltAtAppPeak": 1.7021106508600468,
-   "refCrossHeightAgl": 198.4209844555968
+   "refCrossHeightAgl": 198.4209844555968,
+   "refAxisCrossing": "2026-12-28T09:35:37Z",
+   "refPlateauStart": "2026-12-28T09:35:25Z",
+   "refPlateauEnd": "2026-12-28T09:35:35Z",
+   "dPeakFromAxisCrossingS": -6.516555309295654
   },
   {
    "set": "panel05-fernsehturm",
@@ -970,9 +1110,13 @@
    "refCovered": 0.02256873204759951,
    "refCoveredAtAppPeak": 0.02215839146491588,
    "offAtAppPeakDeg": 0.15426293426930623,
-   "offAtAppPeakM": 16.477526823481988,
+   "offAtAppPeakM": 16.47752682348199,
    "refAltAtAppPeak": 3.2453139928084087,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-01-14T22:33:22Z",
+   "refPlateauStart": "2027-01-14T22:33:45Z",
+   "refPlateauEnd": "2027-01-14T22:33:45Z",
+   "dPeakFromAxisCrossingS": 48.01093006134033
   },
   {
    "set": "panel05-fernsehturm",
@@ -988,9 +1132,13 @@
    "refCovered": 0.28190398030365205,
    "refCoveredAtAppPeak": 0.27944193680755025,
    "offAtAppPeakDeg": 0.01706515767684867,
-   "offAtAppPeakM": 1.822807239465121,
+   "offAtAppPeakM": 1.8228072394651211,
    "refAltAtAppPeak": 1.2884307558491213,
-   "refCrossHeightAgl": 156.98581522996182
+   "refCrossHeightAgl": 156.98581522996182,
+   "refAxisCrossing": "2027-02-10T20:37:59Z",
+   "refPlateauStart": "2027-02-10T20:38:05Z",
+   "refPlateauEnd": "2027-02-10T20:38:05Z",
+   "dPeakFromAxisCrossingS": 5.274117469787598
   },
   {
    "set": "panel05-fernsehturm",
@@ -1006,9 +1154,13 @@
    "refCovered": 0.42347148132950346,
    "refCoveredAtAppPeak": 0.41895773491998356,
    "offAtAppPeakDeg": 0.026648548577575214,
-   "offAtAppPeakM": 2.8464528830191376,
+   "offAtAppPeakM": 2.846452883019138,
    "refAltAtAppPeak": 1.8542919615931666,
-   "refCrossHeightAgl": 218.3540989299221
+   "refCrossHeightAgl": 218.3540989299221,
+   "refAxisCrossing": "2027-02-21T05:56:27Z",
+   "refPlateauStart": "2027-02-21T05:56:30Z",
+   "refPlateauEnd": "2027-02-21T05:56:30Z",
+   "dPeakFromAxisCrossingS": 8.522598028182983
   },
   {
    "set": "panel05-fernsehturm",
@@ -1024,9 +1176,13 @@
    "refCovered": 0.3504308576118178,
    "refCoveredAtAppPeak": 0.3426343865408289,
    "offAtAppPeakDeg": -0.10742284542040592,
-   "offAtAppPeakM": -11.474323532439692,
+   "offAtAppPeakM": -11.474323532439694,
    "refAltAtAppPeak": 0.02912848686009817,
-   "refCrossHeightAgl": 14.130493490057527
+   "refCrossHeightAgl": 14.130493490057527,
+   "refAxisCrossing": "2027-04-03T17:41:49Z",
+   "refPlateauStart": "2027-04-03T17:41:25Z",
+   "refPlateauEnd": "2027-04-03T17:41:25Z",
+   "dPeakFromAxisCrossingS": -32.416893005371094
   },
   {
    "set": "panel05-fernsehturm",
@@ -1042,9 +1198,13 @@
    "refCovered": 0.3368896183832581,
    "refCoveredAtAppPeak": 0.33894132129667626,
    "offAtAppPeakDeg": 0.014778394738905515,
-   "offAtAppPeakM": 1.578547671686369,
+   "offAtAppPeakM": 1.5785476716863691,
    "refAltAtAppPeak": 0.35189006987281246,
-   "refCrossHeightAgl": 56.72710766538168
+   "refCrossHeightAgl": 56.72710766538168,
+   "refAxisCrossing": "2027-04-04T17:40:22Z",
+   "refPlateauStart": "2027-04-04T17:40:15Z",
+   "refPlateauEnd": "2027-04-04T17:40:15Z",
+   "dPeakFromAxisCrossingS": 4.4641194343566895
   },
   {
    "set": "panel05-fernsehturm",
@@ -1060,9 +1220,13 @@
    "refCovered": 0.30611407468198604,
    "refCoveredAtAppPeak": 0.30447271235125156,
    "offAtAppPeakDeg": 0.014130402134031373,
-   "offAtAppPeakM": 1.5093326293380132,
+   "offAtAppPeakM": 1.5093326293380134,
    "refAltAtAppPeak": 0.7618820574794622,
-   "refCrossHeightAgl": 100.51211606247655
+   "refCrossHeightAgl": 100.51211606247655,
+   "refAxisCrossing": "2027-04-05T17:38:56Z",
+   "refPlateauStart": "2027-04-05T17:38:55Z",
+   "refPlateauEnd": "2027-04-05T17:38:55Z",
+   "dPeakFromAxisCrossingS": 4.273303985595703
   },
   {
    "set": "panel05-fernsehturm",
@@ -1080,7 +1244,11 @@
    "offAtAppPeakDeg": 0.1545082300949766,
    "offAtAppPeakM": 16.5037279881773,
    "refAltAtAppPeak": 3.095921038948063,
-   "refCrossHeightAgl": 360.8096630837964
+   "refCrossHeightAgl": 360.8096630837964,
+   "refAxisCrossing": "2027-04-06T17:10:44Z",
+   "refPlateauStart": "2027-04-06T17:11:40Z",
+   "refPlateauEnd": "2027-04-06T17:11:40Z",
+   "dPeakFromAxisCrossingS": 48.09343194961548
   },
   {
    "set": "panel05-fernsehturm",
@@ -1096,9 +1264,13 @@
    "refCovered": 0.2782109150594994,
    "refCoveredAtAppPeak": 0.2765695527287649,
    "offAtAppPeakDeg": 0.01529284892781903,
-   "offAtAppPeakM": 1.6334988674316566,
+   "offAtAppPeakM": 1.6334988674316568,
    "refAltAtAppPeak": 1.180258383853921,
-   "refCrossHeightAgl": 145.32651018544257
+   "refCrossHeightAgl": 145.32651018544257,
+   "refAxisCrossing": "2027-04-06T17:37:30Z",
+   "refPlateauStart": "2027-04-06T17:37:30Z",
+   "refPlateauEnd": "2027-04-06T17:37:30Z",
+   "dPeakFromAxisCrossingS": 4.630421161651611
   },
   {
    "set": "panel05-fernsehturm",
@@ -1114,9 +1286,13 @@
    "refCovered": 0.38654082888797703,
    "refCoveredAtAppPeak": 0.3873615100533443,
    "offAtAppPeakDeg": -0.05258244671546615,
-   "offAtAppPeakM": -5.616570696664103,
+   "offAtAppPeakM": -5.616570696664104,
    "refAltAtAppPeak": 1.6539567153014996,
-   "refCrossHeightAgl": 190.9646267660977
+   "refCrossHeightAgl": 190.9646267660977,
+   "refAxisCrossing": "2027-04-07T17:36:04Z",
+   "refPlateauStart": "2027-04-07T17:35:45Z",
+   "refPlateauEnd": "2027-04-07T17:35:45Z",
+   "dPeakFromAxisCrossingS": -15.942278861999512
   },
   {
    "set": "panel05-fernsehturm",
@@ -1132,9 +1308,13 @@
    "refCovered": 0.3545342634386541,
    "refCoveredAtAppPeak": 0.3545342634386541,
    "offAtAppPeakDeg": 0.0907290849351547,
-   "offAtAppPeakM": 9.691186919076038,
+   "offAtAppPeakM": 9.69118691907604,
    "refAltAtAppPeak": 1.9864929791966353,
-   "refCrossHeightAgl": 237.22654338573224
+   "refCrossHeightAgl": 237.22654338573224,
+   "refAxisCrossing": "2027-04-08T17:34:39Z",
+   "refPlateauStart": "2027-04-08T17:35:00Z",
+   "refPlateauEnd": "2027-04-08T17:35:00Z",
+   "dPeakFromAxisCrossingS": 27.539820432662964
   },
   {
    "set": "panel05-fernsehturm",
@@ -1150,9 +1330,13 @@
    "refCovered": 0.08658186294624538,
    "refCoveredAtAppPeak": 0.08904390644234715,
    "offAtAppPeakDeg": 0.02454624405580422,
-   "offAtAppPeakM": 2.621896159055009,
+   "offAtAppPeakM": 2.6218961590550096,
    "refAltAtAppPeak": 2.4693032739675735,
-   "refCrossHeightAgl": 283.93871374981853
+   "refCrossHeightAgl": 283.93871374981853,
+   "refAxisCrossing": "2027-04-09T17:33:14Z",
+   "refPlateauStart": "2027-04-09T17:33:15Z",
+   "refPlateauEnd": "2027-04-09T17:33:15Z",
+   "dPeakFromAxisCrossingS": 7.4615185260772705
   },
   {
    "set": "panel05-fernsehturm",
@@ -1170,7 +1354,11 @@
    "offAtAppPeakDeg": 0.04374925482748397,
    "offAtAppPeakM": 4.673057227530319,
    "refAltAtAppPeak": 2.8944309338105167,
-   "refCrossHeightAgl": 330.9584440023482
+   "refCrossHeightAgl": 330.9584440023482,
+   "refAxisCrossing": "2027-04-10T17:31:50Z",
+   "refPlateauStart": "2027-04-10T17:31:50Z",
+   "refPlateauEnd": "2027-04-10T17:31:50Z",
+   "dPeakFromAxisCrossingS": 13.317507266998291
   },
   {
    "set": "panel05-fernsehturm",
@@ -1186,9 +1374,13 @@
    "refCovered": 0.021337710299548625,
    "refCoveredAtAppPeak": 0.020927369716865,
    "offAtAppPeakDeg": 0.15880881210514222,
-   "offAtAppPeakM": 16.963092745918637,
+   "offAtAppPeakM": 16.96309274591864,
    "refAltAtAppPeak": 3.251117502166501,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-11T17:30:26Z",
+   "refPlateauStart": "2027-04-11T17:31:10Z",
+   "refPlateauEnd": "2027-04-11T17:31:15Z",
+   "dPeakFromAxisCrossingS": 48.407121658325195
   },
   {
    "set": "panel05-fernsehturm",
@@ -1204,9 +1396,13 @@
    "refCovered": 0.3102174805088223,
    "refCoveredAtAppPeak": 0.30857611817808783,
    "offAtAppPeakDeg": 0.016960596583202918,
-   "offAtAppPeakM": 1.8116385926777299,
+   "offAtAppPeakM": 1.81163859267773,
    "refAltAtAppPeak": 0.7346439959556031,
-   "refCrossHeightAgl": 97.85024351360191
+   "refCrossHeightAgl": 97.85024351360191,
+   "refAxisCrossing": "2027-04-17T02:30:14Z",
+   "refPlateauStart": "2027-04-17T02:30:20Z",
+   "refPlateauEnd": "2027-04-17T02:30:20Z",
+   "dPeakFromAxisCrossingS": 5.391597509384155
   },
   {
    "set": "panel05-fernsehturm",
@@ -1222,9 +1418,13 @@
    "refCovered": 0.35207221994255233,
    "refCoveredAtAppPeak": 0.35002051702913417,
    "offAtAppPeakDeg": 0.03960230616049363,
-   "offAtAppPeakM": 4.230102747119322,
+   "offAtAppPeakM": 4.230102747119323,
    "refAltAtAppPeak": 0.23798061814323496,
-   "refCrossHeightAgl": 46.14826463676718
+   "refCrossHeightAgl": 46.14826463676718,
+   "refAxisCrossing": "2027-05-03T15:10:43Z",
+   "refPlateauStart": "2027-05-03T15:10:40Z",
+   "refPlateauEnd": "2027-05-03T15:10:40Z",
+   "dPeakFromAxisCrossingS": 12.211232900619507
   },
   {
    "set": "panel05-fernsehturm",
@@ -1240,9 +1440,13 @@
    "refCovered": 0.0718096019696348,
    "refCoveredAtAppPeak": 0.06852687730816578,
    "offAtAppPeakDeg": 0.03875275711920248,
-   "offAtAppPeakM": 4.139358543516269,
+   "offAtAppPeakM": 4.13935854351627,
    "refAltAtAppPeak": 2.7444134655618324,
-   "refCrossHeightAgl": 314.62257415312524
+   "refCrossHeightAgl": 314.62257415312524,
+   "refAxisCrossing": "2027-05-14T00:22:15Z",
+   "refPlateauStart": "2027-05-14T00:22:15Z",
+   "refPlateauEnd": "2027-05-14T00:22:25Z",
+   "dPeakFromAxisCrossingS": 12.392005681991577
   },
   {
    "set": "panel05-fernsehturm",
@@ -1258,9 +1462,13 @@
    "refCovered": 0.27739023389413214,
    "refCoveredAtAppPeak": 0.2712351251538777,
    "offAtAppPeakDeg": -0.005083437913471902,
-   "offAtAppPeakM": -0.5429851634256437,
+   "offAtAppPeakM": -0.5429851634256438,
    "refAltAtAppPeak": 1.443560670815354,
-   "refCrossHeightAgl": 172.0003122178571
+   "refCrossHeightAgl": 172.0003122178571,
+   "refAxisCrossing": "2027-06-27T11:36:21Z",
+   "refPlateauStart": "2027-06-27T11:36:10Z",
+   "refPlateauEnd": "2027-06-27T11:36:10Z",
+   "dPeakFromAxisCrossingS": -1.5720164775848389
   },
   {
    "set": "panel05-fernsehturm",
@@ -1276,9 +1484,13 @@
    "refCovered": 0.3693065244152647,
    "refCoveredAtAppPeak": 0.3660237997537957,
    "offAtAppPeakDeg": 0.01096058601554965,
-   "offAtAppPeakM": 1.1707501282000161,
+   "offAtAppPeakM": 1.1707501282000163,
    "refAltAtAppPeak": 0.15307762978372186,
-   "refCrossHeightAgl": 35.24939726981584
+   "refCrossHeightAgl": 35.24939726981584,
+   "refAxisCrossing": "2027-07-07T21:08:16Z",
+   "refPlateauStart": "2027-07-07T21:08:30Z",
+   "refPlateauEnd": "2027-07-07T21:08:30Z",
+   "dPeakFromAxisCrossingS": 3.484410285949707
   },
   {
    "set": "panel05-fernsehturm",
@@ -1294,9 +1506,13 @@
    "refCovered": 0.008206811653672548,
    "refCoveredAtAppPeak": 0.008206811653672548,
    "offAtAppPeakDeg": 0.16148845403256684,
-   "offAtAppPeakM": 17.24931750850084,
+   "offAtAppPeakM": 17.249317508500845,
    "refAltAtAppPeak": 3.381557575277037,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-31T17:29:22Z",
+   "refPlateauStart": "2027-08-31T17:30:10Z",
+   "refPlateauEnd": "2027-08-31T17:30:15Z",
+   "dPeakFromAxisCrossingS": 49.32119417190552
   },
   {
    "set": "panel05-fernsehturm",
@@ -1312,9 +1528,13 @@
    "refCovered": 0.3803857201477226,
    "refCoveredAtAppPeak": 0.3627410750923266,
    "offAtAppPeakDeg": -0.030429498627480716,
-   "offAtAppPeakM": -3.2503133836679923,
+   "offAtAppPeakM": -3.250313383667993,
    "refAltAtAppPeak": 0.1435267855847096,
-   "refCrossHeightAgl": 31.330471537182433
+   "refCrossHeightAgl": 31.330471537182433,
+   "refAxisCrossing": "2027-08-31T17:32:05Z",
+   "refPlateauStart": "2027-08-31T17:32:15Z",
+   "refPlateauEnd": "2027-08-31T17:32:15Z",
+   "dPeakFromAxisCrossingS": -9.69150161743164
   },
   {
    "set": "panel05-fernsehturm",
@@ -1330,9 +1550,13 @@
    "refCovered": 0.0553959786622897,
    "refCoveredAtAppPeak": 0.053344275748871565,
    "offAtAppPeakDeg": 0.09258495095391532,
-   "offAtAppPeakM": 9.88942042377219,
+   "offAtAppPeakM": 9.889420423772192,
    "refAltAtAppPeak": 2.9972552682620224,
-   "refCrossHeightAgl": 345.7942738899118
+   "refCrossHeightAgl": 345.7942738899118,
+   "refAxisCrossing": "2027-09-01T17:30:10Z",
+   "refPlateauStart": "2027-09-01T17:30:30Z",
+   "refPlateauEnd": "2027-09-01T17:30:30Z",
+   "dPeakFromAxisCrossingS": 28.23774766921997
   },
   {
    "set": "panel05-fernsehturm",
@@ -1348,9 +1572,13 @@
    "refCovered": 0.08288879770209273,
    "refCoveredAtAppPeak": 0.07016823963890029,
    "offAtAppPeakDeg": 0.027853113029594166,
-   "offAtAppPeakM": 2.9751179000744,
+   "offAtAppPeakM": 2.9751179000744004,
    "refAltAtAppPeak": 2.6103351743324095,
-   "refCrossHeightAgl": 299.30451752597776
+   "refCrossHeightAgl": 299.30451752597776,
+   "refAxisCrossing": "2027-09-02T17:30:58Z",
+   "refPlateauStart": "2027-09-02T17:31:00Z",
+   "refPlateauEnd": "2027-09-02T17:31:00Z",
+   "dPeakFromAxisCrossingS": 8.483603477478027
   },
   {
    "set": "panel05-fernsehturm",
@@ -1366,9 +1594,13 @@
    "refCovered": 0.20927369716865,
    "refCoveredAtAppPeak": 0.20927369716865,
    "offAtAppPeakDeg": 0.14232274706572032,
-   "offAtAppPeakM": 15.202141029374028,
+   "offAtAppPeakM": 15.20214102937403,
    "refAltAtAppPeak": 2.097618510749892,
-   "refCrossHeightAgl": 253.0836138907513
+   "refCrossHeightAgl": 253.0836138907513,
+   "refAxisCrossing": "2027-09-03T17:31:46Z",
+   "refPlateauStart": "2027-09-03T17:32:30Z",
+   "refPlateauEnd": "2027-09-03T17:32:30Z",
+   "dPeakFromAxisCrossingS": 43.28434419631958
   },
   {
    "set": "panel05-fernsehturm",
@@ -1386,7 +1618,11 @@
    "offAtAppPeakDeg": 0.0026666226228988076,
    "offAtAppPeakM": 0.2848341113505037,
    "refAltAtAppPeak": 1.7681249953076081,
-   "refCrossHeightAgl": 207.25930264957847
+   "refCrossHeightAgl": 207.25930264957847,
+   "refAxisCrossing": "2027-09-04T17:32:34Z",
+   "refPlateauStart": "2027-09-04T17:32:35Z",
+   "refPlateauEnd": "2027-09-04T17:32:35Z",
+   "dPeakFromAxisCrossingS": 0.810065507888794
   },
   {
    "set": "panel05-fernsehturm",
@@ -1402,9 +1638,13 @@
    "refCovered": 0.27287648748461224,
    "refCoveredAtAppPeak": 0.26754205990972507,
    "offAtAppPeakDeg": 0.0037779720702729907,
-   "offAtAppPeakM": 0.40354240907678124,
+   "offAtAppPeakM": 0.40354240907678135,
    "refAltAtAppPeak": 1.3439026138583843,
-   "refCrossHeightAgl": 161.9869965124913
+   "refCrossHeightAgl": 161.9869965124913,
+   "refAxisCrossing": "2027-09-05T17:33:22Z",
+   "refPlateauStart": "2027-09-05T17:33:25Z",
+   "refPlateauEnd": "2027-09-05T17:33:25Z",
+   "dPeakFromAxisCrossingS": 1.1462280750274658
   },
   {
    "set": "panel05-fernsehturm",
@@ -1420,9 +1660,13 @@
    "refCovered": 0.29626590069757897,
    "refCoveredAtAppPeak": 0.2991382847763644,
    "offAtAppPeakDeg": 0.014793029151818769,
-   "offAtAppPeakM": 1.5801108400032833,
+   "offAtAppPeakM": 1.5801108400032835,
    "refAltAtAppPeak": 0.9198316738273111,
-   "refCrossHeightAgl": 117.45010399138373
+   "refCrossHeightAgl": 117.45010399138373,
+   "refAxisCrossing": "2027-09-06T17:34:10Z",
+   "refPlateauStart": "2027-09-06T17:34:10Z",
+   "refPlateauEnd": "2027-09-06T17:34:10Z",
+   "dPeakFromAxisCrossingS": 4.482658624649048
   },
   {
    "set": "panel05-fernsehturm",
@@ -1438,9 +1682,13 @@
    "refCovered": 0.327041444398851,
    "refCoveredAtAppPeak": 0.32540008206811655,
    "offAtAppPeakDeg": 0.01366719717605645,
-   "offAtAppPeakM": 1.4598555974381975,
+   "offAtAppPeakM": 1.4598555974381977,
    "refAltAtAppPeak": 0.5127201268395202,
-   "refCrossHeightAgl": 73.84787906310433
+   "refCrossHeightAgl": 73.84787906310433,
+   "refAxisCrossing": "2027-09-07T17:34:58Z",
+   "refPlateauStart": "2027-09-07T17:35:05Z",
+   "refPlateauEnd": "2027-09-07T17:35:05Z",
+   "dPeakFromAxisCrossingS": 4.136747598648071
   },
   {
    "set": "panel05-fernsehturm",
@@ -1456,9 +1704,13 @@
    "refCovered": 0.39474764054164957,
    "refCoveredAtAppPeak": 0.3820270824784571,
    "offAtAppPeakDeg": -0.017875278303851685,
-   "offAtAppPeakM": -1.9093399145041845,
+   "offAtAppPeakM": -1.9093399145041847,
    "refAltAtAppPeak": 0.13508079105126924,
-   "refCrossHeightAgl": 31.35698384861771
+   "refCrossHeightAgl": 31.35698384861771,
+   "refAxisCrossing": "2027-09-08T17:35:46Z",
+   "refPlateauStart": "2027-09-08T17:36:00Z",
+   "refPlateauEnd": "2027-09-08T17:36:00Z",
+   "dPeakFromAxisCrossingS": -5.404586553573608
   },
   {
    "set": "panel05-fernsehturm",
@@ -1474,9 +1726,13 @@
    "refCovered": 0.2064013130898646,
    "refCoveredAtAppPeak": 0.191629052113254,
    "offAtAppPeakDeg": -0.14958531483211018,
-   "offAtAppPeakM": -15.977888980395957,
+   "offAtAppPeakM": -15.977888980395958,
    "refAltAtAppPeak": -0.17133692715313797,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-09T17:36:33Z",
+   "refPlateauStart": "2027-09-09T17:36:00Z",
+   "refPlateauEnd": "2027-09-09T17:36:00Z",
+   "dPeakFromAxisCrossingS": -45.18454623222351
   },
   {
    "set": "panel05-fernsehturm",
@@ -1492,9 +1748,13 @@
    "refCovered": 0.30611407468198604,
    "refCoveredAtAppPeak": 0.30529339351661877,
    "offAtAppPeakDeg": -0.06225375300468807,
-   "offAtAppPeakM": -6.649606983401402,
+   "offAtAppPeakM": -6.649606983401403,
    "refAltAtAppPeak": 1.5467370625121155,
-   "refCrossHeightAgl": 178.93868365962976
+   "refCrossHeightAgl": 178.93868365962976,
+   "refAxisCrossing": "2027-09-17T06:14:07Z",
+   "refPlateauStart": "2027-09-17T06:13:45Z",
+   "refPlateauEnd": "2027-09-17T06:13:45Z",
+   "dPeakFromAxisCrossingS": -19.25394558906555
   },
   {
    "set": "panel05-fernsehturm",
@@ -1512,7 +1772,11 @@
    "offAtAppPeakDeg": 0.0415085236604237,
    "offAtAppPeakM": 4.433714522918003,
    "refAltAtAppPeak": 2.88501734068456,
-   "refCrossHeightAgl": 329.689382491409
+   "refCrossHeightAgl": 329.689382491409,
+   "refAxisCrossing": "2027-11-11T02:43:22Z",
+   "refPlateauStart": "2027-11-11T02:43:25Z",
+   "refPlateauEnd": "2027-11-11T02:43:25Z",
+   "dPeakFromAxisCrossingS": 12.90440058708191
   },
   {
    "set": "panel05-fernsehturm",
@@ -1528,9 +1792,13 @@
    "refCovered": 0.27944193680755025,
    "refCoveredAtAppPeak": 0.27739023389413214,
    "offAtAppPeakDeg": 0.01818447450742324,
-   "offAtAppPeakM": 1.94236656969003,
+   "offAtAppPeakM": 1.9423665696900303,
    "refAltAtAppPeak": 1.1333035573925767,
-   "refCrossHeightAgl": 140.56934801237733
+   "refCrossHeightAgl": 140.56934801237733,
+   "refAxisCrossing": "2027-11-21T11:55:15Z",
+   "refPlateauStart": "2027-11-21T11:55:25Z",
+   "refPlateauEnd": "2027-11-21T11:55:25Z",
+   "dPeakFromAxisCrossingS": 5.787906169891357
   },
   {
    "set": "panel05-fernsehturm",
@@ -1548,7 +1816,11 @@
    "offAtAppPeakDeg": -0.05163436957516258,
    "offAtAppPeakM": -5.476127127816394,
    "refAltAtAppPeak": 1.4881213272918972,
-   "refCrossHeightAgl": 172.0325807812827
+   "refCrossHeightAgl": 172.0325807812827,
+   "refAxisCrossing": "2026-12-28T09:37:22Z",
+   "refPlateauStart": "2026-12-28T09:37:15Z",
+   "refPlateauEnd": "2026-12-28T09:37:15Z",
+   "dPeakFromAxisCrossingS": -16.45853614807129
   },
   {
    "set": "panel05-fernsehturm",
@@ -1566,7 +1838,11 @@
    "offAtAppPeakDeg": 0.10996344433602741,
    "offAtAppPeakM": 11.662266927072316,
    "refAltAtAppPeak": 3.0458254350303475,
-   "refCrossHeightAgl": 349.65779658445007
+   "refCrossHeightAgl": 349.65779658445007,
+   "refAxisCrossing": "2027-01-14T22:35:04Z",
+   "refPlateauStart": "2027-01-14T22:35:10Z",
+   "refPlateauEnd": "2027-01-14T22:35:10Z",
+   "dPeakFromAxisCrossingS": 34.20934081077576
   },
   {
    "set": "panel05-fernsehturm",
@@ -1584,7 +1860,11 @@
    "offAtAppPeakDeg": 0.01618271667473177,
    "offAtAppPeakM": 1.716271826564396,
    "refAltAtAppPeak": 1.0736693662008632,
-   "refCrossHeightAgl": 133.09374793186558
+   "refCrossHeightAgl": 133.09374793186558,
+   "refAxisCrossing": "2027-02-10T20:39:40Z",
+   "refPlateauStart": "2027-02-10T20:39:45Z",
+   "refPlateauEnd": "2027-02-10T20:39:45Z",
+   "dPeakFromAxisCrossingS": 4.99899959564209
   },
   {
    "set": "panel05-fernsehturm",
@@ -1602,7 +1882,11 @@
    "offAtAppPeakDeg": -0.04937003208514034,
    "offAtAppPeakM": -5.235980883025074,
    "refAltAtAppPeak": 1.670955864566646,
-   "refCrossHeightAgl": 191.57157410984254
+   "refCrossHeightAgl": 191.57157410984254,
+   "refAxisCrossing": "2027-02-21T05:58:12Z",
+   "refPlateauStart": "2027-02-21T05:57:55Z",
+   "refPlateauEnd": "2027-02-21T05:57:55Z",
+   "dPeakFromAxisCrossingS": -15.781550645828247
   },
   {
    "set": "panel05-fernsehturm",
@@ -1620,7 +1904,11 @@
    "offAtAppPeakDeg": -0.12575740053611575,
    "offAtAppPeakM": -13.337308429747145,
    "refAltAtAppPeak": -0.1619695864033086,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-03T17:43:28Z",
+   "refPlateauStart": "2027-04-03T17:42:55Z",
+   "refPlateauEnd": "2027-04-03T17:42:55Z",
+   "dPeakFromAxisCrossingS": -37.92720150947571
   },
   {
    "set": "panel05-fernsehturm",
@@ -1638,7 +1926,11 @@
    "offAtAppPeakDeg": 0.01506162094375924,
    "offAtAppPeakM": 1.5973730621218267,
    "refAltAtAppPeak": 0.1438743296111905,
-   "refCrossHeightAgl": 34.34978783490211
+   "refCrossHeightAgl": 34.34978783490211,
+   "refAxisCrossing": "2027-04-04T17:42:02Z",
+   "refPlateauStart": "2027-04-04T17:42:10Z",
+   "refPlateauEnd": "2027-04-04T17:42:10Z",
+   "dPeakFromAxisCrossingS": 4.546933650970459
   },
   {
    "set": "panel05-fernsehturm",
@@ -1656,7 +1948,11 @@
    "offAtAppPeakDeg": 0.013484072838485673,
    "offAtAppPeakM": 1.4300648516061814,
    "refAltAtAppPeak": 0.5477372397330793,
-   "refCrossHeightAgl": 77.10963012996646
+   "refCrossHeightAgl": 77.10963012996646,
+   "refAxisCrossing": "2027-04-05T17:40:35Z",
+   "refPlateauStart": "2027-04-05T17:40:40Z",
+   "refPlateauEnd": "2027-04-05T17:40:40Z",
+   "dPeakFromAxisCrossingS": 4.075416564941406
   },
   {
    "set": "panel05-fernsehturm",
@@ -1674,7 +1970,11 @@
    "offAtAppPeakDeg": 0.04510565717887113,
    "offAtAppPeakM": 4.783718963308844,
    "refAltAtAppPeak": 2.942696215136701,
-   "refCrossHeightAgl": 333.83145992399926
+   "refCrossHeightAgl": 333.83145992399926,
+   "refAxisCrossing": "2027-04-06T17:12:26Z",
+   "refPlateauStart": "2027-04-06T17:12:20Z",
+   "refPlateauEnd": "2027-04-06T17:12:20Z",
+   "dPeakFromAxisCrossingS": 14.03500509262085
   },
   {
    "set": "panel05-fernsehturm",
@@ -1692,7 +1992,11 @@
    "offAtAppPeakDeg": 0.014385159720427152,
    "offAtAppPeakM": 1.5256303898187913,
    "refAltAtAppPeak": 0.9603671549635124,
-   "refCrossHeightAgl": 120.97186333300175
+   "refCrossHeightAgl": 120.97186333300175,
+   "refAxisCrossing": "2027-04-06T17:39:09Z",
+   "refPlateauStart": "2027-04-06T17:39:05Z",
+   "refPlateauEnd": "2027-04-06T17:39:05Z",
+   "dPeakFromAxisCrossingS": 4.353033781051636
   },
   {
    "set": "panel05-fernsehturm",
@@ -1710,7 +2014,11 @@
    "offAtAppPeakDeg": 0.01481911241780401,
    "offAtAppPeakM": 1.5716536134554289,
    "refAltAtAppPeak": 1.381834763485657,
-   "refCrossHeightAgl": 165.74852426254068
+   "refCrossHeightAgl": 165.74852426254068,
+   "refAxisCrossing": "2027-04-07T17:37:44Z",
+   "refPlateauStart": "2027-04-07T17:37:40Z",
+   "refPlateauEnd": "2027-04-07T17:37:40Z",
+   "dPeakFromAxisCrossingS": 4.490021705627441
   },
   {
    "set": "panel05-fernsehturm",
@@ -1728,7 +2036,11 @@
    "offAtAppPeakDeg": 0.0006032231285967011,
    "offAtAppPeakM": 0.06397534366767314,
    "refAltAtAppPeak": 1.8200578429781111,
-   "refCrossHeightAgl": 211.2348497563407
+   "refCrossHeightAgl": 211.2348497563407,
+   "refAxisCrossing": "2027-04-08T17:36:18Z",
+   "refPlateauStart": "2027-04-08T17:36:15Z",
+   "refPlateauEnd": "2027-04-08T17:36:15Z",
+   "dPeakFromAxisCrossingS": 0.18302559852600098
   },
   {
    "set": "panel05-fernsehturm",
@@ -1746,7 +2058,11 @@
    "offAtAppPeakDeg": 0.1473798630259554,
    "offAtAppPeakM": 15.630497140775004,
    "refAltAtAppPeak": 2.149659216841385,
-   "refCrossHeightAgl": 257.24456230626015
+   "refCrossHeightAgl": 257.24456230626015,
+   "refAxisCrossing": "2027-04-09T17:34:54Z",
+   "refPlateauStart": "2027-04-09T17:35:40Z",
+   "refPlateauEnd": "2027-04-09T17:35:40Z",
+   "dPeakFromAxisCrossingS": 44.76785945892334
   },
   {
    "set": "panel05-fernsehturm",
@@ -1764,7 +2080,11 @@
    "offAtAppPeakDeg": 0.027426970055164455,
    "offAtAppPeakM": 2.908790714182377,
    "refAltAtAppPeak": 2.670500941793634,
-   "refCrossHeightAgl": 303.62125716553754
+   "refCrossHeightAgl": 303.62125716553754,
+   "refAxisCrossing": "2027-04-10T17:33:30Z",
+   "refPlateauStart": "2027-04-10T17:33:20Z",
+   "refPlateauEnd": "2027-04-10T17:33:45Z",
+   "dPeakFromAxisCrossingS": 8.344230651855469
   },
   {
    "set": "panel05-fernsehturm",
@@ -1782,7 +2102,11 @@
    "offAtAppPeakDeg": 0.1198631634585516,
    "offAtAppPeakM": 12.712190086600826,
    "refAltAtAppPeak": 3.041823663665858,
-   "refCrossHeightAgl": 350.2373206073551
+   "refCrossHeightAgl": 350.2373206073551,
+   "refAxisCrossing": "2027-04-11T17:32:06Z",
+   "refPlateauStart": "2027-04-11T17:32:30Z",
+   "refPlateauEnd": "2027-04-11T17:32:30Z",
+   "dPeakFromAxisCrossingS": 36.51649236679077
   },
   {
    "set": "panel05-fernsehturm",
@@ -1800,7 +2124,11 @@
    "offAtAppPeakDeg": 0.15905841435146037,
    "offAtAppPeakM": 16.869075867568583,
    "refAltAtAppPeak": 3.451766825475655,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-12T17:30:43Z",
+   "refPlateauStart": "2027-04-12T17:31:35Z",
+   "refPlateauEnd": "2027-04-12T17:31:35Z",
+   "dPeakFromAxisCrossingS": 48.52939796447754
   },
   {
    "set": "panel05-fernsehturm",
@@ -1818,7 +2146,11 @@
    "offAtAppPeakDeg": 0.01626315560090025,
    "offAtAppPeakM": 1.724802845522271,
    "refAltAtAppPeak": 0.511852279853662,
-   "refCrossHeightAgl": 73.53934142930552
+   "refCrossHeightAgl": 73.53934142930552,
+   "refAxisCrossing": "2027-04-17T02:31:59Z",
+   "refPlateauStart": "2027-04-17T02:32:00Z",
+   "refPlateauEnd": "2027-04-17T02:32:00Z",
+   "dPeakFromAxisCrossingS": 5.166937589645386
   },
   {
    "set": "panel05-fernsehturm",
@@ -1836,7 +2168,11 @@
    "offAtAppPeakDeg": -0.059083116541058904,
    "offAtAppPeakM": -6.266110343720826,
    "refAltAtAppPeak": 0.09795300343952051,
-   "refCrossHeightAgl": 24.688494853357867
+   "refCrossHeightAgl": 24.688494853357867,
+   "refAxisCrossing": "2027-05-03T15:12:25Z",
+   "refPlateauStart": "2027-05-03T15:12:15Z",
+   "refPlateauEnd": "2027-05-03T15:12:20Z",
+   "dPeakFromAxisCrossingS": -18.210421562194824
   },
   {
    "set": "panel05-fernsehturm",
@@ -1854,7 +2190,11 @@
    "offAtAppPeakDeg": 0.02970684921603468,
    "offAtAppPeakM": 3.150585244138065,
    "refAltAtAppPeak": 2.506463458182674,
-   "refCrossHeightAgl": 286.44525837428733
+   "refCrossHeightAgl": 286.44525837428733,
+   "refAxisCrossing": "2027-05-14T00:24:00Z",
+   "refPlateauStart": "2027-05-14T00:24:05Z",
+   "refPlateauEnd": "2027-05-14T00:24:05Z",
+   "dPeakFromAxisCrossingS": 9.49411940574646
   },
   {
    "set": "panel05-fernsehturm",
@@ -1872,7 +2212,11 @@
    "offAtAppPeakDeg": 0.01658097620779371,
    "offAtAppPeakM": 1.7585095812006226,
    "refAltAtAppPeak": 1.2119252744584723,
-   "refCrossHeightAgl": 147.80135580406323
+   "refCrossHeightAgl": 147.80135580406323,
+   "refAxisCrossing": "2027-06-27T11:38:03Z",
+   "refPlateauStart": "2027-06-27T11:38:15Z",
+   "refPlateauEnd": "2027-06-27T11:38:15Z",
+   "dPeakFromAxisCrossingS": 5.125033378601074
   },
   {
    "set": "panel05-fernsehturm",
@@ -1890,7 +2234,11 @@
    "offAtAppPeakDeg": -0.11416115502433137,
    "offAtAppPeakM": -12.107458716263901,
    "refAltAtAppPeak": 0.020555895943520475,
-   "refCrossHeightAgl": 12.451914802376617
+   "refCrossHeightAgl": 12.451914802376617,
+   "refAxisCrossing": "2027-07-07T21:10:00Z",
+   "refPlateauStart": "2027-07-07T21:09:40Z",
+   "refPlateauEnd": "2027-07-07T21:09:40Z",
+   "dPeakFromAxisCrossingS": -36.27511119842529
   },
   {
    "set": "panel05-fernsehturm",
@@ -1908,7 +2256,11 @@
    "offAtAppPeakDeg": 0.1524512613421665,
    "offAtAppPeakM": 16.16834861691126,
    "refAltAtAppPeak": 3.315707014717766,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-21T08:10:50Z",
+   "refPlateauStart": "2027-08-21T08:11:15Z",
+   "refPlateauEnd": "2027-08-21T08:11:15Z",
+   "dPeakFromAxisCrossingS": 47.45552706718445
   },
   {
    "set": "panel05-fernsehturm",
@@ -1926,7 +2278,11 @@
    "offAtAppPeakDeg": 0.16080916216061075,
    "offAtAppPeakM": 17.05475292047997,
    "refAltAtAppPeak": 3.1430091362307997,
-   "refCrossHeightAgl": 364.23665963859594
+   "refCrossHeightAgl": 364.23665963859594,
+   "refAxisCrossing": "2027-08-31T17:31:02Z",
+   "refPlateauStart": "2027-08-31T17:31:05Z",
+   "refPlateauEnd": "2027-08-31T17:31:55Z",
+   "dPeakFromAxisCrossingS": 49.084940671920776
   },
   {
    "set": "panel05-fernsehturm",
@@ -1944,7 +2300,11 @@
    "offAtAppPeakDeg": -0.12361773874222365,
    "offAtAppPeakM": -13.110384772301718,
    "refAltAtAppPeak": -0.00977775941374781,
-   "refCrossHeightAgl": 8.599297660408256
+   "refCrossHeightAgl": 8.599297660408256,
+   "refAxisCrossing": "2027-08-31T17:33:49Z",
+   "refPlateauStart": "2027-08-31T17:33:20Z",
+   "refPlateauEnd": "2027-08-31T17:33:20Z",
+   "dPeakFromAxisCrossingS": -39.351404666900635
   },
   {
    "set": "panel05-fernsehturm",
@@ -1962,7 +2322,11 @@
    "offAtAppPeakDeg": 0.03745971080426276,
    "offAtAppPeakM": 3.9728215958320674,
    "refAltAtAppPeak": 2.7998416326717956,
-   "refCrossHeightAgl": 318.1577594672404
+   "refCrossHeightAgl": 318.1577594672404,
+   "refAxisCrossing": "2027-09-01T17:31:50Z",
+   "refPlateauStart": "2027-09-01T17:31:50Z",
+   "refPlateauEnd": "2027-09-01T17:32:00Z",
+   "dPeakFromAxisCrossingS": 11.419010400772095
   },
   {
    "set": "panel05-fernsehturm",
@@ -1980,7 +2344,11 @@
    "offAtAppPeakDeg": 0.0979817723550873,
    "offAtAppPeakM": 10.391540480496598,
    "refAltAtAppPeak": 2.325474318166135,
-   "refCrossHeightAgl": 272.2873922708803
+   "refCrossHeightAgl": 272.2873922708803,
+   "refAxisCrossing": "2027-09-02T17:32:38Z",
+   "refPlateauStart": "2027-09-02T17:33:00Z",
+   "refPlateauEnd": "2027-09-02T17:33:00Z",
+   "dPeakFromAxisCrossingS": 29.823655366897583
   },
   {
    "set": "panel05-fernsehturm",
@@ -1998,7 +2366,11 @@
    "offAtAppPeakDeg": 0.04448094896165317,
    "offAtAppPeakM": 4.7174650002330045,
    "refAltAtAppPeak": 1.9352336232827643,
-   "refCrossHeightAgl": 226.73972722202228
+   "refCrossHeightAgl": 226.73972722202228,
+   "refAxisCrossing": "2027-09-03T17:33:26Z",
+   "refPlateauStart": "2027-09-03T17:33:45Z",
+   "refPlateauEnd": "2027-09-03T17:33:45Z",
+   "dPeakFromAxisCrossingS": 13.521441459655762
   },
   {
    "set": "panel05-fernsehturm",
@@ -2016,7 +2388,11 @@
    "offAtAppPeakDeg": -0.06993770306531835,
    "offAtAppPeakM": -7.417302780382627,
    "refAltAtAppPeak": 1.5902266499641804,
-   "refCrossHeightAgl": 181.65530196527612
+   "refCrossHeightAgl": 181.65530196527612,
+   "refAxisCrossing": "2027-09-04T17:34:14Z",
+   "refPlateauStart": "2027-09-04T17:33:55Z",
+   "refPlateauEnd": "2027-09-04T17:33:55Z",
+   "dPeakFromAxisCrossingS": -21.234552145004272
   },
   {
    "set": "panel05-fernsehturm",
@@ -2034,7 +2410,11 @@
    "offAtAppPeakDeg": 0.015445050442089183,
    "offAtAppPeakM": 1.6380380047692458,
    "refAltAtAppPeak": 1.1125070475174645,
-   "refCrossHeightAgl": 137.20331364985688
+   "refCrossHeightAgl": 137.20331364985688,
+   "refAxisCrossing": "2027-09-05T17:35:02Z",
+   "refPlateauStart": "2027-09-05T17:35:00Z",
+   "refPlateauEnd": "2027-09-05T17:35:00Z",
+   "dPeakFromAxisCrossingS": 4.683115005493164
   },
   {
    "set": "panel05-fernsehturm",
@@ -2052,7 +2432,11 @@
    "offAtAppPeakDeg": 0.014110408820097396,
    "offAtAppPeakM": 1.496491448623865,
    "refAltAtAppPeak": 0.702416440939011,
-   "refCrossHeightAgl": 93.5753434192412
+   "refCrossHeightAgl": 93.5753434192412,
+   "refAxisCrossing": "2027-09-06T17:35:50Z",
+   "refPlateauStart": "2027-09-06T17:35:55Z",
+   "refPlateauEnd": "2027-09-06T17:35:55Z",
+   "dPeakFromAxisCrossingS": 4.2732627391815186
   },
   {
    "set": "panel05-fernsehturm",
@@ -2070,7 +2454,11 @@
    "offAtAppPeakDeg": 0.01726403687116274,
    "offAtAppPeakM": 1.8309521627484509,
    "refAltAtAppPeak": 0.29894486585497015,
-   "refCrossHeightAgl": 50.96336884202191
+   "refCrossHeightAgl": 50.96336884202191,
+   "refAxisCrossing": "2027-09-07T17:36:37Z",
+   "refPlateauStart": "2027-09-07T17:36:45Z",
+   "refPlateauEnd": "2027-09-07T17:36:45Z",
+   "dPeakFromAxisCrossingS": 5.222253799438477
   },
   {
    "set": "panel05-fernsehturm",
@@ -2088,7 +2476,11 @@
    "offAtAppPeakDeg": -0.11571075131248917,
    "offAtAppPeakM": -12.271802472962472,
    "refAltAtAppPeak": -0.009236339958464623,
-   "refCrossHeightAgl": 9.504924891157891
+   "refCrossHeightAgl": 9.504924891157891,
+   "refAxisCrossing": "2027-09-08T17:37:25Z",
+   "refPlateauStart": "2027-09-08T17:37:00Z",
+   "refPlateauEnd": "2027-09-08T17:37:00Z",
+   "dPeakFromAxisCrossingS": -34.96700382232666
   },
   {
    "set": "panel05-fernsehturm",
@@ -2106,7 +2498,11 @@
    "offAtAppPeakDeg": 0.016843857117656645,
    "offAtAppPeakM": 1.7863896404272572,
    "refAltAtAppPeak": 1.275803298734139,
-   "refCrossHeightAgl": 154.60260926594452
+   "refCrossHeightAgl": 154.60260926594452,
+   "refAxisCrossing": "2027-09-17T06:15:48Z",
+   "refPlateauStart": "2027-09-17T06:15:55Z",
+   "refPlateauEnd": "2027-09-17T06:15:55Z",
+   "dPeakFromAxisCrossingS": 5.206654071807861
   },
   {
    "set": "panel05-fernsehturm",
@@ -2124,7 +2520,11 @@
    "offAtAppPeakDeg": 0.02727256719598962,
    "offAtAppPeakM": 2.892415387191914,
    "refAltAtAppPeak": 2.6657636246077363,
-   "refCrossHeightAgl": 303.04924163901455
+   "refCrossHeightAgl": 303.04924163901455,
+   "refAxisCrossing": "2027-11-11T02:45:04Z",
+   "refPlateauStart": "2027-11-11T02:45:00Z",
+   "refPlateauEnd": "2027-11-11T02:45:00Z",
+   "dPeakFromAxisCrossingS": 8.47478175163269
   },
   {
    "set": "panel05-fernsehturm",
@@ -2142,7 +2542,11 @@
    "offAtAppPeakDeg": 0.01726428444079695,
    "offAtAppPeakM": 1.830978418957272,
    "refAltAtAppPeak": 0.9048742964675878,
-   "refCrossHeightAgl": 115.33526767342182
+   "refCrossHeightAgl": 115.33526767342182,
+   "refAxisCrossing": "2027-11-21T11:57:00Z",
+   "refPlateauStart": "2027-11-21T11:56:55Z",
+   "refPlateauEnd": "2027-11-21T11:56:55Z",
+   "dPeakFromAxisCrossingS": 5.491910934448242
   },
   {
    "set": "panel05-fernsehturm",
@@ -2160,7 +2564,11 @@
    "offAtAppPeakDeg": 0.021481927992387368,
    "offAtAppPeakM": 2.2778905515576713,
    "refAltAtAppPeak": 1.405664185178901,
-   "refCrossHeightAgl": 168.80300406596595
+   "refCrossHeightAgl": 168.80300406596595,
+   "refAxisCrossing": "2026-12-28T09:37:36Z",
+   "refPlateauStart": "2026-12-28T09:37:30Z",
+   "refPlateauEnd": "2026-12-28T09:37:30Z",
+   "dPeakFromAxisCrossingS": 6.8463780879974365
   },
   {
    "set": "panel05-fernsehturm",
@@ -2178,7 +2586,11 @@
    "offAtAppPeakDeg": 0.08882741064699513,
    "offAtAppPeakM": 9.419039087358788,
    "refAltAtAppPeak": 3.0310561663354063,
-   "refCrossHeightAgl": 346.44598010500226
+   "refCrossHeightAgl": 346.44598010500226,
+   "refAxisCrossing": "2027-01-14T22:35:18Z",
+   "refPlateauStart": "2027-01-14T22:35:20Z",
+   "refPlateauEnd": "2027-01-14T22:35:20Z",
+   "dPeakFromAxisCrossingS": 27.632908582687378
   },
   {
    "set": "panel05-fernsehturm",
@@ -2196,7 +2608,11 @@
    "offAtAppPeakDeg": 0.016086103459252342,
    "offAtAppPeakM": 1.7057306538870805,
    "refAltAtAppPeak": 1.0462344290568597,
-   "refCrossHeightAgl": 130.15399476559455
+   "refCrossHeightAgl": 130.15399476559455,
+   "refAxisCrossing": "2027-02-10T20:39:54Z",
+   "refPlateauStart": "2027-02-10T20:39:50Z",
+   "refPlateauEnd": "2027-02-10T20:39:50Z",
+   "dPeakFromAxisCrossingS": 4.968848943710327
   },
   {
    "set": "panel05-fernsehturm",
@@ -2214,7 +2630,11 @@
    "offAtAppPeakDeg": -0.058624940002238037,
    "offAtAppPeakM": -6.216443745834028,
    "refAltAtAppPeak": 1.6471001851793,
-   "refCrossHeightAgl": 188.3046708799678
+   "refCrossHeightAgl": 188.3046708799678,
+   "refAxisCrossing": "2027-02-21T05:58:26Z",
+   "refPlateauStart": "2027-02-21T05:58:10Z",
+   "refPlateauEnd": "2027-02-21T05:58:10Z",
+   "dPeakFromAxisCrossingS": -18.738763332366943
   },
   {
    "set": "panel05-fernsehturm",
@@ -2232,7 +2652,11 @@
    "offAtAppPeakDeg": -0.14868040979945701,
    "offAtAppPeakM": -15.765703190324643,
    "refAltAtAppPeak": -0.1737648564480383,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-03T17:43:41Z",
+   "refPlateauStart": "2027-04-03T17:43:10Z",
+   "refPlateauEnd": "2027-04-03T17:43:10Z",
+   "dPeakFromAxisCrossingS": -44.837936878204346
   },
   {
    "set": "panel05-fernsehturm",
@@ -2250,7 +2674,11 @@
    "offAtAppPeakDeg": -0.014652041791244028,
    "offAtAppPeakM": -1.5536662989062435,
    "refAltAtAppPeak": 0.13601609816873111,
-   "refCrossHeightAgl": 31.53794884829774
+   "refCrossHeightAgl": 31.53794884829774,
+   "refAxisCrossing": "2027-04-04T17:42:14Z",
+   "refPlateauStart": "2027-04-04T17:42:25Z",
+   "refPlateauEnd": "2027-04-04T17:42:30Z",
+   "dPeakFromAxisCrossingS": -4.42303729057312
   },
   {
    "set": "panel05-fernsehturm",
@@ -2268,7 +2696,11 @@
    "offAtAppPeakDeg": 0.01341505587362353,
    "offAtAppPeakM": 1.4224993694222532,
    "refAltAtAppPeak": 0.5204388361595927,
-   "refCrossHeightAgl": 74.196749446498
+   "refCrossHeightAgl": 74.196749446498,
+   "refAxisCrossing": "2027-04-05T17:40:48Z",
+   "refPlateauStart": "2027-04-05T17:40:50Z",
+   "refPlateauEnd": "2027-04-05T17:40:50Z",
+   "dPeakFromAxisCrossingS": 4.054256916046143
   },
   {
    "set": "panel05-fernsehturm",
@@ -2286,7 +2718,11 @@
    "offAtAppPeakDeg": 0.04300335790465175,
    "offAtAppPeakM": 4.559969789069793,
    "refAltAtAppPeak": 2.914654537791406,
-   "refCrossHeightAgl": 330.635187920706
+   "refCrossHeightAgl": 330.635187920706,
+   "refAxisCrossing": "2027-04-06T17:12:39Z",
+   "refPlateauStart": "2027-04-06T17:12:45Z",
+   "refPlateauEnd": "2027-04-06T17:12:45Z",
+   "dPeakFromAxisCrossingS": 13.380069017410278
   },
   {
    "set": "panel05-fernsehturm",
@@ -2304,7 +2740,11 @@
    "offAtAppPeakDeg": 0.014305753897389379,
    "offAtAppPeakM": 1.5169467864951676,
    "refAltAtAppPeak": 0.9322807642720106,
-   "refCrossHeightAgl": 117.96641798230952
+   "refCrossHeightAgl": 117.96641798230952,
+   "refAxisCrossing": "2027-04-06T17:39:22Z",
+   "refPlateauStart": "2027-04-06T17:39:20Z",
+   "refPlateauEnd": "2027-04-06T17:39:20Z",
+   "dPeakFromAxisCrossingS": 4.328678369522095
   },
   {
    "set": "panel05-fernsehturm",
@@ -2322,7 +2762,11 @@
    "offAtAppPeakDeg": 0.006055062879825337,
    "offAtAppPeakM": 0.6420639026408391,
    "refAltAtAppPeak": 1.3589927471555585,
-   "refCrossHeightAgl": 162.6626368140933
+   "refCrossHeightAgl": 162.6626368140933,
+   "refAxisCrossing": "2027-04-07T17:37:56Z",
+   "refPlateauStart": "2027-04-07T17:38:05Z",
+   "refPlateauEnd": "2027-04-07T17:38:05Z",
+   "dPeakFromAxisCrossingS": 1.8344988822937012
   },
   {
    "set": "panel05-fernsehturm",
@@ -2340,7 +2784,11 @@
    "offAtAppPeakDeg": 0.001184559417111481,
    "offAtAppPeakM": 0.12560775294252502,
    "refAltAtAppPeak": 1.790261328042459,
-   "refCrossHeightAgl": 208.0804108538365
+   "refCrossHeightAgl": 208.0804108538365,
+   "refAxisCrossing": "2027-04-08T17:36:31Z",
+   "refPlateauStart": "2027-04-08T17:36:35Z",
+   "refPlateauEnd": "2027-04-08T17:36:35Z",
+   "dPeakFromAxisCrossingS": 0.35936951637268066
   },
   {
    "set": "panel05-fernsehturm",
@@ -2358,7 +2806,11 @@
    "offAtAppPeakDeg": 0.14294979214629738,
    "offAtAppPeakM": 15.158042657650489,
    "refAltAtAppPeak": 2.123042019569964,
-   "refCrossHeightAgl": 254.0318492745228
+   "refCrossHeightAgl": 254.0318492745228,
+   "refAxisCrossing": "2027-04-09T17:35:07Z",
+   "refPlateauStart": "2027-04-09T17:35:50Z",
+   "refPlateauEnd": "2027-04-09T17:35:50Z",
+   "dPeakFromAxisCrossingS": 43.419105052948
   },
   {
    "set": "panel05-fernsehturm",
@@ -2376,7 +2828,11 @@
    "offAtAppPeakDeg": 0.026124570378831626,
    "offAtAppPeakM": 2.7701848758888112,
    "refAltAtAppPeak": 2.6412257456657606,
-   "refCrossHeightAgl": 300.3586764069941
+   "refCrossHeightAgl": 300.3586764069941,
+   "refAxisCrossing": "2027-04-10T17:33:42Z",
+   "refPlateauStart": "2027-04-10T17:33:55Z",
+   "refPlateauEnd": "2027-04-10T17:33:55Z",
+   "dPeakFromAxisCrossingS": 7.947413444519043
   },
   {
    "set": "panel05-fernsehturm",
@@ -2394,7 +2850,11 @@
    "offAtAppPeakDeg": 0.0987821435742354,
    "offAtAppPeakM": 10.474614363762115,
    "refAltAtAppPeak": 3.026577771827985,
-   "refCrossHeightAgl": 346.9314298913401
+   "refCrossHeightAgl": 346.9314298913401,
+   "refAxisCrossing": "2027-04-11T17:32:19Z",
+   "refPlateauStart": "2027-04-11T17:32:30Z",
+   "refPlateauEnd": "2027-04-11T17:32:40Z",
+   "dPeakFromAxisCrossingS": 30.092632055282593
   },
   {
    "set": "panel05-fernsehturm",
@@ -2412,7 +2872,11 @@
    "offAtAppPeakDeg": 0.1589791782708351,
    "offAtAppPeakM": 16.857759145541774,
    "refAltAtAppPeak": 3.4211157715584335,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-12T17:30:56Z",
+   "refPlateauStart": "2027-04-12T17:31:35Z",
+   "refPlateauEnd": "2027-04-12T17:31:45Z",
+   "dPeakFromAxisCrossingS": 48.50153374671936
   },
   {
    "set": "panel05-fernsehturm",
@@ -2430,7 +2894,11 @@
    "offAtAppPeakDeg": 0.016164250565487304,
    "offAtAppPeakM": 1.7140171798910444,
    "refAltAtAppPeak": 0.4834825105789541,
-   "refCrossHeightAgl": 70.5104607400358
+   "refCrossHeightAgl": 70.5104607400358,
+   "refAxisCrossing": "2027-04-17T02:32:12Z",
+   "refPlateauStart": "2027-04-17T02:32:20Z",
+   "refPlateauEnd": "2027-04-17T02:32:20Z",
+   "dPeakFromAxisCrossingS": 5.135134696960449
   },
   {
    "set": "panel05-fernsehturm",
@@ -2448,7 +2916,11 @@
    "offAtAppPeakDeg": -0.07228758882932557,
    "offAtAppPeakM": -7.6651972601136595,
    "refAltAtAppPeak": 0.08037469350174276,
-   "refCrossHeightAgl": 21.984972312213948
+   "refCrossHeightAgl": 21.984972312213948,
+   "refAxisCrossing": "2027-05-03T15:12:38Z",
+   "refPlateauStart": "2027-05-03T15:12:25Z",
+   "refPlateauEnd": "2027-05-03T15:12:25Z",
+   "dPeakFromAxisCrossingS": -22.279029846191406
   },
   {
    "set": "panel05-fernsehturm",
@@ -2466,7 +2938,11 @@
    "offAtAppPeakDeg": 0.10459432244235076,
    "offAtAppPeakM": 11.090923446090986,
    "refAltAtAppPeak": 2.419575580538664,
-   "refCrossHeightAgl": 283.0646272007528
+   "refCrossHeightAgl": 283.0646272007528,
+   "refAxisCrossing": "2027-05-14T00:24:14Z",
+   "refPlateauStart": "2027-05-14T00:24:15Z",
+   "refPlateauEnd": "2027-05-14T00:24:15Z",
+   "dPeakFromAxisCrossingS": 33.42229676246643
   },
   {
    "set": "panel05-fernsehturm",
@@ -2484,7 +2960,11 @@
    "offAtAppPeakDeg": 0.016481238065307637,
    "offAtAppPeakM": 1.7476297509348773,
    "refAltAtAppPeak": 1.184242420512448,
-   "refCrossHeightAgl": 144.83213974561332
+   "refCrossHeightAgl": 144.83213974561332,
+   "refAxisCrossing": "2027-06-27T11:38:16Z",
+   "refPlateauStart": "2027-06-27T11:38:20Z",
+   "refPlateauEnd": "2027-06-27T11:38:20Z",
+   "dPeakFromAxisCrossingS": 5.093878269195557
   },
   {
    "set": "panel05-fernsehturm",
@@ -2502,7 +2982,11 @@
    "offAtAppPeakDeg": -0.11979927497596703,
    "offAtAppPeakM": -12.703219033595103,
    "refAltAtAppPeak": -0.003137395702517365,
-   "refCrossHeightAgl": 9.572625189500679
+   "refCrossHeightAgl": 9.572625189500679,
+   "refAxisCrossing": "2027-07-07T21:10:13Z",
+   "refPlateauStart": "2027-07-07T21:09:45Z",
+   "refPlateauEnd": "2027-07-07T21:09:45Z",
+   "dPeakFromAxisCrossingS": -38.063910484313965
   },
   {
    "set": "panel05-fernsehturm",
@@ -2520,7 +3004,11 @@
    "offAtAppPeakDeg": 0.17626411472175713,
    "offAtAppPeakM": 18.690611086940276,
    "refAltAtAppPeak": 3.4984997896510124,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-03T18:46:45Z",
+   "refPlateauStart": "2027-08-03T18:47:35Z",
+   "refPlateauEnd": "2027-08-03T18:47:45Z",
+   "dPeakFromAxisCrossingS": 56.78847026824951
   },
   {
    "set": "panel05-fernsehturm",
@@ -2538,7 +3026,11 @@
    "offAtAppPeakDeg": 0.15237081072586728,
    "offAtAppPeakM": 16.15702418370608,
    "refAltAtAppPeak": 3.285953531156276,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-21T08:11:03Z",
+   "refPlateauStart": "2027-08-21T08:11:20Z",
+   "refPlateauEnd": "2027-08-21T08:11:20Z",
+   "dPeakFromAxisCrossingS": 47.42756652832031
   },
   {
    "set": "panel05-fernsehturm",
@@ -2556,7 +3048,11 @@
    "offAtAppPeakDeg": 0.1606982485506878,
    "offAtAppPeakM": 17.040045109321543,
    "refAltAtAppPeak": 3.112434129579584,
-   "refCrossHeightAgl": 360.9049799771731
+   "refCrossHeightAgl": 360.9049799771731,
+   "refAxisCrossing": "2027-08-31T17:31:15Z",
+   "refPlateauStart": "2027-08-31T17:31:15Z",
+   "refPlateauEnd": "2027-08-31T17:31:15Z",
+   "dPeakFromAxisCrossingS": 49.04731488227844
   },
   {
    "set": "panel05-fernsehturm",
@@ -2574,7 +3070,11 @@
    "offAtAppPeakDeg": -0.12660863002407027,
    "offAtAppPeakM": -13.425266213521068,
    "refAltAtAppPeak": -0.035153078788787595,
-   "refCrossHeightAgl": 5.725449083877228
+   "refCrossHeightAgl": 5.725449083877228,
+   "refAxisCrossing": "2027-08-31T17:34:03Z",
+   "refPlateauStart": "2027-08-31T17:33:30Z",
+   "refPlateauEnd": "2027-08-31T17:33:30Z",
+   "dPeakFromAxisCrossingS": -40.3005108833313
   },
   {
    "set": "panel05-fernsehturm",
@@ -2592,7 +3092,11 @@
    "offAtAppPeakDeg": 0.03556028006110871,
    "offAtAppPeakM": 3.7707242101663003,
    "refAltAtAppPeak": 2.770777541482095,
-   "refCrossHeightAgl": 314.86726673954854
+   "refCrossHeightAgl": 314.86726673954854,
+   "refAxisCrossing": "2027-09-01T17:32:03Z",
+   "refPlateauStart": "2027-09-01T17:32:10Z",
+   "refPlateauEnd": "2027-09-01T17:32:10Z",
+   "dPeakFromAxisCrossingS": 10.839201927185059
   },
   {
    "set": "panel05-fernsehturm",
@@ -2610,7 +3114,11 @@
    "offAtAppPeakDeg": 0.09720398999266532,
    "offAtAppPeakM": 10.307270858391492,
    "refAltAtAppPeak": 2.2959905893346715,
-   "refCrossHeightAgl": 269.0439275733296
+   "refCrossHeightAgl": 269.0439275733296,
+   "refAxisCrossing": "2027-09-02T17:32:51Z",
+   "refPlateauStart": "2027-09-02T17:33:10Z",
+   "refPlateauEnd": "2027-09-02T17:33:10Z",
+   "dPeakFromAxisCrossingS": 29.584664583206177
   },
   {
    "set": "panel05-fernsehturm",
@@ -2628,7 +3136,11 @@
    "offAtAppPeakDeg": 0.017887758470039556,
    "offAtAppPeakM": 1.8967736984263357,
    "refAltAtAppPeak": 1.9242528903947709,
-   "refCrossHeightAgl": 223.5509911778289
+   "refCrossHeightAgl": 223.5509911778289,
+   "refAxisCrossing": "2027-09-03T17:33:39Z",
+   "refPlateauStart": "2027-09-03T17:33:40Z",
+   "refPlateauEnd": "2027-09-03T17:33:45Z",
+   "dPeakFromAxisCrossingS": 5.4373204708099365
   },
   {
    "set": "panel05-fernsehturm",
@@ -2646,7 +3158,11 @@
    "offAtAppPeakDeg": -0.07098460942621944,
    "offAtAppPeakM": -7.5270325445321955,
    "refAltAtAppPeak": 1.5617114375025594,
-   "refCrossHeightAgl": 178.53070608253066
+   "refCrossHeightAgl": 178.53070608253066,
+   "refAxisCrossing": "2027-09-04T17:34:27Z",
+   "refPlateauStart": "2027-09-04T17:34:15Z",
+   "refPlateauEnd": "2027-09-04T17:34:15Z",
+   "dPeakFromAxisCrossingS": -21.55077314376831
   },
   {
    "set": "panel05-fernsehturm",
@@ -2664,7 +3180,11 @@
    "offAtAppPeakDeg": 0.015333119421182203,
    "offAtAppPeakM": 1.6258860874961338,
    "refAltAtAppPeak": 1.084059491717062,
-   "refCrossHeightAgl": 134.1538928870155
+   "refCrossHeightAgl": 134.1538928870155,
+   "refAxisCrossing": "2027-09-05T17:35:15Z",
+   "refPlateauStart": "2027-09-05T17:35:05Z",
+   "refPlateauEnd": "2027-09-05T17:35:15Z",
+   "dPeakFromAxisCrossingS": 4.648806571960449
   },
   {
    "set": "panel05-fernsehturm",
@@ -2682,7 +3202,11 @@
    "offAtAppPeakDeg": 0.0140344155286306,
    "offAtAppPeakM": 1.4881747364869127,
    "refAltAtAppPeak": 0.6746889593987878,
-   "refCrossHeightAgl": 90.6133097654788
+   "refCrossHeightAgl": 90.6133097654788,
+   "refAxisCrossing": "2027-09-06T17:36:02Z",
+   "refPlateauStart": "2027-09-06T17:36:00Z",
+   "refPlateauEnd": "2027-09-06T17:36:00Z",
+   "dPeakFromAxisCrossingS": 4.249927997589111
   },
   {
    "set": "panel05-fernsehturm",
@@ -2700,7 +3224,11 @@
    "offAtAppPeakDeg": 0.03105778997346859,
    "offAtAppPeakM": 3.293291289212835,
    "refAltAtAppPeak": 0.26323987330725834,
-   "refCrossHeightAgl": 48.098761423871224
+   "refCrossHeightAgl": 48.098761423871224,
+   "refAxisCrossing": "2027-09-07T17:36:50Z",
+   "refPlateauStart": "2027-09-07T17:36:50Z",
+   "refPlateauEnd": "2027-09-07T17:36:55Z",
+   "dPeakFromAxisCrossingS": 9.39386773109436
   },
   {
    "set": "panel05-fernsehturm",
@@ -2718,7 +3246,11 @@
    "offAtAppPeakDeg": -0.11908652314966031,
    "offAtAppPeakM": -12.627640591505322,
    "refAltAtAppPeak": -0.03337885197423973,
-   "refCrossHeightAgl": 6.741624972028582
+   "refCrossHeightAgl": 6.741624972028582,
+   "refAxisCrossing": "2027-09-08T17:37:38Z",
+   "refPlateauStart": "2027-09-08T17:37:10Z",
+   "refPlateauEnd": "2027-09-08T17:37:10Z",
+   "dPeakFromAxisCrossingS": -35.98435115814209
   },
   {
    "set": "panel05-fernsehturm",
@@ -2736,7 +3268,11 @@
    "offAtAppPeakDeg": 0.016742209632556345,
    "offAtAppPeakM": 1.775302530932636,
    "refAltAtAppPeak": 1.2480121964111905,
-   "refCrossHeightAgl": 151.62048155397682
+   "refCrossHeightAgl": 151.62048155397682,
+   "refAxisCrossing": "2027-09-17T06:16:01Z",
+   "refPlateauStart": "2027-09-17T06:16:00Z",
+   "refPlateauEnd": "2027-09-17T06:16:00Z",
+   "dPeakFromAxisCrossingS": 5.174907207489014
   },
   {
    "set": "panel05-fernsehturm",
@@ -2754,7 +3290,11 @@
    "offAtAppPeakDeg": 0.026406886689467755,
    "offAtAppPeakM": 2.8001209997216696,
    "refAltAtAppPeak": 2.6369839426431465,
-   "refCrossHeightAgl": 299.8745289456929
+   "refCrossHeightAgl": 299.8745289456929,
+   "refAxisCrossing": "2027-11-11T02:45:17Z",
+   "refPlateauStart": "2027-11-11T02:45:10Z",
+   "refPlateauEnd": "2027-11-11T02:45:10Z",
+   "dPeakFromAxisCrossingS": 8.205281019210815
   },
   {
    "set": "panel05-fernsehturm",
@@ -2772,7 +3312,11 @@
    "offAtAppPeakDeg": 0.01717588848132973,
    "offAtAppPeakM": 1.8212887642158577,
    "refAltAtAppPeak": 0.8757184709095509,
-   "refCrossHeightAgl": 112.21600300797316
+   "refCrossHeightAgl": 112.21600300797316,
+   "refAxisCrossing": "2027-11-21T11:57:13Z",
+   "refPlateauStart": "2027-11-21T11:57:20Z",
+   "refPlateauEnd": "2027-11-21T11:57:20Z",
+   "dPeakFromAxisCrossingS": 5.46339750289917
   },
   {
    "set": "panel05-fernsehturm",
@@ -2790,7 +3334,11 @@
    "offAtAppPeakDeg": -0.06553576439818608,
    "offAtAppPeakM": -7.07885345571857,
    "refAltAtAppPeak": 1.4854948036303457,
-   "refCrossHeightAgl": 173.6270045617345
+   "refCrossHeightAgl": 173.6270045617345,
+   "refAxisCrossing": "2026-12-28T09:37:27Z",
+   "refPlateauStart": "2026-12-28T09:37:20Z",
+   "refPlateauEnd": "2026-12-28T09:37:20Z",
+   "dPeakFromAxisCrossingS": -20.889341592788696
   },
   {
    "set": "panel05-fernsehturm",
@@ -2808,7 +3356,11 @@
    "offAtAppPeakDeg": 0.14146017239080647,
    "offAtAppPeakM": 15.279837495920342,
    "refAltAtAppPeak": 3.0113658074849927,
-   "refCrossHeightAgl": 354.54787649167605
+   "refCrossHeightAgl": 354.54787649167605,
+   "refAxisCrossing": "2027-01-14T22:35:09Z",
+   "refPlateauStart": "2027-01-14T22:35:45Z",
+   "refPlateauEnd": "2027-01-14T22:35:45Z",
+   "dPeakFromAxisCrossingS": 44.005398750305176
   },
   {
    "set": "panel05-fernsehturm",
@@ -2826,7 +3378,11 @@
    "offAtAppPeakDeg": 0.01640465319845336,
    "offAtAppPeakM": 1.7719505837785032,
    "refAltAtAppPeak": 1.0620177246326767,
-   "refCrossHeightAgl": 134.08182434162813
+   "refCrossHeightAgl": 134.08182434162813,
+   "refAxisCrossing": "2027-02-10T20:39:46Z",
+   "refPlateauStart": "2027-02-10T20:39:50Z",
+   "refPlateauEnd": "2027-02-10T20:39:50Z",
+   "dPeakFromAxisCrossingS": 5.0674355030059814
   },
   {
    "set": "panel05-fernsehturm",
@@ -2844,7 +3400,11 @@
    "offAtAppPeakDeg": -0.041257029024201135,
    "offAtAppPeakM": -4.456382940865356,
    "refAltAtAppPeak": 1.6523820422977777,
-   "refCrossHeightAgl": 193.51286218910056
+   "refCrossHeightAgl": 193.51286218910056,
+   "refAxisCrossing": "2027-02-21T05:58:17Z",
+   "refPlateauStart": "2027-02-21T05:58:05Z",
+   "refPlateauEnd": "2027-02-21T05:58:05Z",
+   "dPeakFromAxisCrossingS": -13.187669277191162
   },
   {
    "set": "panel05-fernsehturm",
@@ -2862,7 +3422,11 @@
    "offAtAppPeakDeg": -0.13554739974437913,
    "offAtAppPeakM": -14.641168648987673,
    "refAltAtAppPeak": -0.16676146694675453,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-03T17:43:33Z",
+   "refPlateauStart": "2027-04-03T17:43:00Z",
+   "refPlateauEnd": "2027-04-03T17:43:00Z",
+   "dPeakFromAxisCrossingS": -40.87887644767761
   },
   {
    "set": "panel05-fernsehturm",
@@ -2880,7 +3444,11 @@
    "offAtAppPeakDeg": -0.00014654270660859856,
    "offAtAppPeakM": -0.015828828039355907,
    "refAltAtAppPeak": 0.14235303139448974,
-   "refCrossHeightAgl": 33.563249920110366
+   "refCrossHeightAgl": 33.563249920110366,
+   "refAxisCrossing": "2027-04-04T17:42:06Z",
+   "refPlateauStart": "2027-04-04T17:42:15Z",
+   "refPlateauEnd": "2027-04-04T17:42:15Z",
+   "dPeakFromAxisCrossingS": -0.04422283172607422
   },
   {
    "set": "panel05-fernsehturm",
@@ -2898,7 +3466,11 @@
    "offAtAppPeakDeg": 0.013677617542390805,
    "offAtAppPeakM": 1.4773895001464261,
    "refAltAtAppPeak": 0.5361933878379905,
-   "refCrossHeightAgl": 77.07330429348977
+   "refCrossHeightAgl": 77.07330429348977,
+   "refAxisCrossing": "2027-04-05T17:40:40Z",
+   "refPlateauStart": "2027-04-05T17:40:40Z",
+   "refPlateauEnd": "2027-04-05T17:40:40Z",
+   "dPeakFromAxisCrossingS": 4.133787155151367
   },
   {
    "set": "panel05-fernsehturm",
@@ -2916,7 +3488,11 @@
    "offAtAppPeakDeg": 0.048862971631053624,
    "offAtAppPeakM": 5.277939744252624,
    "refAltAtAppPeak": 2.9277259886714164,
-   "refCrossHeightAgl": 338.4344939873285
+   "refCrossHeightAgl": 338.4344939873285,
+   "refAxisCrossing": "2027-04-06T17:12:31Z",
+   "refPlateauStart": "2027-04-06T17:12:40Z",
+   "refPlateauEnd": "2027-04-06T17:12:40Z",
+   "dPeakFromAxisCrossingS": 15.203711986541748
   },
   {
    "set": "panel05-fernsehturm",
@@ -2934,7 +3510,11 @@
    "offAtAppPeakDeg": 0.014616620716111091,
    "offAtAppPeakM": 1.5788160406355845,
    "refAltAtAppPeak": 0.9484639646226377,
-   "refCrossHeightAgl": 121.70997488261058
+   "refCrossHeightAgl": 121.70997488261058,
+   "refAxisCrossing": "2027-04-06T17:39:14Z",
+   "refPlateauStart": "2027-04-06T17:39:10Z",
+   "refPlateauEnd": "2027-04-06T17:39:10Z",
+   "dPeakFromAxisCrossingS": 4.422942876815796
   },
   {
    "set": "panel05-fernsehturm",
@@ -2952,7 +3532,11 @@
    "offAtAppPeakDeg": 0.016382246977414205,
    "offAtAppPeakM": 1.769530373124227,
    "refAltAtAppPeak": 1.3687382063540976,
-   "refCrossHeightAgl": 167.28319197088604
+   "refCrossHeightAgl": 167.28319197088604,
+   "refAxisCrossing": "2027-04-07T17:37:49Z",
+   "refPlateauStart": "2027-04-07T17:37:55Z",
+   "refPlateauEnd": "2027-04-07T17:37:55Z",
+   "dPeakFromAxisCrossingS": 4.963477611541748
   },
   {
    "set": "panel05-fernsehturm",
@@ -2970,7 +3554,11 @@
    "offAtAppPeakDeg": 0.008563593605273557,
    "offAtAppPeakM": 0.9249975908992074,
    "refAltAtAppPeak": 1.8022496748374999,
-   "refCrossHeightAgl": 213.58428428332437
+   "refCrossHeightAgl": 213.58428428332437,
+   "refAxisCrossing": "2027-04-08T17:36:23Z",
+   "refPlateauStart": "2027-04-08T17:36:20Z",
+   "refPlateauEnd": "2027-04-08T17:36:20Z",
+   "dPeakFromAxisCrossingS": 2.5980398654937744
   },
   {
    "set": "panel05-fernsehturm",
@@ -2988,7 +3576,11 @@
    "offAtAppPeakDeg": 0.1456014499134166,
    "offAtAppPeakM": 15.727158084475644,
    "refAltAtAppPeak": 2.1385016940296824,
-   "refCrossHeightAgl": 260.4228319577809
+   "refCrossHeightAgl": 260.4228319577809,
+   "refAxisCrossing": "2027-04-09T17:34:59Z",
+   "refPlateauStart": "2027-04-09T17:35:35Z",
+   "refPlateauEnd": "2027-04-09T17:35:45Z",
+   "dPeakFromAxisCrossingS": 44.22644352912903
   },
   {
    "set": "panel05-fernsehturm",
@@ -3006,7 +3598,11 @@
    "offAtAppPeakDeg": 0.030054754378166466,
    "offAtAppPeakM": 3.246367900708352,
    "refAltAtAppPeak": 2.656015666616842,
-   "refCrossHeightAgl": 307.6387365082906
+   "refCrossHeightAgl": 307.6387365082906,
+   "refAxisCrossing": "2027-04-10T17:33:35Z",
+   "refPlateauStart": "2027-04-10T17:33:50Z",
+   "refPlateauEnd": "2027-04-10T17:33:50Z",
+   "dPeakFromAxisCrossingS": 9.143396854400635
   },
   {
    "set": "panel05-fernsehturm",
@@ -3024,7 +3620,11 @@
    "offAtAppPeakDeg": 0.15011025392522068,
    "offAtAppPeakM": 16.21417709086417,
    "refAltAtAppPeak": 3.007277680342162,
-   "refCrossHeightAgl": 355.101262941862
+   "refCrossHeightAgl": 355.101262941862,
+   "refAxisCrossing": "2027-04-11T17:32:11Z",
+   "refPlateauStart": "2027-04-11T17:32:50Z",
+   "refPlateauEnd": "2027-04-11T17:32:50Z",
+   "dPeakFromAxisCrossingS": 45.72825336456299
   },
   {
    "set": "panel05-fernsehturm",
@@ -3042,7 +3642,11 @@
    "offAtAppPeakDeg": 0.15938229288112038,
    "offAtAppPeakM": 17.215697491324235,
    "refAltAtAppPeak": 3.4387195290625807,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-12T17:30:48Z",
+   "refPlateauStart": "2027-04-12T17:31:30Z",
+   "refPlateauEnd": "2027-04-12T17:31:40Z",
+   "dPeakFromAxisCrossingS": 48.626769065856934
   },
   {
    "set": "panel05-fernsehturm",
@@ -3060,7 +3664,11 @@
    "offAtAppPeakDeg": 0.0164566383195679,
    "offAtAppPeakM": 1.7775657628738704,
    "refAltAtAppPeak": 0.49988353849590234,
-   "refCrossHeightAgl": 73.39143323161079
+   "refCrossHeightAgl": 73.39143323161079,
+   "refAxisCrossing": "2027-04-17T02:32:04Z",
+   "refPlateauStart": "2027-04-17T02:32:10Z",
+   "refPlateauEnd": "2027-04-17T02:32:10Z",
+   "dPeakFromAxisCrossingS": 5.2282555103302
   },
   {
    "set": "panel05-fernsehturm",
@@ -3078,7 +3686,11 @@
    "offAtAppPeakDeg": -0.06666010492561215,
    "offAtAppPeakM": -7.200299232708618,
    "refAltAtAppPeak": 0.09183807487878326,
-   "refCrossHeightAgl": 23.766057904052253
+   "refCrossHeightAgl": 23.766057904052253,
+   "refAxisCrossing": "2027-05-03T15:12:30Z",
+   "refPlateauStart": "2027-05-03T15:12:20Z",
+   "refPlateauEnd": "2027-05-03T15:12:20Z",
+   "dPeakFromAxisCrossingS": -20.545387983322144
   },
   {
    "set": "panel05-fernsehturm",
@@ -3096,7 +3708,11 @@
    "offAtAppPeakDeg": 0.030441518947159785,
    "offAtAppPeakM": 3.288144322039659,
    "refAltAtAppPeak": 2.4928754331136864,
-   "refCrossHeightAgl": 290.0981780935322
+   "refCrossHeightAgl": 290.0981780935322,
+   "refAxisCrossing": "2027-05-14T00:24:05Z",
+   "refPlateauStart": "2027-05-14T00:24:10Z",
+   "refPlateauEnd": "2027-05-14T00:24:10Z",
+   "dPeakFromAxisCrossingS": 9.728633880615234
   },
   {
    "set": "panel05-fernsehturm",
@@ -3114,7 +3730,11 @@
    "offAtAppPeakDeg": 0.016819961592541725,
    "offAtAppPeakM": 1.8168101698026913,
    "refAltAtAppPeak": 1.2001579406510636,
-   "refCrossHeightAgl": 149.04989381992408
+   "refCrossHeightAgl": 149.04989381992408,
+   "refAxisCrossing": "2027-06-27T11:38:08Z",
+   "refPlateauStart": "2027-06-27T11:38:15Z",
+   "refPlateauEnd": "2027-06-27T11:38:15Z",
+   "dPeakFromAxisCrossingS": 5.198775768280029
   },
   {
    "set": "panel05-fernsehturm",
@@ -3132,7 +3752,11 @@
    "offAtAppPeakDeg": -0.11858922095167745,
    "offAtAppPeakM": -12.809428931723733,
    "refAltAtAppPeak": 0.012040488666446025,
-   "refCrossHeightAgl": 11.234346997221294
+   "refCrossHeightAgl": 11.234346997221294,
+   "refAxisCrossing": "2027-07-07T21:10:05Z",
+   "refPlateauStart": "2027-07-07T21:09:40Z",
+   "refPlateauEnd": "2027-07-07T21:09:40Z",
+   "dPeakFromAxisCrossingS": -37.68118858337402
   },
   {
    "set": "panel05-fernsehturm",
@@ -3150,7 +3774,11 @@
    "offAtAppPeakDeg": 0.1524462203715912,
    "offAtAppPeakM": 16.466496786883315,
    "refAltAtAppPeak": 3.303246801611929,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-21T08:10:55Z",
+   "refPlateauStart": "2027-08-21T08:11:40Z",
+   "refPlateauEnd": "2027-08-21T08:11:40Z",
+   "dPeakFromAxisCrossingS": 47.4528431892395
   },
   {
    "set": "panel05-fernsehturm",
@@ -3168,7 +3796,11 @@
    "offAtAppPeakDeg": 0.1608126209418196,
    "offAtAppPeakM": 17.370194548439084,
    "refAltAtAppPeak": 3.1302203742623416,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-31T17:31:07Z",
+   "refPlateauStart": "2027-08-31T17:31:55Z",
+   "refPlateauEnd": "2027-08-31T17:31:55Z",
+   "dPeakFromAxisCrossingS": 49.08454346656799
   },
   {
    "set": "panel05-fernsehturm",
@@ -3186,7 +3818,11 @@
    "offAtAppPeakDeg": -0.12703089325575226,
    "offAtAppPeakM": -13.721257178643484,
    "refAltAtAppPeak": -0.01893844573628789,
-   "refCrossHeightAgl": 7.312690239449673
+   "refCrossHeightAgl": 7.312690239449673,
+   "refAxisCrossing": "2027-08-31T17:33:55Z",
+   "refPlateauStart": "2027-08-31T17:33:20Z",
+   "refPlateauEnd": "2027-08-31T17:33:20Z",
+   "dPeakFromAxisCrossingS": -40.436859369277954
   },
   {
    "set": "panel05-fernsehturm",
@@ -3204,7 +3840,11 @@
    "offAtAppPeakDeg": 0.04062644561334648,
    "offAtAppPeakM": 4.388270398072297,
    "refAltAtAppPeak": 2.7848634547436797,
-   "refCrossHeightAgl": 322.43350433901014
+   "refCrossHeightAgl": 322.43350433901014,
+   "refAxisCrossing": "2027-09-01T17:31:55Z",
+   "refPlateauStart": "2027-09-01T17:31:55Z",
+   "refPlateauEnd": "2027-09-01T17:31:55Z",
+   "dPeakFromAxisCrossingS": 12.383925437927246
   },
   {
    "set": "panel05-fernsehturm",
@@ -3222,7 +3862,11 @@
    "offAtAppPeakDeg": 0.09882993164211847,
    "offAtAppPeakM": 10.675126925850035,
    "refAltAtAppPeak": 2.31233984320247,
-   "refCrossHeightAgl": 275.7321268180013
+   "refCrossHeightAgl": 275.7321268180013,
+   "refAxisCrossing": "2027-09-02T17:32:43Z",
+   "refPlateauStart": "2027-09-02T17:33:05Z",
+   "refPlateauEnd": "2027-09-02T17:33:05Z",
+   "dPeakFromAxisCrossingS": 30.080896854400635
   },
   {
    "set": "panel05-fernsehturm",
@@ -3240,7 +3884,11 @@
    "offAtAppPeakDeg": 0.06730697237322697,
    "offAtAppPeakM": 7.270170697686401,
    "refAltAtAppPeak": 1.906842041732325,
-   "refCrossHeightAgl": 229.36267008199158
+   "refCrossHeightAgl": 229.36267008199158,
+   "refAxisCrossing": "2027-09-03T17:33:31Z",
+   "refPlateauStart": "2027-09-03T17:33:55Z",
+   "refPlateauEnd": "2027-09-03T17:33:55Z",
+   "dPeakFromAxisCrossingS": 20.459022045135498
   },
   {
    "set": "panel05-fernsehturm",
@@ -3258,7 +3906,11 @@
    "offAtAppPeakDeg": -0.06658070078624514,
    "offAtAppPeakM": -7.191722385066448,
    "refAltAtAppPeak": 1.5757014753948153,
-   "refCrossHeightAgl": 183.46905109584884
+   "refCrossHeightAgl": 183.46905109584884,
+   "refAxisCrossing": "2027-09-04T17:34:19Z",
+   "refPlateauStart": "2027-09-04T17:34:00Z",
+   "refPlateauEnd": "2027-09-04T17:34:00Z",
+   "dPeakFromAxisCrossingS": -20.214619636535645
   },
   {
    "set": "panel05-fernsehturm",
@@ -3276,7 +3928,11 @@
    "offAtAppPeakDeg": 0.015693848233045374,
    "offAtAppPeakM": 1.6951729001438325,
    "refAltAtAppPeak": 1.1004344508537551,
-   "refCrossHeightAgl": 138.2243270759898
+   "refCrossHeightAgl": 138.2243270759898,
+   "refAxisCrossing": "2027-09-05T17:35:07Z",
+   "refPlateauStart": "2027-09-05T17:35:10Z",
+   "refPlateauEnd": "2027-09-05T17:35:10Z",
+   "dPeakFromAxisCrossingS": 4.758409023284912
   },
   {
    "set": "panel05-fernsehturm",
@@ -3294,7 +3950,11 @@
    "offAtAppPeakDeg": 0.014311168746007755,
    "offAtAppPeakM": 1.5458226094308374,
    "refAltAtAppPeak": 0.6906890209155856,
-   "refCrossHeightAgl": 93.82402893334822
+   "refCrossHeightAgl": 93.82402893334822,
+   "refAxisCrossing": "2027-09-06T17:35:54Z",
+   "refPlateauStart": "2027-09-06T17:36:00Z",
+   "refPlateauEnd": "2027-09-06T17:36:00Z",
+   "dPeakFromAxisCrossingS": 4.333930730819702
   },
   {
    "set": "panel05-fernsehturm",
@@ -3312,7 +3972,11 @@
    "offAtAppPeakDeg": 0.02114271521961237,
    "offAtAppPeakM": 2.2837329215583106,
    "refAltAtAppPeak": 0.28523240022906776,
-   "refCrossHeightAgl": 50.463018063479524
+   "refCrossHeightAgl": 50.463018063479524,
+   "refAxisCrossing": "2027-09-07T17:36:42Z",
+   "refPlateauStart": "2027-09-07T17:36:35Z",
+   "refPlateauEnd": "2027-09-07T17:36:35Z",
+   "dPeakFromAxisCrossingS": 6.39530348777771
   },
   {
    "set": "panel05-fernsehturm",
@@ -3330,7 +3994,11 @@
    "offAtAppPeakDeg": -0.1192599903141611,
    "offAtAppPeakM": -12.881882164904287,
    "refAltAtAppPeak": -0.01798614753542882,
-   "refCrossHeightAgl": 8.278511458245566
+   "refCrossHeightAgl": 8.278511458245566,
+   "refAxisCrossing": "2027-09-08T17:37:30Z",
+   "refPlateauStart": "2027-09-08T17:37:00Z",
+   "refPlateauEnd": "2027-09-08T17:37:00Z",
+   "dPeakFromAxisCrossingS": -36.03856158256531
   },
   {
    "set": "panel05-fernsehturm",
@@ -3348,7 +4016,11 @@
    "offAtAppPeakDeg": 0.017085324533516476,
    "offAtAppPeakM": 1.845473379715457,
    "refAltAtAppPeak": 1.2639885023609372,
-   "refCrossHeightAgl": 155.97185532508541
+   "refCrossHeightAgl": 155.97185532508541,
+   "refAxisCrossing": "2027-09-17T06:15:53Z",
+   "refPlateauStart": "2027-09-17T06:16:00Z",
+   "refPlateauEnd": "2027-09-17T06:16:00Z",
+   "dPeakFromAxisCrossingS": 5.2811665534973145
   },
   {
    "set": "panel05-fernsehturm",
@@ -3366,7 +4038,11 @@
    "offAtAppPeakDeg": 0.029475352538331164,
    "offAtAppPeakM": 3.1837837414507035,
    "refAltAtAppPeak": 2.651943221664304,
-   "refCrossHeightAgl": 307.0905927711304
+   "refCrossHeightAgl": 307.0905927711304,
+   "refAxisCrossing": "2027-11-11T02:45:09Z",
+   "refPlateauStart": "2027-11-11T02:45:10Z",
+   "refPlateauEnd": "2027-11-11T02:45:10Z",
+   "dPeakFromAxisCrossingS": 9.15904688835144
   },
   {
    "set": "panel05-fernsehturm",
@@ -3384,7 +4060,11 @@
    "offAtAppPeakDeg": 0.01749825110968964,
    "offAtAppPeakM": 1.8900756933917178,
    "refAltAtAppPeak": 0.8925501609389055,
-   "refCrossHeightAgl": 115.92435695119097
+   "refCrossHeightAgl": 115.92435695119097,
+   "refAxisCrossing": "2027-11-21T11:57:05Z",
+   "refPlateauStart": "2027-11-21T11:57:15Z",
+   "refPlateauEnd": "2027-11-21T11:57:15Z",
+   "dPeakFromAxisCrossingS": 5.566176652908325
   },
   {
    "set": "panel05-fernsehturm",
@@ -3400,9 +4080,13 @@
    "refCovered": 0.27615921214608125,
    "refCoveredAtAppPeak": 0.2745178498153467,
    "offAtAppPeakDeg": -0.06802486803435967,
-   "offAtAppPeakM": -7.384661929690896,
+   "offAtAppPeakM": -7.384661929690898,
    "refAltAtAppPeak": 1.4914373111934902,
-   "refCrossHeightAgl": 174.7894522974993
+   "refCrossHeightAgl": 174.7894522974993,
+   "refAxisCrossing": "2026-12-28T09:37:25Z",
+   "refPlateauStart": "2026-12-28T09:37:15Z",
+   "refPlateauEnd": "2026-12-28T09:37:15Z",
+   "dPeakFromAxisCrossingS": -21.683040142059326
   },
   {
    "set": "panel05-fernsehturm",
@@ -3418,9 +4102,13 @@
    "refCovered": 0.046368485843249894,
    "refCoveredAtAppPeak": 0.043085761181780875,
    "offAtAppPeakDeg": 0.15341979219393262,
-   "offAtAppPeakM": 16.654987086536693,
+   "offAtAppPeakM": 16.654987086536696,
    "refAltAtAppPeak": 3.0070304134374854,
-   "refCrossHeightAgl": 356.6114720922164
+   "refCrossHeightAgl": 356.6114720922164,
+   "refAxisCrossing": "2027-01-14T22:35:08Z",
+   "refPlateauStart": "2027-01-14T22:35:10Z",
+   "refPlateauEnd": "2027-01-14T22:35:40Z",
+   "dPeakFromAxisCrossingS": 47.72562527656555
   },
   {
    "set": "panel05-fernsehturm",
@@ -3436,9 +4124,13 @@
    "refCovered": 0.2958555601148954,
    "refCoveredAtAppPeak": 0.2905211325400082,
    "offAtAppPeakDeg": 0.016485778366662793,
-   "offAtAppPeakM": 1.7896675642814055,
+   "offAtAppPeakM": 1.789667564281406,
    "refAltAtAppPeak": 1.0657281835773154,
-   "refCrossHeightAgl": 135.00379276469073
+   "refCrossHeightAgl": 135.00379276469073,
+   "refAxisCrossing": "2027-02-10T20:39:44Z",
+   "refPlateauStart": "2027-02-10T20:39:45Z",
+   "refPlateauEnd": "2027-02-10T20:39:45Z",
+   "dPeakFromAxisCrossingS": 5.092547416687012
   },
   {
    "set": "panel05-fernsehturm",
@@ -3454,9 +4146,13 @@
    "refCovered": 0.40008206811653674,
    "refCoveredAtAppPeak": 0.3963890028723841,
    "offAtAppPeakDeg": -0.035235464461991745,
-   "offAtAppPeakM": -3.8251010329930777,
+   "offAtAppPeakM": -3.8251010329930786,
    "refAltAtAppPeak": 1.6522263342860788,
-   "refCrossHeightAgl": 194.78014093929792
+   "refCrossHeightAgl": 194.78014093929792,
+   "refAxisCrossing": "2027-02-21T05:58:15Z",
+   "refPlateauStart": "2027-02-21T05:58:00Z",
+   "refPlateauEnd": "2027-02-21T05:58:00Z",
+   "dPeakFromAxisCrossingS": -11.262956142425537
   },
   {
    "set": "panel05-fernsehturm",
@@ -3472,9 +4168,13 @@
    "refCovered": 0.21050471891670086,
    "refCoveredAtAppPeak": 0.2096840377513336,
    "offAtAppPeakDeg": -0.1331383729934507,
-   "offAtAppPeakM": -14.453271323203628,
+   "offAtAppPeakM": -14.453271323203634,
    "refAltAtAppPeak": -0.16469591635709557,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-04-03T17:43:31Z",
+   "refPlateauStart": "2027-04-03T17:42:55Z",
+   "refPlateauEnd": "2027-04-03T17:42:55Z",
+   "dPeakFromAxisCrossingS": -40.1527316570282
   },
   {
    "set": "panel05-fernsehturm",
@@ -3490,9 +4190,13 @@
    "refCovered": 0.3750512925728354,
    "refCoveredAtAppPeak": 0.36889618383258105,
    "offAtAppPeakDeg": 0.002527391933607803,
-   "offAtAppPeakM": 0.27436929365440543,
+   "offAtAppPeakM": 0.27436929365440554,
    "refAltAtAppPeak": 0.14430740724995028,
-   "refCrossHeightAgl": 33.96484043683888
+   "refCrossHeightAgl": 33.96484043683888,
+   "refAxisCrossing": "2027-04-04T17:42:05Z",
+   "refPlateauStart": "2027-04-04T17:42:10Z",
+   "refPlateauEnd": "2027-04-04T17:42:25Z",
+   "dPeakFromAxisCrossingS": 0.762988805770874
   },
   {
    "set": "panel05-fernsehturm",
@@ -3508,9 +4212,13 @@
    "refCovered": 0.3188346327451785,
    "refCoveredAtAppPeak": 0.3143208863356586,
    "offAtAppPeakDeg": 0.013744604996882454,
-   "offAtAppPeakM": 1.4920905279500047,
+   "offAtAppPeakM": 1.4920905279500052,
    "refAltAtAppPeak": 0.5398993361166666,
-   "refCrossHeightAgl": 77.70704817309256
+   "refCrossHeightAgl": 77.70704817309256,
+   "refAxisCrossing": "2027-04-05T17:40:38Z",
+   "refPlateauStart": "2027-04-05T17:40:35Z",
+   "refPlateauEnd": "2027-04-05T17:40:35Z",
+   "dPeakFromAxisCrossingS": 4.154094934463501
   },
   {
    "set": "panel05-fernsehturm",
@@ -3526,9 +4234,13 @@
    "refCovered": 0.06114074681986048,
    "refCoveredAtAppPeak": 0.057447681575707836,
    "offAtAppPeakDeg": 0.052696013695527386,
-   "offAtAppPeakM": 5.720588035353097,
+   "offAtAppPeakM": 5.7205880353530985,
    "refAltAtAppPeak": 2.9290840564182425,
-   "refCrossHeightAgl": 340.41520508907
+   "refCrossHeightAgl": 340.41520508907,
+   "refAxisCrossing": "2027-04-06T17:12:29Z",
+   "refPlateauStart": "2027-04-06T17:12:35Z",
+   "refPlateauEnd": "2027-04-06T17:12:35Z",
+   "dPeakFromAxisCrossingS": 16.396443605422974
   },
   {
    "set": "panel05-fernsehturm",
@@ -3544,9 +4256,13 @@
    "refCovered": 0.2888797702092737,
    "refCoveredAtAppPeak": 0.2876487484612228,
    "offAtAppPeakDeg": 0.01470026365255469,
-   "offAtAppPeakM": 1.5958351774619703,
+   "offAtAppPeakM": 1.5958351774619708,
    "refAltAtAppPeak": 0.9522668147975815,
-   "refCrossHeightAgl": 122.58004556666427
+   "refCrossHeightAgl": 122.58004556666427,
+   "refAxisCrossing": "2027-04-06T17:39:12Z",
+   "refPlateauStart": "2027-04-06T17:39:25Z",
+   "refPlateauEnd": "2027-04-06T17:39:25Z",
+   "dPeakFromAxisCrossingS": 4.448308944702148
   },
   {
    "set": "panel05-fernsehturm",
@@ -3562,9 +4278,13 @@
    "refCovered": 0.26302831350020517,
    "refCoveredAtAppPeak": 0.2634386540828888,
    "offAtAppPeakDeg": 0.007336636983814159,
-   "offAtAppPeakM": 0.7964526119913798,
+   "offAtAppPeakM": 0.7964526119913801,
    "refAltAtAppPeak": 1.3788638124427561,
-   "refCrossHeightAgl": 168.3926069717812
+   "refCrossHeightAgl": 168.3926069717812,
+   "refAxisCrossing": "2027-04-07T17:37:47Z",
+   "refPlateauStart": "2027-04-07T17:37:50Z",
+   "refPlateauEnd": "2027-04-07T17:37:50Z",
+   "dPeakFromAxisCrossingS": 2.2229013442993164
   },
   {
    "set": "panel05-fernsehturm",
@@ -3580,9 +4300,13 @@
    "refCovered": 0.4263438654082889,
    "refCoveredAtAppPeak": 0.4238818219121871,
    "offAtAppPeakDeg": 0.013634648539611757,
-   "offAtAppPeakM": 1.4801538452721281,
+   "offAtAppPeakM": 1.4801538452721286,
    "refAltAtAppPeak": 1.8027500115148223,
-   "refCrossHeightAgl": 214.93506048638315
+   "refCrossHeightAgl": 214.93506048638315,
+   "refAxisCrossing": "2027-04-08T17:36:22Z",
+   "refPlateauStart": "2027-04-08T17:36:30Z",
+   "refPlateauEnd": "2027-04-08T17:36:30Z",
+   "dPeakFromAxisCrossingS": 4.136521577835083
   },
   {
    "set": "panel05-fernsehturm",
@@ -3598,9 +4322,13 @@
    "refCovered": 0.14567090685268774,
    "refCoveredAtAppPeak": 0.14567090685268774,
    "offAtAppPeakDeg": 0.14101490770828592,
-   "offAtAppPeakM": 15.308334298366669,
+   "offAtAppPeakM": 15.308334298366672,
    "refAltAtAppPeak": 2.1458109717432463,
-   "refCrossHeightAgl": 262.0162471064156
+   "refCrossHeightAgl": 262.0162471064156,
+   "refAxisCrossing": "2027-04-09T17:34:57Z",
+   "refPlateauStart": "2027-04-09T17:35:40Z",
+   "refPlateauEnd": "2027-04-09T17:35:40Z",
+   "dPeakFromAxisCrossingS": 42.833982944488525
   },
   {
    "set": "panel05-fernsehturm",
@@ -3616,9 +4344,13 @@
    "refCovered": 0.07139926138695117,
    "refCoveredAtAppPeak": 0.07263028313500206,
    "offAtAppPeakDeg": 0.031193698546385238,
-   "offAtAppPeakM": 3.3863339210800385,
+   "offAtAppPeakM": 3.3863339210800394,
    "refAltAtAppPeak": 2.6593428347901353,
-   "refCrossHeightAgl": 309.4755199111437
+   "refCrossHeightAgl": 309.4755199111437,
+   "refAxisCrossing": "2027-04-10T17:33:33Z",
+   "refPlateauStart": "2027-04-10T17:33:30Z",
+   "refPlateauEnd": "2027-04-10T17:33:30Z",
+   "dPeakFromAxisCrossingS": 9.489992380142212
   },
   {
    "set": "panel05-fernsehturm",
@@ -3634,9 +4366,13 @@
    "refCovered": 0.043085761181780875,
    "refCoveredAtAppPeak": 0.04267542059909725,
    "offAtAppPeakDeg": 0.15805945733006557,
-   "offAtAppPeakM": 17.15866110292742,
+   "offAtAppPeakM": 17.158661102927425,
    "refAltAtAppPeak": 3.005716412406542,
-   "refCrossHeightAgl": 357.18166127331375
+   "refCrossHeightAgl": 357.18166127331375,
+   "refAxisCrossing": "2027-04-11T17:32:09Z",
+   "refPlateauStart": "2027-04-11T17:32:20Z",
+   "refPlateauEnd": "2027-04-11T17:32:45Z",
+   "dPeakFromAxisCrossingS": 48.149885177612305
   },
   {
    "set": "panel05-fernsehturm",
@@ -3652,9 +4388,13 @@
    "refCovered": 0.3192449733278621,
    "refCoveredAtAppPeak": 0.3180139515798112,
    "offAtAppPeakDeg": 0.01653070797024315,
-   "offAtAppPeakM": 1.7945450442775204,
+   "offAtAppPeakM": 1.7945450442775208,
    "refAltAtAppPeak": 0.5037431536900444,
-   "refCrossHeightAgl": 74.02408607565548
+   "refCrossHeightAgl": 74.02408607565548,
+   "refAxisCrossing": "2027-04-17T02:32:02Z",
+   "refPlateauStart": "2027-04-17T02:32:05Z",
+   "refPlateauEnd": "2027-04-17T02:32:05Z",
+   "dPeakFromAxisCrossingS": 5.251851797103882
   },
   {
    "set": "panel05-fernsehturm",
@@ -3670,9 +4410,13 @@
    "refCovered": 0.4025441116126385,
    "refCoveredAtAppPeak": 0.3848994665572425,
    "offAtAppPeakDeg": -0.06569884031975397,
-   "offAtAppPeakM": -7.132152387110403,
+   "offAtAppPeakM": -7.132152387110405,
    "refAltAtAppPeak": 0.09475523826213234,
-   "refCrossHeightAgl": 24.10284622784233
+   "refCrossHeightAgl": 24.10284622784233,
+   "refAxisCrossing": "2027-05-03T15:12:28Z",
+   "refPlateauStart": "2027-05-03T15:12:20Z",
+   "refPlateauEnd": "2027-05-03T15:12:20Z",
+   "dPeakFromAxisCrossingS": -20.249279260635376
   },
   {
    "set": "panel05-fernsehturm",
@@ -3688,9 +4432,13 @@
    "refCovered": 0.08370947886746,
    "refCoveredAtAppPeak": 0.07550266721378744,
    "offAtAppPeakDeg": 0.030727050847096028,
-   "offAtAppPeakM": 3.3356754545648477,
+   "offAtAppPeakM": 3.3356754545648486,
    "refAltAtAppPeak": 2.496973488119845,
-   "refCrossHeightAgl": 291.8649281246304
+   "refCrossHeightAgl": 291.8649281246304,
+   "refAxisCrossing": "2027-05-14T00:24:03Z",
+   "refPlateauStart": "2027-05-14T00:24:05Z",
+   "refPlateauEnd": "2027-05-14T00:24:05Z",
+   "dPeakFromAxisCrossingS": 9.81999683380127
   },
   {
    "set": "panel05-fernsehturm",
@@ -3706,9 +4454,13 @@
    "refCovered": 0.2843660237997538,
    "refCoveredAtAppPeak": 0.28067295855560115,
    "offAtAppPeakDeg": 0.016910802363673767,
-   "offAtAppPeakM": 1.8358074337236605,
+   "offAtAppPeakM": 1.835807433723661,
    "refAltAtAppPeak": 1.2038961307295164,
-   "refCrossHeightAgl": 150.05083471859666
+   "refCrossHeightAgl": 150.05083471859666,
+   "refAxisCrossing": "2027-06-27T11:38:06Z",
+   "refPlateauStart": "2027-06-27T11:38:15Z",
+   "refPlateauEnd": "2027-06-27T11:38:15Z",
+   "dPeakFromAxisCrossingS": 5.22689414024353
   },
   {
    "set": "panel05-fernsehturm",
@@ -3724,9 +4476,13 @@
    "refCovered": 0.3233483791546984,
    "refCoveredAtAppPeak": 0.3180139515798112,
    "offAtAppPeakDeg": -0.11843452688290047,
-   "offAtAppPeakM": -12.857047240302538,
+   "offAtAppPeakM": -12.857047240302542,
    "refAltAtAppPeak": 0.015699883286159788,
-   "refCrossHeightAgl": 11.534918503691758
+   "refCrossHeightAgl": 11.534918503691758,
+   "refAxisCrossing": "2027-07-07T21:10:03Z",
+   "refPlateauStart": "2027-07-07T21:09:35Z",
+   "refPlateauEnd": "2027-07-07T21:09:35Z",
+   "dPeakFromAxisCrossingS": -37.63243818283081
   },
   {
    "set": "panel05-fernsehturm",
@@ -3742,9 +4498,13 @@
    "refCovered": 0.009848173984407058,
    "refCoveredAtAppPeak": 0.010258514567090685,
    "offAtAppPeakDeg": 0.15246373592874596,
-   "offAtAppPeakM": 16.55119927322406,
+   "offAtAppPeakM": 16.551199273224064,
    "refAltAtAppPeak": 3.3073155436628796,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-21T08:10:53Z",
+   "refPlateauStart": "2027-08-21T08:11:35Z",
+   "refPlateauEnd": "2027-08-21T08:11:40Z",
+   "dPeakFromAxisCrossingS": 47.45873045921326
   },
   {
    "set": "panel05-fernsehturm",
@@ -3760,9 +4520,13 @@
    "refCovered": 0.028723840787853918,
    "refCoveredAtAppPeak": 0.027492819039803038,
    "offAtAppPeakDeg": 0.16083079461445743,
-   "offAtAppPeakM": 17.45951268161838,
+   "offAtAppPeakM": 17.45951268161839,
    "refAltAtAppPeak": 3.134412603264082,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-08-31T17:31:05Z",
+   "refPlateauStart": "2027-08-31T17:31:25Z",
+   "refPlateauEnd": "2027-08-31T17:31:25Z",
+   "dPeakFromAxisCrossingS": 49.09062910079956
   },
   {
    "set": "panel05-fernsehturm",
@@ -3778,9 +4542,13 @@
    "refCovered": 0.29544521953221176,
    "refCoveredAtAppPeak": 0.2921624948707427,
    "offAtAppPeakDeg": -0.12716993610344018,
-   "offAtAppPeakM": -13.805348145180545,
+   "offAtAppPeakM": -13.805348145180549,
    "refAltAtAppPeak": -0.015093157510407962,
-   "refCrossHeightAgl": 7.592895639175374
+   "refCrossHeightAgl": 7.592895639175374,
+   "refAxisCrossing": "2027-08-31T17:33:53Z",
+   "refPlateauStart": "2027-08-31T17:33:30Z",
+   "refPlateauEnd": "2027-08-31T17:33:30Z",
+   "dPeakFromAxisCrossingS": -40.48156547546387
   },
   {
    "set": "panel05-fernsehturm",
@@ -3796,9 +4564,13 @@
    "refCovered": 0.06934755847353304,
    "refCoveredAtAppPeak": 0.06319244973327862,
    "offAtAppPeakDeg": 0.041991045042480704,
-   "offAtAppPeakM": 4.558475167588936,
+   "offAtAppPeakM": 4.558475167588938,
    "refAltAtAppPeak": 2.7880538705461024,
-   "refCrossHeightAgl": 324.34839025625774
+   "refCrossHeightAgl": 324.34839025625774,
+   "refAxisCrossing": "2027-09-01T17:31:53Z",
+   "refPlateauStart": "2027-09-01T17:31:50Z",
+   "refPlateauEnd": "2027-09-01T17:31:50Z",
+   "dPeakFromAxisCrossingS": 12.800020217895508
   },
   {
    "set": "panel05-fernsehturm",
@@ -3814,9 +4586,13 @@
    "refCovered": 0.09519901518260156,
    "refCoveredAtAppPeak": 0.09396799343455067,
    "offAtAppPeakDeg": 0.09923978176073338,
-   "offAtAppPeakM": 10.773298933989167,
+   "offAtAppPeakM": 10.773298933989171,
    "refAltAtAppPeak": 2.3161683586552355,
-   "refCrossHeightAgl": 277.4065812674378
+   "refCrossHeightAgl": 277.4065812674378,
+   "refAxisCrossing": "2027-09-02T17:32:41Z",
+   "refPlateauStart": "2027-09-02T17:33:00Z",
+   "refPlateauEnd": "2027-09-02T17:33:00Z",
+   "dPeakFromAxisCrossingS": 30.205963611602783
   },
   {
    "set": "panel05-fernsehturm",
@@ -3832,9 +4608,13 @@
    "refCovered": 0.407468198604842,
    "refCoveredAtAppPeak": 0.4025441116126385,
    "offAtAppPeakDeg": 0.07367926453665133,
-   "offAtAppPeakM": 7.998493426795155,
+   "offAtAppPeakM": 7.998493426795157,
    "refAltAtAppPeak": 1.9064343770544696,
-   "refCrossHeightAgl": 230.79735447776434
+   "refCrossHeightAgl": 230.79735447776434,
+   "refAxisCrossing": "2027-09-03T17:33:29Z",
+   "refPlateauStart": "2027-09-03T17:33:45Z",
+   "refPlateauEnd": "2027-09-03T17:33:45Z",
+   "dPeakFromAxisCrossingS": 22.39607000350952
   },
   {
    "set": "panel05-fernsehturm",
@@ -3850,9 +4630,13 @@
    "refCovered": 0.3385309807139926,
    "refCoveredAtAppPeak": 0.3352482560525236,
    "offAtAppPeakDeg": -0.06489034998160749,
-   "offAtAppPeakM": -7.044384075415663,
+   "offAtAppPeakM": -7.044384075415665,
    "refAltAtAppPeak": 1.5785413797258943,
-   "refCrossHeightAgl": 184.6650525001703
+   "refCrossHeightAgl": 184.6650525001703,
+   "refAxisCrossing": "2027-09-04T17:34:17Z",
+   "refPlateauStart": "2027-09-04T17:34:05Z",
+   "refPlateauEnd": "2027-09-04T17:34:05Z",
+   "dPeakFromAxisCrossingS": -19.701591730117798
   },
   {
    "set": "panel05-fernsehturm",
@@ -3868,9 +4652,13 @@
    "refCovered": 0.27944193680755025,
    "refCoveredAtAppPeak": 0.28067295855560115,
    "offAtAppPeakDeg": 0.01578930124005509,
-   "offAtAppPeakM": 1.7140592129478527,
+   "offAtAppPeakM": 1.7140592129478531,
    "refAltAtAppPeak": 1.1042823068305538,
-   "refCrossHeightAgl": 139.1832067130417
+   "refCrossHeightAgl": 139.1832067130417,
+   "refAxisCrossing": "2027-09-05T17:35:05Z",
+   "refPlateauStart": "2027-09-05T17:35:05Z",
+   "refPlateauEnd": "2027-09-05T17:35:15Z",
+   "dPeakFromAxisCrossingS": 4.787391662597656
   },
   {
    "set": "panel05-fernsehturm",
@@ -3886,9 +4674,13 @@
    "refCovered": 0.31062782109150594,
    "refCoveredAtAppPeak": 0.30529339351661877,
    "offAtAppPeakDeg": 0.014386829013260525,
-   "offAtAppPeakM": 1.5618092555436371,
+   "offAtAppPeakM": 1.5618092555436378,
    "refAltAtAppPeak": 0.6944492352795093,
-   "refCrossHeightAgl": 94.5485872592555
+   "refCrossHeightAgl": 94.5485872592555,
+   "refAxisCrossing": "2027-09-06T17:35:53Z",
+   "refPlateauStart": "2027-09-06T17:35:50Z",
+   "refPlateauEnd": "2027-09-06T17:35:50Z",
+   "dPeakFromAxisCrossingS": 4.356903314590454
   },
   {
    "set": "panel05-fernsehturm",
@@ -3904,9 +4696,13 @@
    "refCovered": 0.33647927780057446,
    "refCoveredAtAppPeak": 0.3336068937217891,
    "offAtAppPeakDeg": 0.019489220032017602,
-   "offAtAppPeakM": 2.1157159928206593,
+   "offAtAppPeakM": 2.11571599282066,
    "refAltAtAppPeak": 0.28997836276960165,
-   "refCrossHeightAgl": 50.95667407034004
+   "refCrossHeightAgl": 50.95667407034004,
+   "refAxisCrossing": "2027-09-07T17:36:40Z",
+   "refPlateauStart": "2027-09-07T17:36:45Z",
+   "refPlateauEnd": "2027-09-07T17:36:50Z",
+   "dPeakFromAxisCrossingS": 5.895214557647705
   },
   {
    "set": "panel05-fernsehturm",
@@ -3922,9 +4718,13 @@
    "refCovered": 0.31637258924907674,
    "refCoveredAtAppPeak": 0.30652441526466967,
    "offAtAppPeakDeg": -0.11936486647875744,
-   "offAtAppPeakM": -12.95804329650567,
+   "offAtAppPeakM": -12.958043296505673,
    "refAltAtAppPeak": -0.01432179388807564,
-   "refCrossHeightAgl": 8.5470437442429
+   "refCrossHeightAgl": 8.5470437442429,
+   "refAxisCrossing": "2027-09-08T17:37:28Z",
+   "refPlateauStart": "2027-09-08T17:36:55Z",
+   "refPlateauEnd": "2027-09-08T17:36:55Z",
+   "dPeakFromAxisCrossingS": -36.070659160614014
   },
   {
    "set": "panel05-fernsehturm",
@@ -3940,9 +4740,13 @@
    "refCovered": 0.2823143208863357,
    "refCoveredAtAppPeak": 0.278621255642183,
    "offAtAppPeakDeg": 0.017176438633360828,
-   "offAtAppPeakM": 1.8646444473715564,
+   "offAtAppPeakM": 1.864644447371557,
    "refAltAtAppPeak": 1.267741430591191,
-   "refCrossHeightAgl": 157.00931265835547
+   "refCrossHeightAgl": 157.00931265835547,
+   "refAxisCrossing": "2027-09-17T06:15:51Z",
+   "refPlateauStart": "2027-09-17T06:15:55Z",
+   "refPlateauEnd": "2027-09-17T06:15:55Z",
+   "dPeakFromAxisCrossingS": 5.309378385543823
   },
   {
    "set": "panel05-fernsehturm",
@@ -3958,9 +4762,13 @@
    "refCovered": 0.07591300779647107,
    "refCoveredAtAppPeak": 0.07960607304062371,
    "offAtAppPeakDeg": 0.03049729227437454,
-   "offAtAppPeakM": 3.3107332615988945,
+   "offAtAppPeakM": 3.3107332615988954,
    "refAltAtAppPeak": 2.6552537172024655,
-   "refCrossHeightAgl": 308.91148105986565
+   "refCrossHeightAgl": 308.91148105986565,
+   "refAxisCrossing": "2027-11-11T02:45:07Z",
+   "refPlateauStart": "2027-11-11T02:45:20Z",
+   "refPlateauEnd": "2027-11-11T02:45:25Z",
+   "dPeakFromAxisCrossingS": 9.476679801940918
   },
   {
    "set": "panel05-fernsehturm",
@@ -3976,9 +4784,13 @@
    "refCovered": 0.2892901107919573,
    "refCoveredAtAppPeak": 0.2868280672958556,
    "offAtAppPeakDeg": 0.017585705045449377,
-   "offAtAppPeakM": 1.909073700669408,
+   "offAtAppPeakM": 1.9090737006694087,
    "refAltAtAppPeak": 0.8965062968219548,
-   "refCrossHeightAgl": 116.78263060902185
+   "refCrossHeightAgl": 116.78263060902185,
+   "refAxisCrossing": "2027-11-21T11:57:03Z",
+   "refPlateauStart": "2027-11-21T11:57:05Z",
+   "refPlateauEnd": "2027-11-21T11:57:10Z",
+   "dPeakFromAxisCrossingS": 5.5940704345703125
   },
   {
    "set": "preview-siegessaeule",
@@ -3996,7 +4808,11 @@
    "offAtAppPeakDeg": 0.007096257827767797,
    "offAtAppPeakM": 0.08897609630129368,
    "refAltAtAppPeak": 3.072929207000243,
-   "refCrossHeightAgl": 38.57479712597545
+   "refCrossHeightAgl": 38.57479712597545,
+   "refAxisCrossing": "2026-12-02T11:31:59Z",
+   "refPlateauStart": "2026-12-02T11:32:00Z",
+   "refPlateauEnd": "2026-12-02T11:32:00Z",
+   "dPeakFromAxisCrossingS": 2.23305082321167
   },
   {
    "set": "preview-siegessaeule",
@@ -4014,7 +4830,11 @@
    "offAtAppPeakDeg": 0.006547116873432402,
    "offAtAppPeakM": 0.08209071817357985,
    "refAltAtAppPeak": 2.4727265711652606,
-   "refCrossHeightAgl": 31.021084656608622
+   "refCrossHeightAgl": 31.021084656608622,
+   "refAxisCrossing": "2026-12-16T22:22:23Z",
+   "refPlateauStart": "2026-12-16T22:22:25Z",
+   "refPlateauEnd": "2026-12-16T22:22:25Z",
+   "dPeakFromAxisCrossingS": 2.0054104328155518
   },
   {
    "set": "preview-siegessaeule",
@@ -4032,25 +4852,33 @@
    "offAtAppPeakDeg": 0.16998299247450466,
    "offAtAppPeakM": 2.1313237871391086,
    "refAltAtAppPeak": 5.450264371220462,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2026-12-29T09:21:40Z",
+   "refPlateauStart": "2026-12-29T09:22:35Z",
+   "refPlateauEnd": "2026-12-29T09:22:35Z",
+   "dPeakFromAxisCrossingS": 53.57213282585144
   },
   {
    "set": "preview-siegessaeule",
    "point": "west",
    "body": "moon",
-   "appPeak": "2027-01-12T20:24:00.000Z",
+   "appPeak": "2027-01-12T20:26:22.500Z",
    "refPeak": "2027-01-12T20:25:40Z",
-   "dPeakS": -100.0,
+   "dPeakS": 42.5,
    "dStartS": 25.0,
    "dEndS": -85.0,
    "refDurationS": 650.0,
    "appCovered": 1,
    "refCovered": 1.0,
    "refCoveredAtAppPeak": 1.0,
-   "offAtAppPeakDeg": -0.4560465013084171,
-   "offAtAppPeakM": -5.71811769007409,
-   "refAltAtAppPeak": 0.7168717890024144,
-   "refCrossHeightAgl": 5.305023724342396
+   "offAtAppPeakDeg": 0.008396753108572828,
+   "offAtAppPeakM": 0.10528229544917402,
+   "refAltAtAppPeak": 0.42257479785741225,
+   "refCrossHeightAgl": 5.305023724342396,
+   "refAxisCrossing": "2027-01-12T20:26:20Z",
+   "refPlateauStart": "2027-01-12T20:23:35Z",
+   "refPlateauEnd": "2027-01-12T20:27:45Z",
+   "dPeakFromAxisCrossingS": 2.5768749713897705
   },
   {
    "set": "preview-siegessaeule",
@@ -4068,7 +4896,11 @@
    "offAtAppPeakDeg": 0.46721283719921664,
    "offAtAppPeakM": 5.858126269478384,
    "refAltAtAppPeak": 0.7597114002858762,
-   "refCrossHeightAgl": 13.553756081965082
+   "refCrossHeightAgl": 13.553756081965082,
+   "refAxisCrossing": "2027-01-26T08:10:32Z",
+   "refPlateauStart": "2027-01-26T08:13:05Z",
+   "refPlateauEnd": "2027-01-26T08:13:25Z",
+   "dPeakFromAxisCrossingS": 147.69717407226562
   },
   {
    "set": "preview-siegessaeule",
@@ -4086,7 +4918,11 @@
    "offAtAppPeakDeg": 0.14996647853073714,
    "offAtAppPeakM": 1.8803476648640984,
    "refAltAtAppPeak": 5.125923717232382,
-   "refCrossHeightAgl": 65.74438068038974
+   "refCrossHeightAgl": 65.74438068038974,
+   "refAxisCrossing": "2027-02-09T18:54:36Z",
+   "refPlateauStart": "2027-02-09T18:55:15Z",
+   "refPlateauEnd": "2027-02-09T18:55:20Z",
+   "dPeakFromAxisCrossingS": 45.89715909957886
   },
   {
    "set": "preview-siegessaeule",
@@ -4104,7 +4940,11 @@
    "offAtAppPeakDeg": 0.17230902381482688,
    "offAtAppPeakM": 2.160488622121075,
    "refAltAtAppPeak": 5.224698909357667,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-02-22T05:46:04Z",
+   "refPlateauStart": "2027-02-22T05:46:50Z",
+   "refPlateauEnd": "2027-02-22T05:46:50Z",
+   "dPeakFromAxisCrossingS": 54.44852066040039
   },
   {
    "set": "preview-siegessaeule",
@@ -4122,7 +4962,11 @@
    "offAtAppPeakDeg": -1.9639725900797784,
    "offAtAppPeakM": -24.625178305141702,
    "refAltAtAppPeak": 0.0665017840940752,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-03-07T16:54:05Z",
+   "refPlateauEnd": "2027-03-07T16:54:05Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4140,7 +4984,11 @@
    "offAtAppPeakDeg": -1.3475094877718021,
    "offAtAppPeakM": -16.895684579234825,
    "refAltAtAppPeak": 0.0843860873145193,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-03-08T16:55:50Z",
+   "refPlateauEnd": "2027-03-08T16:55:55Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4158,7 +5006,11 @@
    "offAtAppPeakDeg": 0.0069151971737855715,
    "offAtAppPeakM": 0.08670587577434796,
    "refAltAtAppPeak": 2.7348208083071546,
-   "refCrossHeightAgl": 34.31779507663227
+   "refCrossHeightAgl": 34.31779507663227,
+   "refAxisCrossing": "2027-03-08T16:59:19Z",
+   "refPlateauStart": "2027-03-08T16:59:20Z",
+   "refPlateauEnd": "2027-03-08T16:59:20Z",
+   "dPeakFromAxisCrossingS": 2.1179001331329346
   },
   {
    "set": "preview-siegessaeule",
@@ -4176,7 +5028,11 @@
    "offAtAppPeakDeg": -0.769108593787144,
    "offAtAppPeakM": -9.6434320691084,
    "refAltAtAppPeak": 0.12711781000915456,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-03-09T17:00:42Z",
+   "refPlateauStart": "2027-03-09T16:57:05Z",
+   "refPlateauEnd": "2027-03-09T16:57:05Z",
+   "dPeakFromAxisCrossingS": -232.6257495880127
   },
   {
    "set": "preview-siegessaeule",
@@ -4194,25 +5050,33 @@
    "offAtAppPeakDeg": -0.447609150452652,
    "offAtAppPeakM": -5.612326361673821,
    "refAltAtAppPeak": 0.3350072082538742,
-   "refCrossHeightAgl": 0.5690244007318369
+   "refCrossHeightAgl": 0.5690244007318369,
+   "refAxisCrossing": "2027-03-10T16:59:15Z",
+   "refPlateauStart": "2027-03-10T16:56:30Z",
+   "refPlateauEnd": "2027-03-10T16:57:30Z",
+   "dPeakFromAxisCrossingS": -135.31121182441711
   },
   {
    "set": "preview-siegessaeule",
    "point": "west",
    "body": "sun",
-   "appPeak": "2027-03-11T16:55:30.000Z",
+   "appPeak": "2027-03-11T16:57:49.454Z",
    "refPeak": "2027-03-11T16:57:25Z",
-   "dPeakS": -115.0,
+   "dPeakS": 24.453999996185303,
    "dStartS": 20.0,
    "dEndS": -60.0,
    "refDurationS": 650.0,
    "appCovered": 1,
    "refCovered": 1.0,
-   "refCoveredAtAppPeak": 0.9942552318424293,
-   "offAtAppPeakDeg": -0.4560329790640863,
-   "offAtAppPeakM": -5.717948142047089,
-   "refAltAtAppPeak": 0.7645605978090252,
-   "refCrossHeightAgl": 5.770441939675616
+   "refCoveredAtAppPeak": 1.0,
+   "offAtAppPeakDeg": 0.005576525056792538,
+   "offAtAppPeakM": 0.06992099815457635,
+   "refAltAtAppPeak": 0.46133201926393236,
+   "refCrossHeightAgl": 5.770441939675616,
+   "refAxisCrossing": "2027-03-11T16:57:48Z",
+   "refPlateauStart": "2027-03-11T16:55:35Z",
+   "refPlateauEnd": "2027-03-11T16:59:15Z",
+   "dPeakFromAxisCrossingS": 1.6850056648254395
   },
   {
    "set": "preview-siegessaeule",
@@ -4230,7 +5094,11 @@
    "offAtAppPeakDeg": 0.03357523498391191,
    "offAtAppPeakM": 0.42098151078690826,
    "refAltAtAppPeak": 0.871295407404713,
-   "refCrossHeightAgl": 11.14774672588193
+   "refCrossHeightAgl": 11.14774672588193,
+   "refAxisCrossing": "2027-03-12T16:56:20Z",
+   "refPlateauStart": "2027-03-12T16:56:20Z",
+   "refPlateauEnd": "2027-03-12T16:59:05Z",
+   "dPeakFromAxisCrossingS": 10.139228582382202
   },
   {
    "set": "preview-siegessaeule",
@@ -4248,7 +5116,11 @@
    "offAtAppPeakDeg": 0.0034972324245782765,
    "offAtAppPeakM": 0.043849884904078436,
    "refAltAtAppPeak": 1.3324269284364019,
-   "refCrossHeightAgl": 16.68028086224884
+   "refCrossHeightAgl": 16.68028086224884,
+   "refAxisCrossing": "2027-03-13T16:54:52Z",
+   "refPlateauStart": "2027-03-13T16:54:50Z",
+   "refPlateauEnd": "2027-03-13T16:54:55Z",
+   "dPeakFromAxisCrossingS": 1.0555226802825928
   },
   {
    "set": "preview-siegessaeule",
@@ -4266,7 +5138,11 @@
    "offAtAppPeakDeg": 0.0036220871702978504,
    "offAtAppPeakM": 0.04541537028361865,
    "refAltAtAppPeak": 1.7835486163178467,
-   "refCrossHeightAgl": 22.34264573876523
+   "refCrossHeightAgl": 22.34264573876523,
+   "refAxisCrossing": "2027-03-14T16:53:23Z",
+   "refPlateauStart": "2027-03-14T16:53:25Z",
+   "refPlateauEnd": "2027-03-14T16:53:25Z",
+   "dPeakFromAxisCrossingS": 1.0926885604858398
   },
   {
    "set": "preview-siegessaeule",
@@ -4284,7 +5160,11 @@
    "offAtAppPeakDeg": 0.003797223090974017,
    "offAtAppPeakM": 0.04761130381959054,
    "refAltAtAppPeak": 2.24285076029246,
-   "refCrossHeightAgl": 28.110894443361463
+   "refCrossHeightAgl": 28.110894443361463,
+   "refAxisCrossing": "2027-03-15T16:51:54Z",
+   "refPlateauStart": "2027-03-15T16:51:55Z",
+   "refPlateauEnd": "2027-03-15T16:51:55Z",
+   "dPeakFromAxisCrossingS": 1.1450660228729248
   },
   {
    "set": "preview-siegessaeule",
@@ -4302,7 +5182,11 @@
    "offAtAppPeakDeg": 0.004022168186348363,
    "offAtAppPeakM": 0.050431767358868035,
    "refAltAtAppPeak": 2.7086388718714622,
-   "refCrossHeightAgl": 33.96467860268499
+   "refCrossHeightAgl": 33.96467860268499,
+   "refAxisCrossing": "2027-03-16T16:50:25Z",
+   "refPlateauStart": "2027-03-16T16:50:25Z",
+   "refPlateauEnd": "2027-03-16T16:50:25Z",
+   "dPeakFromAxisCrossingS": 1.2125005722045898
   },
   {
    "set": "preview-siegessaeule",
@@ -4320,7 +5204,11 @@
    "offAtAppPeakDeg": 0.004291502884909938,
    "offAtAppPeakM": 0.053808807857977516,
    "refAltAtAppPeak": 3.1795194071609716,
-   "refCrossHeightAgl": 39.887398885126004
+   "refCrossHeightAgl": 39.887398885126004,
+   "refAxisCrossing": "2027-03-17T16:48:56Z",
+   "refPlateauStart": "2027-03-17T16:48:55Z",
+   "refPlateauEnd": "2027-03-17T16:48:55Z",
+   "dPeakFromAxisCrossingS": 1.2933447360992432
   },
   {
    "set": "preview-siegessaeule",
@@ -4338,7 +5226,11 @@
    "offAtAppPeakDeg": 0.004701263449664905,
    "offAtAppPeakM": 0.05894657150115379,
    "refAltAtAppPeak": 3.6543040584261566,
-   "refCrossHeightAgl": 45.865957882753705
+   "refCrossHeightAgl": 45.865957882753705,
+   "refAxisCrossing": "2027-03-18T16:47:26Z",
+   "refPlateauStart": "2027-03-18T16:47:25Z",
+   "refPlateauEnd": "2027-03-18T16:47:30Z",
+   "dPeakFromAxisCrossingS": 1.4165618419647217
   },
   {
    "set": "preview-siegessaeule",
@@ -4356,7 +5248,11 @@
    "offAtAppPeakDeg": 0.03974924630383796,
    "offAtAppPeakM": 0.4983940624585007,
    "refAltAtAppPeak": 4.106789592001503,
-   "refCrossHeightAgl": 51.89003239838434
+   "refCrossHeightAgl": 51.89003239838434,
+   "refAxisCrossing": "2027-03-19T16:45:57Z",
+   "refPlateauStart": "2027-03-19T16:46:10Z",
+   "refPlateauEnd": "2027-03-19T16:46:10Z",
+   "dPeakFromAxisCrossingS": 11.97577977180481
   },
   {
    "set": "preview-siegessaeule",
@@ -4374,7 +5270,11 @@
    "offAtAppPeakDeg": 0.04676354567098427,
    "offAtAppPeakM": 0.5863425264411901,
    "refAltAtAppPeak": 4.582085890557321,
-   "refCrossHeightAgl": 57.95158689734201
+   "refCrossHeightAgl": 57.95158689734201,
+   "refAxisCrossing": "2027-03-20T16:44:27Z",
+   "refPlateauStart": "2027-03-20T16:44:35Z",
+   "refPlateauEnd": "2027-03-20T16:44:35Z",
+   "dPeakFromAxisCrossingS": 14.088430881500244
   },
   {
    "set": "preview-siegessaeule",
@@ -4392,7 +5292,11 @@
    "offAtAppPeakDeg": 0.10043187956782705,
    "offAtAppPeakM": 1.259260416550822,
    "refAltAtAppPeak": 5.024666146080418,
-   "refCrossHeightAgl": 64.0443259445613
+   "refCrossHeightAgl": 64.0443259445613,
+   "refAxisCrossing": "2027-03-21T16:42:57Z",
+   "refPlateauStart": "2027-03-21T16:43:20Z",
+   "refPlateauEnd": "2027-03-21T16:43:20Z",
+   "dPeakFromAxisCrossingS": 30.257851362228394
   },
   {
    "set": "preview-siegessaeule",
@@ -4410,7 +5314,11 @@
    "offAtAppPeakDeg": 0.00713173418434444,
    "offAtAppPeakM": 0.08942091493610013,
    "refAltAtAppPeak": 1.2618341176607748,
-   "refCrossHeightAgl": 15.828216037592863
+   "refCrossHeightAgl": 15.828216037592863,
+   "refAxisCrossing": "2027-03-22T04:32:46Z",
+   "refPlateauStart": "2027-03-22T04:32:45Z",
+   "refPlateauEnd": "2027-03-22T04:32:45Z",
+   "dPeakFromAxisCrossingS": 2.2555618286132812
   },
   {
    "set": "preview-siegessaeule",
@@ -4428,25 +5336,33 @@
    "offAtAppPeakDeg": 0.1650596201278564,
    "offAtAppPeakM": 2.069592313639322,
    "refAltAtAppPeak": 5.460217576585977,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-03-22T16:41:27Z",
+   "refPlateauStart": "2027-03-22T16:42:20Z",
+   "refPlateauEnd": "2027-03-22T16:42:20Z",
+   "dPeakFromAxisCrossingS": 49.73333501815796
   },
   {
    "set": "preview-siegessaeule",
    "point": "west",
    "body": "moon",
-   "appPeak": "2027-04-04T14:59:30.000Z",
+   "appPeak": "2027-04-04T15:00:00.000Z",
    "refPeak": "2027-04-04T14:59:40Z",
-   "dPeakS": -10.0,
+   "dPeakS": 20.0,
    "dStartS": 0.0,
    "dEndS": -60.0,
    "refDurationS": 480.0,
    "appCovered": 1,
    "refCovered": 1.0,
    "refCoveredAtAppPeak": 1.0,
-   "offAtAppPeakDeg": -0.464674062758762,
-   "offAtAppPeakM": -5.826293965102795,
-   "refAltAtAppPeak": 0.35452188057542555,
-   "refCrossHeightAgl": 0.7948504639970917
+   "offAtAppPeakDeg": -0.366984633268096,
+   "offAtAppPeakM": -4.601419630355843,
+   "refAltAtAppPeak": 0.29379503507287086,
+   "refCrossHeightAgl": 0.7948504639970917,
+   "refAxisCrossing": "2027-04-04T15:01:53Z",
+   "refPlateauStart": "2027-04-04T14:59:00Z",
+   "refPlateauEnd": "2027-04-04T15:00:20Z",
+   "dPeakFromAxisCrossingS": -112.72692346572876
   },
   {
    "set": "preview-siegessaeule",
@@ -4464,7 +5380,11 @@
    "offAtAppPeakDeg": 0.0382751199971675,
    "offAtAppPeakM": 0.47991079882772597,
    "refAltAtAppPeak": 4.499947708455772,
-   "refCrossHeightAgl": 56.8503985957211
+   "refCrossHeightAgl": 56.8503985957211,
+   "refAxisCrossing": "2027-04-18T02:16:38Z",
+   "refPlateauStart": "2027-04-18T02:16:45Z",
+   "refPlateauEnd": "2027-04-18T02:16:50Z",
+   "dPeakFromAxisCrossingS": 12.071515321731567
   },
   {
    "set": "preview-siegessaeule",
@@ -4482,7 +5402,11 @@
    "offAtAppPeakDeg": 0.011003726848667943,
    "offAtAppPeakM": 0.13796971354804707,
    "refAltAtAppPeak": 4.010316728044763,
-   "refCrossHeightAgl": 50.405126808973314
+   "refCrossHeightAgl": 50.405126808973314,
+   "refAxisCrossing": "2027-05-02T13:26:31Z",
+   "refPlateauStart": "2027-05-02T13:26:35Z",
+   "refPlateauEnd": "2027-05-02T13:26:35Z",
+   "dPeakFromAxisCrossingS": 3.3693199157714844
   },
   {
    "set": "preview-siegessaeule",
@@ -4500,7 +5424,11 @@
    "offAtAppPeakDeg": -1.1763564607560613,
    "offAtAppPeakM": -14.749690368818607,
    "refAltAtAppPeak": 0.09525331687508298,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-05-16T01:08:40Z",
+   "refPlateauEnd": "2027-05-16T01:08:45Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4518,7 +5446,11 @@
    "offAtAppPeakDeg": 0.006296555386894683,
    "offAtAppPeakM": 0.07894906471387345,
    "refAltAtAppPeak": 1.2834639938193788,
-   "refCrossHeightAgl": 16.08826352466655
+   "refCrossHeightAgl": 16.08826352466655,
+   "refAxisCrossing": "2027-05-29T11:27:24Z",
+   "refPlateauStart": "2027-05-29T11:27:25Z",
+   "refPlateauEnd": "2027-05-29T11:27:25Z",
+   "dPeakFromAxisCrossingS": 1.9306964874267578
   },
   {
    "set": "preview-siegessaeule",
@@ -4536,7 +5468,11 @@
    "offAtAppPeakDeg": 0.5597394742078349,
    "offAtAppPeakM": 7.018267172575099,
    "refAltAtAppPeak": 0.7735828591177719,
-   "refCrossHeightAgl": 14.544145082118066
+   "refCrossHeightAgl": 14.544145082118066,
+   "refAxisCrossing": "2027-06-11T23:07:31Z",
+   "refPlateauStart": "2027-06-11T23:10:25Z",
+   "refPlateauEnd": "2027-06-11T23:10:25Z",
+   "dPeakFromAxisCrossingS": 176.75636863708496
   },
   {
    "set": "preview-siegessaeule",
@@ -4554,7 +5490,11 @@
    "offAtAppPeakDeg": -1.4846993860313662,
    "offAtAppPeakM": -18.615833690974103,
    "refAltAtAppPeak": 0.0875485035471732,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-06-25T09:22:50Z",
+   "refPlateauEnd": "2027-06-25T09:22:50Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4572,7 +5512,11 @@
    "offAtAppPeakDeg": 0.0028813482519359354,
    "offAtAppPeakM": 0.036127650060660245,
    "refAltAtAppPeak": 3.7111633508705197,
-   "refCrossHeightAgl": 46.56625249035934
+   "refCrossHeightAgl": 46.56625249035934,
+   "refAxisCrossing": "2027-07-08T20:56:20Z",
+   "refPlateauStart": "2027-07-08T20:56:20Z",
+   "refPlateauEnd": "2027-07-08T20:56:20Z",
+   "dPeakFromAxisCrossingS": 0.9094841480255127
   },
   {
    "set": "preview-siegessaeule",
@@ -4590,7 +5534,11 @@
    "offAtAppPeakDeg": 0.00831853836930724,
    "offAtAppPeakM": 0.10430160360539067,
    "refAltAtAppPeak": 3.40243087671291,
-   "refCrossHeightAgl": 42.7263386115752
+   "refCrossHeightAgl": 42.7263386115752,
+   "refAxisCrossing": "2027-07-23T07:57:05Z",
+   "refPlateauStart": "2027-07-23T07:57:05Z",
+   "refPlateauEnd": "2027-07-23T07:57:05Z",
+   "dPeakFromAxisCrossingS": 2.5455636978149414
   },
   {
    "set": "preview-siegessaeule",
@@ -4608,7 +5556,11 @@
    "offAtAppPeakDeg": -1.1221925323089026,
    "offAtAppPeakM": -14.070558489659314,
    "refAltAtAppPeak": 0.09555900901885456,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-08-05T19:42:35Z",
+   "refPlateauEnd": "2027-08-05T19:42:40Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4626,7 +5578,11 @@
    "offAtAppPeakDeg": 0.007136873134674307,
    "offAtAppPeakM": 0.08948534942404232,
    "refAltAtAppPeak": 1.3098567881388792,
-   "refCrossHeightAgl": 16.42645590095483
+   "refCrossHeightAgl": 16.42645590095483,
+   "refAxisCrossing": "2027-08-19T06:02:35Z",
+   "refPlateauStart": "2027-08-19T06:02:35Z",
+   "refPlateauEnd": "2027-08-19T06:02:35Z",
+   "dPeakFromAxisCrossingS": 2.1875500679016113
   },
   {
    "set": "preview-siegessaeule",
@@ -4644,7 +5600,11 @@
    "offAtAppPeakDeg": 0.010135473499693692,
    "offAtAppPeakM": 0.12708315961113145,
    "refAltAtAppPeak": 3.314124458709421,
-   "refCrossHeightAgl": 41.63802034896815
+   "refCrossHeightAgl": 41.63802034896815,
+   "refAxisCrossing": "2027-09-01T17:23:18Z",
+   "refPlateauStart": "2027-09-01T17:23:20Z",
+   "refPlateauEnd": "2027-09-01T17:23:20Z",
+   "dPeakFromAxisCrossingS": 3.2074921131134033
   },
   {
    "set": "preview-siegessaeule",
@@ -4662,7 +5622,11 @@
    "offAtAppPeakDeg": -1.3268351508100829,
    "offAtAppPeakM": -16.63646037386939,
    "refAltAtAppPeak": 0.09231359434741898,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-09-15T04:01:10Z",
+   "refPlateauEnd": "2027-09-15T04:01:10Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4680,7 +5644,11 @@
    "offAtAppPeakDeg": 0.16635505808676423,
    "offAtAppPeakM": 2.085835101793539,
    "refAltAtAppPeak": 5.3120934192535865,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-21T16:28:01Z",
+   "refPlateauStart": "2027-09-21T16:28:50Z",
+   "refPlateauEnd": "2027-09-21T16:28:50Z",
+   "dPeakFromAxisCrossingS": 50.20288300514221
   },
   {
    "set": "preview-siegessaeule",
@@ -4698,7 +5666,11 @@
    "offAtAppPeakDeg": 0.10327990907939319,
    "offAtAppPeakM": 1.2949703011463973,
    "refAltAtAppPeak": 4.882354692636303,
-   "refCrossHeightAgl": 62.27602496419917
+   "refCrossHeightAgl": 62.27602496419917,
+   "refAxisCrossing": "2027-09-22T16:28:51Z",
+   "refPlateauStart": "2027-09-22T16:29:15Z",
+   "refPlateauEnd": "2027-09-22T16:29:15Z",
+   "dPeakFromAxisCrossingS": 31.16581416130066
   },
   {
    "set": "preview-siegessaeule",
@@ -4716,7 +5688,11 @@
    "offAtAppPeakDeg": 0.016285104241689774,
    "offAtAppPeakM": 0.2041900165486221,
    "refAltAtAppPeak": 4.471393943629861,
-   "refCrossHeightAgl": 56.2719130603089
+   "refCrossHeightAgl": 56.2719130603089,
+   "refAxisCrossing": "2027-09-23T16:29:41Z",
+   "refPlateauStart": "2027-09-23T16:29:45Z",
+   "refPlateauEnd": "2027-09-23T16:29:45Z",
+   "dPeakFromAxisCrossingS": 4.914173364639282
   },
   {
    "set": "preview-siegessaeule",
@@ -4734,7 +5710,11 @@
    "offAtAppPeakDeg": 0.012714677697599203,
    "offAtAppPeakM": 0.1594223906063121,
    "refAltAtAppPeak": 4.000371543012832,
-   "refCrossHeightAgl": 50.29937988501391
+   "refCrossHeightAgl": 50.29937988501391,
+   "refAxisCrossing": "2027-09-24T16:30:31Z",
+   "refPlateauStart": "2027-09-24T16:30:35Z",
+   "refPlateauEnd": "2027-09-24T16:30:35Z",
+   "dPeakFromAxisCrossingS": 3.837007761001587
   },
   {
    "set": "preview-siegessaeule",
@@ -4752,7 +5732,11 @@
    "offAtAppPeakDeg": 0.008769500628871532,
    "offAtAppPeakM": 0.10995597276856174,
    "refAltAtAppPeak": 3.53209328274224,
-   "refCrossHeightAgl": 44.365102372848455
+   "refCrossHeightAgl": 44.365102372848455,
+   "refAxisCrossing": "2027-09-25T16:31:21Z",
+   "refPlateauStart": "2027-09-25T16:31:20Z",
+   "refPlateauEnd": "2027-09-25T16:31:20Z",
+   "dPeakFromAxisCrossingS": 2.646791934967041
   },
   {
    "set": "preview-siegessaeule",
@@ -4770,7 +5754,11 @@
    "offAtAppPeakDeg": 0.008279592705165968,
    "offAtAppPeakM": 0.10381328522022827,
    "refAltAtAppPeak": 3.064509871397929,
-   "refCrossHeightAgl": 38.4775233310486
+   "refCrossHeightAgl": 38.4775233310486,
+   "refAxisCrossing": "2027-09-26T16:32:12Z",
+   "refPlateauStart": "2027-09-26T16:32:10Z",
+   "refPlateauEnd": "2027-09-26T16:32:10Z",
+   "dPeakFromAxisCrossingS": 2.499440908432007
   },
   {
    "set": "preview-siegessaeule",
@@ -4788,7 +5776,11 @@
    "offAtAppPeakDeg": 0.007740004202594367,
    "offAtAppPeakM": 0.09704768006140559,
    "refAltAtAppPeak": 2.6011182373834143,
-   "refCrossHeightAgl": 32.64726524602568
+   "refCrossHeightAgl": 32.64726524602568,
+   "refAxisCrossing": "2027-09-27T16:33:03Z",
+   "refPlateauStart": "2027-09-27T16:33:00Z",
+   "refPlateauEnd": "2027-09-27T16:33:00Z",
+   "dPeakFromAxisCrossingS": 2.337193727493286
   },
   {
    "set": "preview-siegessaeule",
@@ -4806,7 +5798,11 @@
    "offAtAppPeakDeg": 0.007168553671953236,
    "offAtAppPeakM": 0.08988257435642523,
    "refAltAtAppPeak": 2.143046760443797,
-   "refCrossHeightAgl": 26.887764799241683
+   "refCrossHeightAgl": 26.887764799241683,
+   "refAxisCrossing": "2027-09-28T16:33:54Z",
+   "refPlateauStart": "2027-09-28T16:33:55Z",
+   "refPlateauEnd": "2027-09-28T16:33:55Z",
+   "dPeakFromAxisCrossingS": 2.165386199951172
   },
   {
    "set": "preview-siegessaeule",
@@ -4824,7 +5820,11 @@
    "offAtAppPeakDeg": -0.909330064087484,
    "offAtAppPeakM": -11.401592404846456,
    "refAltAtAppPeak": 0.07463179903171419,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-29T16:10:41Z",
+   "refPlateauStart": "2027-09-29T16:06:20Z",
+   "refPlateauEnd": "2027-09-29T16:06:20Z",
+   "dPeakFromAxisCrossingS": -288.645977973938
   },
   {
    "set": "preview-siegessaeule",
@@ -4842,7 +5842,11 @@
    "offAtAppPeakDeg": 0.006585708312073217,
    "offAtAppPeakM": 0.08257459511890086,
    "refAltAtAppPeak": 1.6916851568658657,
-   "refCrossHeightAgl": 21.215774741286925
+   "refCrossHeightAgl": 21.215774741286925,
+   "refAxisCrossing": "2027-09-29T16:34:45Z",
+   "refPlateauStart": "2027-09-29T16:34:45Z",
+   "refPlateauEnd": "2027-09-29T16:34:45Z",
+   "dPeakFromAxisCrossingS": 1.990156888961792
   },
   {
    "set": "preview-siegessaeule",
@@ -4860,7 +5864,11 @@
    "offAtAppPeakDeg": 0.006006900042197008,
    "offAtAppPeakM": 0.07531723474524452,
    "refAltAtAppPeak": 1.2487051536838751,
-   "refCrossHeightAgl": 15.651591083222499
+   "refCrossHeightAgl": 15.651591083222499,
+   "refAxisCrossing": "2027-09-30T16:35:36Z",
+   "refPlateauStart": "2027-09-30T16:35:35Z",
+   "refPlateauEnd": "2027-09-30T16:35:35Z",
+   "dPeakFromAxisCrossingS": 1.816103219985962
   },
   {
    "set": "preview-siegessaeule",
@@ -4878,25 +5886,33 @@
    "offAtAppPeakDeg": 0.006727422164752716,
    "offAtAppPeakM": 0.08435146762117926,
    "refAltAtAppPeak": 0.8151779908156199,
-   "refCrossHeightAgl": 10.218745584581002
+   "refCrossHeightAgl": 10.218745584581002,
+   "refAxisCrossing": "2027-10-01T16:36:28Z",
+   "refPlateauStart": "2027-10-01T16:36:15Z",
+   "refPlateauEnd": "2027-10-01T16:39:15Z",
+   "dPeakFromAxisCrossingS": 2.0350406169891357
   },
   {
    "set": "preview-siegessaeule",
    "point": "west",
    "body": "sun",
-   "appPeak": "2027-10-02T16:35:00.000Z",
+   "appPeak": "2027-10-02T16:37:21.329Z",
    "refPeak": "2027-10-02T16:36:30Z",
-   "dPeakS": -90.0,
+   "dPeakS": 51.3289999961853,
    "dStartS": 25.0,
    "dEndS": -60.0,
    "refDurationS": 625.0,
    "appCovered": 1,
    "refCovered": 1.0,
    "refCoveredAtAppPeak": 1.0,
-   "offAtAppPeakDeg": -0.46233006200256604,
-   "offAtAppPeakM": -5.796903821441795,
-   "refAltAtAppPeak": 0.7025634240871375,
-   "refCrossHeightAgl": 4.941234186518524
+   "offAtAppPeakDeg": 0.004686867805234523,
+   "offAtAppPeakM": 0.05876607238792474,
+   "refAltAtAppPeak": 0.39578423560692333,
+   "refCrossHeightAgl": 4.941234186518524,
+   "refAxisCrossing": "2027-10-02T16:37:20Z",
+   "refPlateauStart": "2027-10-02T16:34:40Z",
+   "refPlateauEnd": "2027-10-02T16:38:20Z",
+   "dPeakFromAxisCrossingS": 1.4186275005340576
   },
   {
    "set": "preview-siegessaeule",
@@ -4914,7 +5930,11 @@
    "offAtAppPeakDeg": -0.5353575721405126,
    "offAtAppPeakM": -6.712555835839018,
    "refAltAtAppPeak": 0.33317662990591046,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-10-03T16:38:12Z",
+   "refPlateauStart": "2027-10-03T16:35:25Z",
+   "refPlateauEnd": "2027-10-03T16:36:00Z",
+   "dPeakFromAxisCrossingS": -162.10791611671448
   },
   {
    "set": "preview-siegessaeule",
@@ -4932,7 +5952,11 @@
    "offAtAppPeakDeg": -0.8147056377208741,
    "offAtAppPeakM": -10.215148468169689,
    "refAltAtAppPeak": 0.10516307276083597,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-10-04T16:39:05Z",
+   "refPlateauStart": "2027-10-04T16:35:20Z",
+   "refPlateauEnd": "2027-10-04T16:35:20Z",
+   "dPeakFromAxisCrossingS": -246.8318784236908
   },
   {
    "set": "preview-siegessaeule",
@@ -4950,7 +5974,11 @@
    "offAtAppPeakDeg": -1.4151741170436463,
    "offAtAppPeakM": -17.744094363152833,
    "refAltAtAppPeak": 0.08374927542729976,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-10-05T16:33:05Z",
+   "refPlateauEnd": "2027-10-05T16:33:05Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -4968,7 +5996,11 @@
    "offAtAppPeakDeg": 0.007037162697186584,
    "offAtAppPeakM": 0.08823513477521205,
    "refAltAtAppPeak": 3.2148270956512968,
-   "refCrossHeightAgl": 40.35457310497708
+   "refCrossHeightAgl": 40.35457310497708,
+   "refAxisCrossing": "2027-10-13T02:33:53Z",
+   "refPlateauStart": "2027-10-13T02:33:55Z",
+   "refPlateauEnd": "2027-10-13T02:33:55Z",
+   "dPeakFromAxisCrossingS": 2.1546897888183594
   },
   {
    "set": "preview-siegessaeule",
@@ -4986,25 +6018,33 @@
    "offAtAppPeakDeg": 0.008333766583956261,
    "offAtAppPeakM": 0.10449254186129878,
    "refAltAtAppPeak": 2.709122348748705,
-   "refCrossHeightAgl": 34.01268001483726
+   "refCrossHeightAgl": 34.01268001483726,
+   "refAxisCrossing": "2027-10-26T13:51:53Z",
+   "refPlateauStart": "2027-10-26T13:51:55Z",
+   "refPlateauEnd": "2027-10-26T13:51:55Z",
+   "dPeakFromAxisCrossingS": 2.6331586837768555
   },
   {
    "set": "preview-siegessaeule",
    "point": "west",
    "body": "moon",
-   "appPeak": "2027-11-09T00:34:30.000Z",
+   "appPeak": "2027-11-09T00:35:24.141Z",
    "refPeak": "2027-11-09T00:36:25Z",
-   "dPeakS": -115.0,
+   "dPeakS": -60.85899996757507,
    "dStartS": 0.0,
    "dEndS": -60.0,
    "refDurationS": 720.0,
    "appCovered": 1,
    "refCovered": 1.0,
-   "refCoveredAtAppPeak": 0.9983586376692655,
-   "offAtAppPeakDeg": -0.16910046213256774,
-   "offAtAppPeakM": -2.1202582217948325,
-   "refAltAtAppPeak": 0.801168627391954,
-   "refCrossHeightAgl": 8.62353678565089
+   "refCoveredAtAppPeak": 1.0,
+   "offAtAppPeakDeg": 0.007343982784156469,
+   "offAtAppPeakM": 0.09208218406062268,
+   "refAltAtAppPeak": 0.6877755645227392,
+   "refCrossHeightAgl": 8.62353678565089,
+   "refAxisCrossing": "2027-11-09T00:35:22Z",
+   "refPlateauStart": "2027-11-09T00:34:35Z",
+   "refPlateauEnd": "2027-11-09T00:38:15Z",
+   "dPeakFromAxisCrossingS": 2.2536349296569824
   },
   {
    "set": "preview-siegessaeule",
@@ -5022,7 +6062,11 @@
    "offAtAppPeakDeg": 0.12303971301213619,
    "offAtAppPeakM": 1.5427276769754923,
    "refAltAtAppPeak": 5.059096288080243,
-   "refCrossHeightAgl": 64.73773486648864
+   "refCrossHeightAgl": 64.73773486648864,
+   "refAxisCrossing": "2027-11-22T11:41:49Z",
+   "refPlateauStart": "2027-11-22T11:42:20Z",
+   "refPlateauEnd": "2027-11-22T11:42:20Z",
+   "dPeakFromAxisCrossingS": 38.81307125091553
   },
   {
    "set": "preview-siegessaeule",
@@ -5038,9 +6082,13 @@
    "refCovered": 0.43208863356585964,
    "refCoveredAtAppPeak": 0.43208863356585964,
    "offAtAppPeakDeg": 0.07731603058817323,
-   "offAtAppPeakM": 1.469214321996998,
+   "offAtAppPeakM": 1.4692143219969982,
    "refAltAtAppPeak": 3.0468889233369394,
-   "refCrossHeightAgl": 59.3536002479451
+   "refCrossHeightAgl": 59.3536002479451,
+   "refAxisCrossing": "2026-12-02T11:31:46Z",
+   "refPlateauStart": "2026-12-02T11:32:00Z",
+   "refPlateauEnd": "2026-12-02T11:32:10Z",
+   "dPeakFromAxisCrossingS": 24.329232692718506
   },
   {
    "set": "preview-siegessaeule",
@@ -5056,27 +6104,35 @@
    "refCovered": 0.6770619614279852,
    "refCoveredAtAppPeak": 0.676241280262618,
    "offAtAppPeakDeg": 0.013193777519900321,
-   "offAtAppPeakM": 0.25071756459836625,
+   "offAtAppPeakM": 0.2507175645983663,
    "refAltAtAppPeak": 2.492454526064324,
-   "refCrossHeightAgl": 47.860398733281286
+   "refCrossHeightAgl": 47.860398733281286,
+   "refAxisCrossing": "2026-12-16T22:22:11Z",
+   "refPlateauStart": "2026-12-16T22:22:10Z",
+   "refPlateauEnd": "2026-12-16T22:22:10Z",
+   "dPeakFromAxisCrossingS": 4.041149854660034
   },
   {
    "set": "preview-siegessaeule",
    "point": "mitte",
    "body": "moon",
-   "appPeak": "2027-01-12T20:26:30.000Z",
+   "appPeak": "2027-01-12T20:26:09.844Z",
    "refPeak": "2027-01-12T20:26:50Z",
-   "dPeakS": -20.0,
+   "dPeakS": -40.15599989891052,
    "dStartS": 10.0,
    "dEndS": -65.0,
    "refDurationS": 555.0,
    "appCovered": 1,
    "refCovered": 1.0,
    "refCoveredAtAppPeak": 1.0,
-   "offAtAppPeakDeg": 0.07261979211972412,
-   "offAtAppPeakM": 1.3799730512686723,
-   "refAltAtAppPeak": 0.40443134772046035,
-   "refCrossHeightAgl": 8.844149012738885
+   "offAtAppPeakDeg": 0.006940975134208309,
+   "offAtAppPeakM": 0.13189735683823123,
+   "refAltAtAppPeak": 0.4456326709922313,
+   "refCrossHeightAgl": 8.844149012738885,
+   "refAxisCrossing": "2027-01-12T20:26:08Z",
+   "refPlateauStart": "2027-01-12T20:26:05Z",
+   "refPlateauEnd": "2027-01-12T20:27:35Z",
+   "dPeakFromAxisCrossingS": 2.130006790161133
   },
   {
    "set": "preview-siegessaeule",
@@ -5092,9 +6148,13 @@
    "refCovered": 0.6852687730816578,
    "refCoveredAtAppPeak": 0.6848584324989742,
    "offAtAppPeakDeg": 0.010187692314438829,
-   "offAtAppPeakM": 0.1935937908685377,
+   "offAtAppPeakM": 0.19359379086853773,
    "refAltAtAppPeak": 1.103465177348553,
-   "refCrossHeightAgl": 21.400946241922497
+   "refCrossHeightAgl": 21.400946241922497,
+   "refAxisCrossing": "2027-01-26T08:10:20Z",
+   "refPlateauStart": "2027-01-26T08:10:20Z",
+   "refPlateauEnd": "2027-01-26T08:10:25Z",
+   "dPeakFromAxisCrossingS": 3.2196266651153564
   },
   {
    "set": "preview-siegessaeule",
@@ -5110,9 +6170,13 @@
    "refCovered": 0.05785802215839146,
    "refCoveredAtAppPeak": 0.03857201477226098,
    "offAtAppPeakDeg": -1.6587032617078754,
-   "offAtAppPeakM": -31.519861657475253,
+   "offAtAppPeakM": -31.51986165747526,
    "refAltAtAppPeak": -0.10179321046397871,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-03-07T16:55:55Z",
+   "refPlateauEnd": "2027-03-07T16:55:55Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5128,9 +6192,13 @@
    "refCovered": 0.15059499384489125,
    "refCoveredAtAppPeak": 0.14608124743537135,
    "offAtAppPeakDeg": -1.220065237739219,
-   "offAtAppPeakM": -23.18454927678777,
+   "offAtAppPeakM": -23.184549276787774,
    "refAltAtAppPeak": 0.02658234557284267,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-03-08T16:56:05Z",
+   "refPlateauEnd": "2027-03-08T16:56:05Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5146,9 +6214,13 @@
    "refCovered": 0.6454657365613459,
    "refCoveredAtAppPeak": 0.6454657365613459,
    "offAtAppPeakDeg": 0.013062991107763655,
-   "offAtAppPeakM": 0.24823226797395334,
+   "offAtAppPeakM": 0.2482322679739534,
    "refAltAtAppPeak": 2.755007731898836,
-   "refCrossHeightAgl": 52.85962809607412
+   "refCrossHeightAgl": 52.85962809607412,
+   "refAxisCrossing": "2027-03-08T16:59:06Z",
+   "refPlateauStart": "2027-03-08T16:59:10Z",
+   "refPlateauEnd": "2027-03-08T16:59:10Z",
+   "dPeakFromAxisCrossingS": 4.000603675842285
   },
   {
    "set": "preview-siegessaeule",
@@ -5164,9 +6236,13 @@
    "refCovered": 0.36109971276159214,
    "refCoveredAtAppPeak": 0.3393516618793599,
    "offAtAppPeakDeg": -0.5871701805422491,
-   "offAtAppPeakM": -11.15782628957411,
+   "offAtAppPeakM": -11.157826289574112,
    "refAltAtAppPeak": 0.0347861532332433,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-03-09T17:00:30Z",
+   "refPlateauStart": "2027-03-09T16:58:00Z",
+   "refPlateauEnd": "2027-03-09T16:58:00Z",
+   "dPeakFromAxisCrossingS": -177.6050741672516
   },
   {
    "set": "preview-siegessaeule",
@@ -5182,27 +6258,35 @@
    "refCovered": 0.9950759130077965,
    "refCoveredAtAppPeak": 0.9913828477636438,
    "offAtAppPeakDeg": -0.28437775959000117,
-   "offAtAppPeakM": -5.403948884449846,
+   "offAtAppPeakM": -5.4039488844498464,
    "refAltAtAppPeak": 0.2530215900531601,
-   "refCrossHeightAgl": 1.6695726069289032
+   "refCrossHeightAgl": 1.6695726069289032,
+   "refAxisCrossing": "2027-03-10T16:59:03Z",
+   "refPlateauStart": "2027-03-10T16:57:40Z",
+   "refPlateauEnd": "2027-03-10T16:57:40Z",
+   "dPeakFromAxisCrossingS": -85.96983647346497
   },
   {
    "set": "preview-siegessaeule",
    "point": "mitte",
    "body": "sun",
-   "appPeak": "2027-03-11T16:58:30.000Z",
+   "appPeak": "2027-03-11T16:58:00.000Z",
    "refPeak": "2027-03-11T16:58:40Z",
-   "dPeakS": -10.0,
+   "dPeakS": -40.0,
    "dStartS": 0.0,
    "dEndS": -70.0,
    "refDurationS": 550.0,
-   "appCovered": 1,
+   "appCovered": 0.999409253250871,
    "refCovered": 1.0,
-   "refCoveredAtAppPeak": 1.0,
-   "offAtAppPeakDeg": 0.1795395814138253,
-   "offAtAppPeakM": 3.411739096948519,
-   "refAltAtAppPeak": 0.37155697799826726,
-   "refCrossHeightAgl": 9.566633400336368
+   "refCoveredAtAppPeak": 0.993434550677062,
+   "offAtAppPeakDeg": 0.08026233909439046,
+   "offAtAppPeakM": 1.5252021762805845,
+   "refAltAtAppPeak": 0.4358296036174842,
+   "refCrossHeightAgl": 9.566633400336368,
+   "refAxisCrossing": "2027-03-11T16:57:36Z",
+   "refPlateauStart": "2027-03-11T16:58:20Z",
+   "refPlateauEnd": "2027-03-11T16:58:55Z",
+   "dPeakFromAxisCrossingS": 24.2521071434021
   },
   {
    "set": "preview-siegessaeule",
@@ -5218,9 +6302,13 @@
    "refCovered": 0.6918342224045958,
    "refCoveredAtAppPeak": 0.6930652441526467,
    "offAtAppPeakDeg": 0.006047098474783562,
-   "offAtAppPeakM": 0.11491127542490834,
+   "offAtAppPeakM": 0.11491127542490837,
    "refAltAtAppPeak": 0.9134254988983486,
-   "refCrossHeightAgl": 17.72907256331221
+   "refCrossHeightAgl": 17.72907256331221,
+   "refAxisCrossing": "2027-03-12T16:56:08Z",
+   "refPlateauStart": "2027-03-12T16:56:10Z",
+   "refPlateauEnd": "2027-03-12T16:56:15Z",
+   "dPeakFromAxisCrossingS": 1.8260316848754883
   },
   {
    "set": "preview-siegessaeule",
@@ -5236,9 +6324,13 @@
    "refCovered": 0.6663931062782109,
    "refCoveredAtAppPeak": 0.6668034468608945,
    "offAtAppPeakDeg": 0.006328752587045878,
-   "offAtAppPeakM": 0.1202634676214959,
+   "offAtAppPeakM": 0.12026346762149592,
    "refAltAtAppPeak": 1.3547666273232968,
-   "refCrossHeightAgl": 26.124755796344274
+   "refCrossHeightAgl": 26.124755796344274,
+   "refAxisCrossing": "2027-03-13T16:54:40Z",
+   "refPlateauStart": "2027-03-13T16:54:40Z",
+   "refPlateauEnd": "2027-03-13T16:54:40Z",
+   "dPeakFromAxisCrossingS": 1.910064935684204
   },
   {
    "set": "preview-siegessaeule",
@@ -5254,9 +6346,13 @@
    "refCovered": 0.6389002872384079,
    "refCoveredAtAppPeak": 0.6389002872384079,
    "offAtAppPeakDeg": 0.006669512966886372,
-   "offAtAppPeakM": 0.12673883924394147,
+   "offAtAppPeakM": 0.1267388392439415,
    "refAltAtAppPeak": 1.8061551642069513,
-   "refCrossHeightAgl": 34.71525035876557
+   "refCrossHeightAgl": 34.71525035876557,
+   "refAxisCrossing": "2027-03-14T16:53:11Z",
+   "refPlateauStart": "2027-03-14T16:53:05Z",
+   "refPlateauEnd": "2027-03-14T16:53:10Z",
+   "dPeakFromAxisCrossingS": 2.011953115463257
   },
   {
    "set": "preview-siegessaeule",
@@ -5272,9 +6368,13 @@
    "refCovered": 0.6093557652851868,
    "refCoveredAtAppPeak": 0.6101764464505539,
    "offAtAppPeakDeg": 0.00707713776725424,
-   "offAtAppPeakM": 0.13448481624438577,
+   "offAtAppPeakM": 0.1344848162443858,
    "refAltAtAppPeak": 2.265620414145718,
-   "refCrossHeightAgl": 43.46449542016047
+   "refCrossHeightAgl": 43.46449542016047,
+   "refAxisCrossing": "2027-03-15T16:51:42Z",
+   "refPlateauStart": "2027-03-15T16:51:40Z",
+   "refPlateauEnd": "2027-03-15T16:51:45Z",
+   "dPeakFromAxisCrossingS": 2.1340506076812744
   },
   {
    "set": "preview-siegessaeule",
@@ -5290,9 +6390,13 @@
    "refCovered": 0.6187935986869101,
    "refCoveredAtAppPeak": 0.6179729175215429,
    "offAtAppPeakDeg": 0.010039151169723403,
-   "offAtAppPeakM": 0.19077110616057344,
+   "offAtAppPeakM": 0.19077110616057347,
    "refAltAtAppPeak": 2.7296987307786287,
-   "refCrossHeightAgl": 52.34196636607345
+   "refCrossHeightAgl": 52.34196636607345,
+   "refAxisCrossing": "2027-03-16T16:50:13Z",
+   "refPlateauStart": "2027-03-16T16:50:20Z",
+   "refPlateauEnd": "2027-03-16T16:50:20Z",
+   "dPeakFromAxisCrossingS": 3.0262160301208496
   },
   {
    "set": "preview-siegessaeule",
@@ -5308,9 +6412,13 @@
    "refCovered": 0.34345506770619616,
    "refCoveredAtAppPeak": 0.3401723430447271,
    "offAtAppPeakDeg": 0.09440234320996406,
-   "offAtAppPeakM": 1.7939006130944763,
+   "offAtAppPeakM": 1.7939006130944766,
    "refAltAtAppPeak": 3.1398878245158954,
-   "refCrossHeightAgl": 61.322815051143124
+   "refCrossHeightAgl": 61.322815051143124,
+   "refAxisCrossing": "2027-03-17T16:48:44Z",
+   "refPlateauStart": "2027-03-17T16:49:05Z",
+   "refPlateauEnd": "2027-03-17T16:49:05Z",
+   "dPeakFromAxisCrossingS": 28.449816465377808
   },
   {
    "set": "preview-siegessaeule",
@@ -5326,9 +6434,13 @@
    "refCovered": 0.03652031185884284,
    "refCoveredAtAppPeak": 0.03652031185884284,
    "offAtAppPeakDeg": 0.16209083192834942,
-   "offAtAppPeakM": 3.0801655222321727,
+   "offAtAppPeakM": 3.080165522232173,
    "refAltAtAppPeak": 3.565335702969919,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-03-18T16:47:14Z",
+   "refPlateauStart": "2027-03-18T16:48:05Z",
+   "refPlateauEnd": "2027-03-18T16:48:05Z",
+   "dPeakFromAxisCrossingS": 48.8397958278656
   },
   {
    "set": "preview-siegessaeule",
@@ -5344,9 +6456,13 @@
    "refCovered": 0.6709068526877309,
    "refCoveredAtAppPeak": 0.6713171932704144,
    "offAtAppPeakDeg": 0.010039794131736078,
-   "offAtAppPeakM": 0.19078332418302407,
+   "offAtAppPeakM": 0.19078332418302413,
    "refAltAtAppPeak": 1.285070748662194,
-   "refCrossHeightAgl": 24.85291511162114
+   "refCrossHeightAgl": 24.85291511162114,
+   "refAxisCrossing": "2027-03-22T04:32:33Z",
+   "refPlateauStart": "2027-03-22T04:32:35Z",
+   "refPlateauEnd": "2027-03-22T04:32:35Z",
+   "dPeakFromAxisCrossingS": 3.1751391887664795
   },
   {
    "set": "preview-siegessaeule",
@@ -5362,9 +6478,13 @@
    "refCovered": 1.0,
    "refCoveredAtAppPeak": 1.0,
    "offAtAppPeakDeg": -0.28352873868046186,
-   "offAtAppPeakM": -5.387815183967803,
+   "offAtAppPeakM": -5.3878151839678035,
    "refAltAtAppPeak": 0.2639391722441617,
-   "refCrossHeightAgl": 1.9966444811905577
+   "refCrossHeightAgl": 1.9966444811905577,
+   "refAxisCrossing": "2027-04-04T15:01:41Z",
+   "refPlateauStart": "2027-04-04T15:00:15Z",
+   "refPlateauEnd": "2027-04-04T15:00:25Z",
+   "dPeakFromAxisCrossingS": -87.09180521965027
   },
   {
    "set": "preview-siegessaeule",
@@ -5380,9 +6500,13 @@
    "refCovered": 0.16208453016003282,
    "refCoveredAtAppPeak": 0.1571604431678293,
    "offAtAppPeakDeg": -1.0588245475925915,
-   "offAtAppPeakM": -20.120538754649782,
+   "offAtAppPeakM": -20.120538754649786,
    "refAltAtAppPeak": 0.041768228607257374,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-05-16T01:09:00Z",
+   "refPlateauEnd": "2027-05-16T01:09:00Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5398,9 +6522,13 @@
    "refCovered": 0.70701682396389,
    "refCoveredAtAppPeak": 0.70701682396389,
    "offAtAppPeakDeg": 0.008791724256006935,
-   "offAtAppPeakM": 0.16706661081420865,
+   "offAtAppPeakM": 0.16706661081420868,
    "refAltAtAppPeak": 1.3051730926908065,
-   "refCrossHeightAgl": 25.210062760126387
+   "refCrossHeightAgl": 25.210062760126387,
+   "refAxisCrossing": "2027-05-29T11:27:12Z",
+   "refPlateauStart": "2027-05-29T11:27:10Z",
+   "refPlateauEnd": "2027-05-29T11:27:10Z",
+   "dPeakFromAxisCrossingS": 2.6956663131713867
   },
   {
    "set": "preview-siegessaeule",
@@ -5416,9 +6544,13 @@
    "refCovered": 0.6856791136643414,
    "refCoveredAtAppPeak": 0.6848584324989742,
    "offAtAppPeakDeg": 0.01053406363275579,
-   "offAtAppPeakM": 0.2001757855432372,
+   "offAtAppPeakM": 0.20017578554323723,
    "refAltAtAppPeak": 1.1822233162975866,
-   "refCrossHeightAgl": 22.903245081879835
+   "refCrossHeightAgl": 22.903245081879835,
+   "refAxisCrossing": "2027-06-11T23:07:18Z",
+   "refPlateauStart": "2027-06-11T23:07:20Z",
+   "refPlateauEnd": "2027-06-11T23:07:20Z",
+   "dPeakFromAxisCrossingS": 3.325342893600464
   },
   {
    "set": "preview-siegessaeule",
@@ -5434,9 +6566,13 @@
    "refCovered": 0.15592942141977842,
    "refCoveredAtAppPeak": 0.15059499384489125,
    "offAtAppPeakDeg": -1.331322556546595,
-   "offAtAppPeakM": -25.298740149951747,
+   "offAtAppPeakM": -25.29874014995175,
    "refAltAtAppPeak": 0.01574251747534894,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-06-25T09:23:10Z",
+   "refPlateauEnd": "2027-06-25T09:23:10Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5452,9 +6588,13 @@
    "refCovered": 0.020106688551497744,
    "refCoveredAtAppPeak": 0.019696347968814115,
    "offAtAppPeakDeg": 0.17157315381706234,
-   "offAtAppPeakM": 3.260355361502241,
+   "offAtAppPeakM": 3.260355361502242,
    "refAltAtAppPeak": 3.6100333186316638,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-07-08T20:56:08Z",
+   "refPlateauStart": "2027-07-08T20:56:50Z",
+   "refPlateauEnd": "2027-07-08T20:57:05Z",
+   "dPeakFromAxisCrossingS": 54.15564203262329
   },
   {
    "set": "preview-siegessaeule",
@@ -5470,9 +6610,13 @@
    "refCovered": 0.1645465736561346,
    "refCoveredAtAppPeak": 0.16085350841198195,
    "offAtAppPeakDeg": 0.156091936154136,
-   "offAtAppPeakM": 2.96617022888107,
+   "offAtAppPeakM": 2.9661702288810705,
    "refAltAtAppPeak": 3.323170290920232,
-   "refCrossHeightAgl": 65.61043270252104
+   "refCrossHeightAgl": 65.61043270252104,
+   "refAxisCrossing": "2027-07-23T07:56:53Z",
+   "refPlateauStart": "2027-07-23T07:57:30Z",
+   "refPlateauEnd": "2027-07-23T07:57:40Z",
+   "dPeakFromAxisCrossingS": 47.765310764312744
   },
   {
    "set": "preview-siegessaeule",
@@ -5488,9 +6632,13 @@
    "refCovered": 0.16085350841198195,
    "refCoveredAtAppPeak": 0.15428805908904392,
    "offAtAppPeakDeg": -1.0047492352604426,
-   "offAtAppPeakM": -19.092961126304655,
+   "offAtAppPeakM": -19.09296112630466,
    "refAltAtAppPeak": 0.042017539963443706,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-08-05T19:42:30Z",
+   "refPlateauEnd": "2027-08-05T19:42:30Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5506,9 +6654,13 @@
    "refCovered": 0.7144029544521954,
    "refCoveredAtAppPeak": 0.7144029544521954,
    "offAtAppPeakDeg": 0.00960130764065081,
-   "offAtAppPeakM": 0.18245089133819525,
+   "offAtAppPeakM": 0.1824508913381953,
    "refAltAtAppPeak": 1.3316300094978901,
-   "refCrossHeightAgl": 25.723534908067055
+   "refCrossHeightAgl": 25.723534908067055,
+   "refAxisCrossing": "2027-08-19T06:02:23Z",
+   "refPlateauStart": "2027-08-19T06:02:25Z",
+   "refPlateauEnd": "2027-08-19T06:02:25Z",
+   "dPeakFromAxisCrossingS": 2.9427895545959473
   },
   {
    "set": "preview-siegessaeule",
@@ -5524,9 +6676,13 @@
    "refCovered": 0.22732868280672958,
    "refCoveredAtAppPeak": 0.22568732047599507,
    "offAtAppPeakDeg": 0.14160896616293103,
-   "offAtAppPeakM": 2.690954510041697,
+   "offAtAppPeakM": 2.6909545100416974,
    "refAltAtAppPeak": 3.2415612964907674,
-   "refCrossHeightAgl": 64.00061536497203
+   "refCrossHeightAgl": 64.00061536497203,
+   "refAxisCrossing": "2027-09-01T17:23:06Z",
+   "refPlateauStart": "2027-09-01T17:23:45Z",
+   "refPlateauEnd": "2027-09-01T17:23:45Z",
+   "dPeakFromAxisCrossingS": 44.813435792922974
   },
   {
    "set": "preview-siegessaeule",
@@ -5542,9 +6698,13 @@
    "refCovered": 0.1645465736561346,
    "refCoveredAtAppPeak": 0.1583914649158802,
    "offAtAppPeakDeg": -1.2011962812446726,
-   "offAtAppPeakM": -22.825987916200194,
+   "offAtAppPeakM": -22.825987916200198,
    "refAltAtAppPeak": 0.037301660564462824,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-09-15T04:01:35Z",
+   "refPlateauEnd": "2027-09-15T04:01:35Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5560,9 +6720,13 @@
    "refCovered": 0.0853508411981945,
    "refCoveredAtAppPeak": 0.08453016003282725,
    "offAtAppPeakDeg": 0.16452073158824282,
-   "offAtAppPeakM": 3.1263402075357547,
+   "offAtAppPeakM": 3.126340207535755,
    "refAltAtAppPeak": 3.4440929901850907,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-25T16:31:09Z",
+   "refPlateauStart": "2027-09-25T16:31:55Z",
+   "refPlateauEnd": "2027-09-25T16:31:55Z",
+   "dPeakFromAxisCrossingS": 49.654489278793335
   },
   {
    "set": "preview-siegessaeule",
@@ -5578,9 +6742,13 @@
    "refCovered": 0.4296265900697579,
    "refCoveredAtAppPeak": 0.42880590890439063,
    "offAtAppPeakDeg": 0.0790971930830791,
-   "offAtAppPeakM": 1.503061241289307,
+   "offAtAppPeakM": 1.5030612412893074,
    "refAltAtAppPeak": 3.0387917946713245,
-   "refCrossHeightAgl": 59.18753053495277
+   "refCrossHeightAgl": 59.18753053495277,
+   "refAxisCrossing": "2027-09-26T16:32:00Z",
+   "refPlateauStart": "2027-09-26T16:32:20Z",
+   "refPlateauEnd": "2027-09-26T16:32:20Z",
+   "dPeakFromAxisCrossingS": 23.877306699752808
   },
   {
    "set": "preview-siegessaeule",
@@ -5596,9 +6764,13 @@
    "refCovered": 0.6327451784981535,
    "refCoveredAtAppPeak": 0.6323348379154698,
    "offAtAppPeakDeg": 0.014307607341063087,
-   "offAtAppPeakM": 0.2718833527676571,
+   "offAtAppPeakM": 0.2718833527676572,
    "refAltAtAppPeak": 2.6218434908385855,
-   "refCrossHeightAgl": 50.34662287784521
+   "refCrossHeightAgl": 50.34662287784521,
+   "refAxisCrossing": "2027-09-27T16:32:51Z",
+   "refPlateauStart": "2027-09-27T16:32:55Z",
+   "refPlateauEnd": "2027-09-27T16:32:55Z",
+   "dPeakFromAxisCrossingS": 4.320218324661255
   },
   {
    "set": "preview-siegessaeule",
@@ -5614,9 +6786,13 @@
    "refCovered": 0.6212556421830119,
    "refCoveredAtAppPeak": 0.6192039392695937,
    "offAtAppPeakDeg": 0.010377444013884518,
-   "offAtAppPeakM": 0.19719958791124723,
+   "offAtAppPeakM": 0.19719958791124728,
    "refAltAtAppPeak": 2.165920212317179,
-   "refCrossHeightAgl": 41.6118208972081
+   "refCrossHeightAgl": 41.6118208972081,
+   "refAxisCrossing": "2027-09-28T16:33:42Z",
+   "refPlateauStart": "2027-09-28T16:33:40Z",
+   "refPlateauEnd": "2027-09-28T16:33:40Z",
+   "dPeakFromAxisCrossingS": 3.1345667839050293
   },
   {
    "set": "preview-siegessaeule",
@@ -5632,9 +6808,13 @@
    "refCovered": 0.19614279852277391,
    "refCoveredAtAppPeak": 0.1600328272466147,
    "offAtAppPeakDeg": -0.8314288512656342,
-   "offAtAppPeakM": -15.79940365158681,
+   "offAtAppPeakM": -15.799403651586813,
    "refAltAtAppPeak": 0.04694989281054307,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-29T16:10:28Z",
+   "refPlateauStart": "2027-09-29T16:07:05Z",
+   "refPlateauEnd": "2027-09-29T16:07:05Z",
+   "dPeakFromAxisCrossingS": -263.91827297210693
   },
   {
    "set": "preview-siegessaeule",
@@ -5650,9 +6830,13 @@
    "refCovered": 0.6491588018054986,
    "refCoveredAtAppPeak": 0.6487484612228149,
    "offAtAppPeakDeg": 0.009568776520926869,
-   "offAtAppPeakM": 0.18183271181390495,
+   "offAtAppPeakM": 0.18183271181390498,
    "refAltAtAppPeak": 1.7143763377984442,
-   "refCrossHeightAgl": 33.0082105952925
+   "refCrossHeightAgl": 33.0082105952925,
+   "refAxisCrossing": "2027-09-29T16:34:33Z",
+   "refPlateauStart": "2027-09-29T16:34:35Z",
+   "refPlateauEnd": "2027-09-29T16:34:35Z",
+   "dPeakFromAxisCrossingS": 2.8914945125579834
   },
   {
    "set": "preview-siegessaeule",
@@ -5668,9 +6852,13 @@
    "refCovered": 0.6766516208453016,
    "refCoveredAtAppPeak": 0.676241280262618,
    "offAtAppPeakDeg": 0.008784003878002348,
-   "offAtAppPeakM": 0.16691990268849038,
+   "offAtAppPeakM": 0.1669199026884904,
    "refAltAtAppPeak": 1.2711070777082278,
-   "refCrossHeightAgl": 24.566220178015577
+   "refCrossHeightAgl": 24.566220178015577,
+   "refAxisCrossing": "2027-09-30T16:35:24Z",
+   "refPlateauStart": "2027-09-30T16:35:25Z",
+   "refPlateauEnd": "2027-09-30T16:35:25Z",
+   "dPeakFromAxisCrossingS": 2.655625820159912
   },
   {
    "set": "preview-siegessaeule",
@@ -5686,27 +6874,35 @@
    "refCovered": 0.7127615921214608,
    "refCoveredAtAppPeak": 0.7123512515387772,
    "offAtAppPeakDeg": 0.06775197744911868,
-   "offAtAppPeakM": 1.2874713672521287,
+   "offAtAppPeakM": 1.287471367252129,
    "refAltAtAppPeak": 0.798065402454126,
-   "refCrossHeightAgl": 16.32124307774767
+   "refCrossHeightAgl": 16.32124307774767,
+   "refAxisCrossing": "2027-10-01T16:36:16Z",
+   "refPlateauStart": "2027-10-01T16:36:30Z",
+   "refPlateauEnd": "2027-10-01T16:36:30Z",
+   "dPeakFromAxisCrossingS": 20.4947350025177
   },
   {
    "set": "preview-siegessaeule",
    "point": "mitte",
    "body": "sun",
-   "appPeak": "2027-10-02T16:37:00.000Z",
+   "appPeak": "2027-10-02T16:37:09.375Z",
    "refPeak": "2027-10-02T16:37:50Z",
-   "dPeakS": -50.0,
+   "dPeakS": -40.625,
    "dStartS": 15.0,
    "dEndS": -70.0,
    "refDurationS": 535.0,
    "appCovered": 1,
    "refCovered": 1.0,
-   "refCoveredAtAppPeak": 0.9995896594173164,
-   "offAtAppPeakDeg": -0.025997364409846877,
-   "offAtAppPeakM": -0.4940204487290988,
-   "refAltAtAppPeak": 0.43882381253335345,
-   "refCrossHeightAgl": 8.31000308122277
+   "refCoveredAtAppPeak": 1.0,
+   "offAtAppPeakDeg": 0.004977333894195165,
+   "offAtAppPeakM": 0.09458284636551478,
+   "refAltAtAppPeak": 0.4186467548104869,
+   "refCrossHeightAgl": 8.31000308122277,
+   "refAxisCrossing": "2027-10-02T16:37:08Z",
+   "refPlateauStart": "2027-10-02T16:37:05Z",
+   "refPlateauEnd": "2027-10-02T16:38:30Z",
+   "dPeakFromAxisCrossingS": 1.5064783096313477
   },
   {
    "set": "preview-siegessaeule",
@@ -5722,9 +6918,13 @@
    "refCovered": 0.937217890849405,
    "refCoveredAtAppPeak": 0.9290110791957324,
    "offAtAppPeakDeg": -0.3153596226371419,
-   "offAtAppPeakM": -5.9926883290996535,
+   "offAtAppPeakM": -5.992688329099654,
    "refAltAtAppPeak": 0.21446084636803742,
-   "refCrossHeightAgl": 0.5609334502562913
+   "refCrossHeightAgl": 0.5609334502562913,
+   "refAxisCrossing": "2027-10-03T16:38:00Z",
+   "refPlateauStart": "2027-10-03T16:36:30Z",
+   "refPlateauEnd": "2027-10-03T16:36:30Z",
+   "dPeakFromAxisCrossingS": -95.49787712097168
   },
   {
    "set": "preview-siegessaeule",
@@ -5740,9 +6940,13 @@
    "refCovered": 0.2966762412802626,
    "refCoveredAtAppPeak": 0.2736971686499795,
    "offAtAppPeakDeg": -0.6392487729314589,
-   "offAtAppPeakM": -12.14746082235592,
+   "offAtAppPeakM": -12.147460822355923,
    "refAltAtAppPeak": 0.01668446625272657,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-10-04T16:38:53Z",
+   "refPlateauStart": "2027-10-04T16:36:10Z",
+   "refPlateauEnd": "2027-10-04T16:36:10Z",
+   "dPeakFromAxisCrossingS": -193.6826868057251
   },
   {
    "set": "preview-siegessaeule",
@@ -5758,9 +6962,13 @@
    "refCovered": 0.15100533442757488,
    "refCoveredAtAppPeak": 0.1452605662700041,
    "offAtAppPeakDeg": -1.2863231641141653,
-   "offAtAppPeakM": -24.443629620609563,
+   "offAtAppPeakM": -24.443629620609567,
    "refAltAtAppPeak": 0.02482440635032168,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-10-05T16:33:30Z",
+   "refPlateauEnd": "2027-10-05T16:33:30Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5776,9 +6984,13 @@
    "refCovered": 0.04349610176446451,
    "refCoveredAtAppPeak": 0.02421009437833402,
    "offAtAppPeakDeg": -1.715429458191215,
-   "offAtAppPeakM": -32.597813275939316,
+   "offAtAppPeakM": -32.59781327593932,
    "refAltAtAppPeak": -0.10267255629105654,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-10-06T16:32:50Z",
+   "refPlateauEnd": "2027-10-06T16:32:50Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5794,9 +7006,13 @@
    "refCovered": 0.32663110381616745,
    "refCoveredAtAppPeak": 0.32211735740664754,
    "offAtAppPeakDeg": 0.0917326719894076,
-   "offAtAppPeakM": 1.7431696176925378,
+   "offAtAppPeakM": 1.743169617692538,
    "refAltAtAppPeak": 3.1800864117378143,
-   "refCrossHeightAgl": 62.01426248878282
+   "refCrossHeightAgl": 62.01426248878282,
+   "refAxisCrossing": "2027-10-13T02:33:41Z",
+   "refPlateauStart": "2027-10-13T02:34:05Z",
+   "refPlateauEnd": "2027-10-13T02:34:05Z",
+   "dPeakFromAxisCrossingS": 28.086873292922974
   },
   {
    "set": "preview-siegessaeule",
@@ -5812,9 +7028,13 @@
    "refCovered": 0.613459171112023,
    "refCoveredAtAppPeak": 0.6122281493639721,
    "offAtAppPeakDeg": 0.014649047415238616,
-   "offAtAppPeakM": 0.27837164042632473,
+   "offAtAppPeakM": 0.2783716404263248,
    "refAltAtAppPeak": 2.7309390957304993,
-   "refCrossHeightAgl": 52.43674171838794
+   "refCrossHeightAgl": 52.43674171838794,
+   "refAxisCrossing": "2027-10-26T13:51:41Z",
+   "refPlateauStart": "2027-10-26T13:51:50Z",
+   "refPlateauEnd": "2027-10-26T13:51:50Z",
+   "dPeakFromAxisCrossingS": 4.628348350524902
   },
   {
    "set": "preview-siegessaeule",
@@ -5830,9 +7050,13 @@
    "refCovered": 0.8375051292572836,
    "refCoveredAtAppPeak": 0.8375051292572836,
    "offAtAppPeakDeg": 0.06706340848075261,
-   "offAtAppPeakM": 1.2743866889220326,
+   "offAtAppPeakM": 1.2743866889220328,
    "refAltAtAppPeak": 0.6721342925535307,
-   "refCrossHeightAgl": 13.882361231479438
+   "refCrossHeightAgl": 13.882361231479438,
+   "refAxisCrossing": "2027-11-09T00:35:10Z",
+   "refPlateauStart": "2027-11-09T00:35:30Z",
+   "refPlateauEnd": "2027-11-09T00:35:30Z",
+   "dPeakFromAxisCrossingS": 20.57943296432495
   },
   {
    "set": "preview-siegessaeule",
@@ -5848,9 +7072,13 @@
    "refCovered": 0.004513746409519901,
    "refCoveredAtAppPeak": 0.004513746409519901,
    "offAtAppPeakDeg": 0.1633727098383631,
-   "offAtAppPeakM": 3.84727993615426,
+   "offAtAppPeakM": 3.8472799361542602,
    "refAltAtAppPeak": 2.9774349661413146,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2026-12-02T11:31:47Z",
+   "refPlateauStart": "2026-12-02T11:32:35Z",
+   "refPlateauEnd": "2026-12-02T11:32:40Z",
+   "dPeakFromAxisCrossingS": 51.41053342819214
   },
   {
    "set": "preview-siegessaeule",
@@ -5866,9 +7094,13 @@
    "refCovered": 0.35125153877718507,
    "refCoveredAtAppPeak": 0.35002051702913417,
    "offAtAppPeakDeg": 0.08311150648329371,
-   "offAtAppPeakM": 1.9572010017651447,
+   "offAtAppPeakM": 1.9572010017651449,
    "refAltAtAppPeak": 2.4395170952122243,
-   "refCrossHeightAgl": 59.57990717125289
+   "refCrossHeightAgl": 59.57990717125289,
+   "refAxisCrossing": "2026-12-16T22:22:12Z",
+   "refPlateauStart": "2026-12-16T22:22:30Z",
+   "refPlateauEnd": "2026-12-16T22:22:30Z",
+   "dPeakFromAxisCrossingS": 25.45718216896057
   },
   {
    "set": "preview-siegessaeule",
@@ -5884,9 +7116,13 @@
    "refCovered": 0.933935166187936,
    "refCoveredAtAppPeak": 0.9351661879359868,
    "offAtAppPeakDeg": 0.19479830506548537,
-   "offAtAppPeakM": 4.587324354335429,
+   "offAtAppPeakM": 4.58732435433543,
    "refAltAtAppPeak": 0.3238859914094846,
-   "refCrossHeightAgl": 11.239195650051418
+   "refCrossHeightAgl": 11.239195650051418,
+   "refAxisCrossing": "2027-01-12T20:26:09Z",
+   "refPlateauStart": "2027-01-12T20:27:05Z",
+   "refPlateauEnd": "2027-01-12T20:27:05Z",
+   "dPeakFromAxisCrossingS": 59.784910678863525
   },
   {
    "set": "preview-siegessaeule",
@@ -5902,9 +7138,13 @@
    "refCovered": 0.5510874025441116,
    "refCoveredAtAppPeak": 0.5502667213787443,
    "offAtAppPeakDeg": 0.011927649820074031,
-   "offAtAppPeakM": 0.2808853931825347,
+   "offAtAppPeakM": 0.28088539318253475,
    "refAltAtAppPeak": 1.0976067822974724,
-   "refCrossHeightAgl": 26.79159641255733
+   "refCrossHeightAgl": 26.79159641255733,
+   "refAxisCrossing": "2027-01-26T08:10:21Z",
+   "refPlateauStart": "2027-01-26T08:10:20Z",
+   "refPlateauEnd": "2027-01-26T08:10:20Z",
+   "dPeakFromAxisCrossingS": 3.7695248126983643
   },
   {
    "set": "preview-siegessaeule",
@@ -5920,9 +7160,13 @@
    "refCovered": 0.10545752974969225,
    "refCoveredAtAppPeak": 0.09766105867870332,
    "offAtAppPeakDeg": -1.0604216647644045,
-   "offAtAppPeakM": -24.971973585721777,
+   "offAtAppPeakM": -24.97197358572178,
    "refAltAtAppPeak": -0.07723378123063551,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-03-08T16:56:50Z",
+   "refPlateauEnd": "2027-03-08T16:56:50Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -5938,9 +7182,13 @@
    "refCovered": 0.14443988510463684,
    "refCoveredAtAppPeak": 0.1440295445219532,
    "offAtAppPeakDeg": 0.15925108056751824,
-   "offAtAppPeakM": 3.75021928499853,
+   "offAtAppPeakM": 3.7502192849985305,
    "refAltAtAppPeak": 2.6488528216723455,
-   "refCrossHeightAgl": 65.77450669814674
+   "refCrossHeightAgl": 65.77450669814674,
+   "refAxisCrossing": "2027-03-08T16:59:08Z",
+   "refPlateauStart": "2027-03-08T16:59:50Z",
+   "refPlateauEnd": "2027-03-08T16:59:55Z",
+   "dPeakFromAxisCrossingS": 48.77400469779968
   },
   {
    "set": "preview-siegessaeule",
@@ -5956,9 +7204,13 @@
    "refCovered": 0.2778005744768158,
    "refCoveredAtAppPeak": 0.2531801395157981,
    "offAtAppPeakDeg": -0.5236155195914517,
-   "offAtAppPeakM": -12.330673126351833,
+   "offAtAppPeakM": -12.330673126351835,
    "refAltAtAppPeak": -0.009244127005812341,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-03-09T17:00:32Z",
+   "refPlateauStart": "2027-03-09T16:58:15Z",
+   "refPlateauEnd": "2027-03-09T16:58:15Z",
+   "dPeakFromAxisCrossingS": -158.38656282424927
   },
   {
    "set": "preview-siegessaeule",
@@ -5974,9 +7226,13 @@
    "refCovered": 0.9396799343455068,
    "refCoveredAtAppPeak": 0.9331144850225688,
    "offAtAppPeakDeg": -0.20874761823352098,
-   "offAtAppPeakM": -4.915818095594986,
+   "offAtAppPeakM": -4.915818095594987,
    "refAltAtAppPeak": 0.20048832303209985,
-   "refCrossHeightAgl": 2.349333190405452
+   "refCrossHeightAgl": 2.349333190405452,
+   "refAxisCrossing": "2027-03-10T16:59:04Z",
+   "refPlateauStart": "2027-03-10T16:58:10Z",
+   "refPlateauEnd": "2027-03-10T16:58:10Z",
+   "dPeakFromAxisCrossingS": -63.10856056213379
   },
   {
    "set": "preview-siegessaeule",
@@ -5994,7 +7250,11 @@
    "offAtAppPeakDeg": 0.17121341010535818,
    "offAtAppPeakM": 4.031921354249451,
    "refAltAtAppPeak": 0.37261328178293984,
-   "refCrossHeightAgl": 12.13246127196308
+   "refCrossHeightAgl": 12.13246127196308,
+   "refAxisCrossing": "2027-03-11T16:57:37Z",
+   "refPlateauStart": "2027-03-11T16:58:20Z",
+   "refPlateauEnd": "2027-03-11T16:58:20Z",
+   "dPeakFromAxisCrossingS": 51.73612904548645
   },
   {
    "set": "preview-siegessaeule",
@@ -6010,9 +7270,13 @@
    "refCovered": 0.5617562576938859,
    "refCoveredAtAppPeak": 0.5613459171112023,
    "offAtAppPeakDeg": 0.007665708994257016,
-   "offAtAppPeakM": 0.1805205314839978,
+   "offAtAppPeakM": 0.18052053148399783,
    "refAltAtAppPeak": 0.9078560722052269,
-   "refCrossHeightAgl": 22.24472165073264
+   "refCrossHeightAgl": 22.24472165073264,
+   "refAxisCrossing": "2027-03-12T16:56:09Z",
+   "refPlateauStart": "2027-03-12T16:56:15Z",
+   "refPlateauEnd": "2027-03-12T16:56:15Z",
+   "dPeakFromAxisCrossingS": 2.314816951751709
   },
   {
    "set": "preview-siegessaeule",
@@ -6028,9 +7292,13 @@
    "refCovered": 0.5338530980713992,
    "refCoveredAtAppPeak": 0.5305703734099303,
    "offAtAppPeakDeg": 0.008126338979626096,
-   "offAtAppPeakM": 0.19136795209944105,
+   "offAtAppPeakM": 0.19136795209944107,
    "refAltAtAppPeak": 1.3489407323294855,
-   "refCrossHeightAgl": 32.646524512798266
+   "refCrossHeightAgl": 32.646524512798266,
+   "refAxisCrossing": "2027-03-13T16:54:41Z",
+   "refPlateauStart": "2027-03-13T16:54:45Z",
+   "refPlateauEnd": "2027-03-13T16:54:45Z",
+   "dPeakFromAxisCrossingS": 2.4525985717773438
   },
   {
    "set": "preview-siegessaeule",
@@ -6046,9 +7314,13 @@
    "refCovered": 0.5071809601969635,
    "refCoveredAtAppPeak": 0.5059499384489126,
    "offAtAppPeakDeg": -0.015552859238395896,
-   "offAtAppPeakM": -0.36625580463782714,
+   "offAtAppPeakM": -0.3662558046378272,
    "refAltAtAppPeak": 1.8170117355129982,
-   "refCrossHeightAgl": 43.290208945030955
+   "refCrossHeightAgl": 43.290208945030955,
+   "refAxisCrossing": "2027-03-14T16:53:12Z",
+   "refPlateauStart": "2027-03-14T16:53:05Z",
+   "refPlateauEnd": "2027-03-14T16:53:05Z",
+   "dPeakFromAxisCrossingS": -4.691761255264282
   },
   {
    "set": "preview-siegessaeule",
@@ -6064,9 +7336,13 @@
    "refCovered": 0.48256052523594584,
    "refCoveredAtAppPeak": 0.48132950348789494,
    "offAtAppPeakDeg": 0.04637442125874686,
-   "offAtAppPeakM": 1.092075785705349,
+   "offAtAppPeakM": 1.0920757857053491,
    "refAltAtAppPeak": 2.2330046476255285,
-   "refCrossHeightAgl": 54.1310294685914
+   "refCrossHeightAgl": 54.1310294685914,
+   "refAxisCrossing": "2027-03-15T16:51:43Z",
+   "refPlateauStart": "2027-03-15T16:52:00Z",
+   "refPlateauEnd": "2027-03-15T16:52:00Z",
+   "dPeakFromAxisCrossingS": 13.984096050262451
   },
   {
    "set": "preview-siegessaeule",
@@ -6082,9 +7358,13 @@
    "refCovered": 0.1645465736561346,
    "refCoveredAtAppPeak": 0.16413623307345096,
    "offAtAppPeakDeg": 0.16058843955518357,
-   "offAtAppPeakM": 3.7817128827099893,
+   "offAtAppPeakM": 3.7817128827099897,
    "refAltAtAppPeak": 2.6169784817283537,
-   "refCrossHeightAgl": 65.13109252302417
+   "refCrossHeightAgl": 65.13109252302417,
+   "refAxisCrossing": "2027-03-16T16:50:14Z",
+   "refPlateauStart": "2027-03-16T16:51:05Z",
+   "refPlateauEnd": "2027-03-16T16:51:05Z",
+   "dPeakFromAxisCrossingS": 48.41002035140991
   },
   {
    "set": "preview-siegessaeule",
@@ -6102,7 +7382,11 @@
    "offAtAppPeakDeg": 0.011877350051172086,
    "offAtAppPeakM": 0.2797008790009367,
    "refAltAtAppPeak": 1.2790846757942294,
-   "refCrossHeightAgl": 31.0683478092592
+   "refCrossHeightAgl": 31.0683478092592,
+   "refAxisCrossing": "2027-03-22T04:32:34Z",
+   "refPlateauStart": "2027-03-22T04:32:30Z",
+   "refPlateauEnd": "2027-03-22T04:32:30Z",
+   "dPeakFromAxisCrossingS": 3.756309747695923
   },
   {
    "set": "preview-siegessaeule",
@@ -6118,9 +7402,13 @@
    "refCovered": 0.9839967172753386,
    "refCoveredAtAppPeak": 0.9774312679524005,
    "offAtAppPeakDeg": -0.2038677913479383,
-   "offAtAppPeakM": -4.800902574591613,
+   "offAtAppPeakM": -4.800902574591614,
    "refAltAtAppPeak": 0.2105467913359751,
-   "refCrossHeightAgl": 2.7563252800087352
+   "refCrossHeightAgl": 2.7563252800087352,
+   "refAxisCrossing": "2027-04-04T15:01:42Z",
+   "refPlateauStart": "2027-04-04T15:00:45Z",
+   "refPlateauEnd": "2027-04-04T15:00:45Z",
+   "dPeakFromAxisCrossingS": -62.62518286705017
   },
   {
    "set": "preview-siegessaeule",
@@ -6136,9 +7424,13 @@
    "refCovered": 0.12843660237997537,
    "refCoveredAtAppPeak": 0.11694706606483381,
    "offAtAppPeakDeg": -1.0099493411516716,
-   "offAtAppPeakM": -23.783395896348377,
+   "offAtAppPeakM": -23.78339589634838,
    "refAltAtAppPeak": 0.005703019634874851,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-05-16T01:09:10Z",
+   "refPlateauEnd": "2027-05-16T01:09:10Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -6154,9 +7446,13 @@
    "refCovered": 0.567090685268773,
    "refCoveredAtAppPeak": 0.5675010258514567,
    "offAtAppPeakDeg": 0.010344432580492424,
-   "offAtAppPeakM": 0.24360205543021238,
+   "offAtAppPeakM": 0.24360205543021243,
    "refAltAtAppPeak": 1.2996402059125187,
-   "refCrossHeightAgl": 31.51507862305006
+   "refCrossHeightAgl": 31.51507862305006,
+   "refAxisCrossing": "2027-05-29T11:27:13Z",
+   "refPlateauStart": "2027-05-29T11:27:15Z",
+   "refPlateauEnd": "2027-05-29T11:27:15Z",
+   "dPeakFromAxisCrossingS": 3.1717662811279297
   },
   {
    "set": "preview-siegessaeule",
@@ -6172,9 +7468,13 @@
    "refCovered": 0.5531391054575298,
    "refCoveredAtAppPeak": 0.5498563807960607,
    "offAtAppPeakDeg": 0.012280148491557445,
-   "offAtAppPeakM": 0.28918641890256425,
+   "offAtAppPeakM": 0.2891864189025643,
    "refAltAtAppPeak": 1.1763409542615026,
-   "refCrossHeightAgl": 28.652918774817135
+   "refCrossHeightAgl": 28.652918774817135,
+   "refAxisCrossing": "2027-06-11T23:07:20Z",
+   "refPlateauStart": "2027-06-11T23:07:20Z",
+   "refPlateauEnd": "2027-06-11T23:07:25Z",
+   "dPeakFromAxisCrossingS": 3.876572847366333
   },
   {
    "set": "preview-siegessaeule",
@@ -6190,9 +7490,13 @@
    "refCovered": 0.09807139926138696,
    "refCoveredAtAppPeak": 0.08494050061551088,
    "offAtAppPeakDeg": -1.1461811092067593,
-   "offAtAppPeakM": -26.991531137685275,
+   "offAtAppPeakM": -26.991531137685282,
    "refAltAtAppPeak": -0.10009828062494597,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-06-25T09:24:20Z",
+   "refPlateauEnd": "2027-06-25T09:24:20Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -6208,9 +7512,13 @@
    "refCovered": 0.12679524004924086,
    "refCoveredAtAppPeak": 0.11694706606483381,
    "offAtAppPeakDeg": -0.9567972999683593,
-   "offAtAppPeakM": -22.531713275594154,
+   "offAtAppPeakM": -22.531713275594157,
    "refAltAtAppPeak": 0.0064765560293195135,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-08-05T19:42:40Z",
+   "refPlateauEnd": "2027-08-05T19:42:40Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -6226,9 +7534,13 @@
    "refCovered": 0.5752974969224456,
    "refCoveredAtAppPeak": 0.5740664751743948,
    "offAtAppPeakDeg": 0.011129896486056811,
-   "offAtAppPeakM": 0.262099021829564,
+   "offAtAppPeakM": 0.26209902182956407,
    "refAltAtAppPeak": 1.326103768448015,
-   "refCrossHeightAgl": 32.15121493162779
+   "refCrossHeightAgl": 32.15121493162779,
+   "refAxisCrossing": "2027-08-19T06:02:24Z",
+   "refPlateauStart": "2027-08-19T06:02:25Z",
+   "refPlateauEnd": "2027-08-19T06:02:25Z",
+   "dPeakFromAxisCrossingS": 3.411325216293335
   },
   {
    "set": "preview-siegessaeule",
@@ -6244,9 +7556,13 @@
    "refCovered": 0.11776774723020107,
    "refCoveredAtAppPeak": 0.11202297907263029,
    "offAtAppPeakDeg": -1.0612602228168282,
-   "offAtAppPeakM": -24.99172087138278,
+   "offAtAppPeakM": -24.991720871382782,
    "refAltAtAppPeak": -0.051522042134779955,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-09-15T04:02:00Z",
+   "refPlateauEnd": "2027-09-15T04:02:00Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -6262,9 +7578,13 @@
    "refCovered": 0.006565449322938038,
    "refCoveredAtAppPeak": 0.006975789905621666,
    "offAtAppPeakDeg": 0.1642179125159963,
-   "offAtAppPeakM": 3.8671836967447475,
+   "offAtAppPeakM": 3.8671836967447484,
    "refAltAtAppPeak": 2.972228264260861,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-26T16:32:01Z",
+   "refPlateauStart": "2027-09-26T16:32:50Z",
+   "refPlateauEnd": "2027-09-26T16:32:50Z",
+   "dPeakFromAxisCrossingS": 49.5739004611969
   },
   {
    "set": "preview-siegessaeule",
@@ -6280,9 +7600,13 @@
    "refCovered": 0.24579400902749282,
    "refCoveredAtAppPeak": 0.2453836684448092,
    "offAtAppPeakDeg": 0.12074743283842337,
-   "offAtAppPeakM": 2.843493115594481,
+   "offAtAppPeakM": 2.8434931155944816,
    "refAltAtAppPeak": 2.540559935745236,
-   "refCrossHeightAgl": 62.65836720529096
+   "refCrossHeightAgl": 62.65836720529096,
+   "refAxisCrossing": "2027-09-27T16:32:52Z",
+   "refPlateauStart": "2027-09-27T16:33:20Z",
+   "refPlateauEnd": "2027-09-27T16:33:20Z",
+   "dPeakFromAxisCrossingS": 36.461068630218506
   },
   {
    "set": "preview-siegessaeule",
@@ -6298,9 +7622,13 @@
    "refCovered": 0.5092326631103816,
    "refCoveredAtAppPeak": 0.5038982355354945,
    "offAtAppPeakDeg": 0.014857035036811435,
-   "offAtAppPeakM": 0.34986977240211875,
+   "offAtAppPeakM": 0.3498697724021188,
    "refAltAtAppPeak": 2.1579896224240382,
-   "refCrossHeightAgl": 51.835153624135906
+   "refCrossHeightAgl": 51.835153624135906,
+   "refAxisCrossing": "2027-09-28T16:33:43Z",
+   "refPlateauStart": "2027-09-28T16:33:40Z",
+   "refPlateauEnd": "2027-09-28T16:33:40Z",
+   "dPeakFromAxisCrossingS": 4.487678527832031
   },
   {
    "set": "preview-siegessaeule",
@@ -6316,9 +7644,13 @@
    "refCovered": 0.1345917111202298,
    "refCoveredAtAppPeak": 0.12638489946655723,
    "offAtAppPeakDeg": -0.7874492428163005,
-   "offAtAppPeakM": -18.543719300636965,
+   "offAtAppPeakM": -18.54371930063697,
    "refAltAtAppPeak": 0.01395477857755012,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-09-29T16:10:30Z",
+   "refPlateauStart": "2027-09-29T16:07:20Z",
+   "refPlateauEnd": "2027-09-29T16:07:20Z",
+   "dPeakFromAxisCrossingS": -249.96621823310852
   },
   {
    "set": "preview-siegessaeule",
@@ -6336,7 +7668,11 @@
    "offAtAppPeakDeg": 0.011515800125065772,
    "offAtAppPeakM": 0.2711867043997864,
    "refAltAtAppPeak": 1.708338368765088,
-   "refCrossHeightAgl": 41.174859412942624
+   "refCrossHeightAgl": 41.174859412942624,
+   "refAxisCrossing": "2027-09-29T16:34:34Z",
+   "refPlateauStart": "2027-09-29T16:34:40Z",
+   "refPlateauEnd": "2027-09-29T16:34:40Z",
+   "dPeakFromAxisCrossingS": 3.479868173599243
   },
   {
    "set": "preview-siegessaeule",
@@ -6352,9 +7688,13 @@
    "refCovered": 0.5420599097250718,
    "refCoveredAtAppPeak": 0.5404185473943373,
    "offAtAppPeakDeg": 0.01053248606094616,
-   "offAtAppPeakM": 0.24803054524953067,
+   "offAtAppPeakM": 0.24803054524953072,
    "refAltAtAppPeak": 1.2653217247289508,
-   "refCrossHeightAgl": 30.715271169027396
+   "refCrossHeightAgl": 30.715271169027396,
+   "refAxisCrossing": "2027-09-30T16:35:25Z",
+   "refPlateauStart": "2027-09-30T16:35:30Z",
+   "refPlateauEnd": "2027-09-30T16:35:30Z",
+   "dPeakFromAxisCrossingS": 3.1842541694641113
   },
   {
    "set": "preview-siegessaeule",
@@ -6370,9 +7710,13 @@
    "refCovered": 0.5691423881821912,
    "refCoveredAtAppPeak": 0.5691423881821912,
    "offAtAppPeakDeg": 0.009612278446902926,
-   "offAtAppPeakM": 0.2263604860694657,
+   "offAtAppPeakM": 0.22636048606946574,
    "refAltAtAppPeak": 0.832495116353815,
-   "refCrossHeightAgl": 20.500309460177796
+   "refCrossHeightAgl": 20.500309460177796,
+   "refAxisCrossing": "2027-10-01T16:36:17Z",
+   "refPlateauStart": "2027-10-01T16:36:15Z",
+   "refPlateauEnd": "2027-10-01T16:36:20Z",
+   "dPeakFromAxisCrossingS": 2.9076106548309326
   },
   {
    "set": "preview-siegessaeule",
@@ -6388,9 +7732,13 @@
    "refCovered": 0.9524004924086992,
    "refCoveredAtAppPeak": 0.9507591300779648,
    "offAtAppPeakDeg": 0.17643453365076894,
-   "offAtAppPeakM": 4.154874103703842,
+   "offAtAppPeakM": 4.154874103703843,
    "refAltAtAppPeak": 0.30318773369743585,
-   "refCrossHeightAgl": 10.575423938443862
+   "refCrossHeightAgl": 10.575423938443862,
+   "refAxisCrossing": "2027-10-02T16:37:09Z",
+   "refPlateauStart": "2027-10-02T16:38:00Z",
+   "refPlateauEnd": "2027-10-02T16:38:00Z",
+   "dPeakFromAxisCrossingS": 53.405616998672485
   },
   {
    "set": "preview-siegessaeule",
@@ -6406,9 +7754,13 @@
    "refCovered": 0.8494050061551087,
    "refCoveredAtAppPeak": 0.8387361510053344,
    "offAtAppPeakDeg": -0.24755422232084776,
-   "offAtAppPeakM": -5.829678613934724,
+   "offAtAppPeakM": -5.829678613934725,
    "refAltAtAppPeak": 0.16685635408655036,
-   "refCrossHeightAgl": 0.9757189728294767
+   "refCrossHeightAgl": 0.9757189728294767,
+   "refAxisCrossing": "2027-10-03T16:38:01Z",
+   "refPlateauStart": "2027-10-03T16:36:55Z",
+   "refPlateauEnd": "2027-10-03T16:36:55Z",
+   "dPeakFromAxisCrossingS": -74.96749305725098
   },
   {
    "set": "preview-siegessaeule",
@@ -6424,9 +7776,13 @@
    "refCovered": 0.2154288059089044,
    "refCoveredAtAppPeak": 0.18834632745178498,
    "offAtAppPeakDeg": -0.5839459773735627,
-   "offAtAppPeakM": -13.751400982269503,
+   "offAtAppPeakM": -13.751400982269505,
    "refAltAtAppPeak": -0.022286053554914864,
-   "refCrossHeightAgl": NaN
+   "refCrossHeightAgl": NaN,
+   "refAxisCrossing": "2027-10-04T16:38:54Z",
+   "refPlateauStart": "2027-10-04T16:36:35Z",
+   "refPlateauEnd": "2027-10-04T16:36:35Z",
+   "dPeakFromAxisCrossingS": -176.93203902244568
   },
   {
    "set": "preview-siegessaeule",
@@ -6442,9 +7798,13 @@
    "refCovered": 0.09684037751333607,
    "refCoveredAtAppPeak": 0.0882232252769799,
    "offAtAppPeakDeg": -1.0951152466981342,
-   "offAtAppPeakM": -25.788976142752382,
+   "offAtAppPeakM": -25.788976142752386,
    "refAltAtAppPeak": -0.09910522777481368,
-   "refCrossHeightAgl": null
+   "refCrossHeightAgl": null,
+   "refAxisCrossing": null,
+   "refPlateauStart": "2027-10-05T16:34:35Z",
+   "refPlateauEnd": "2027-10-05T16:34:35Z",
+   "dPeakFromAxisCrossingS": null
   },
   {
    "set": "preview-siegessaeule",
@@ -6460,9 +7820,13 @@
    "refCovered": 0.16331555190808372,
    "refCoveredAtAppPeak": 0.16413623307345096,
    "offAtAppPeakDeg": 0.167715283214504,
-   "offAtAppPeakM": 3.9495436216733038,
+   "offAtAppPeakM": 3.9495436216733046,
    "refAltAtAppPeak": 2.6118615857595393,
-   "refCrossHeightAgl": 65.24600930726501
+   "refCrossHeightAgl": 65.24600930726501,
+   "refAxisCrossing": "2027-10-26T13:51:42Z",
+   "refPlateauStart": "2027-10-26T13:52:35Z",
+   "refPlateauEnd": "2027-10-26T13:52:35Z",
+   "dPeakFromAxisCrossingS": 52.992634296417236
   },
   {
    "set": "preview-siegessaeule",
@@ -6478,9 +7842,13 @@
    "refCovered": 0.6216659827656955,
    "refCoveredAtAppPeak": 0.6228970045137464,
    "offAtAppPeakDeg": 0.08235585177989115,
-   "offAtAppPeakM": 1.9394060151854542,
+   "offAtAppPeakM": 1.9394060151854544,
    "refAltAtAppPeak": 0.658014817621696,
-   "refCrossHeightAgl": 17.480786824680596
+   "refCrossHeightAgl": 17.480786824680596,
+   "refAxisCrossing": "2027-11-09T00:35:11Z",
+   "refPlateauStart": "2027-11-09T00:35:25Z",
+   "refPlateauEnd": "2027-11-09T00:35:30Z",
+   "dPeakFromAxisCrossingS": 25.27245330810547
   }
  ]
 }

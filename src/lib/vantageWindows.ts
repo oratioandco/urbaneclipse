@@ -164,6 +164,7 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
     });
 
     const before = windows.length;
+    const lists: FixedCandidate[][] = [];
     let current: { list: FixedCandidate[]; last: Date } | null = null;
     const gapMs = gapMinutes * 60_000;
     for (const hit of hits) {
@@ -171,15 +172,22 @@ export function enumerateVantageWindows(req: WindowScanRequest): VantageWindow[]
         current.list.push(hit);
         current.last = hit.when;
       } else {
-        if (current) windows.push(finishWindow(current.list, body, landmark, point));
+        if (current) {
+          windows.push(finishWindow(current.list, body, landmark, point));
+          lists.push(current.list);
+        }
         current = { list: [hit], last: hit.when };
       }
     }
-    if (current) windows.push(finishWindow(current.list, body, landmark, point));
+    if (current) {
+      windows.push(finishWindow(current.list, body, landmark, point));
+      lists.push(current.list);
+    }
 
     if (refinePeaks) {
       for (let i = before; i < windows.length; i++) {
         windows[i] = refineWindowPeak(windows[i]!, classifier.classify, landmark, point, fineStepSeconds * 1000);
+        windows[i] = centreOnPlateau(windows[i]!, lists[i - before]!, classifier.classify, (t) => bodyAt(t, body), landmark, point, fineStepSeconds * 1000);
       }
     }
   }
@@ -331,6 +339,74 @@ function refineWindowPeak(
   return {
     ...win,
     peak: new Date(best.t),
+    kind: candidate.kind,
+    coveredFraction: candidate.coveredFraction,
+    band: bandAtAltitude(candidate.bodyAlt, landmark, point),
+  };
+}
+
+/** Cover from which the whole disc counts as hidden: the top of the curve is then flat. */
+const FULL_COVER = 0.999;
+
+/**
+ * When the structure hides the whole disc for minutes (the Siegessäule's hall from 700 m),
+ * every instant of that stretch has the same cover and "the maximum" is whichever the search
+ * happened to land on: up to 115 s and 0.46 deg from the middle (audit defect 10). The moment
+ * a photographer means is the disc centred behind the structure, so among the fully covered
+ * instants this takes the one where the body is nearest the axis.
+ */
+function centreOnPlateau(
+  win: VantageWindow,
+  list: FixedCandidate[],
+  classify: (t: Date) => FixedCandidate | null,
+  sample: (t: Date) => BodySample,
+  landmark: RevolutionLandmark,
+  point: StandingPoint,
+  fineMs: number,
+): VantageWindow {
+  if (win.coveredFraction < FULL_COVER) return win;
+  const full = list.filter((hit) => hit.coveredFraction >= FULL_COVER);
+  if (full.length < 2) return win;
+  const offAxis = (tMs: number): number => {
+    let d = (sample(new Date(tMs)).az - point.bearingToLandmarkDeg) % 360;
+    if (d > 180) d -= 360;
+    if (d <= -180) d += 360;
+    return d;
+  };
+  let lo = full[0]!.when.getTime();
+  let hi = full[full.length - 1]!.when.getTime();
+  const dLo = offAxis(lo);
+  const dHi = offAxis(hi);
+  let at: number;
+  if (Math.sign(dLo) === Math.sign(dHi)) {
+    // The axis crossing lies outside the fully covered stretch: its nearer end is the best
+    // there is. The sweep only knows that end to one fine step, so narrow it to a second.
+    const outward = Math.abs(dLo) <= Math.abs(dHi) ? -1 : 1;
+    let inside = outward < 0 ? lo : hi;
+    let outside = inside + outward * fineMs;
+    const isFull = (tMs: number): boolean => (classify(new Date(tMs))?.coveredFraction ?? 0) >= FULL_COVER;
+    if (isFull(outside)) inside = outside;
+    else {
+      while (Math.abs(outside - inside) > 1000) {
+        const mid = Math.round((inside + outside) / 2);
+        if (isFull(mid)) inside = mid;
+        else outside = mid;
+      }
+    }
+    at = inside;
+  } else {
+    while (hi - lo > 1000) {
+      const mid = Math.round((lo + hi) / 2);
+      if (Math.sign(offAxis(mid)) === Math.sign(dLo)) lo = mid;
+      else hi = mid;
+    }
+    at = hi;
+  }
+  const candidate = classify(new Date(at));
+  if (!candidate || candidate.coveredFraction < FULL_COVER) return win;
+  return {
+    ...win,
+    peak: new Date(at),
     kind: candidate.kind,
     coveredFraction: candidate.coveredFraction,
     band: bandAtAltitude(candidate.bodyAlt, landmark, point),

@@ -45,7 +45,7 @@ const ref = JSON.parse(readFileSync('tests/fixtures/accuracy-reference.json', 'u
   miniatureBridge: { spot: { lat: number; lon: number; eyeOrthometric: number; towerBaseOrthometric: number }; crossings: Array<{ body: 'sun' | 'moon'; state: string; axisCrossing: string }> };
   streets: Array<{ name: string; geodesicBearingDeg: number; storedBearingDeg: number }>;
   days: Array<{ day: string; sunCentre4DegDownEvening: string; sunrise: string; sunset: string; moonrise: string[]; moonset: string[] }>;
-  siegessaeuleWestFullCover: Array<{ body: 'sun' | 'moon'; refPeak: string }>;
+  siegessaeuleWestFullCover: Array<{ body: 'sun' | 'moon'; refPeak: string; appPeakWhenAudited: string; refAxisCrossing: string | null; refPlateauStart: string; refPlateauEnd: string }>;
 };
 
 const START = new Date('2026-11-23T00:00:00Z');
@@ -182,7 +182,7 @@ describe('audit: street bearings are from true north', () => {
   });
 });
 
-describe('audit: the errors known in November 2026 (fixed since, bar the one marked)', () => {
+describe('audit: the errors known in November 2026, fixed since', () => {
   it('moonrise and moonset of a Berlin day are all found, the 00:18 rise of 27 March 2027 included (fixed in lib/moonTimes.ts)', () => {
     // suncalc scans the UTC day, 01:00 to 01:00 in Berlin: asked for Berlin noon it missed that
     // rise, and on 14 January 2027 it reported a set that falls at 00:01 the next day.
@@ -228,8 +228,8 @@ describe('audit: the errors known in November 2026 (fixed since, bar the one mar
     }
   });
 
-  it.fails('a pass fully behind the Siegessäule peaks when the disc is centred, not anywhere on the 100 % plateau', () => {
-    // From 718 m the hall hides the whole disc for minutes; the listed time is then up to 115 s from the centred moment.
+  it('a pass fully behind the Siegessäule peaks when the disc is centred, not anywhere on the 100 % plateau (fixed: was up to 115 s out)', () => {
+    // From 718 m the hall hides the whole disc for minutes; the listed time was any moment of that stretch.
     const point = STRASSE_DES_17_JUNI.points[0]!;
     const load = (name: string) => {
       const bin = readFileSync(`public/heightmap/${name}.bin`);
@@ -247,11 +247,31 @@ describe('audit: the errors known in November 2026 (fixed since, bar the one mar
       refinePeaks: true,
       enabled: true,
     });
+    // The reference: the instant the sun's centre crosses the bearing to the column's axis
+    // (Skyfield azimuth against the Vincenty bearing), and the stretch over which the whole disc
+    // stays hidden. When the crossing falls inside that stretch, the listed moment is the crossing;
+    // when the disc is only fully hidden before or after it, the nearer end of the stretch.
     const full = ref.siegessaeuleWestFullCover.filter((p) => p.body === 'sun' && p.refPeak >= '2027-03-10' && p.refPeak < '2027-03-13');
     expect(full.length).toBe(3);
+    let onAxis = 0;
     for (const p of full) {
       const mine = windows.find((w) => Math.abs(seconds(w.peak, p.refPeak)) < 900)!;
-      expect(Math.abs(seconds(mine.peak, p.refPeak)), p.refPeak).toBeLessThan(30);
+      expect(mine.coveredFraction, p.refPeak).toBeGreaterThan(0.999);
+      const cross = Date.parse(p.refAxisCrossing!);
+      const from = Date.parse(p.refPlateauStart);
+      const to = Date.parse(p.refPlateauEnd);
+      if (cross >= from && cross <= to) {
+        onAxis++;
+        // Measured after the fix: 1.5 and 8 s here, 21 s at worst over the year's six such passes.
+        // Before: 138 and 10 s here, 140 s at worst.
+        expect(Math.abs(seconds(mine.peak, cross)), `${p.refPeak} (was ${seconds(p.appPeakWhenAudited, cross)} s)`).toBeLessThan(30);
+      } else {
+        // 10 March: the disc is only fully hidden before the crossing, with the sun 0.3 deg up,
+        // where the two refraction formulas part; the end of that stretch is not sharp to 30 s.
+        expect(mine.peak.getTime(), p.refPeak).toBeGreaterThanOrEqual(from - 45_000);
+        expect(mine.peak.getTime(), p.refPeak).toBeLessThanOrEqual(to + 45_000);
+      }
     }
+    expect(onAxis).toBe(2);
   });
 });
