@@ -171,6 +171,8 @@ export function showEclipseStatus(now) {
       body = next.body;
       const minutes = Math.round((next.t - t) / 60_000);
       text = minutes > 0 ? `${BODY_NAME[body]} behind the sphere in ${minutes} min (${clockOf(next.t)})` : `${BODY_NAME[body]} was behind the sphere ${-minutes} min ago`;
+      // The same look at the tower, at that minute: a pass a building hides is not promised.
+      if (!seesToTower(sampleBody(body, new Date(next.t), FERNSEHTURM.lat, FERNSEHTURM.lon))) text += ', but a building hides it from here';
       eclipseAction = () => {
         setMinute(next.t);
         setFine(true);
