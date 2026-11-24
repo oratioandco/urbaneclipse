@@ -44,6 +44,8 @@ export function showLevel(tile, level, geometry) {
   tile.mesh.scale.setScalar(lod.step);
   tile.mesh.updateMatrix();
   tile.level = level;
+  // Heights read off the buildings (a bridge's deck, sightlines.js) are stale from here on.
+  app.tileEpoch = (app.tileEpoch ?? 0) + 1;
   invalidateShadows();
 }
 

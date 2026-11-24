@@ -19,7 +19,7 @@ import { phaseStops } from './dayMath.js';
 import { bodyIcon } from './bodyAt.js';
 import { currentRows, dayVerdict, emptyNote, markKind, openShot, showVerdict } from './daylist.js';
 import { icon } from './icons.js';
-import { MARK_NAMES, markBody } from './marks.js';
+import { MARK_NAMES, clusterBody, clusterMarks, markBody } from './marks.js';
 import { shotCard } from './shotCard.js';
 import {
   DAY_MINUTES,
@@ -77,6 +77,10 @@ const HOURS_Y = 97;
 const STEP_MIN = 10;
 /** A mark's 16-unit box on the scale: 11 px, the size the set was judged at. */
 const MARK_SCALE = 11 / 16;
+/** A cluster's number has to be read, so its sign is a little larger than a mark. */
+const CLUSTER_SCALE = 13 / 16;
+/** Marks within this many pixels of the leftmost one share a sign: a mark's own width. */
+const MARK_REACH = 11;
 const DOT = 14;
 // For the headless renders of the card on its own (the landmarks no list shows yet).
 window.__shotCard = shotCard;
@@ -160,12 +164,29 @@ function drawPlot() {
   // inside for the sun and dark for the moon. Streets first, so a tower's ring lies on top
   // where the two meet.
   const now = Date.now();
-  const order = drawn.rows.map((row, i) => ({ row, i })).sort((a, b) => (a.row.kind === 'tower') - (b.row.kind === 'tower'));
-  for (const { row, i } of order) {
-    const at = x(drawn.minutes[i]).toFixed(1);
-    const tick = el('g', { class: `tl-tick tl-tick-${row.body}${row.t < now ? ' tl-past' : ''}` });
-    tick.innerHTML = `<path d="M${at},${CURVES.y + 4}V${BAR.y}"/><g transform="translate(${at} ${CURVES.y + 4}) scale(${MARK_SCALE})">${markBody(markKind(row), 'var(--surface-solid)')}</g>`;
+  // Three or more within a mark's width of each other (sunrise on a busy day) would pile into
+  // one blot: they keep their ticks and share one sign with their number (marks.js).
+  const xs = drawn.minutes.map((m) => x(m));
+  const groups = clusterMarks(xs, { reach: MARK_REACH });
+  const tickOf = (i) => `<path d="M${xs[i].toFixed(1)},${CURVES.y + 4}V${BAR.y}"/>`;
+  const past = (row) => (row.until ?? row.t) < now;
+  // Streets first, so a tower's ring lies on top where two meet; clusters over both.
+  const single = groups.filter((g) => g.length === 1).map(([i]) => i).sort((a, b) => (drawn.rows[a].kind === 'tower') - (drawn.rows[b].kind === 'tower'));
+  for (const i of single) {
+    const row = drawn.rows[i];
+    const tick = el('g', { class: `tl-tick tl-tick-${row.body}${past(row) ? ' tl-past' : ''}` });
+    tick.innerHTML = `${tickOf(i)}<g transform="translate(${xs[i].toFixed(1)} ${CURVES.y + 4}) scale(${MARK_SCALE})">${markBody(markKind(row), 'var(--surface-solid)')}</g>`;
     nodes.push(tick);
+  }
+  for (const group of groups.filter((g) => g.length > 1)) {
+    const rows = group.map((i) => drawn.rows[i]);
+    const body = rows.every((r) => r.body === rows[0].body) ? rows[0].body : null;
+    const mid = ((xs[group[0]] + xs[group[group.length - 1]]) / 2).toFixed(1);
+    const cluster = el('g', { class: `tl-cluster${rows.every(past) ? ' tl-past' : ''}` });
+    cluster.innerHTML =
+      group.map((i) => `<g class="tl-tick tl-tick-${drawn.rows[i].body}">${tickOf(i)}</g>`).join('') +
+      `<g transform="translate(${mid} ${CURVES.y + 4}) scale(${CLUSTER_SCALE})"><title>${rows.length} shots, ${formatClock(Math.min(...rows.map((r) => r.t)))}\u2013${formatClock(Math.max(...rows.map((r) => r.t)))}</title>${clusterBody(rows.length, body, 'var(--surface-solid)')}</g>`;
+    nodes.push(cluster);
   }
   // Where today has got to.
   if (now >= from && now < dayEnd()) {

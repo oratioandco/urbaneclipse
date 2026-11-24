@@ -7,6 +7,8 @@ import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { SPHERE_CENTRE_AGL } from '../lib/dailyPaths.ts';
 import { formatClock } from './time.js';
+import { streetStatus } from './dayShots.js';
+import { ticketShotRow } from './daylist.js';
 import { compassName, EYE_HEIGHT } from './eye.js';
 import { bodyAgainstTower, DISC_RADIUS_DEG, SPHERE_RADIUS_M } from './towerShots.js';
 import { orbitTo } from './camera.js';
@@ -120,6 +122,16 @@ export function showEclipseStatus(now) {
       // Stepping sideways moves the sphere across the moon; this far puts the moon on its edge.
       const metres = covering.flat * Math.tan(THREE.MathUtils.degToRad(Math.max(0, here.radiusDeg - Math.abs(covering.signedOff))));
       text = `Moon hidden behind the sphere: step ${Math.max(1, Math.round(metres))} m left or right, or move further away`;
+    }
+  } else if (streetStatus(ticketShotRow(), t)) {
+    // The card above is a street's: the line speaks of that street, not of the tower.
+    const street = streetStatus(ticketShotRow(), t);
+    ({ text, state, body } = street);
+    if (street.jumpTo !== null) {
+      eclipseAction = () => {
+        setMinute(street.jumpTo);
+        setFine(true);
+      };
     }
   } else if (moonBeside(here)) {
     const moon = moonBeside(here);

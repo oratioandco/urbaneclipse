@@ -27,10 +27,16 @@ describe('the sheet’s three heights', () => {
   });
   it('has no full height of its own when there is nothing below the day view', () => {
     expect(sheetSizes({ viewport: 844, head: 48, day: 320, all: 320 }).full).toBe(368);
+    // A 320 x 568 phone: the day view would take 392 px, 69 %. Half stops at half the screen,
+    // and full shows the rest.
+    const small = sheetSizes({ viewport: 568, head: 48, day: 344, all: 700 });
+    expect(small.half).toBe(284);
+    expect(small.full).toBe(512);
   });
   it('never grows past a short screen', () => {
     const short = sheetSizes({ viewport: 360, head: 48, day: 320, all: 900 });
-    expect(short.half).toBe(304);
+    // Half keeps to half the screen; full takes what the screen has.
+    expect(short.half).toBe(180);
     expect(short.full).toBe(304);
   });
 

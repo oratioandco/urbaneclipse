@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
-import { collectRows, computeDayPaths, dayShots, findShot, shotKey } from '../../src/miniature/dayShots.js';
-import { decodeStreets } from '../../src/lib/streets';
+import { collectRows, computeDayPaths, dayShots, findShot, shotKey, streetStatus } from '../../src/miniature/dayShots.js';
+import { decodeStreets, streetMoments } from '../../src/lib/streets';
+import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { decodeViewshed } from '../../src/lib/viewshed';
 import { berlinDayStart, wallToInstant } from '../../src/miniature/berlinClock.js';
 
@@ -201,6 +202,24 @@ describe('one row logic for the planner and the home page', () => {
     expect(read('home/home.js')).toMatch(/from '\.\.\/miniature\/dayShots\.js'/);
     expect(() => read('home/shots.js')).toThrow();
   });
+  it('is the list `/map` shows too, and the same whatever order the street moments come in', () => {
+    // Finding 6 of the adversarial test: `/map` had a list of its own (`dayHighlights`).
+    const map = read('components/react/daily/TodayScreen.tsx');
+    expect(map).toMatch(/import \{ collectRows, computeDayPaths[^}]*\} from '\.\.\/\.\.\/\.\.\/miniature\/dayShots\.js'/);
+    expect(map).not.toMatch(/dayHighlights/);
+    // 24 November 2026: Weserstraße's two directions are equally long, the moon down one at
+    // 07:34 and the sun down the other at 08:09. Which of them is among the twelve kept must not
+    // depend on whether the moments arrive by time (`/plan/`) or sun first (`/map`, home).
+    const views = decodeStreets(JSON.parse(readFileSync(new URL('../../public/streets/berlin.json', import.meta.url), 'utf8')));
+    const from = berlinDayStart('2026-11-24');
+    const { lat, lon } = FERNSEHTURM;
+    const all = [...streetMoments(views, 'sun', from, from + 24 * HOUR, lat, lon), ...streetMoments(views, 'moon', from, from + 24 * HOUR, lat, lon)];
+    const names = (moments: typeof all) => collectRows([], moments, from, { tower: false }).map((r: { t: number; title: string }) => `${r.t} ${r.title}`);
+    const byTime = names([...all].sort((x, y) => x.peak - y.peak));
+    expect(byTime.length).toBe(12);
+    expect(names(all)).toEqual(byTime);
+    expect(names([...all].reverse())).toEqual(byTime);
+  });
   it('names a shot in a link and finds its row again', () => {
     const sphere = { kind: 'tower', where: 'sphere', body: 'sun', short: 'TV tower', t: 1000 * 3_600_000 };
     const later = { ...sphere, t: 1008 * 3_600_000 };
@@ -238,6 +257,25 @@ describe('one row logic for the planner and the home page', () => {
 
 // Adversarial test 2026-11, finding 4: 24 December 2026, "Moonset behind the TV tower's
 // antenna" was listed at 7:50 (the stretch's start) and opened at 8:20.
+describe('the status line under a street shot', () => {
+  // Sonnenallee on 24 November 2026: the sun stands in the street from 08:05 to 08:10 (made-up
+  // bounds for the wording; the real ones come from streetMoments).
+  const from = wallToInstant('2026-11-24', 8 * 60 + 5);
+  const row = { kind: 'street', body: 'sun', moment: { body: 'sun', from, to: from + 5 * 60_000, peak: from + 2 * 60_000, view: { name: 'Sonnenallee' } } };
+  it('speaks of the street, before, during and after', () => {
+    expect(streetStatus(row, from + 60_000)).toMatchObject({ text: 'Sun down Sonnenallee now', state: 'now', jumpTo: null });
+    const before = streetStatus(row, from - 20 * 60_000);
+    expect(before.text).toMatch(/^Sun down Sonnenallee in 20 min \(/);
+    expect(before.jumpTo).toBe(row.moment.peak);
+    expect(streetStatus(row, from + 35 * 60_000).text).toMatch(/^Sun was down Sonnenallee 30 min ago \(/);
+    expect(streetStatus(row, from + 5 * 3_600_000).text).toMatch(/5 h ago/);
+  });
+  it('has nothing to say of a tower row or of no row', () => {
+    expect(streetStatus({ kind: 'tower', body: 'sun' }, from)).toBeNull();
+    expect(streetStatus(null, from)).toBeNull();
+  });
+});
+
 describe('antenna rows', () => {
   const from = Date.UTC(2026, 11, 23, 23);
   const rows = collectRows([], [], from).filter((r) => r.where === 'antenna');

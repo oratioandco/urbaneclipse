@@ -132,6 +132,40 @@ export function drawMark(ctx, kind, x, y, size = 12, halo = '') {
 // ---------------------------------------------------------------------------------------------
 // The direction needle. Unit length along +x, from the tail at -0.5 to the tip at 0.5.
 
+/**
+ * Marks too close to tell apart, as groups. `xs` are the marks' positions along a line, in
+ * pixels, in any order; the result is a list of groups of indices into `xs`, left to right. A
+ * group is every mark within `reach` pixels of its leftmost one. Two marks that meet still
+ * read as two (the halo keeps them apart); from `min` marks on a group is a cluster, to be drawn
+ * as one sign with a count (`clusterBody`). Smaller groups come back as single marks.
+ */
+export function clusterMarks(xs, { reach = 12, min = 3 } = {}) {
+  const order = xs.map((x, i) => i).sort((a, b) => xs[a] - xs[b] || a - b);
+  const groups = [];
+  let open = null;
+  for (const i of order) {
+    if (open && xs[i] - xs[open[0]] <= reach) open.push(i);
+    else groups.push((open = [i]));
+  }
+  return groups.flatMap((g) => (g.length >= min ? [g] : g.map((i) => [i])));
+}
+
+/**
+ * A cluster's sign, without the outer <svg>: a pill with the number of shots in it, in the
+ * body's colour when all are the sun's or all the moon's (`body`), in ink when mixed (null).
+ * In the 16-unit box of the marks, so it scales with them.
+ */
+export function clusterBody(count, body = null, halo = 'var(--surface, #fff)') {
+  const text = String(count);
+  const w = 12 + 5.5 * text.length;
+  const fill = body ? MARK_COLOUR[body] : 'var(--ink, #24221f)';
+  return (
+    (halo ? `<rect x="${-w / 2 - HALO}" y="${-8 - HALO}" width="${w + 2 * HALO}" height="${16 + 2 * HALO}" rx="${8 + HALO}" fill="${halo}"/>` : '') +
+    `<rect x="${-w / 2}" y="-8" width="${w}" height="16" rx="8" fill="${fill}"/>` +
+    `<text y="4.4" text-anchor="middle" font-size="12.5" font-weight="700" fill="${body ? '#fff' : 'var(--surface-solid, #fff)'}" style="font-variant-numeric:tabular-nums">${text}</text>`
+  );
+}
+
 /** Half the needle's width at the tail, as a share of its length: about twice as long as wide. */
 export const NEEDLE_HALF_WIDTH = 0.26;
 const NOTCH = -0.26;

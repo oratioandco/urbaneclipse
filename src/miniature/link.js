@@ -18,6 +18,7 @@ import { enterEye, look } from './eyeLevel.js';
 import { eyeCamera } from './render.js';
 import { app } from './state.js';
 import { showFlight } from './walk.js';
+import { toast } from './share.js';
 
 // Shared links open the same view: ?date=2027-03-22&time=1020&at=52.5,13.4&look=268,2&lens=200&cam=ff
 let lastLink = '';
@@ -90,6 +91,19 @@ async function nameLinkedShot(key) {
   if (row) showTicket(row, dayVerdict(row));
 }
 
+/**
+ * What is wrong with a link's standing point (`at=lat,lon`), in words for the reader, or '' when
+ * it can be stood on or the link has none. `half` is half the model's side in metres.
+ */
+export function linkSpotProblem(text, half) {
+  if (text === null || text === undefined) return '';
+  const at = text.split(',').map(Number);
+  if (text.trim() === '' || at.length !== 2 || at.some((v) => !Number.isFinite(v)) || Math.abs(at[0]) > 90 || Math.abs(at[1]) > 180) return 'This link\u2019s standing point could not be read. Showing the map instead.';
+  const [x, z] = sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);
+  if (Math.abs(x) > half || Math.abs(z) > half) return `This link\u2019s standing point is outside the model, which reaches ${Math.round(half / 1000)} km from the TV tower. Showing the map instead.`;
+  return '';
+}
+
 /** Open the view a shared link names, once the city is there to stand in. */
 export async function openLinkedView() {
   const shot = params.get('shot');
@@ -97,10 +111,11 @@ export async function openLinkedView() {
   if (shot && !params.has('here') && (await openLinkedShot(shot))) return;
   if (shot && params.has('here')) nameLinkedShot(shot);
   const at = params.get('at')?.split(',').map(Number);
-  if (!at || at.length !== 2 || at.some((v) => !Number.isFinite(v))) return;
+  // A standing point that cannot be used is said, not dropped in silence: the map opens instead.
+  const message = linkSpotProblem(params.get('at'), cityUniforms.uHalf.value);
+  if (message) toast(message, 6000);
+  if (!at || message) return;
   const [x, z] = sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);
-  const half = cityUniforms.uHalf.value;
-  if (Math.abs(x) > half || Math.abs(z) > half) return;
   const cam = FORMATS.find((f) => f.id === params.get('cam'));
   if (cam) cameraFormat.format = cam;
   const [heading, pitch] = (params.get('look') ?? '').split(',').map(Number);

@@ -7,6 +7,11 @@
  * Usage: npx astro build && npx astro preview, then
  *   node scripts/miniature/record_clips.mjs http://localhost:4321 [clip ...]
  * Output: public/media/<clip>.mp4 and <clip>.jpg
+ *
+ * The city geometry is not in git, so a local preview has none. With CITY set (the live site's
+ * origin, read only) the /city/ requests are answered from there through a cache on disk
+ * (CACHE, default .perf-city-cache), as scripts/adversarial/lib.mjs does. HEADLESS=1 records
+ * without opening a window, in the installed Chrome.
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -36,11 +41,27 @@ const CLIPS = {
   'street-henge': { photo: true, url: '/plan/?nointro&date=2027-04-12&time=1171.25&at=52.515750,13.453950&look=280.1,3&lens=200&cam=ff', from: 1166, to: 1173, seconds: 9, poster: 0.78 },
 };
 
-const browser = await chromium.launch({ headless: false, args: ['--use-angle=metal'] });
+const CITY = process.env.CITY;
+const CACHE = process.env.CACHE ?? '.perf-city-cache';
+if (CITY) fs.mkdirSync(CACHE, { recursive: true });
+async function cityFromCache(route) {
+  const url = new URL(route.request().url());
+  const file = path.join(CACHE, url.pathname.split('/').pop());
+  if (!fs.existsSync(file)) {
+    const response = await fetch(`${CITY}${url.pathname}${url.search}`, { headers: { 'accept-encoding': 'identity' } });
+    if (!response.ok) return route.fulfill({ status: response.status, body: '' });
+    fs.writeFileSync(file, Buffer.from(await response.arrayBuffer()));
+  }
+  await route.fulfill({ status: 200, body: fs.readFileSync(file), contentType: file.endsWith('.json') ? 'application/json' : 'application/octet-stream' });
+}
+
+const browser = await chromium.launch(process.env.HEADLESS ? { channel: 'chrome', headless: true, args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] } : { headless: false, args: ['--use-angle=metal'] });
 for (const [name, clip] of Object.entries(CLIPS)) {
   if (ONLY.length && !ONLY.includes(name)) continue;
-  const page = await (await browser.newContext({ viewport: clip.photo ? { width: 1500, height: 1060 } : { width: 1280, height: 720 } })).newPage();
-  await page.goto(BASE + clip.url);
+  const context = await browser.newContext({ viewport: clip.photo ? { width: 1500, height: 1060 } : { width: 1280, height: 720 } });
+  if (CITY) await context.route('**/city/**', cityFromCache);
+  const page = await context.newPage();
+  await page.goto(BASE + clip.url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   if (clip.pick) {
     await page.click('.tabs [data-mode="shoot"]');

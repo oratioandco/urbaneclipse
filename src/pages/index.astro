@@ -158,7 +158,7 @@ const FEATURES = [
         <h2>What it knows, and what it doesn’t</h2>
         <ul>
           <li><b>Buildings and ground</b> come from Berlin’s 3D city model (LoD2) and terrain (DGM1), 9 km round the tower. Every view the planner offers is checked against them.</li>
-          <li><b>Trees are not in the model.</b> In summer a clear sightline on screen can be leaves on site, so check a park spot before you rely on it.</li>
+          <li><b>Trees are drawn, not checked.</b> The planner shows the street and park trees of the city’s tree register, bare in winter; woods inside parks are missing. The sightline check looks at buildings only, so in summer a view it calls clear can be leaves on site: check a park spot before you rely on it.</li>
           <li><b>The sun and moon</b> are computed for the exact time and place; the tower is modelled from its drawings, antenna included.</li>
           <li><b>Clouds</b> come from the Open-Meteo forecast, which reaches 16 days ahead. Beyond that the sky is clear.</li>
         </ul>

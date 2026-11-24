@@ -101,10 +101,15 @@
       .tools [data-tip]::before { right: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
       .topleft [data-tip]::before { left: 0; top: calc(100% + 6px); }
       [data-tip]:focus-visible::before { opacity: 1; visibility: visible; }
+      .tools [data-tip], .topleft [data-tip] { -webkit-touch-callout: none; }
+      /* On a touch screen: shown by a tap or a long press (tips.js). */
+      [data-tip][data-tip-shown]::before { opacity: 1; visibility: visible; }
       @media (hover: hover) { [data-tip]:hover::before { opacity: 1; visibility: visible; } }
       .tools .round:focus-visible, .topleft .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       /* Top: map tools on the right; at eye level, the way back on the left. */
       .tools { position: fixed; z-index: 3; top: max(var(--gutter), env(safe-area-inset-top)); right: var(--gutter); display: grid; gap: 8px; }
+      /* A short phone (320 x 568): six buttons at eye level must end above the ticket's credit line. */
+      @media (max-height: 600px) { .tools { gap: 4px; } .tools .round { width: 40px; height: 40px; } }
       #photographer { cursor: grab; }
       .layers { position: fixed; z-index: 4; top: max(var(--gutter), env(safe-area-inset-top)); right: calc(var(--gutter) + 56px); width: 290px; max-height: calc(100vh - 140px); overflow-y: auto; padding: 8px; border-radius: var(--radius); display: grid; gap: 2px; box-sizing: border-box; }
       .sharemenu { position: fixed; z-index: 4; top: calc(max(var(--gutter), env(safe-area-inset-top)) + var(--control) + 8px); left: var(--gutter); width: 260px; padding: 6px; border-radius: var(--radius); display: grid; gap: 2px; box-sizing: border-box; }

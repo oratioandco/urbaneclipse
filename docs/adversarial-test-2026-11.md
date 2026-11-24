@@ -152,7 +152,7 @@ or inferred.
 - **Fixed on 2026-11-24** (`src/miniature/dates.js`): the search starts on the whole minute, a
   tower row opens at the axis crossing (`align`), and the row prints the pass as a range with
   the crossing to the second. Not re-measured against the reference (`reference.py` needs the
-  ephemeris file, which is not on this machine); street rows still open at their one-minute peak.
+  ephemeris file, which is not on this machine); street rows still open at their one-minute peak. Left so on 2026-11-24, read in the code and not re-measured: a street's search runs from a whole minute in one-minute steps, so the row's label and the clock it opens at are the same whole minute, and a street's gap is 0.5 to 1 degree wide, several minutes of sun, so seconds would be false precision.
 
 ### 4. Antenna rows show the start of an hour-long window as the shot's time. Medium. Verified.
 
@@ -201,6 +201,17 @@ or inferred.
   `dailyPaths.ts` but pick the moment and the stand differently.
 - Fix: one function for "the shots of a day", used by both, or take the list off `/map` and
   link to `/plan/`.
+- **Fixed on 2026-11-24.** `/map`'s "Best shots" and "Streets today" are now the rows of
+  `src/miniature/dayShots.js`, the list `/plan/` and the home page use; its own picker
+  (`dayHighlights`) is no longer called by the page. A sphere row opens `/map`'s preview at
+  the shared standing point and minute; an antenna row links to `/plan/`. Found on the way:
+  the twelve streets kept depended on the order the moments came in, so `/plan/` (by time)
+  and `/map` and the home page (sun first) could keep a different one of a street's two
+  equally long directions (Weserstraße, 07:34 against 08:09); the cut now breaks ties by
+  time. Re-run: `scripts/adversarial/sameshots.mjs` reads both pages for 24 November: nine
+  tower rows and twelve street rows, identical in time, title and stand. Test:
+  `tests/unit/homeGrid.test.ts`. Not done: `/map` still shows no weather verdict, and its
+  clock stays 24-hour (13g).
 
 ### 7. A shared link, a reload or the calendar entry forgets which shot it was. Medium. Verified.
 
@@ -220,6 +231,11 @@ or inferred.
   shared link shows the card again at the same spot; the link and the calendar entry are titled
   with the shot and its time. Not changed: the status line under a street shot still speaks of
   the tower, and the calendar entry still starts 20 minutes early (on purpose: be there first).
+  **Status line fixed on 2026-11-24** (`streetStatus` in `dayShots.js`, used by `eclipse.js`):
+  under a street's card it says "Sun down Sonnenallee now", "… in 26 min (08:08)" or
+  "Sun was down Sonnenallee 30 min ago", and a tap goes to the peak; a tower alignment at that
+  very minute still comes first. Checked in the page at 08:07 and 07:40; test in
+  `tests/unit/homeGrid.test.ts`.
 
 ### 8. Switches you forgot make the app say nothing lines up. Medium. Verified.
 
@@ -277,6 +293,10 @@ or inferred.
   model" for a dropped `at`.
 - **Fixed on 2026-11-24** for the date (`berlinClock.js` `startDate`, tested): `?date=garbage`
   opens today and the page builds. A dropped `at` is still dropped without a word.
+  **Fixed on 2026-11-24** for `at` too (`link.js` `linkSpotProblem`): the map opens with
+  "This link's standing point is outside the model, which reaches 9 km from the TV tower"
+  or "… could not be read", for six seconds. Checked in the page with `at=48.137,11.575`
+  and `at=abc`; a link without `at` says nothing.
 
 ### 12. Small phones: the picture at eye level shrinks to a stamp. Medium on 320 px, low on 390. Verified.
 
@@ -287,6 +307,16 @@ or inferred.
   At 320 px a card's reason overlaps its time (`edge-width-narrow-thisday.png`). No horizontal
   overflow at any width; 2560 px is fine (`edge-width-wide-thisday.png`).
 - File: `src/miniature/miniature.css` (eye-level ticket, `.walkpad`, `.tools`), `shotCard.js`.
+- **Partly fixed on 2026-11-24.** At 320 x 568 with More open the frame is 124 x 186 px
+  (was 87 x 131): where it fits between the walk stick and the minimap it now takes the room
+  beside them, down to the credit line (`main.js` `updateViewArea`; 390 x 844 is unchanged at
+  271 x 407). The six eye-level buttons are 40 px on screens under 600 px high and end above
+  the credit line. The horizon strip behind More was blank until the view moved; it is drawn
+  when it opens. The half sheet is at most half the screen: 49.7 % at 320 x 568 in "1 day"
+  (was 69 %), the rest shows at full (`sheetHeights.js`, test in `tests/unit/panel.test.ts`).
+  Renders opened: 320 x 568 map and eye level. Not fixed: the ticket's line and the frame's
+  caption are still cut at 320 px ("08:08 Sonne…", "Tower 4.3 km · s"), and at 390 px the
+  Dates list still covers the frame.
 - Fix: Dates as a full sheet of its own; hide the walk pad while More is open; let the ticket's
   line wrap.
 
@@ -294,15 +324,15 @@ or inferred.
 
 | | Finding | State | File |
 |---|---|---|---|
-| a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | suspected `landmarks.js` or `moleculeManShape.js`; find the geometry with NaN positions |
-| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute (not re-run with a faked clock) | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
+| a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | `landmarks.js` `fieldGroundAt`. **Fixed on 2026-11-24**: it was the Holocaust memorial; eight slabs at the field's south edge read a ground probe past the end of the 7x7 grid and got NaN heights (and were not drawn). Re-run: no NaN position in the scene, no console error |
+| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute. Re-run with the faked clock (`edges.mjs day-change`): at 23:58 "Today, Tue 24 Nov", six minutes on "Tue 24 Nov", and the three-day cards call the 25th "Today" | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
 | c | A failed forecast is not asked for again within 65 s and has no "try again" | verified, 3 requests then none | `weather.js`, `forecast.js` |
 | d | "+ 1 min" at 11:59 PM does nothing and is not disabled; typing "24:00" gives 11:59 PM; "noon" is ignored | verified | `dayview.js`, `time.js` |
-| e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back. **Fixed on 2026-11-24** (`link.js` keeps it) | verified, `edges.json` | `link.js` list of kept options |
+| e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back. **Fixed on 2026-11-24** (`link.js` keeps it). Re-run (`edges.mjs glass-off`): the address reads `…&nointro&glass=off` after the first frames and the panel has no backdrop filter | verified, `edges.json` | `link.js` list of kept options |
 | f | "Next 3 days" lists a day's shots out of time order (tomorrow: 4:20 PM, 8:54 AM, 8:00 AM) with no word on why | verified | `planmode.js` |
 | g | Times are 12-hour in `/plan/` and on the landing page with an English device, 24-hour in `/map`, UTC in `/classic` | verified | `time.js`, `daily/`, `ControlPanel.tsx` |
-| h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro` |
-| i | The landing page's hero clip still shows the old small triangle arrow and old pills | verified, `views-home-desktop-dark.png` | `public/media`, re-record with `record_clips.mjs` |
+| h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro`. **Fixed on 2026-11-24**: "Trees are drawn, not checked", which is what the code does (the tree register is drawn; `sightlines.js` checks buildings only) |
+| i | The landing page's hero clip still shows the old small triangle arrow and old pills | verified, `views-home-desktop-dark.png` | `public/media`, re-record with `record_clips.mjs`. **Fixed on 2026-11-24**: `berlin-day.mp4` and its poster re-recorded from the present planner (the pill with the time, the kite needle); frames at 2, 6 and 10 s and the poster opened. The recorder can now run against a local preview (`CITY`, `HEADLESS`). The three eye-level clips were not re-recorded: they show no controls |
 | j | `/classic` at 390 px: panels overlap and are cut off | verified, `views-classic-phone-light.png` | `src/styles/global.css` |
 | k | Server addresses in a public repository (already on `main`). **Fixed on 2026-11-24** in the four files: a placeholder in the notes, and `sync_tiles_hetzner.sh` now requires `PLASTERVOID_HOST` from the environment. Git history still holds the address; it was not rewritten | verified by grep | `src/miniature/README.md:20`, `docs/HANDOFF-2026-11-08.md:20`, `scripts/README.md:321`, `scripts/sync_tiles_hetzner.sh:23` |
 
@@ -399,6 +429,12 @@ days (finding 2) and between `/plan/` and `/map` (finding 6).
    `dan-1-marks-timeline-phone3.png`); today's morning on a phone is a knot of blue bars and
    orange rings (`uc-phone-05-uc2-this-day.png`). Suggested: stack a cluster's marks upward, or
    show one mark with a count.
+   **Fixed on 2026-11-24**: on the day timeline three or more marks within a mark's width
+   (11 px) of each other keep their ticks and share one sign with their number, in the body's
+   colour, or in ink when sun and moon are mixed (`clusterMarks`, `clusterBody` in `marks.js`).
+   Pairs stay two marks. Renders opened for 31 October ("6", "7", "3") and 24 November
+   ("6", "4", "6") at 390 px. Test: `tests/unit/miniatureIcons.test.ts`. The three-day strips
+   are unchanged.
 2. **The arrow's tip is unmistakable: yes.** A long kite with a notched tail, the front half in
    the body's colour (`dan-2-arrow-closeup-phone-day.png`). At night the tail is white and
    brighter than the blue tip (`dan-2-arrow-closeup-night.png`); the shape still carries it. The
@@ -409,6 +445,13 @@ days (finding 2) and between `/plan/` and `/map` (finding 6).
    screen**, where six of the map's buttons are bare icons (`dan-3-touch-toolbar.png`). The
    camera icon means "Stand here" and reads as "take a picture". On a phone "Go there" loses its
    words too. Suggested: a long press shows the tip, or the help sheet names the six buttons.
+   **Fixed on 2026-11-24** (`src/miniature/tips.js`): on a touch screen a long press on a
+   toolbar button shows its tip and does nothing else, and a tap does what the button does and
+   shows the tip beside it for two seconds (a button that opens a menu leaves the naming to the
+   menu's heading). Re-run with real touch events on a 390 px phone,
+   `scripts/adversarial/touchtips.mjs`: six of six map buttons show their tip on a long press
+   and none acts; a tap on Layers opens the menu. Not checked on a real phone: whether iOS or
+   Android puts its own long-press menu over the tip. The camera icon still means "Stand here".
 
 ## One product?
 

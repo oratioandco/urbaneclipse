@@ -13,7 +13,6 @@ import {
   applyView,
   compassPoint,
   computeDayPath,
-  dayHighlights,
   nextClearPoint,
   pointAtTime,
   type DayPath,
@@ -36,6 +35,9 @@ import LightRibbon, { LightLegend } from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
+// The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
+import { collectRows, computeDayPaths, type ShotRow } from '../../../miniature/dayShots.js';
+import { planLink } from '../../../home/grid.js';
 
 interface Props {
   day: BerlinDay;
@@ -69,8 +71,7 @@ function clearRuns(path: DayPath): Array<{ from: number; to: number }> {
   return runs;
 }
 
-function openingTime(day: BerlinDay, paths: DayPath[], now: number): number {
-  const picks = paths.flatMap(dayHighlights).sort((a, b) => a.t - b.t);
+function openingTime(day: BerlinDay, picks: ShotRow[], now: number): number {
   if (berlinDayOf(new Date(now)) === day) {
     const next = picks.find((p) => p.t >= now);
     return next ? next.t : now;
@@ -136,11 +137,18 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
     () => (layers.streets ? allMoments.filter((m) => shown[m.body]) : []),
     [allMoments, layers.streets, shown],
   );
-  const [time, setTime] = useState(() => openingTime(day, allPaths, Date.now()));
+  // Every shot of the day, as `/plan/` lists them (src/miniature/dayShots.js). Without the
+  // building data no standing point is checked, so no tower shot is offered.
+  const allRows = useMemo(
+    () => collectRows(view ? computeDayPaths(bounds.start.getTime(), view) : [], allMoments, bounds.start.getTime()),
+    [bounds, view, allMoments],
+  );
+  const towerShots = useMemo(() => allRows.filter((r) => r.kind === 'tower'), [allRows]);
+  const [time, setTime] = useState(() => openingTime(day, towerShots, Date.now()));
   useEffect(() => {
-    setTime(openingTime(day, allPaths, Date.now()));
+    setTime(openingTime(day, towerShots, Date.now()));
     setFree(null);
-  }, [day, allPaths]);
+  }, [day, towerShots]);
 
   const freeState = free && view ? sampleViewshed(view, free.lat, free.lon) : null;
 
@@ -151,14 +159,9 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         .sort((a, b) => b.view.lengthM - a.view.lengthM),
     [moments, time],
   );
-  // Longest first, then in time order, so the list reads like the day.
   const topStreets = useMemo(
-    () =>
-      [...moments]
-        .sort((a, b) => b.view.lengthM - a.view.lengthM)
-        .slice(0, 6)
-        .sort((a, b) => a.peak - b.peak),
-    [moments],
+    () => (layers.streets ? allRows.filter((r) => r.kind === 'street' && shown[r.body] && r.moment) : []),
+    [allRows, layers.streets, shown],
   );
   const nextStreet = useMemo(
     () => [...moments].filter((m) => m.from > time).sort((a, b) => a.from - b.from)[0],
@@ -181,12 +184,8 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   const towerPaths = layers.tower ? paths : [];
 
   const highlights = useMemo(
-    () =>
-      towerPaths
-        .flatMap((path) => dayHighlights(path).map((point) => ({ body: path.body, point })))
-        .sort((a, b) => a.point.t - b.point.t),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [paths, layers.tower],
+    () => (layers.tower ? towerShots.filter((r) => shown[r.body]) : []),
+    [towerShots, layers.tower, shown],
   );
 
   // At midday, so the day's headline phase does not move with the slider.
@@ -465,27 +464,42 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         <section className="ue-list" data-testid="highlights">
           <h2 className="ue-eyebrow">Best shots</h2>
           {highlights.length === 0 ? (
-            <p className="ue-empty">No low-light shots today. Try the next day.</p>
+            <p className="ue-empty">
+              {view ? 'No shot at the tower on this day. Try the next day.' : viewFailed ? 'Building data could not be loaded, so no tower shot is offered.' : 'Checking buildings…'}
+            </p>
           ) : (
-            highlights.map(({ body, point }) => (
-              <button
-                key={`${body}-${point.t}`}
-                type="button"
-                className="ue-row ue-row--cta"
-                data-past={point.t < Date.now()}
-                onClick={() => openPoint(body, point)}
-              >
-                <i className={`ue-dot ue-dot--${body}`} />
-                <span className="ue-row__time">{formatTime(new Date(point.t))}</span>
-                <span className="ue-row__main">
-                  <strong>{placeLabel(point)}</strong>
-                  <small>
-                    {coverageLabel(point.kind, point.coveredFraction)} ·{' '}
-                    {LIGHT_PHASE_NAMES[lightPhaseOf(point.t, point.lat, point.lon)]}
-                  </small>
-                </span>
-              </button>
-            ))
+            highlights.map((row) => {
+              const inner = (
+                <>
+                  <i className={`ue-dot ue-dot--${row.body}`} />
+                  <span className="ue-row__time">{formatTime(new Date(row.t))}</span>
+                  <span className="ue-row__main">
+                    <strong>{row.title}</strong>
+                    <small>
+                      {row.stand} of the tower · {LIGHT_PHASE_NAMES[lightPhaseOf(row.t, FERNSEHTURM.lat, FERNSEHTURM.lon)]}
+                    </small>
+                  </span>
+                </>
+              );
+              const past = (row.until ?? row.t) < Date.now();
+              // The preview here is of the sphere; the antenna's stretch opens in the planner.
+              return row.where === 'antenna' || !row.at ? (
+                <a key={`${row.body}-${row.t}`} className="ue-row ue-row--cta" data-past={past} href={planLink(row)}>
+                  {inner}
+                  <span className="ue-row__go">Plan</span>
+                </a>
+              ) : (
+                <button
+                  key={`${row.body}-${row.t}`}
+                  type="button"
+                  className="ue-row ue-row--cta"
+                  data-past={past}
+                  onClick={() => onOpenSpot({ lat: row.at![0], lon: row.at![1], t: row.openAt, body: row.body, label: `${row.stand} of the tower` })}
+                >
+                  {inner}
+                </button>
+              );
+            })
           )}
           {layers.streets && (
             <div className="ue-list" data-testid="streets-today">
@@ -496,7 +510,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               {!streetsFailed && streetViews && moments.length === 0 && (
                 <p className="ue-empty">No street lines up on this day.</p>
               )}
-              {topStreets.map((m) => (
+              {topStreets.map(({ moment }) => moment!).map((m) => (
                 <button
                   key={`${m.body}-${m.view.bearingDeg}-${m.view.from.lat}`}
                   type="button"

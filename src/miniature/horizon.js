@@ -166,3 +166,5 @@ canvas.addEventListener('click', (e) => {
 });
 
 controls.addEventListener('change', () => renderHorizon());
+// The strip is hidden behind "More" and has no size until that opens: draw it when it gets one.
+if (canvas) new ResizeObserver(() => renderHorizon()).observe(canvas);

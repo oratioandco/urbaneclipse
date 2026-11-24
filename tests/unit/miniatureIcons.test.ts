@@ -10,7 +10,7 @@ import { ICONS, ICON_NAMES, ICON_STROKE, icon, iconBody, iconSprite, iconUse, we
 // @ts-expect-error plain JS modules of the miniature
 import { sunSvg, moonSvg, bodySvg, drawSun, drawMoon, discRadius, GLOW_REACH, MOON_DARK } from '../../src/miniature/bodies.js';
 // @ts-expect-error plain JS modules of the miniature
-import { MARK_KINDS, MARK_NAMES, MARK_COLOUR, MARK_FILL, markSvg, markBody, drawMark, needleSvg, drawNeedle, NEEDLE_HALF_WIDTH } from '../../src/miniature/marks.js';
+import { MARK_KINDS, MARK_NAMES, MARK_COLOUR, MARK_FILL, clusterBody, clusterMarks, markSvg, markBody, drawMark, needleSvg, drawNeedle, NEEDLE_HALF_WIDTH } from '../../src/miniature/marks.js';
 // @ts-expect-error plain JS modules of the miniature
 import { CONTROL_NAMES, controlName } from '../../src/miniature/controlNames.js';
 import { cssRgb, moonLook, sunLook } from '../../src/lib/mapBodyLook.js';
@@ -285,6 +285,23 @@ describe('event marks', () => {
     expect(calls).toContain('arc');
     expect(calls).toContain('roundRect');
     expect(calls).toContain('rotate');
+  });
+});
+
+describe('marks that pile up', () => {
+  it('groups three or more within a mark\u2019s width and leaves pairs as two marks', () => {
+    // Sunrise on 31 October 2026 on a 390 px phone: seven shots in fifteen minutes, about 4 px.
+    const xs = [100, 100.4, 101, 102, 103, 104, 104.2, 140, 146, 300];
+    expect(clusterMarks(xs, { reach: 11 })).toEqual([[0, 1, 2, 3, 4, 5, 6], [7], [8], [9]]);
+    // Any order in, left to right out; a group reaches from its leftmost mark only.
+    expect(clusterMarks([30, 0, 10, 20, 5], { reach: 11 })).toEqual([[1, 4, 2], [3], [0]]);
+    expect(clusterMarks([])).toEqual([]);
+  });
+  it('draws a cluster as its number, in the body\u2019s colour or in ink when mixed', () => {
+    expect(clusterBody(7, 'sun')).toContain(`fill="${MARK_COLOUR.sun}"`);
+    expect(clusterBody(7, 'sun')).toMatch(/>7<\/text>/);
+    expect(clusterBody(12, null)).toContain('var(--ink');
+    expect(clusterBody(12, null)).toMatch(/>12<\/text>/);
   });
 });
 

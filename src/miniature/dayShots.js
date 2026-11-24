@@ -10,6 +10,7 @@
  *   dayShots(from, { shed, views, sheds })   all of it in one call, from the city data alone
  *   withoutContinued(rows, from, before)   a list of days side by side: drop a midnight repeat
  *   shotKey(row), findShot(rows, key, t)   a shot's name in a link, and the row it names
+ *   streetStatus(row, t)                   the eye-level status line under a street shot
  *
  * A row is a shot for `shotCard` (shotCard.js). It also says where to stand and look, as
  * numbers a link can carry and the planner can fly to: `at` (lat, lon), `look` (heading and
@@ -172,7 +173,9 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
   if (streets) {
     const seen = new Set();
     // The longest views are the ones worth a trip; the rest still show on the map and slider.
-    for (const m of [...moments].filter(shown).sort((a, b) => b.view.lengthM - a.view.lengthM)) {
+    // Equal lengths (a street's two directions) go by time, so the twelve kept are the same
+    // whatever order the moments come in: `/plan/` hands them over by time, `/map` by body.
+    for (const m of [...moments].filter(shown).sort((a, b) => b.view.lengthM - a.view.lengthM || a.peak - b.peak || a.body.localeCompare(b.body))) {
       const key = `${m.view.name}${m.body}`;
       if (seen.has(key) || seen.size >= 12) continue;
       seen.add(key);
@@ -232,6 +235,28 @@ export function findShot(rows, key, t) {
     if (off <= 3 * 3_600_000 && (!best || off < best.off)) best = { row, off };
   }
   return best ? best.row : null;
+}
+
+/**
+ * What the eye-level status line says of a street shot at the instant `t`: the body down the
+ * street now, in so many minutes, or so many minutes ago. `row` is a street row; the result is
+ * the words, the line's state ('now' or 'soon') and the instant a tap on it goes to (the
+ * peak), or null for a row that is not a street's. The line under a street shot spoke only
+ * of the tower ("Nothing lines up with the tower from here") while the sun stood in the street.
+ */
+export function streetStatus(row, t) {
+  const m = row?.kind === 'street' ? row.moment : null;
+  if (!m) return null;
+  const what = `${BODY_NAME[m.body]} down ${m.view.name}`;
+  if (t >= m.from - 30_000 && t <= m.to + 30_000) return { text: `${what} now`, state: 'now', body: m.body, jumpTo: null };
+  const minutes = Math.max(1, Math.round(Math.abs((t < m.from ? m.from : m.to) - t) / 60_000));
+  const span = minutes >= 120 ? `${Math.round(minutes / 60)} h` : `${minutes} min`;
+  return {
+    text: t < m.from ? `${what} in ${span} (${formatClock(m.peak)})` : `${BODY_NAME[m.body]} was down ${m.view.name} ${span} ago (${formatClock(m.peak)})`,
+    state: 'soon',
+    body: m.body,
+    jumpTo: m.peak,
+  };
 }
 
 /**
