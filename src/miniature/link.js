@@ -9,7 +9,7 @@ import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromL
 import { dateInput, instant, setFine, timeInput } from './clock.js';
 import { findShot, shotKey } from './dayShots.js';
 import { currentRows, dayVerdict, openShot, showTicket, ticketShotRow } from './daylist.js';
-import { getViewshed } from './plan.js';
+import { getViewshed, landmarksSettled } from './plan.js';
 import { setPanelMode } from './planmode.js';
 import { params } from './config.js';
 import { enterEye, look } from './eyeLevel.js';
@@ -52,15 +52,15 @@ export function syncLink(now) {
   history.replaceState(null, '', `${location.pathname}?${query}`);
 }
 /**
- * A link that names its shot (`shot=sphere-sun`, `antenna-moon`, `street-sun:Sonnenallee`; the
+ * A link that names its shot (`shot=sphere-sun`, `antenna-moon`, `viktoria-sun`, `street-sun:Sonnenallee`; the
  * home page's cards) opens it as a tap on its card would: the planner finds the day's row,
  * searches for a confirmed clear spot to stand on and puts the shot's card on the ticket.
  * False when the day has no such row (the layer is switched off, or the link is old): the
  * link's own `at` and `look` then open the view as before.
  */
 async function openLinkedShot(key) {
-  // The rows are checked against the buildings once the viewshed is in: wait for it, briefly.
-  for (let i = 0; i < 40 && !(app.dayReady && getViewshed()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
+  // The rows are checked against the buildings once the viewsheds are in: wait for them, briefly.
+  for (let i = 0; i < 40 && !(app.dayReady && getViewshed() && landmarksSettled()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
   const row = findShot(currentRows(), key, instant().getTime());
   if (!row) return false;
   setPanelMode('shoot');
@@ -70,7 +70,7 @@ async function openLinkedShot(key) {
 
 /** The card of a link's shot on the ticket, once the day's rows are there; the view is the link's own. */
 async function nameLinkedShot(key) {
-  for (let i = 0; i < 40 && !(app.dayReady && getViewshed()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
+  for (let i = 0; i < 40 && !(app.dayReady && getViewshed() && landmarksSettled()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
   const row = findShot(currentRows(), key, instant().getTime());
   if (row) showTicket(row, dayVerdict(row));
 }

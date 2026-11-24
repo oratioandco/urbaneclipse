@@ -13,7 +13,7 @@
  * and in its small print: buildings (LoD2, the viewshed) yes, trees no.
  */
 import { getMoonIllumination } from 'suncalc';
-import { compassPoint, MIN_MOON_ILLUMINATION } from '../lib/dailyPaths.ts';
+import { MIN_MOON_ILLUMINATION } from '../lib/dailyPaths.ts';
 import { DISC_DEG, FIGURE_TARGETS, figureHeight, figurePasses } from '../lib/landmarkStands.ts';
 import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
@@ -26,14 +26,17 @@ const rad = (d) => (d * Math.PI) / 180;
 const deg = (r) => (r * 180) / Math.PI;
 const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
-/** What every one of these rows has and has not been checked against. */
+/** What every one of these rows has and has not been checked against: in full, and for a card's one line. */
 export const LANDMARK_CHECK = 'buildings checked, trees not';
+export const LANDMARK_CAUTION = 'trees unchecked';
 
 /**
  * A day's passes behind the two figures, for the day that starts at `from` (a Berlin midnight,
  * ms). `sheds` holds each landmark's viewshed by its id (`siegessaeule`, `brandenburger-tor`).
  * A landmark without its viewshed gives no passes: an unchecked standing point is not offered
- * as a shot. A moon under a quarter lit is too faint to read behind a figure and is left out.
+ * as a shot. A moon under a quarter lit is too faint to read behind a figure and is left out,
+ * and so is a pass of a single minute: that is the stand point touching the very end or edge
+ * of the strip, not a place to set up a tripod.
  */
 export function computeLandmarkPasses(from, sheds = {}) {
   const to = dayEndOf(from);
@@ -44,6 +47,7 @@ export function computeLandmarkPasses(from, sheds = {}) {
     const isClear = (lat, lon) => sampleViewshed(shed, lat, lon) === VIEW_VISIBLE;
     for (const body of ['sun', 'moon']) {
       for (const pass of figurePasses(target, body, from, to, { isClear })) {
+        if (pass.points.length < 2) continue;
         if (body === 'moon' && getMoonIllumination(new Date(pass.best.t)).fraction < MIN_MOON_ILLUMINATION) continue;
         passes.push(pass);
       }
@@ -87,7 +91,6 @@ export function landmarkRows(passes, flags = {}) {
     const big = best.discShare >= 1.25;
     const place = `${target.short}’s ${target.figure === 'Quadriga' ? 'quadriga' : target.figure}`;
     const lit = body === 'moon' ? getMoonIllumination(new Date(best.t)).fraction : 1;
-    const side = compassPoint(best.bearingDeg);
     rows.push({
       t: best.t,
       body,
@@ -97,14 +100,18 @@ export function landmarkRows(passes, flags = {}) {
       short: target.short,
       where: target.where,
       side: corridor.side,
-      stand: `${distanceText(best.distanceM)} ${side}, looking ${corridor.looking === 'west' ? 'W' : 'E'}`,
+      // Where to stand, as short as the tower's "5.3 km SE": the side in a word, since east or
+      // west of a gate is the whole question. The street and the way to look are in the detail.
+      stand: `${distanceText(best.distanceM)} ${corridor.side}`,
+      // What is not checked, for the card that has no room for the detail (shotCard.js).
+      caution: LANDMARK_CAUTION,
       brief: `${BODY_NAME[body]} behind ${target.short}`,
       compact: `${BODY_NAME[body]} · ${target.short}`,
       distanceM: best.distanceM,
       score: landmarkScore(body, best.discShare),
       title: big ? `Big ${body} behind the ${place}, ${best.discShare.toFixed(1)}× the figure` : `${BODY_NAME[body]} behind the ${place}`,
       detail:
-        `${first.t === last.t ? formatClock(best.t) : `${formatClock(first.t)}–${formatClock(last.t)}`} · ` +
+        `${formatClock(first.t)}–${formatClock(last.t)} · ` +
         `on ${corridor.street}, ${distanceText(best.distanceM)} ${corridor.side} of ${target.noun}, looking ${corridor.looking} · ` +
         `${Math.round(best.bodyAlt)}° up${body === 'moon' ? ` · ${Math.round(lit * 100)}% lit` : ''} · ${LANDMARK_CHECK}`,
       checked: { buildings: true, trees: false },

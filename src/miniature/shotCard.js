@@ -18,6 +18,7 @@
  *   title      the shot in a sentence ("Sun behind the TV tower's sphere")
  *   short      the place ("TV tower", "Hohenzollerndamm")
  *   stand      tower shots: where to stand ("5.3 km SE")
+ *   caution    what is not checked, in two words ("trees unchecked"); shown on the card size
  *   detail     the list row's small print
  * `verdict` is what `shotVerdict` (verdict.js) returns: its word and reason are shown, its
  * grade backs them with colour, and its `sky` (cloud layers, rain) is what the frame is drawn
@@ -342,7 +343,9 @@ export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', 
   const kind = `${shot.kind === 'tower' ? 'tower' : 'henge'}-${shot.body}`;
   const what = span('sc-what');
   what.innerHTML = markSvg(kind, { size: 10, halo: '' });
-  what.append(shotWhat(shot));
+  // A shot with something unchecked says so on the card, which shows no small print; the
+  // rows have it in their detail, and the ticket's one line has no room for it.
+  what.append(shot.caution && size === 'card' ? `${shotWhat(shot)} \u00b7 ${shot.caution}` : shotWhat(shot));
   const name = span('sc-name', breakable(shortStreet(shot.short ?? shot.title ?? '')));
   name.lang = 'de';
   const meta = span('sc-meta');

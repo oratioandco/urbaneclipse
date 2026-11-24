@@ -68,7 +68,10 @@ describe('a day’s rows for the two landmarks', () => {
   it('say where to stand, which side, which way to look, and what was checked', () => {
     // Sunset: east of each landmark, looking west.
     expect(column.side).toBe('east');
-    expect(column.stand).toMatch(/^1\.\d km E, looking W$/);
+    expect(column.stand).toMatch(/^1\.\d km east$/);
+    expect(column.caution).toBe('trees unchecked');
+    expect(gate.stand).toMatch(/^\d+ m east$/);
+    expect(gate.caution).toBe('trees unchecked');
     expect(column.detail).toContain('on Straße des 17. Juni');
     expect(column.detail).toContain('east of the column, looking west');
     expect(gate.side).toBe('east');
@@ -209,6 +212,8 @@ describe('how many there are', () => {
     expect(days[0]).toBe('2027-03-15');
     expect(days[days.length - 1]).toBe('2027-03-27');
     expect(column).toBe(13);
-    expect(gate).toBe(8);
+    // 13 to 18 March from Unter den Linden, 31 March from Straße des 17. Juni; the single
+    // minute of 19 March is not a pass.
+    expect(gate).toBe(7);
   });
 });

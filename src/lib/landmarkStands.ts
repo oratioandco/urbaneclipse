@@ -224,11 +224,13 @@ export const minDistanceM = (target: FigureTarget) => (target.minDiscShare * fig
 /** Ground height along a corridor, metres DHHN2016, linear between its samples. */
 export function groundAlong(corridor: StandCorridor, distanceM: number): number {
   const g = corridor.ground;
-  if (distanceM <= g[0][0]) return g[0][1];
-  for (let i = 1; i < g.length; i++) {
-    if (distanceM <= g[i][0]) return g[i - 1][1] + ((g[i][1] - g[i - 1][1]) * (distanceM - g[i - 1][0])) / (g[i][0] - g[i - 1][0]);
+  let [d0, h0] = g[0]!;
+  if (distanceM <= d0) return h0;
+  for (const [d1, h1] of g) {
+    if (distanceM <= d1 && d1 > d0) return h0 + ((h1 - h0) * (distanceM - d0)) / (d1 - d0);
+    [d0, h0] = [d1, h1];
   }
-  return g[g.length - 1][1];
+  return h0;
 }
 
 /** The highest and lowest a body can stand and still give a stand point in a corridor. */
@@ -340,11 +342,11 @@ export function figurePasses(
     for (let t = coarse; t < Math.min(coarse + COARSE, end); t += MINUTE) {
       // From the landmark first, then from the point that gives: over 2 km the sun stands 0.02° elsewhere.
       let stand = standFor(target, bodyAt(body, t, lat, lon));
-      let seen = stand ? bodyAt(body, t, stand.lat, stand.lon) : null;
+      const seen = stand ? bodyAt(body, t, stand.lat, stand.lon) : null;
       if (stand && seen) stand = standFor(target, seen);
       if (!stand || !seen || (isClear && !isClear(stand.lat, stand.lon))) continue;
       const point: StandPoint = { ...stand, t, bodyAz: seen.az, bodyAlt: seen.alt };
-      if (current && current.corridor === stand.corridor && t - current.points[current.points.length - 1].t <= 2 * MINUTE) current.points.push(point);
+      if (current && current.corridor === stand.corridor && t - current.points[current.points.length - 1]!.t <= 2 * MINUTE) current.points.push(point);
       else passes.push((current = { target, body, corridor: stand.corridor, points: [point], best: point }));
       if (Math.abs(point.acrossM) < Math.abs(current.best.acrossM)) current.best = point;
     }

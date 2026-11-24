@@ -35,7 +35,7 @@ for (const el of document.querySelectorAll('[data-body]')) {
   el.innerHTML = el.dataset.body === 'moon' ? moonSvg({ fraction: 1, altitudeDeg: 6, sunAltitudeDeg: -8, size: 14, glow: false }) : sunSvg({ altitudeDeg: 3, size: 14, glow: false });
 }
 
-export const layers = { tower: true, streets: true, trees: true, clouds: true, names: true, sun: true, moon: true, weather: true };
+export const layers = { tower: true, landmarks: true, streets: true, trees: true, clouds: true, names: true, sun: true, moon: true, weather: true };
 try {
   Object.assign(layers, JSON.parse(localStorage.getItem('miniature.layers') ?? '{}'));
 } catch {}
@@ -156,14 +156,14 @@ new MutationObserver(() => {
 tiltButton.addEventListener('click', () => orbitTo(controls.getPolarAngle() < 0.2 ? THREE.MathUtils.degToRad(55) : 0, null));
 
 /** The list's filters are the map's layers, so both always agree. */
-/** Which of the four shot switches (sun, moon, tower, streets) are off, as words: "Sun and Streets". */
+/** Which of the five shot switches (sun, moon, tower, landmarks, streets) are off, as words: "Sun and Streets". */
 export function switchedOff() {
-  const off = [['sun', 'Sun'], ['moon', 'Moon'], ['tower', 'Tower'], ['streets', 'Streets']].filter(([key]) => layers[key] === false).map(([, word]) => word);
+  const off = [['sun', 'Sun'], ['moon', 'Moon'], ['tower', 'Tower'], ['landmarks', 'Landmarks'], ['streets', 'Streets']].filter(([key]) => layers[key] === false).map(([, word]) => word);
   return off.length < 3 ? off.join(' and ') : `${off.slice(0, -1).join(', ')} and ${off[off.length - 1]}`;
 }
-/** Switch all four back on. */
+/** Switch all five back on. */
 export function showAllShots() {
-  for (const name of ['sun', 'moon', 'tower', 'streets']) if (layers[name] === false) setLayer(name, true);
+  for (const name of ['sun', 'moon', 'tower', 'landmarks', 'streets']) if (layers[name] === false) setLayer(name, true);
 }
 
 function setLayer(name, on) {
