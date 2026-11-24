@@ -176,6 +176,11 @@ or inferred.
   moon takes the horizon's colour as the sun does).
 - Fix: keep the moon's own mark in small sizes whatever its altitude: the dark limb or the
   phase, a cool rim. Colour it warm only in the rendered frame.
+- **Fixed on 2026-11-24** in `src/miniature/bodies.js` (`moonFragment`, `drawMoon`), so every
+  place that shows a moon has it: a wider dark limb, seas on the lit face, and a rim in the
+  high moon's cool glow. The face's colour is still `moonLook`'s for its altitude. Sun and
+  moon side by side at 0 to 5 degrees, 16 and 32 px, light and dark, before and after:
+  `docs/images/sun-moon-low-2026-11-24.png`. Test: `tests/unit/miniatureIcons.test.ts`.
 
 ### 6. `/map` and `/plan/` name different tower shots for the same day. Medium. Verified from the pages' text.
 

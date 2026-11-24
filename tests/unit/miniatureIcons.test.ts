@@ -116,6 +116,26 @@ describe('the one sun', () => {
 });
 
 describe('the one moon', () => {
+  // Adversarial test 2026-11, finding 5: a low moon read as the sun. Its colour still comes
+  // from moonLook; its marks are its own at every altitude.
+  it('keeps the moon\u2019s own marks at the horizon, and gives the sun none of them', () => {
+    const blueOf = (rgb: string) => Number(rgb.match(/rgb\((\d+) (\d+) (\d+)\)/)![3]) - Number(rgb.match(/rgb\((\d+) (\d+) (\d+)\)/)![1]);
+    for (const altitudeDeg of [0, 1, 2, 3, 4, 5, 40]) {
+      const moon = moonSvg({ fraction: 1, altitudeDeg, sunAltitudeDeg: -2, size: 16, glow: false });
+      // The seas, clipped to the lit face, in the dark body's colour.
+      expect(moon).toContain('clip-path');
+      expect((moon.match(new RegExp(`fill="${MOON_DARK}" fill-opacity`, 'g')) ?? []).length).toBe(1);
+      // The rim is the high moon's cool glow, not the horizon's warm one.
+      const rim = moon.match(/stroke="(rgb\([^"]+\))" stroke-opacity/)![1];
+      expect(rim).toBe(cssRgb(moonLook(90, -2, 1).glow));
+      expect(blueOf(rim)).toBeGreaterThan(0);
+      // The lit face is still moonLook's tint for that altitude.
+      expect(moon).toContain(`fill="${cssRgb(moonLook(altitudeDeg, -2, 1).core)}"`);
+      const sun = sunSvg({ altitudeDeg, size: 16, glow: false });
+      expect(sun).not.toContain(MOON_DARK);
+      expect(sun).not.toContain('clip-path');
+    }
+  });
   it('takes tint and glow from moonLook', () => {
     const cases = [
       { fraction: 0.85, waxing: true, altitudeDeg: 30, sunAltitudeDeg: -20 },
