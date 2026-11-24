@@ -36,7 +36,8 @@ import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
-import { collectRows, computeDayPaths, type ShotRow } from '../../../miniature/dayShots.js';
+import { collectRows, computeDayPaths, computeLandmarkPasses, type ShotRow } from '../../../miniature/dayShots.js';
+import { FIGURE_TARGETS } from '../../../lib/landmarkStands.js';
 import { planLink } from '../../../home/grid.js';
 
 interface Props {
@@ -82,7 +83,7 @@ function openingTime(day: BerlinDay, picks: ShotRow[], now: number): number {
 export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): JSX.Element {
   const [shown, setShown] = useState<Record<Body, boolean>>({ sun: true, moon: true });
   const [free, setFree] = useState<{ lat: number; lon: number } | null>(null);
-  const [layers, setLayers] = useState({ tower: true, streets: true });
+  const [layers, setLayers] = useState({ tower: true, landmarks: true, streets: true });
   const [streetViews, setStreetViews] = useState<StreetView[] | null>(null);
   const [streetsFailed, setStreetsFailed] = useState(false);
   useEffect(() => {
@@ -116,6 +117,21 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
       current = false;
     };
   }, []);
+  // The Siegessäule's and the Brandenburger Tor's viewsheds, by landmark id: without its own a
+  // landmark has no rows, as the tower has none without the building data.
+  const [sheds, setSheds] = useState<Record<string, Viewshed>>({});
+  useEffect(() => {
+    let current = true;
+    for (const { id } of FIGURE_TARGETS) {
+      loadViewshed(id).then(
+        (loaded) => current && setSheds((had) => ({ ...had, [id]: loaded })),
+        (err: unknown) => console.error(`[TodayScreen] ${id} visibility data failed`, err),
+      );
+    }
+    return () => {
+      current = false;
+    };
+  }, []);
   const allPaths = useMemo(
     () =>
       (['sun', 'moon'] as const).map((body) => {
@@ -140,10 +156,22 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   // Every shot of the day, as `/plan/` lists them (src/miniature/dayShots.js). Without the
   // building data no standing point is checked, so no tower shot is offered.
   const allRows = useMemo(
-    () => collectRows(view ? computeDayPaths(bounds.start.getTime(), view) : [], allMoments, bounds.start.getTime()),
-    [bounds, view, allMoments],
+    () =>
+      collectRows(
+        view ? computeDayPaths(bounds.start.getTime(), view) : [],
+        allMoments,
+        bounds.start.getTime(),
+        {},
+        computeLandmarkPasses(bounds.start.getTime(), sheds),
+      ),
+    [bounds, view, allMoments, sheds],
   );
-  const towerShots = useMemo(() => allRows.filter((r) => r.kind === 'tower'), [allRows]);
+  const towerShots = useMemo(() => allRows.filter((r) => r.kind === 'tower' && !r.target), [allRows]);
+  // The sun or moon behind the Viktoria and the quadriga: the planner's rows, as they are there.
+  const landmarkShots = useMemo(
+    () => (layers.landmarks ? allRows.filter((r) => r.target && shown[r.body]) : []),
+    [allRows, layers.landmarks, shown],
+  );
   const [time, setTime] = useState(() => openingTime(day, towerShots, Date.now()));
   useEffect(() => {
     setTime(openingTime(day, towerShots, Date.now()));
@@ -184,8 +212,8 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   const towerPaths = layers.tower ? paths : [];
 
   const highlights = useMemo(
-    () => (layers.tower ? towerShots.filter((r) => shown[r.body]) : []),
-    [towerShots, layers.tower, shown],
+    () => [...(layers.tower ? towerShots.filter((r) => shown[r.body]) : []), ...landmarkShots].sort((a, b) => a.t - b.t),
+    [towerShots, landmarkShots, layers.tower, shown],
   );
 
   // At midday, so the day's headline phase does not move with the slider.
@@ -218,6 +246,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         paths={towerPaths}
         time={time}
         streets={moments}
+        landmarks={landmarkShots}
         moon={moonToday}
         onPickStreet={(m) => {
           setFree(null);
@@ -290,7 +319,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               )}
             </div>
             <div className="ue-chips">
-              {(['tower', 'streets'] as const).map((layer) => (
+              {(['tower', 'landmarks', 'streets'] as const).map((layer) => (
                 <button
                   key={layer}
                   type="button"
@@ -298,7 +327,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                   aria-pressed={layers[layer]}
                   onClick={() => setLayers((l) => ({ ...l, [layer]: !l[layer] }))}
                 >
-                  {layer === 'tower' ? 'Tower' : 'Streets'}
+                  {layer === 'tower' ? 'Tower' : layer === 'landmarks' ? 'Landmarks' : 'Streets'}
                 </button>
               ))}
               {(['sun', 'moon'] as const).map((body) => (
@@ -476,15 +505,17 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                   <span className="ue-row__main">
                     <strong>{row.title}</strong>
                     <small>
-                      {row.stand} of the tower · {LIGHT_PHASE_NAMES[lightPhaseOf(row.t, FERNSEHTURM.lat, FERNSEHTURM.lon)]}
+                      {row.target ? `${row.stand} of it · ${row.caution ?? ''}` : `${row.stand} of the tower`} ·{' '}
+                      {LIGHT_PHASE_NAMES[lightPhaseOf(row.t, FERNSEHTURM.lat, FERNSEHTURM.lon)]}
                     </small>
                   </span>
                 </>
               );
               const past = (row.until ?? row.t) < Date.now();
               // The preview here is of the sphere; the antenna's stretch opens in the planner.
-              return row.where === 'antenna' || !row.at ? (
-                <a key={`${row.body}-${row.t}`} className="ue-row ue-row--cta" data-past={past} href={planLink(row)}>
+              // So does a shot of the Siegessäule or the Brandenburger Tor: the preview here knows only the tower.
+              return row.where === 'antenna' || row.target || !row.at ? (
+                <a key={`${row.target ?? 'tower'}-${row.body}-${row.t}`} className="ue-row ue-row--cta" data-past={past} href={planLink(row)}>
                   {inner}
                   <span className="ue-row__go">Plan</span>
                 </a>

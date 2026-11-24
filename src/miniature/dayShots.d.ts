@@ -10,7 +10,11 @@ export interface ShotRow {
   until?: number;
   body: Body;
   kind: 'tower' | 'street';
-  where?: 'sphere' | 'antenna';
+  where?: 'sphere' | 'antenna' | 'viktoria' | 'quadriga';
+  /** Set on a shot of the Siegessäule or the Brandenburger Tor: the landmark's id. */
+  target?: string;
+  /** What such a shot has not been checked against, in two words ("trees unchecked"). */
+  caution?: string;
   short: string;
   stand?: string;
   brief: string;
@@ -27,12 +31,16 @@ export interface ShotRow {
 export interface ShotFlags {
   tower?: boolean;
   streets?: boolean;
+  landmarks?: boolean;
   sun?: boolean;
   moon?: boolean;
 }
 export const BODY_NAME: Record<Body, string>;
 export function computeDayPaths(from: number, shed?: Viewshed | null): DayPath[];
-export function collectRows(paths: DayPath[], moments: StreetMoment[], from: number, flags?: ShotFlags): ShotRow[];
+/** A day's passes behind the Viktoria and the quadriga (landmarkShots.js); opaque to the pages. */
+export type LandmarkPass = { readonly body: Body };
+export function computeLandmarkPasses(from: number, sheds?: Record<string, Viewshed>): LandmarkPass[];
+export function collectRows(paths: DayPath[], moments: StreetMoment[], from: number, flags?: ShotFlags, passes?: LandmarkPass[]): ShotRow[];
 export function withoutContinued(rows: ShotRow[], from: number, dayBefore?: ShotRow[]): ShotRow[];
 export function shotKey(row: ShotRow): string;
 export function findShot(rows: ShotRow[], key: string, t: number): ShotRow | null;

@@ -13,6 +13,7 @@ import {
 } from '../../../lib/dailyPaths.js';
 import { litDiscPath } from '../../../lib/moonPhase.js';
 import type { StreetMoment } from '../../../lib/streets.js';
+import type { ShotRow } from '../../../miniature/dayShots.js';
 import { FERNSEHTURM } from '../../../lib/landmarks.js';
 import { VIEWPOINTS, type Viewpoint } from '../../../lib/viewpoints.js';
 import { sampleBody, type Body } from '../../../lib/bodyPosition.js';
@@ -31,6 +32,8 @@ interface Props {
   onPickFree: (pos: { lat: number; lon: number }) => void;
   onPickViewpoint: (viewpoint: Viewpoint) => void;
   streets: StreetMoment[];
+  /** The day's shots at the Siegessäule and the Brandenburger Tor (rows of dayShots.js): where to stand for each. */
+  landmarks?: ShotRow[];
   onPickStreet: (moment: StreetMoment) => void;
   moon: { fraction: number; waxing: boolean };
 }
@@ -173,6 +176,7 @@ export default function TodayMap({
   onPickFree,
   onPickViewpoint,
   streets,
+  landmarks,
   onPickStreet,
   moon,
 }: Props): JSX.Element {
@@ -425,6 +429,29 @@ export default function TodayMap({
       }).addTo(layer);
     }
   }, [paths, time, selected, viewTick, moon]);
+
+  // Where to stand for the day's shots at the Siegessäule and the Brandenburger Tor: the same
+  // mark the tower's spot has, with the minute and the landmark beside it.
+  const landmarkLayer = useRef<L.LayerGroup | null>(null);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    landmarkLayer.current ??= L.layerGroup().addTo(map);
+    const layer = landmarkLayer.current;
+    layer.clearLayers();
+    for (const row of landmarks ?? []) {
+      if (!row.at) continue;
+      L.marker(row.at, {
+        icon: L.divIcon({
+          className: `ue-map-now ue-map-now--${row.body} ue-map-now--landmark`,
+          iconSize: [0, 0],
+          html: `<i></i><span>${formatTime(new Date(row.t))} · ${row.short}</span>`,
+        }),
+        interactive: false,
+        zIndexOffset: 550,
+      }).addTo(layer);
+    }
+  }, [landmarks]);
 
   // Only the streets lined up right now. The list and the slider cover the rest of the day.
   useEffect(() => {
