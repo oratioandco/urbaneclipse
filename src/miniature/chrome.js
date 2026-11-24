@@ -91,7 +91,9 @@ intro.addEventListener('close', () => {
   } catch {}
 });
 try {
-  if (!localStorage.getItem('miniature.intro') && !params.has('nointro')) setTimeout(openIntro, 600);
+  // Not over a view or a shot the address names (a card on the home page, a shared link): the
+  // introduction's examples are links that would leave it. It waits behind the ? button.
+  if (!localStorage.getItem('miniature.intro') && !params.has('nointro') && !params.has('shot') && !params.has('at')) setTimeout(openIntro, 600);
 } catch {}
 
 const layersButton = document.getElementById('layers');

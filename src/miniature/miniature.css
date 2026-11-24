@@ -341,6 +341,10 @@
       #time-row { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
       .dv-readout { min-height: 16px; font-size: var(--text-s); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
       .dv-readout b { font-weight: 600; color: var(--ink); }
+      /* On a phone the line is whole on two lines rather than cut on one. */
+      @media (max-width: 480px) { .dv-readout { white-space: normal; } }
+      /* 320 px: the credit line ends before the tool buttons. */
+      @media (max-width: 359px) { body:not([data-eye='true']) .credit { right: 56px; max-width: calc(100% - 68px); overflow: hidden; text-overflow: ellipsis; } }
       .dv-nav { display: grid; grid-template-columns: 1.15fr 1fr 1fr 1.15fr; gap: 6px; }
       .dv-nav button { height: var(--control); padding: 0 4px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--field); color: var(--ink); font-size: var(--text-s); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; }
       .dv-nav button:disabled { color: var(--muted); opacity: 0.55; cursor: default; }
@@ -459,10 +463,13 @@
       #airspace[data-inside='true'] { background: #fde8e4; color: #b4321f; }
       body[data-night='true'] #airspace[data-inside='true'] { background: #4a2228; color: #ffb3a6; }
       /* Touch screens walk with the stick; a keyboard walks with keys. */
-      @media (pointer: coarse) {
+      @media (pointer: coarse), (hover: none) {
         .keys { display: none; }
         body[data-eye='true'] .walkpad { display: grid; }
       }
+      /* And wherever a finger has been used (tips.js sets this): some touch screens report a fine pointer. */
+      body[data-touch='true'] .keys { display: none; }
+      body[data-touch='true'][data-eye='true'] .walkpad { display: grid; }
 
       /* 900 px and wider: a side panel, top left, as tall as its content; it folds to a rail. */
       @media (min-width: 900px) {

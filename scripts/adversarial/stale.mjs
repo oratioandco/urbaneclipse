@@ -11,7 +11,8 @@
 import { open, plan, shot, save, close } from './lib.mjs';
 
 const date = process.argv[2] ?? '2026-11-26';
-const { page } = await open({ size: 'desktop', forecast: 'fixed' });
+// SIZE=phone runs it on the phone layout (the walk is by keys either way).
+const { page } = await open({ size: process.env.SIZE ?? 'desktop', forecast: 'fixed' });
 const snap = async () => {
   const s = await page.evaluate(() => ({ clock: document.getElementById('clock').value, ticket: document.getElementById('ticket-shot').hidden ? '' : document.getElementById('ticket-shot').innerText.replace(/\n/g, ' / '), status: document.getElementById('eclipse').innerText, url: location.search }));
   await page.click('#share');
