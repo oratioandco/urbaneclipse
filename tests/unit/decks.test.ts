@@ -70,3 +70,27 @@ describe('telling a bridge deck from a roof', () => {
     expect(deckTop(0, 0, tall)).toBeNull();
   });
 });
+
+describe('bridges the model does not have', () => {
+  it('names the bridge at a place on it or just beside it, and none elsewhere', async () => {
+    const { missingBridgeAt, missingBridgeNote } = await import('../../src/miniature/bridgesMissing.js');
+    // Centres from OpenStreetMap (Nominatim, 2026-11-24): ways 380356103 and 288514442.
+    expect(missingBridgeAt(52.5547093, 13.3981606)?.name).toBe('Bösebrücke');
+    expect(missingBridgeAt(52.5017288, 13.4457312)?.name).toBe('Oberbaumbrücke');
+    // 20 m north of the Bösebrücke's outline: still it (one is moved to the street beside it).
+    expect(missingBridgeAt(52.5548866 + 20 / 111_320, 13.398)?.name).toBe('Bösebrücke');
+    // The Lichtenberger Brücke and the Moltkebrücke are in the model.
+    expect(missingBridgeAt(52.5111010, 13.4991829)).toBeNull();
+    expect(missingBridgeAt(52.52189, 13.36876)).toBeNull();
+    expect(missingBridgeNote({ name: 'Elsenbrücke' })).toMatch(/Elsenbrücke is not in the model yet/);
+  });
+  it('knows the railway viaducts the deck rule would take for bridges', async () => {
+    const { railViaductAt } = await import('../../src/miniature/bridgesMissing.js');
+    // The two cells of the census, OpenStreetMap ways 266284848 and 96837199 (building=viaduct).
+    expect(railViaductAt(52.50465, 13.32633)).toBe(true);
+    expect(railViaductAt(52.50509, 13.32914)).toBe(true);
+    // Hardenbergstraße itself, 200 m north, and the Lichtenberger Brücke: not on the list.
+    expect(railViaductAt(52.5068, 13.3275)).toBe(false);
+    expect(railViaductAt(52.5111010, 13.4991829)).toBe(false);
+  });
+});
