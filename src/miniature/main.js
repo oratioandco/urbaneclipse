@@ -25,7 +25,7 @@ import { drawMinimap, setMinimapGround } from './minimap.js';
 import { frameRect, sceneFromLatLon, setViewArea } from './eye.js';
 import { DISC_RADIUS_DEG } from './towerShots.js';
 import { orbitTo, stepFlight, stepOrbit } from './camera.js';
-import { layers, needle, tiltButton, towerItems } from './chrome.js';
+import { landmarkItems, layers, needle, tiltButton, towerItems } from './chrome.js';
 import { CITY, CITY_VERSION, REFLECTION_REACH_M, isPhone, params } from './config.js';
 import { face, showEclipseStatus, updateForecast } from './eclipse.js';
 import { enterEye, exitEye, look, placeEyeCamera, shotCaption, stepLook, stepTransition } from './eyeLevel.js';
@@ -221,8 +221,8 @@ function frame(now) {
     thirds,
     eclipse: street > 0.5 ? eclipseHere : null,
     photographer: street > 0 || app.drag?.moved ? null : app.photographer,
-    paths: towerItems(app.dayPaths),
-    spots: towerItems(app.spots),
+    paths: [...towerItems(app.dayPaths), ...landmarkItems(app.landmarkPaths)],
+    spots: [...towerItems(app.spots), ...landmarkItems(app.landmarkSpots)],
     rays: towerItems(app.rays),
     hourRays: towerItems(app.hourRays),
     names: layers.names,
@@ -231,7 +231,7 @@ function frame(now) {
   if (street > 0.5) {
     const aspect = innerWidth / innerHeight;
     const hfov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(eyeCamera.fov) / 2) * aspect));
-    drawMinimap({ look, fov: hfov, paths: towerItems(app.dayPaths), rays: towerItems(app.rays), spots: towerItems(app.spots), bodies: app.bodies, night: app.night });
+    drawMinimap({ look, fov: hfov, paths: [...towerItems(app.dayPaths), ...landmarkItems(app.landmarkPaths)], rays: towerItems(app.rays), spots: [...towerItems(app.spots), ...landmarkItems(app.landmarkSpots)], bodies: app.bodies, night: app.night });
   }
   needle.style.transform = `rotate(${app.camera === eyeCamera ? -look.heading : THREE.MathUtils.radToDeg(controls.getAzimuthalAngle())}deg)`;
   tiltButton.textContent = controls.getPolarAngle() < 0.2 ? '3D' : '2D';

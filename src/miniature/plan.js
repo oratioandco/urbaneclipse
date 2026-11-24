@@ -68,6 +68,8 @@ function antennaStretch(line) {
 let dayPlanned = false;
 let viewshed = null;
 app.dayPaths = [];
+app.landmarkPaths = [];
+app.landmarkSpots = [];
 app.spots = [];
 export const toScene = (p) => {
   const [x, z] = sceneFromLatLon(p.lat, p.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
@@ -95,6 +97,16 @@ function computePaths() {
 function buildPaths() {
   const from = dayStart();
   app.dayPaths = computeDayPaths(from);
+  // The Siegessäule's and the Brandenburger Tor's passes on the map, in the tower's own
+  // language: the stretch of street the stand point runs along as a path, and the spot of the
+  // pass's own minute as a mark (the row's `at`), which a tap opens.
+  const passes = landmarkPassesFor(from);
+  app.landmarkPaths = passes.map((pass) => ({
+    body: pass.body,
+    faint: false,
+    segments: [pass.points.map((p) => ({ ...toScene(p), t: p.t, clear: true }))],
+  }));
+  app.landmarkSpots = passes.map((pass) => ({ kind: 'landmark', target: pass.target.id, body: pass.body, t: pass.best.t, ...toScene(pass.best) }));
   app.dayReady = true;
   // One line through the tower per hour, like the hours on a clock face: along each, the disc
   // sits behind some part of the tower at that hour.

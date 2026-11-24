@@ -41,6 +41,8 @@ try {
 } catch {}
 export const shownBody = (item) => layers[item.body] !== false;
 export const towerItems = (items) => (layers.tower ? items.filter(shownBody) : []);
+/** The Siegessäule's and the Brandenburger Tor's paths and stand points: the Landmarks switch is theirs. */
+export const landmarkItems = (items) => (layers.landmarks !== false ? items.filter(shownBody) : []);
 
 document.getElementById('minimap').addEventListener('click', () => exitEye());
 // The ticket at eye level: the camera's rows wait behind "More", the map of where you stand
