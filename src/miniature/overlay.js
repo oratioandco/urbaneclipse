@@ -684,7 +684,7 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
       }
     }
     if (placed) taps.push(drawPill({ ...placed, moon: body.moon, ux, uy, night, body }));
-    else taps.push(drawEdgeNeedle({ frame, ux, uy, moon: body.moon, night, body }));
+    else taps.push(drawEdgeNeedle({ frame, area, ux, uy, moon: body.moon, night, body }));
   }
   return taps;
 }
@@ -695,14 +695,20 @@ function pillHalfWidth(text) {
   return (40 + ctx.measureText(text).width + 12) / 2 + NEEDLE + NEEDLE_GAP + 3;
 }
 
-/** The needle alone, just outside the frame on the side the body lies; a tap on it turns to face it. */
-function drawEdgeNeedle({ frame, ux, uy, moon, night, body }) {
+/**
+ * The needle alone, just outside the frame on the side the body lies; a tap on it turns to face
+ * it. Shorter than a pill's needle, and kept inside the safe area, so that on a 320 px screen
+ * it stands in the 20 px between the frame and the tool buttons and touches neither.
+ */
+const EDGE_NEEDLE = 20;
+function drawEdgeNeedle({ frame, area, ux, uy, moon, night, body }) {
   const cx = frame.x + frame.w / 2;
   const cy = frame.y + frame.h / 2;
-  const reach = Math.min(Math.abs(ux) > 1e-3 ? frame.w / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? frame.h / 2 / Math.abs(uy) : Infinity) + NEEDLE / 2 + 4;
-  const x = cx + ux * reach;
-  const y = cy + uy * reach;
-  drawNeedle(ctx, x, y, Math.atan2(uy, ux), NEEDLE, {
+  const reach = Math.min(Math.abs(ux) > 1e-3 ? frame.w / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? frame.h / 2 / Math.abs(uy) : Infinity) + EDGE_NEEDLE / 2 + 3;
+  const half = EDGE_NEEDLE / 2 + 1;
+  const x = Math.max(area.left + half, Math.min(area.right - half, cx + ux * reach));
+  const y = Math.max(area.top + half, Math.min(area.bottom + 30 - half, cy + uy * reach));
+  drawNeedle(ctx, x, y, Math.atan2(uy, ux), EDGE_NEEDLE, {
     kind: moon ? 'moon' : 'sun',
     ink: night ? '#ece8df' : '#24221f',
     halo: night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)',
