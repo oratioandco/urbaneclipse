@@ -105,6 +105,12 @@ function updateViewArea() {
   if (document.body.dataset.dates !== 'open') panelTop = panel.getBoundingClientRect().top;
   const top = document.querySelector('.topleft').getBoundingClientRect().bottom;
   let area = { left: 0, top: top + 4, right: innerWidth, bottom: panelTop - 4 };
+  // On a wide screen the open Dates list stands tall at the left and covered the first 75 px
+  // of the viewfinder and the start of its caption: the frame keeps to the right of it.
+  if (document.body.dataset.eye === 'true' && document.body.dataset.dates === 'open' && innerWidth >= 900) {
+    const card = ticket.getBoundingClientRect();
+    if (card.right < innerWidth / 2) area.left = card.right + 8;
+  }
   // On a small phone the walk stick's row above the ticket takes a third of what is left, and
   // the picture shrinks to a stamp (87 x 131 px at 320 x 568 with More open). Where the frame
   // fits beside the stick and the minimap, it takes that room too, down to the credit line.
