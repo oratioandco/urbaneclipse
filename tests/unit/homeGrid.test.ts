@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
 import { collectRows, computeDayPaths, dayShots, findShot, shotKey } from '../../src/miniature/dayShots.js';
-import { decodeStreets } from '../../src/lib/streets';
+import { decodeStreets, streetMoments } from '../../src/lib/streets';
+import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { decodeViewshed } from '../../src/lib/viewshed';
 import { berlinDayStart, wallToInstant } from '../../src/miniature/berlinClock.js';
 
@@ -200,6 +201,24 @@ describe('one row logic for the planner and the home page', () => {
     expect(read('miniature/plan.js')).toMatch(/from '\.\/dayShots\.js'/);
     expect(read('home/home.js')).toMatch(/from '\.\.\/miniature\/dayShots\.js'/);
     expect(() => read('home/shots.js')).toThrow();
+  });
+  it('is the list `/map` shows too, and the same whatever order the street moments come in', () => {
+    // Finding 6 of the adversarial test: `/map` had a list of its own (`dayHighlights`).
+    const map = read('components/react/daily/TodayScreen.tsx');
+    expect(map).toMatch(/import \{ collectRows, computeDayPaths[^}]*\} from '\.\.\/\.\.\/\.\.\/miniature\/dayShots\.js'/);
+    expect(map).not.toMatch(/dayHighlights/);
+    // 24 November 2026: Weserstraße's two directions are equally long, the moon down one at
+    // 07:34 and the sun down the other at 08:09. Which of them is among the twelve kept must not
+    // depend on whether the moments arrive by time (`/plan/`) or sun first (`/map`, home).
+    const views = decodeStreets(JSON.parse(readFileSync(new URL('../../public/streets/berlin.json', import.meta.url), 'utf8')));
+    const from = berlinDayStart('2026-11-24');
+    const { lat, lon } = FERNSEHTURM;
+    const all = [...streetMoments(views, 'sun', from, from + 24 * HOUR, lat, lon), ...streetMoments(views, 'moon', from, from + 24 * HOUR, lat, lon)];
+    const names = (moments: typeof all) => collectRows([], moments, from, { tower: false }).map((r: { t: number; title: string }) => `${r.t} ${r.title}`);
+    const byTime = names([...all].sort((x, y) => x.peak - y.peak));
+    expect(byTime.length).toBe(12);
+    expect(names(all)).toEqual(byTime);
+    expect(names([...all].reverse())).toEqual(byTime);
   });
   it('names a shot in a link and finds its row again', () => {
     const sphere = { kind: 'tower', where: 'sphere', body: 'sun', short: 'TV tower', t: 1000 * 3_600_000 };

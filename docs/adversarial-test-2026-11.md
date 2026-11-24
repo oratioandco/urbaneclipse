@@ -201,6 +201,17 @@ or inferred.
   `dailyPaths.ts` but pick the moment and the stand differently.
 - Fix: one function for "the shots of a day", used by both, or take the list off `/map` and
   link to `/plan/`.
+- **Fixed on 2026-11-24.** `/map`'s "Best shots" and "Streets today" are now the rows of
+  `src/miniature/dayShots.js`, the list `/plan/` and the home page use; its own picker
+  (`dayHighlights`) is no longer called by the page. A sphere row opens `/map`'s preview at
+  the shared standing point and minute; an antenna row links to `/plan/`. Found on the way:
+  the twelve streets kept depended on the order the moments came in, so `/plan/` (by time)
+  and `/map` and the home page (sun first) could keep a different one of a street's two
+  equally long directions (Weserstraße, 07:34 against 08:09); the cut now breaks ties by
+  time. Re-run: `scripts/adversarial/sameshots.mjs` reads both pages for 24 November: nine
+  tower rows and twelve street rows, identical in time, title and stand. Test:
+  `tests/unit/homeGrid.test.ts`. Not done: `/map` still shows no weather verdict, and its
+  clock stays 24-hour (13g).
 
 ### 7. A shared link, a reload or the calendar entry forgets which shot it was. Medium. Verified.
 

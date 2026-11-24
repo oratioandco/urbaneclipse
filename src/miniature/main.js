@@ -15,6 +15,7 @@
  * light or the view moves.
  */
 import * as THREE from 'three';
+import { currentRows } from './daylist.js';
 import { MeshoptDecoder } from 'meshoptimizer/decoder';
 import { decodeStreets } from '../lib/streets.ts';
 import { cityUniforms, makeTerrainTexture } from './shading.js';
@@ -382,4 +383,4 @@ updateSun();
 requestAnimationFrame(frame);
 start().then(openLinkedView);
 window.__sky = skyUniforms;
-window.__mini = { frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), deckAt: (x, z) => deckAt(x, z), standable: (x, z) => standable({ x, y: 0, z }), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, shadowEvery: () => quality.shadowEvery, get camera() { return app.camera; }, get controls() { return controls; }, renderer };
+window.__mini = { dayRows: () => currentRows(), frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), deckAt: (x, z) => deckAt(x, z), standable: (x, z) => standable({ x, y: 0, z }), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, shadowEvery: () => quality.shadowEvery, get camera() { return app.camera; }, get controls() { return controls; }, renderer };

@@ -162,7 +162,9 @@ export function collectRows(paths, moments, from, flags = {}) {
   if (streets) {
     const seen = new Set();
     // The longest views are the ones worth a trip; the rest still show on the map and slider.
-    for (const m of [...moments].filter(shown).sort((a, b) => b.view.lengthM - a.view.lengthM)) {
+    // Equal lengths (a street's two directions) go by time, so the twelve kept are the same
+    // whatever order the moments come in: `/plan/` hands them over by time, `/map` by body.
+    for (const m of [...moments].filter(shown).sort((a, b) => b.view.lengthM - a.view.lengthM || a.peak - b.peak || a.body.localeCompare(b.body))) {
       const key = `${m.view.name}${m.body}`;
       if (seen.has(key) || seen.size >= 12) continue;
       seen.add(key);
