@@ -133,7 +133,10 @@ export function collectRows(paths, moments, from, flags = {}) {
         const out = (reach(SPHERE_TOP_AGL, mid.alt) + reach(TIP_AGL, mid.alt)) / 2;
         const spot = offsetGeodetic(FERNSEHTURM.lat, FERNSEHTURM.lon, 0, bearing, out);
         rows.push({
-          t: w.start,
+          // The row's time is the minute it opens at, the middle of the stretch; the stretch
+          // itself is in the detail, and the shot has passed only when the stretch has.
+          t: mid.t,
+          start: w.start,
           until: w.end,
           body: 'moon',
           kind: 'tower',
@@ -191,12 +194,12 @@ export function collectRows(paths, moments, from, flags = {}) {
  * A day's rows without those that only continue a pass from the evening before. Rows are
  * collected a day at a time, so a moon that is low across midnight is one row late in the
  * evening and a second at 00:00 the next day: side by side in a list of days that reads as two
- * shots. A row at its day's very start is dropped when the day before has the same shot
+ * shots. A row that starts at its day's very start is dropped when the day before has the same shot
  * (place, body, kind) still running at midnight (`until`). For lists of several days only: a
  * day looked at alone keeps its 00:00 row, which is all it has of that pass.
  */
 export function withoutContinued(rows, from, dayBefore = []) {
-  return rows.filter((row) => row.t !== from || !dayBefore.some((b) => b.kind === row.kind && b.body === row.body && b.short === row.short && (b.until ?? b.t) >= from - 60_000));
+  return rows.filter((row) => (row.start ?? row.t) !== from || !dayBefore.some((b) => b.kind === row.kind && b.body === row.body && b.short === row.short && (b.until ?? b.t) >= from - 60_000));
 }
 
 /**

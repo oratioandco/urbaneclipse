@@ -20,7 +20,8 @@ set -euo pipefail
 
 SRC="${1:-data/berlin-full}"
 REMOTE_DIR="${2:-/data/plastervoid/tiles/berlin-full}"
-HOST="${PLASTERVOID_HOST:-root@100.105.62.79}"
+# The server is not written into this public repository: set PLASTERVOID_HOST (user@host).
+HOST="${PLASTERVOID_HOST:?set PLASTERVOID_HOST to user@host of the tile server}"
 
 if [[ ! -f "$SRC/tileset.json" ]]; then
   echo "error: $SRC/tileset.json not found — run convert_batch.py --all first" >&2

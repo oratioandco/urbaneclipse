@@ -94,6 +94,21 @@ or inferred.
   "building" is a bridge, or a short list of decks starting with the vantages in
   `src/lib/vantages.ts`). Until then, do not say "Buildings hide it": say the spot is on a
   structure the model cannot stand on, and offer take-off at deck height.
+- **Fixed on 2026-11-24** (`src/miniature/decks.js`, `sightlines.js` `deckAt`, `eyeLevel.js`,
+  `walk.js`, `locate.js`; tests in `tests/unit/decks.test.ts`). Cause, measured in the page: the
+  deck is a surface of the building model 2 to 5 m above the bare-earth terrain (terrain 4.6 to
+  7.5, deck 8.2 to 10.1 in scene metres at the six points), so `roofAt` took it for a roof,
+  `standable` moved the photographer to the nearest street and `enterEye` stood them on the
+  terrain inside the bridge. A deck is now told from a roof for any bridge: a built surface
+  with a street on it whose points run on, without a step, to plain ground. A viaduct or a
+  house over the street steps down by its clearance and is not a deck. Re-run: all six points
+  of `src/lib/vantages.ts` and the default spot of `/classic` stand where they are (moved 0 m);
+  "My location" at nord-mitte says "Standing where you are, on the bridge, facing the TV
+  tower"; the view shows the tower 6.2 km off (`bridge-classic-link.png`); Dates lists passes
+  behind the tower from there. Walking onto and along a deck works by the same rule.
+  Not checked: that the list equals panel 05's 203 windows, and the model's deck height against
+  the surveyed 47.7 to 48.2 m (the scene's vertical datum was not tied down here; the deck may
+  sit a few metres low in the model, which moves a pass by seconds, not minutes).
 
 ### 2. Clock-change days: the day view sets and reads the time one hour off. High on two days a year. Verified.
 
@@ -112,6 +127,12 @@ or inferred.
   wrong hour on those days.
 - Fix: `instantOfMinute`, `minuteOf` and `dayEnd` from `clock.js`, as the audit wrote. Add the
   two cases of `dst.mjs` as a test.
+- **Fixed on 2026-11-24** (commit 8e76276, `src/miniature/dayMath.js`; tests in
+  `tests/unit/panelDays.test.ts` for both days). `dst.mjs` re-run on b46eb58: the 7:22 AM and
+  7:07 PM cards of 28 March and the 7:17 AM and 4:15 PM cards of 31 October set the clock they
+  show, the card under the thumb lights up, and the readout names the shot
+  (`dst-2027-10-31-card-415PM.png` opened: 4:15 PM over a city in daylight). The forecast
+  lookups in `verdict.js`, `planmode.js` and `dates.js` read the wall-clock hour.
 
 ### 3. "Dates": the minute shown depends on the second you pressed the button, and is cut, not rounded. Medium. Verified.
 
@@ -128,6 +149,10 @@ or inferred.
   `src/miniature/towerShots.js` (`findShots`), `src/lib/streets.ts`.
 - Fix: start the search on a whole minute; set the scene to the shot's `align` instant, which
   `findShots` already returns; print the pass as a range, as the audit's defect 4 asks.
+- **Fixed on 2026-11-24** (`src/miniature/dates.js`): the search starts on the whole minute, a
+  tower row opens at the axis crossing (`align`), and the row prints the pass as a range with
+  the crossing to the second. Not re-measured against the reference (`reference.py` needs the
+  ephemeris file, which is not on this machine); street rows still open at their one-minute peak.
 
 ### 4. Antenna rows show the start of an hour-long window as the shot's time. Medium. Verified.
 
@@ -141,6 +166,11 @@ or inferred.
   `mid.t`).
 - Fix: give the row the instant it opens at, show the window as a range, and call it passed at
   its end.
+- **Fixed on 2026-11-24** (`src/miniature/dayShots.js`, `verdict.js`): the row's time is the
+  minute it opens at (8:20 for 24 December), the stretch stays in its small print as a range,
+  it is "Passed" only after the stretch ends and stays the next shot until then, and a stretch
+  across midnight is one row in lists of days. Test: `tests/unit/homeGrid.test.ts`, "antenna
+  rows". Not changed: where on the 1.6 to 9 km stretch you are put (its middle).
 
 ### 5. A low moon looks like the sun. Medium, and on the first screen. Verified.
 
@@ -155,6 +185,11 @@ or inferred.
   moon takes the horizon's colour as the sun does).
 - Fix: keep the moon's own mark in small sizes whatever its altitude: the dark limb or the
   phase, a cool rim. Colour it warm only in the rendered frame.
+- **Fixed on 2026-11-24** in `src/miniature/bodies.js` (`moonFragment`, `drawMoon`), so every
+  place that shows a moon has it: a wider dark limb, seas on the lit face, and a rim in the
+  high moon's cool glow. The face's colour is still `moonLook`'s for its altitude. Sun and
+  moon side by side at 0 to 5 degrees, 16 and 32 px, light and dark, before and after:
+  `docs/images/sun-moon-low-2026-11-24.png`. Test: `tests/unit/miniatureIcons.test.ts`.
 
 ### 6. `/map` and `/plan/` name different tower shots for the same day. Medium. Verified from the pages' text.
 
@@ -180,6 +215,11 @@ or inferred.
   reads the tower status only), `src/miniature/eclipse.js`.
 - Fix: put the shot's kind and name in the address, rebuild the ticket from it, and title the
   calendar entry "Moon down Weserstraße, 7:33".
+- **Fixed on 2026-11-24** (`link.js`, `share.js`, `daylist.js`): the address carries
+  `shot=street-moon:Weserstraße&here=1` while a shot's card is on the ticket; a reload or a
+  shared link shows the card again at the same spot; the link and the calendar entry are titled
+  with the shot and its time. Not changed: the status line under a street shot still speaks of
+  the tower, and the calendar entry still starts 20 minutes early (on purpose: be there first).
 
 ### 8. Switches you forgot make the app say nothing lines up. Medium. Verified.
 
@@ -192,6 +232,10 @@ or inferred.
 - File: `src/miniature/daylist.js` (`emptyDay` only names the switches when both of a pair are
   off), `src/miniature/planmode.js`, `src/miniature/chrome.js` (layers kept in `localStorage`).
 - Fix: when any switch is off and the list is empty, say which, with a button to show all.
+- **Fixed on 2026-11-24** (`daylist.js` `emptyNote`, `chrome.js` `switchedOff`): an empty list
+  with any switch off says "No shots to show with Sun and Streets switched off" with a "Show
+  all shots" button, in the day view, the day list and the three-day list; the peek line says
+  "No shots to show: … switched off".
 
 ### 9. At eye level the browser's back button leaves the planner, and Escape does nothing. Medium. Verified.
 
@@ -202,6 +246,10 @@ or inferred.
 - File: `src/miniature/eyeLevel.js` (`enterEye` pushes no history entry), `src/miniature/sheet.js`.
 - Fix: push a history entry on entering eye level; Escape and back both return to the map; move
   focus to the ticket.
+- **Fixed on 2026-11-24** (`sheet.js`): eye level is its own history entry. Re-run with the
+  keyboard: Enter on a row opens the shot with the focus on "Map"; Escape returns to the map;
+  the browser's back returns to the map; the "Map" button returns and a further back leaves the
+  planner. Moving the map itself with keys is not added.
 
 ### 10. On a phone the map shows a time nobody states. Medium. Verified.
 
@@ -213,6 +261,10 @@ or inferred.
   `src/miniature/overlay.js`, `src/miniature/chrome.js`.
 - Fix: open at the present minute (or at the next shot), and put the time on the pill:
   "Sun 0° up · 4:00 PM".
+- **Fixed on 2026-11-24** (`clock.js`, `overlay.js`): without a time in the address, today
+  opens at the present minute (checked: 09:11 gave minute 551), another day at 16:00, and the
+  map's first pill carries the time. The grey of "Clouds on the map" on an overcast day is
+  unchanged.
 
 ### 11. A bad date in the address leaves an empty page for good. Low to medium. Verified.
 
@@ -223,6 +275,8 @@ or inferred.
 - File: `src/miniature/clock.js` (`dateInput.value = startAt`), `src/miniature/link.js`.
 - Fix: fall back to today when the date does not parse; say "This link's spot is outside the
   model" for a dropped `at`.
+- **Fixed on 2026-11-24** for the date (`berlinClock.js` `startDate`, tested): `?date=garbage`
+  opens today and the page builds. A dropped `at` is still dropped without a word.
 
 ### 12. Small phones: the picture at eye level shrinks to a stamp. Medium on 320 px, low on 390. Verified.
 
@@ -241,16 +295,16 @@ or inferred.
 | | Finding | State | File |
 |---|---|---|---|
 | a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | suspected `landmarks.js` or `moleculeManShape.js`; find the geometry with NaN positions |
-| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight) | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
+| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute (not re-run with a faked clock) | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
 | c | A failed forecast is not asked for again within 65 s and has no "try again" | verified, 3 requests then none | `weather.js`, `forecast.js` |
 | d | "+ 1 min" at 11:59 PM does nothing and is not disabled; typing "24:00" gives 11:59 PM; "noon" is ignored | verified | `dayview.js`, `time.js` |
-| e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back | verified, `edges.json` | `link.js` list of kept options |
+| e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back. **Fixed on 2026-11-24** (`link.js` keeps it) | verified, `edges.json` | `link.js` list of kept options |
 | f | "Next 3 days" lists a day's shots out of time order (tomorrow: 4:20 PM, 8:54 AM, 8:00 AM) with no word on why | verified | `planmode.js` |
 | g | Times are 12-hour in `/plan/` and on the landing page with an English device, 24-hour in `/map`, UTC in `/classic` | verified | `time.js`, `daily/`, `ControlPanel.tsx` |
 | h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro` |
 | i | The landing page's hero clip still shows the old small triangle arrow and old pills | verified, `views-home-desktop-dark.png` | `public/media`, re-record with `record_clips.mjs` |
 | j | `/classic` at 390 px: panels overlap and are cut off | verified, `views-classic-phone-light.png` | `src/styles/global.css` |
-| k | Server addresses in a public repository (already on `main`) | verified by grep | `src/miniature/README.md:20`, `docs/HANDOFF-2026-11-08.md:20`, `scripts/README.md:321`, `scripts/sync_tiles_hetzner.sh:23` |
+| k | Server addresses in a public repository (already on `main`). **Fixed on 2026-11-24** in the four files: a placeholder in the notes, and `sync_tiles_hetzner.sh` now requires `PLASTERVOID_HOST` from the environment. Git history still holds the address; it was not rewritten | verified by grep | `src/miniature/README.md:20`, `docs/HANDOFF-2026-11-08.md:20`, `scripts/README.md:321`, `scripts/sync_tiles_hetzner.sh:23` |
 
 ## The five use cases
 

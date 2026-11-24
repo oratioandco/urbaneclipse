@@ -59,7 +59,7 @@ export const worthTaking = (rated) => rated.verdict?.grade !== 'poor';
  */
 export function groupDay(day, shots, rate, now) {
   const all = shots
-    .filter((shot) => shot.t > now && shot.t >= day.from && shot.t < day.to)
+    .filter((shot) => (shot.until ?? shot.t) > now && shot.t >= day.from && shot.t < day.to)
     .sort((a, b) => a.t - b.t)
     .map((shot) => ({ shot, verdict: rate(shot) }));
   const worth = all.filter(worthTaking);

@@ -156,6 +156,16 @@ new MutationObserver(() => {
 tiltButton.addEventListener('click', () => orbitTo(controls.getPolarAngle() < 0.2 ? THREE.MathUtils.degToRad(55) : 0, null));
 
 /** The list's filters are the map's layers, so both always agree. */
+/** Which of the four shot switches (sun, moon, tower, streets) are off, as words: "Sun and Streets". */
+export function switchedOff() {
+  const off = [['sun', 'Sun'], ['moon', 'Moon'], ['tower', 'Tower'], ['streets', 'Streets']].filter(([key]) => layers[key] === false).map(([, word]) => word);
+  return off.length < 3 ? off.join(' and ') : `${off.slice(0, -1).join(', ')} and ${off[off.length - 1]}`;
+}
+/** Switch all four back on. */
+export function showAllShots() {
+  for (const name of ['sun', 'moon', 'tower', 'streets']) if (layers[name] === false) setLayer(name, true);
+}
+
 function setLayer(name, on) {
   layers[name] = on;
   try {

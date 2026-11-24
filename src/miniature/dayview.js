@@ -17,7 +17,7 @@ import { skyPalette } from '../lib/skyPalette.ts';
 import { dateInput, dayEnd, dayStart, instantOfMinute, minuteOf } from './clock.js';
 import { phaseStops } from './dayMath.js';
 import { bodyIcon } from './bodyAt.js';
-import { currentRows, dayVerdict, emptyDay, markKind, openShot, showVerdict } from './daylist.js';
+import { currentRows, dayVerdict, emptyNote, markKind, openShot, showVerdict } from './daylist.js';
 import { icon } from './icons.js';
 import { MARK_NAMES, markBody } from './marks.js';
 import { shotCard } from './shotCard.js';
@@ -190,7 +190,7 @@ function drawShots() {
   const now = Date.now();
   const isToday = now >= drawn.from && now < dayEnd();
   if (!rows.length) {
-    const note = Object.assign(document.createElement('p'), { className: 'muted', textContent: app.dayReady ? emptyDay() : 'Working out the day…' });
+    const note = app.dayReady ? emptyNote() : Object.assign(document.createElement('p'), { className: 'muted', textContent: 'Working out the day…' });
     shotsRow.replaceChildren(note);
     shotsRow.dataset.scrolls = 'false';
     shotsCount.textContent = '';

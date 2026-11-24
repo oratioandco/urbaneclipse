@@ -1,6 +1,6 @@
 /** The moment: the day and time inputs, and turning them into instants in Berlin time. */
 import { formatDay, formatMinutes, parseTime, uses12h } from './time.js';
-import { berlinDayEnd, berlinDayStart, isLaterReading, isSkipped, wallMinutesOf, wallToInstant } from './berlinClock.js';
+import { startDate, berlinDayEnd, berlinDayStart, isLaterReading, isSkipped, wallMinutesOf, wallToInstant } from './berlinClock.js';
 import { params } from './config.js';
 import { updateSun } from './lighting.js';
 import { PHASE_COLOURS, updateDay } from './plan.js';
@@ -126,11 +126,18 @@ export function showPhases() {
   timeInput.style.setProperty('--phases', stops.map((s) => `${PHASE_COLOURS[s.phase]} ${(s.at * 100).toFixed(1)}%`).join(','));
 }
 
-const startAt = params.get('date') ?? new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
-dateInput.value = startAt;
-timeInput.value = params.get('time') ?? '960';
-skipMissingHour();
 const todayInBerlin = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
+// A date in the address that is no date (?date=garbage, 30 February) is today: it used to
+// leave the page building for ever.
+const asked = params.get('date') ?? '';
+const startAt = startDate(asked, todayInBerlin());
+dateInput.value = startAt;
+// Without a time in the address, today opens at the present minute and another day at 16:00:
+// the map then shows a time the visitor already knows.
+timeInput.value = params.get('time') ?? (startAt === todayInBerlin() ? String(Math.floor(wallMinutesOf(startAt, Date.now()))) : '960');
+skipMissingHour();
+// "Today" is the day's name only until midnight: keep the label honest under an open page.
+setInterval(() => showDay(), 60_000);
 function showDay() {
   const [y, m, d] = dateInput.value.split('-').map(Number);
   const isToday = dateInput.value === todayInBerlin();

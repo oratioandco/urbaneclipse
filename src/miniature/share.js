@@ -6,6 +6,7 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { compassName, latLonFromScene } from './eye.js';
 import { formatClock, formatDay } from './time.js';
 import { instant } from './clock.js';
+import { ticketShotRow } from './daylist.js';
 import { look } from './eyeLevel.js';
 
 const button = document.getElementById('share');
@@ -34,6 +35,10 @@ const spot = () => {
 
 /** What the moment is: the eye-level line when something lines up, else just the view. */
 function title() {
+  // The shot this view was opened for names the link and the calendar entry, with its time:
+  // the entry itself starts early, to be there in time.
+  const shot = ticketShotRow();
+  if (shot) return `${shot.title}, ${formatClock(shot.t)}`;
   const status = document.getElementById('eclipse');
   if (status.dataset.state === 'now') return status.textContent.replace(/ now$/, '');
   return `Photo facing ${compassName(look.heading)}`;

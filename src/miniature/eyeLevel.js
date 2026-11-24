@@ -6,7 +6,7 @@ import { orbitTo } from './camera.js';
 import { instant } from './clock.js';
 import { showViewHere } from './pointer.js';
 import { FOV, controls, eyeCamera, overview, renderer } from './render.js';
-import { sightline } from './sightlines.js';
+import { deckAt, sightline, standLift } from './sightlines.js';
 import { app, invalidate, invalidateShadows, smooth } from './state.js';
 import { nudgeKeys, showFlight } from './walk.js';
 import { DISC_DEG, SPHERE_CENTRE_AGL, SPHERE_RADIUS_M } from './towerShots.js';
@@ -63,7 +63,9 @@ function openView(x, z, view) {
 
 export function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   const y = app.groundAt(x, z);
-  Object.assign(look, { x, y, z, lift: 0, mode: 'walk', ...view, active: false });
+  // On a bridge one stands on its deck, which the model draws above the terrain: `lift` is
+  // the deck's height over it (sightlines.js `deckAt`).
+  Object.assign(look, { x, y, z, lift: standLift(x, z), mode: 'walk', ...view, active: false });
   app.liftAnimation = null;
   app.photographer = { x, y, z, heading: look.heading };
   app.orbitAnimation = null;
@@ -188,7 +190,7 @@ export function updateEyeBar() {
   facingLabel.textContent = `Facing ${compassName(heading)} ${Math.round(heading)}\u00b0`;
   const lift = look.lift ?? 0;
   if (look.mode === 'drone') facingLabel.textContent += ` \u00b7 ${Math.round(lift)} m up`;
-  else if (lift >= 1) facingLabel.textContent += ` \u00b7 on a roof, ${Math.round(lift)} m up`;
+  else if (lift >= 1) facingLabel.textContent += deckAt(look.x, look.z) !== null ? ' \u00b7 on a bridge' : ` \u00b7 on a roof, ${Math.round(lift)} m up`;
   renderHorizon();
 }
 // The horizon strip turns to a tapped sun, moon or tower.

@@ -147,8 +147,9 @@ export const PASSED = { grade: 'past', word: 'Passed', reason: '', label: 'Passe
  * or which kind of no-forecast it is (`missing`). `body` and `distanceM` are the shot's: which
  * disc, and how far away the landmark stands.
  */
-export function shotVerdict(day, from, t, { body = 'sun', distanceM = null, now = null, missing } = {}) {
-  if (now !== null && t < now) return PASSED;
+export function shotVerdict(day, from, t, { body = 'sun', distanceM = null, now = null, until = t, missing } = {}) {
+  // A shot with a stretch (`until`: moonrise on the antenna lasts an hour) has passed at its end.
+  if (now !== null && Math.max(t, until) < now) return PASSED;
   return verdict(day ? shotSky(day, from, t, { body, distanceM }) : null, missing);
 }
 

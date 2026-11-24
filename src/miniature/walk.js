@@ -4,7 +4,7 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { camera as cameraFormat, EYE_HEIGHT, sceneFromLatLon, setFormat, setLens } from './eye.js';
 import { applyControl } from './chrome.js';
 import { look, updateEyeBar } from './eyeLevel.js';
-import { roofAt } from './sightlines.js';
+import { deckAt, roofAt } from './sightlines.js';
 import { app, invalidate, smooth } from './state.js';
 
 const WALK_MPS = 14;
@@ -181,7 +181,8 @@ heightInput.addEventListener('input', () => {
 });
 
 /** Somewhere you can be: open ground, or anywhere above the roofs once you have risen. */
-const passable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && roofAt(x, z) < app.groundAt(x, z) + EYE_HEIGHT + (look.lift ?? 0) - 0.5;
+// A bridge's deck is walked onto from the street that runs over it.
+const passable = (x, z) => Math.abs(x) < 9300 && Math.abs(z) < 9300 && (roofAt(x, z) < app.groundAt(x, z) + EYE_HEIGHT + (look.lift ?? 0) - 0.5 || (look.mode !== 'drone' && deckAt(x, z) !== null));
 
 export function stepWalk(now) {
   const dt = Math.min(0.1, (now - lastStep) / 1000);
@@ -219,7 +220,7 @@ export function stepWalk(now) {
   if (look.mode !== 'drone') {
     // On foot on a roof: stay on it, and step down where it ends.
     const below = floorUnder(look.x, look.z);
-    look.lift = below <= (look.lift ?? 0) + 0.6 ? below : look.lift ?? 0;
+    look.lift = below <= (look.lift ?? 0) + 0.6 || deckAt(look.x, look.z) !== null ? below : look.lift ?? 0;
   } else showFlight();
   app.photographer.x = look.x;
   app.photographer.z = look.z;

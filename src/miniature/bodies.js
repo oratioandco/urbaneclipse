@@ -97,19 +97,45 @@ export function moonFragment(cx, cy, r, { fraction = 1, waxing = true, altitudeD
       `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(reach)}" fill="url(#${id}g)"/>`
     : '';
   const turn = rotateDeg ? ` rotate(${round(rotateDeg)})` : '';
+  const place = `translate(${round(cx)} ${round(cy)})${turn} scale(${round(r * MOON_LIT)})`;
+  // The seas: on the lit face only, in the dark body's own colour.
+  const seas =
+    lit > 0.005
+      ? `<defs><clipPath id="${id}c"><path d="${litDiscPath(lit, waxing)}"/></clipPath></defs>` +
+        `<g transform="${place}" clip-path="url(#${id}c)" fill="${MOON_DARK}" fill-opacity="${SEA_OPACITY}">${MOON_SEAS.map(([x, y, sr]) => `<circle cx="${x}" cy="${y}" r="${sr}"/>`).join('')}</g>`
+      : '';
   return (
     halo +
     `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r)}" fill="${MOON_DARK}"/>` +
-    (lit > 0.005 ? `<path d="${litDiscPath(lit, waxing)}" transform="translate(${round(cx)} ${round(cy)})${turn} scale(${round(r * MOON_LIT)})" fill="${cssRgb(look.core)}"/>` : '') +
-    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r * (1 - RIM / 2))}" fill="none" stroke="${cssRgb(look.glow)}" stroke-opacity="${RIM_OPACITY}" stroke-width="${round(r * RIM)}"/>`
+    (lit > 0.005 ? `<path d="${litDiscPath(lit, waxing)}" transform="${place}" fill="${cssRgb(look.core)}"/>` : '') +
+    seas +
+    `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(r * (1 - RIM / 2))}" fill="none" stroke="${cssRgb(moonRim(sunAltitudeDeg, lit))}" stroke-opacity="${RIM_OPACITY}" stroke-width="${round(r * RIM)}"/>`
   );
 }
-/** The moon's rim, as a share of the radius: it keeps a new moon findable on the dark surface. */
-const RIM = 0.06;
-/** The lit part stops short of the edge, so a ring of the dark body always shows: that ring is
- * what tells a low, warm, nearly full moon from a low sun. */
-const MOON_LIT = 0.86;
-const RIM_OPACITY = 0.6;
+// What makes the moon the moon at every altitude and size (adversarial test 2026-11, finding 5:
+// low on the horizon its lit face takes the horizon's warmth, as the real one does, and a
+// peach disc with a hairline round it read as the sun). The colour still comes from
+// `moonLook`; these three marks are the moon's own, and the sun has none of them:
+//   the dark limb   the lit part stops well short of the edge, so a ring of the dark body shows
+//   the seas        dark patches on the lit face, where the eye knows them from the real moon
+//   the cool rim    a rim in the high moon's own glow, whatever warmth the horizon lends the face
+/** The moon's rim, as a share of the radius: it also keeps a new moon findable on the dark surface. */
+const RIM = 0.09;
+/** The lit part's radius, as a share of the disc's. */
+const MOON_LIT = 0.78;
+const RIM_OPACITY = 0.9;
+/** The seas, in units of the lit radius: x, y, radius. Roughly Imbrium, Serenitatis and
+ * Tranquillitatis, Nubium and Humorum, Crisium: the pattern, not a map. */
+export const MOON_SEAS = [
+  [-0.3, -0.34, 0.3],
+  [0.22, -0.3, 0.24],
+  [0.36, 0.06, 0.2],
+  [-0.22, 0.34, 0.26],
+  [0.66, -0.3, 0.11],
+];
+const SEA_OPACITY = 0.3;
+/** The rim's colour: the glow `moonLook` gives a moon high in that sky, where it is the moon's own blue. */
+const moonRim = (sunAltitudeDeg, lit) => moonLook(90, sunAltitudeDeg, lit).glow;
 
 function wrap(inner, size, label, className) {
   const a11y = label ? `role="img" aria-label="${escapeText(label)}"` : 'aria-hidden="true"';
@@ -190,10 +216,20 @@ export function drawMoon(ctx, x, y, radius, { fraction = 1, waxing = true, altit
     if (rotateDeg) ctx.rotate((rotateDeg * Math.PI) / 180);
     ctx.scale(radius * MOON_LIT, radius * MOON_LIT);
     ctx.fillStyle = cssRgb(look.core);
-    ctx.fill(new Path2D(litDiscPath(lit, waxing)));
+    const face = new Path2D(litDiscPath(lit, waxing));
+    ctx.fill(face);
+    // The seas, on the lit face only.
+    ctx.clip(face);
+    ctx.fillStyle = MOON_DARK;
+    ctx.globalAlpha *= SEA_OPACITY;
+    for (const [sx, sy, sr] of MOON_SEAS) {
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
-  ctx.strokeStyle = rgba(look.glow, RIM_OPACITY);
+  ctx.strokeStyle = rgba(moonRim(sunAltitudeDeg, lit), RIM_OPACITY);
   ctx.lineWidth = radius * RIM;
   ctx.beginPath();
   ctx.arc(x, y, radius * (1 - RIM / 2), 0, Math.PI * 2);

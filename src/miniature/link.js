@@ -7,8 +7,8 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { cityUniforms } from './shading.js';
 import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromLatLon } from './eye.js';
 import { dateInput, instant, setFine, timeInput } from './clock.js';
-import { findShot } from './dayShots.js';
-import { currentRows, dayVerdict, openShot } from './daylist.js';
+import { findShot, shotKey } from './dayShots.js';
+import { currentRows, dayVerdict, openShot, showTicket, ticketShotRow } from './daylist.js';
 import { getViewshed } from './plan.js';
 import { setPanelMode } from './planmode.js';
 import { params } from './config.js';
@@ -31,10 +31,17 @@ function linkQuery() {
     q.set('lens', String(Math.round(look.lens)));
     q.set('cam', cameraFormat.format.id);
     if (look.mode === 'drone') q.set('fly', String(Math.round(look.lift ?? 0)));
+    // Which shot this view was opened for, so a reload or a shared link shows its card again.
+    // `here` says the spot in `at` is the one to stand on (it was searched for, or walked to).
+    const shot = ticketShotRow();
+    if (shot) {
+      q.set('shot', shotKey(shot));
+      q.set('here', '1');
+    }
   }
   // Developer options stay put.
-  for (const key of ['nointro', 'stats', 'shadow', 'budget', 'mirror', 'samples', 'blur']) if (params.has(key)) q.set(key, params.get(key));
-  return q.toString().replace(/%2C/g, ',').replace(/=(&|$)/g, '$1');
+  for (const key of ['nointro', 'stats', 'shadow', 'budget', 'mirror', 'samples', 'blur', 'glass']) if (params.has(key)) q.set(key, params.get(key));
+  return q.toString().replace(/%2C/g, ',').replace(/%3A/g, ':').replace(/=(&|$)/g, '$1');
 }
 export function syncLink(now) {
   if (now - lastLinkCheck < 400 || !window.__ready) return;
@@ -61,10 +68,19 @@ async function openLinkedShot(key) {
   return true;
 }
 
+/** The card of a link's shot on the ticket, once the day's rows are there; the view is the link's own. */
+async function nameLinkedShot(key) {
+  for (let i = 0; i < 40 && !(app.dayReady && getViewshed()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
+  const row = findShot(currentRows(), key, instant().getTime());
+  if (row) showTicket(row, dayVerdict(row));
+}
+
 /** Open the view a shared link names, once the city is there to stand in. */
 export async function openLinkedView() {
   const shot = params.get('shot');
-  if (shot && (await openLinkedShot(shot))) return;
+  // The planner's own links carry the spot it stood on (`here`): open there, and name the shot.
+  if (shot && !params.has('here') && (await openLinkedShot(shot))) return;
+  if (shot && params.has('here')) nameLinkedShot(shot);
   const at = params.get('at')?.split(',').map(Number);
   if (!at || at.length !== 2 || at.some((v) => !Number.isFinite(v))) return;
   const [x, z] = sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);

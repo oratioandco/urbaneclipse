@@ -48,8 +48,10 @@ The mapping table at the end of this note is kept as the record of what was repl
 
 The sun is a disc with a flat core to 65 % of its radius, falling to the limb colour, a rim
 and a halo in the glow colour. No rays. The moon is the dark disc `#20263a` with the lit part
-in `moonLook`'s tint, stopped short of the edge so a dark ring always shows: that ring is what
-separates a low, warm, nearly full moon from a low sun. All colours come from `sunLook` and
+in `moonLook`'s tint and three marks of its own, which the sun never has: the lit part stops
+well short of the edge, so a ring of the dark body shows; dark seas lie on the lit face; and
+the rim is the high moon's cool glow whatever warmth the horizon lends the face. Together they
+keep a low, warm, full moon from reading as a low sun at 16 px (added 2026-11-24). All colours come from `sunLook` and
 `moonLook` in `src/lib/mapBodyLook.ts`. The geometry is in units of the radius, so 12 px and
 96 px are the same drawing.
 
