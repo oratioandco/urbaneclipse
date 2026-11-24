@@ -20,7 +20,7 @@ import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js
 import { iconEl } from './icons.js';
 import { moonSvg } from './bodies.js';
 import { collectRows, emptyNote, openShot, renderDayList, shotRow } from './daylist.js';
-import { computeDayPaths, getViewshed } from './plan.js';
+import { computeDayPaths, getViewshed, landmarkShedCount } from './plan.js';
 import { renderPeek } from './peek.js';
 import { onPeek } from './sheet.js';
 import { renderSparkstrip } from './sparkstrip.js';
@@ -175,6 +175,8 @@ function rowsFor(from, now) {
     layers.streets ? 1 : 0,
     layers.sun ? 1 : 0,
     layers.moon ? 1 : 0,
+    layers.landmarks === false ? 0 : 1,
+    landmarkShedCount(),
   ].join('|');
   if (!rowsMemo.has(key)) {
     const views = app.views ?? [];

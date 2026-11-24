@@ -168,6 +168,18 @@ export async function goViewHere(target) {
     // Face the body: on a tower line it is behind some part of the tower, not always the sphere.
     enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
     setFine(true);
+  } else if (target.kind === 'landmark') {
+    // Behind the figure on a low landmark (the Viktoria, the quadriga): the alignment holds
+    // at one spot only, so the search stays within a few steps of it along the line through
+    // the landmark's axis, and the sight line is checked as far as the landmark.
+    const dx = target.x - target.axis.x;
+    const dz = target.z - target.axis.z;
+    const length = Math.hypot(dx, dz) || 1;
+    const keep = (x, z) => Math.hypot(x - target.x, z - target.z) <= 45;
+    const spot = await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x - target.axis.x, z - target.axis.z) - 40) }), keep);
+    if (!spot) return noClearView(target);
+    enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
+    setFine(true);
   } else if (target.kind === 'street') {
     const m = target.moment;
     const dx = m.view.b[0] - m.view.a[0];

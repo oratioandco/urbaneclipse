@@ -10,6 +10,7 @@
  * today, so further dates show their shots without a verdict.
  */
 import { loadStreets } from '../lib/streets.ts';
+import { FIGURE_TARGETS } from '../lib/landmarkStands.ts';
 import { loadViewshed } from '../lib/viewshed.ts';
 import { drawShotFrame, shotCard } from '../miniature/shotCard.js';
 import { formatClock } from '../miniature/time.js';
@@ -34,6 +35,7 @@ const state = {
   shots: new Map(), // date -> rows of dayShots
   forecasts: new Map(), // date -> the day's forecast, null (failed), or 'none' (out of reach)
   shed: undefined, // undefined while loading, null when it failed
+  sheds: {}, // the Siegessäule's and the Brandenburger Tor's viewsheds, by id; one that failed is absent
   views: undefined,
   showSkipped: false,
   hero: null,
@@ -186,7 +188,7 @@ async function computeShots() {
   state.days = threeDays(clock());
   let before = [];
   for (const day of state.days) {
-    const rows = dayShots(day.from, { shed: state.shed, views: state.views ?? [] });
+    const rows = dayShots(day.from, { shed: state.shed, views: state.views ?? [], sheds: state.sheds });
     state.shots.set(day.date, withoutContinued(rows, day.from, before));
     before = rows;
     await nextFrame();
@@ -196,9 +198,11 @@ async function computeShots() {
 /** The viewshed and the streets, then the shots. Either may fail without taking the other along. */
 async function loadCity() {
   root.dataset.state = 'loading';
-  const [shed, views] = await Promise.allSettled([loadViewshed(), loadStreets()]);
+  const [shed, views, ...landmarks] = await Promise.allSettled([loadViewshed(), loadStreets(), ...FIGURE_TARGETS.map((target) => loadViewshed(target.id))]);
   state.shed = shed.status === 'fulfilled' ? shed.value : null;
   state.views = views.status === 'fulfilled' ? views.value : null;
+  // A landmark whose viewshed did not load has no shots: unchecked ones are not offered.
+  state.sheds = Object.fromEntries(FIGURE_TARGETS.map((target, i) => [target.id, landmarks[i].status === 'fulfilled' ? landmarks[i].value : null]).filter(([, value]) => value));
   state.shots.clear();
   await computeShots();
   render();

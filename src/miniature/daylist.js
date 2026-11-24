@@ -8,7 +8,8 @@ import { cloudNote } from './forecast.js';
 import { forecastReach } from './weather.js';
 import { shotVerdict, verdict, verdictNote } from './verdict.js';
 import { dateInput } from './clock.js';
-import { toScene } from './plan.js';
+import { FIGURE_TARGETS } from '../lib/landmarkStands.ts';
+import { landmarkPassesFor, landmarkShedCount, toScene } from './plan.js';
 import { goViewHere } from './pointer.js';
 import { app, invalidate } from './state.js';
 
@@ -21,7 +22,15 @@ const dayList = document.getElementById('daylist');
  * moments, `from` the day's start; `flags` carry the tower, streets and moon switches.
  */
 export function collectRows(dayPaths, moments, from, flags = {}) {
-  const rows = collectShots(dayPaths.map((path) => path.source ?? path), moments, from, { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false });
+  // The Siegessäule's and the Brandenburger Tor's rows come with every list (plan.js keeps
+  // each day's passes); the Landmarks switch is theirs.
+  const rows = collectShots(
+    dayPaths.map((path) => path.source ?? path),
+    moments,
+    from,
+    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false },
+    landmarkPassesFor(from),
+  );
   for (const row of rows) row.go = () => goViewHere(flightTo(row));
   return rows;
 }
@@ -29,6 +38,12 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
 /** Where `goViewHere` starts its search for a clear view of a row's shot, in the scene. */
 function flightTo(row) {
   if (row.kind === 'street') return { kind: 'street', body: row.body, t: row.t, x: row.moment.view.a[0], z: row.moment.view.a[1], moment: row.moment };
+  if (row.target) {
+    // Behind a figure on the Siegessäule or the Brandenburger Tor: the one spot it lines up
+    // from at that minute, and the landmark's axis, which the sight line is checked up to.
+    const landmark = FIGURE_TARGETS.find((target) => target.id === row.target).landmark;
+    return { kind: 'landmark', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }), axis: toScene(landmark), lens: row.lens };
+  }
   if (row.where === 'antenna') {
     // The middle of the antenna stretch; the search finds a clear view near it.
     const a = (row.standBearingDeg * Math.PI) / 180;
@@ -40,7 +55,7 @@ function flightTo(row) {
 /** The chosen day's rows, collected once per day, data and layer state. */
 let rowsMemo = { key: null, rows: [] };
 export function currentRows() {
-  const key = [dayStart(), layers.tower, layers.streets, layers.sun, layers.moon].join('|');
+  const key = [dayStart(), layers.tower, layers.streets, layers.sun, layers.moon, layers.landmarks, landmarkShedCount()].join('|');
   if (rowsMemo.key !== key || rowsMemo.paths !== app.dayPaths || rowsMemo.moments !== app.moments) {
     rowsMemo = {
       key,

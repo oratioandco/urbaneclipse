@@ -350,6 +350,9 @@
       #dayfilter button, .plan-filter button { height: var(--control-s); padding: 0 12px; border: 1px solid var(--line); border-radius: calc(var(--control-s) / 2); background: none; font-size: var(--text-s); font-weight: 600; color: var(--muted); cursor: pointer; }
       #dayfilter button[aria-pressed='true'], .plan-filter button[aria-pressed='true'] { background: var(--field); color: var(--ink); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
       #dayfilter .sep { width: 1px; height: 18px; background: var(--line); }
+      /* Five switches (Sun, Moon, Tower, Landmarks, Streets) on one line of the side panel. */
+      #dayfilter { gap: 5px; }
+      #dayfilter button { padding: 0 9px; }
       #daylist, #plancards { display: grid; margin: 0 -6px; }
       #daylist > p, #plancards > p { margin: 4px 6px; }
       .shots-row:has(> p) { min-height: 40px; }

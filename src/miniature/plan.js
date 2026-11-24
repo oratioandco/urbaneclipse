@@ -12,7 +12,8 @@ import { sceneFromLatLon } from './eye.js';
 import { antennaRange } from './towerShots.js';
 import { layers, shownBody } from './chrome.js';
 import { dayEnd, dayStart, instant, showPhases } from './clock.js';
-import { computeDayPaths as towerPaths } from './dayShots.js';
+import { FIGURE_TARGETS } from '../lib/landmarkStands.ts';
+import { computeDayPaths as towerPaths, computeLandmarkPasses } from './dayShots.js';
 import { renderDayList } from './daylist.js';
 import { renderDayView } from './dayview.js';
 import { renderPlanCards } from './planmode.js';
@@ -143,6 +144,38 @@ export function updateTracks() {
 }
 
 export const PHASE_COLOURS = { night: '#1b2140', twilight: '#2f3a6e', blue: '#3f62b5', golden: '#f0a03c', day: '#f3e6c4' };
+
+// The Siegessäule's and the Brandenburger Tor's viewsheds, by landmark id, and each day's
+// passes behind their figures (dayShots.js): the rows of daylist.js are read from these.
+// Without a landmark's viewshed it has no rows, as with the tower.
+const landmarkSheds = {};
+let landmarkShedsSettled = false;
+/** Whether the landmarks' viewsheds have loaded or failed: a link's shot can be looked for. */
+export const landmarksSettled = () => landmarkShedsSettled;
+const passesMemo = new Map();
+/** How many of the landmarks' viewsheds are in: part of what a list of rows was made from. */
+export const landmarkShedCount = () => Object.keys(landmarkSheds).length;
+export function landmarkPassesFor(from) {
+  const key = `${from}|${landmarkShedCount()}`;
+  if (!passesMemo.has(key)) {
+    if (passesMemo.size > 12) passesMemo.clear();
+    passesMemo.set(key, computeLandmarkPasses(from, landmarkSheds));
+  }
+  return passesMemo.get(key);
+}
+Promise.allSettled(
+  FIGURE_TARGETS.map(({ id }) =>
+    loadViewshed(id).then(
+      (shed) => (landmarkSheds[id] = shed),
+      (error) => console.error(`[miniature] ${id} visibility data failed`, error),
+    ),
+  ),
+).then(() => {
+  landmarkShedsSettled = true;
+  if (!landmarkShedCount()) return;
+  if (dayPlanned) buildPaths();
+  invalidate();
+});
 
 // Safari drops a request now and then while the first load is busy; try again a few times.
 function loadVisibility(attempt = 0) {

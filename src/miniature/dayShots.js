@@ -4,8 +4,10 @@
  * home page loads it without the planner and Node can test it.
  *
  *   computeDayPaths(from, shed)            the day's tower paths, checked against the buildings
- *   collectRows(paths, moments, from, f)   every shot of the day, in time order
- *   dayShots(from, { shed, views })       both in one call, from the city data alone
+ *   computeLandmarkPasses(from, sheds)     the day's passes behind the Siegessäule's Viktoria and
+ *                                          the Brandenburger Tor's quadriga (landmarkShots.js)
+ *   collectRows(paths, moments, from, f, passes)   every shot of the day, in time order
+ *   dayShots(from, { shed, views, sheds })   all of it in one call, from the city data alone
  *   withoutContinued(rows, from, before)   a list of days side by side: drop a midnight repeat
  *   shotKey(row), findShot(rows, key, t)   a shot's name in a link, and the row it names
  *
@@ -24,7 +26,10 @@ import { streetMoments } from '../lib/streets.ts';
 import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
 import { formatClock } from './time.js';
+import { computeLandmarkPasses, landmarkRows } from './landmarkShots.js';
 import { alignmentMinute, discOverSphere, EYE_HEIGHT, SPHERE_TOP_AGL, TIP_AGL, visibleMoon } from './towerShots.js';
+
+export { computeLandmarkPasses };
 
 export const BODY_NAME = { sun: 'Sun', moon: 'Moon' };
 const rad = (d) => (d * Math.PI) / 180;
@@ -47,15 +52,17 @@ export function computeDayPaths(from, shed = null) {
 
 /**
  * Every chance of a day, in time order: the sun or moon behind the tower's sphere, moonrise
- * and moonset behind the antenna, and street henges. `paths` are `computeDayPaths`'s,
- * `moments` the day's street moments (`streetMoments`, src/lib/streets.ts), `from` the day's
- * start. `flags` switch kinds and bodies off (`tower`, `streets`, `sun`, `moon`; all on by
- * default). Each row carries a spectacle score, so a list can rank the big moon over a short
- * henge; a short name (the place); the shot in a few words (`brief`); and for tower rows where
- * to stand (`stand`), which is all that tells two of them apart.
+ * and moonset behind the antenna, the sun or moon behind the figures on the Siegessäule and
+ * the Brandenburger Tor, and street henges. `paths` are `computeDayPaths`'s, `moments` the
+ * day's street moments (`streetMoments`, src/lib/streets.ts), `from` the day's start, `passes`
+ * `computeLandmarkPasses`'s. `flags` switch kinds and bodies off (`tower`, `landmarks`,
+ * `streets`, `sun`, `moon`; all on by default). Each row carries a spectacle score, so a list
+ * can rank the big moon over a short henge; a short name (the place); the shot in a few words
+ * (`brief`); and for tower and landmark rows where to stand (`stand`), which is all that tells
+ * two of them apart.
  */
-export function collectRows(paths, moments, from, flags = {}) {
-  const { tower = true, streets = true, sun = true, moon = true } = flags;
+export function collectRows(paths, moments, from, flags = {}, passes = []) {
+  const { tower = true, streets = true, sun = true, moon = true, landmarks = true } = flags;
   const shown = (item) => (item.body === 'moon' ? moon : sun);
   const rows = [];
   if (tower) {
@@ -159,6 +166,9 @@ export function collectRows(paths, moments, from, flags = {}) {
       }
     }
   }
+  // The sun or moon behind the Viktoria and the quadriga: rows of the tower's kind with their
+  // own landmark, so every list, card and link takes them as it takes the tower's.
+  if (landmarks) rows.push(...landmarkRows(passes, { sun, moon }));
   if (streets) {
     const seen = new Set();
     // The longest views are the ones worth a trip; the rest still show on the map and slider.
@@ -204,7 +214,8 @@ export function withoutContinued(rows, from, dayBefore = []) {
 
 /**
  * A shot's name in a link (`?shot=`): which kind and body, and for a street its name.
- * "sphere-sun", "sphere-moon", "antenna-moon", "street-sun:Sonnenallee".
+ * "sphere-sun", "sphere-moon", "antenna-moon", "viktoria-sun", "quadriga-moon",
+ * "street-sun:Sonnenallee".
  */
 export const shotKey = (row) => (row.kind === 'street' ? `street-${row.body}:${row.short}` : `${row.where ?? 'sphere'}-${row.body}`);
 
@@ -225,12 +236,13 @@ export function findShot(rows, key, t) {
 
 /**
  * Every shot of the day that starts at `from`, from the city data alone: `shed` is the tower's
- * viewshed (src/lib/viewshed.ts), `views` the street views (src/lib/streets.ts). Without a
- * viewshed nothing says where the tower can be seen from, so no sphere rows are given: an
- * unchecked standing point is not offered as a shot.
+ * viewshed (src/lib/viewshed.ts), `views` the street views (src/lib/streets.ts), `sheds` the
+ * other landmarks' viewsheds by id (`siegessaeule`, `brandenburger-tor`). Without a viewshed
+ * nothing says where a landmark can be seen from, so no rows are given for it: an unchecked
+ * standing point is not offered as a shot.
  */
-export function dayShots(from, { shed = null, views = [] } = {}) {
+export function dayShots(from, { shed = null, views = [], sheds = {} } = {}) {
   const to = dayEndOf(from);
   const moments = [...streetMoments(views, 'sun', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon), ...streetMoments(views, 'moon', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon)];
-  return collectRows(shed ? computeDayPaths(from, shed) : [], moments, from);
+  return collectRows(shed ? computeDayPaths(from, shed) : [], moments, from, {}, computeLandmarkPasses(from, sheds));
 }
