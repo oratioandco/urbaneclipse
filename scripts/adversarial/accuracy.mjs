@@ -99,17 +99,14 @@ if ((await page.getAttribute('#ticket-more', 'aria-expanded')) !== 'true') await
 await page.click('#dates-toggle');
 await page.waitForFunction(() => document.querySelector('#dates h3') && !document.getElementById('dates').innerText.includes('Searching'), null, { timeout: 180_000 });
 await page.waitForTimeout(2000);
-const sections = await page.$$eval('#dates section', (boxes) =>
-  boxes.map((box) => ({
-    heading: box.querySelector('h3').innerText,
-    notes: [...box.querySelectorAll('p')].map((p) => p.innerText),
-    rows: [...box.querySelectorAll('.dayrow')].map((r) => ({ body: r.dataset.body, title: r.querySelector('b').innerText, detail: r.querySelector('small').innerText })),
-  })),
-);
+// The year's rows are shot cards (fromHereView.js); each says which search found it (data-heading).
+const listed = await page.$$eval('#dates .shotcard--row', (rows) => rows.map((r) => ({ body: r.dataset.body, heading: r.dataset.heading, title: r.querySelector('.sc-title').innerText, detail: r.querySelector('.sc-detail').innerText })));
+const notes = await page.$$eval('#dates .fh-notes p', (ps) => ps.map((p) => p.innerText));
+const sections = [...new Set(listed.map((r) => r.heading))].map((heading) => ({ heading, notes, rows: listed.filter((r) => r.heading === heading) }));
 out.datesSpot = (await shown()).at;
 out.sections = sections;
 await shot(page, 'accuracy-dates-list');
-const all = await page.$$eval('#dates .dayrow', (rows) => rows.map((r, index) => ({ index, body: r.dataset.body, title: r.querySelector('b').innerText, detail: r.querySelector('small').innerText, heading: r.closest('section').querySelector('h3').innerText })));
+const all = listed.map((r, index) => ({ index, ...r }));
 // Open: every row on a clock-change day, the first sun and first moon row, and the last row.
 const wanted = new Set();
 for (const r of all) if (/28 Mar|31 Oct/.test(r.title)) wanted.add(r.index);
@@ -123,7 +120,7 @@ for (const month of ['Jan', 'Apr', 'Jun', 'Sept', 'Sep', 'Nov 2027']) {
 }
 if (all.length) wanted.add(all.length - 1);
 for (const index of [...wanted].sort((a, b) => a - b)) {
-  await page.click(`#dates .dayrow >> nth=${index}`);
+  await page.click(`#dates .shotcard--row >> nth=${index}`);
   await page.waitForTimeout(2500);
   out.dates.push({ row: all[index], after: await shown() });
 }
