@@ -12,7 +12,7 @@
  *   byMonth(shots)                 the year list's groups
  *   rowWhen(when)                  a row's date under its month's name: without the year
  *   gatherNotes(groups)            what the search said beside its dates, said once
- *   countWords(n)                  "14 dates in the next twelve months"
+ *   countWords(n)                  "14 dates in 12 months"
  */
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
@@ -28,6 +28,8 @@ const RUN_MS = 21 * DAY_MS;
 /** With the sun this high the moon is a pale disc in a blue sky: less of a picture. */
 const PALE_MOON_SUN_DEG = 6;
 const PALE_MOON = 0.6;
+/** Days of one run follow each other this closely (a pass comes back a day later, a little changed). */
+const NEXT_DAY_MS = 1.5 * DAY_MS;
 /** A forecast that says Skip halves a shot's rank; one that says Go lifts it a little. */
 const WEATHER = { good: 1.1, fair: 0.9, poor: 0.5 };
 
@@ -140,7 +142,9 @@ export function rank(shot, now, grade = null) {
 
 /**
  * The shots worth a card: up to `max`, in time order. The next shot in time comes first when
- * it is decent (it scores `DECENT` or more and no forecast says Skip); the rest are the best by
+ * it is decent (it scores `DECENT` or more and no forecast says Skip), on the best of its days
+ * when it runs over several (the sun at the sphere's edge today is a ring round it tomorrow:
+ * the card is tomorrow's); the rest are the best by
  * `rank`, one of each kind (the same body at the same place) before a second of any: the moon
  * comes round every month and would otherwise take every card. A run of the same shot on
  * neighbouring days never gives two. `gradeOf` gives a shot's forecast grade ('good', 'fair',
@@ -150,9 +154,14 @@ export function highlights(shots, now, { max = 3, gradeOf = () => null } = {}) {
   const ahead = shots.filter((s) => (s.until ?? s.t) >= now).sort((a, b) => a.t - b.t);
   const chosen = [];
   const sameRun = (a, b) => a.series === b.series && Math.abs(a.t - b.t) < RUN_MS;
-  const next = ahead[0];
-  if (next && next.score >= DECENT && gradeOf(next) !== 'poor') chosen.push(next);
   const ranked = ahead.map((shot) => ({ shot, value: rank(shot, now, gradeOf(shot)) })).sort((a, b) => b.value - a.value || a.shot.t - b.shot.t);
+  const next = ahead[0];
+  if (next && next.score >= DECENT && gradeOf(next) !== 'poor') {
+    // The days that follow it without a gap are the same chance: its best day stands for it.
+    const run = [next];
+    for (const shot of ahead) if (shot.series === next.series && shot.t > run[run.length - 1].t && shot.t - run[run.length - 1].t <= NEXT_DAY_MS) run.push(shot);
+    chosen.push(ranked.find(({ shot }) => run.includes(shot)).shot);
+  }
   for (const again of [(c, shot) => c.series === shot.series, sameRun]) {
     for (const { shot } of ranked) {
       if (chosen.length >= max) break;
@@ -206,5 +215,5 @@ export function gatherNotes(groups) {
 /** How many dates the year holds, in words; `of` the number before the switches hid some. */
 export function countWords(n, of = n) {
   const dates = `${n} date${n === 1 ? '' : 's'}`;
-  return of > n ? `${dates} of ${of} shown` : `${dates} in the next twelve months`;
+  return of > n ? `${dates} of ${of} shown` : `${dates} in 12 months`;
 }

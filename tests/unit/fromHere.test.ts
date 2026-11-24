@@ -143,6 +143,16 @@ describe('from here: highlights', () => {
     const autumn = shot(190, 1.6, { kind: 'street', series: 'street|sun' });
     expect(highlights([...run, autumn], NOW)).toEqual([run[0], autumn]);
   });
+  it('shows the next chance on its best day', () => {
+    const edge = shot(10, 1, { series: 'fernsehturm|sun' });
+    const ring = shot(11, 1.8, { series: 'fernsehturm|sun' });
+    const after = shot(12, 1, { series: 'fernsehturm|sun' });
+    const later = shot(150, 1.8, { series: 'fernsehturm|sun' });
+    expect(highlights([edge, ring, after, later], NOW)).toEqual([ring, later]);
+    // A better day of the same kind a week on is another chance, not this one.
+    const week = shot(17, 1.8, { series: 'fernsehturm|sun' });
+    expect(highlights([edge, week], NOW)[0]).toBe(edge);
+  });
   it('shows one of each kind before a second of any', () => {
     const moons = [20, 50, 80, 110].map((d) => shot(d, 2, { body: 'moon', series: 'fernsehturm|moon' }));
     const sun = shot(130, 1.2, { series: 'fernsehturm|sun' });
@@ -208,8 +218,8 @@ describe('from here: what the search said', () => {
 
 describe('from here: the count in words', () => {
   it('says how many, and how many the switches hide', () => {
-    expect(countWords(1)).toBe('1 date in the next twelve months');
-    expect(countWords(14)).toBe('14 dates in the next twelve months');
+    expect(countWords(1)).toBe('1 date in 12 months');
+    expect(countWords(14)).toBe('14 dates in 12 months');
     expect(countWords(5, 14)).toBe('5 dates of 14 shown');
   });
 });
