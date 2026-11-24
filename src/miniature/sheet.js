@@ -6,6 +6,7 @@
  * The rules for the heights are in sheetHeights.js; this file is the wiring.
  */
 import { params } from './config.js';
+import './glass.js';
 import { controls } from './render.js';
 import { parseHeight, sheetSizes, snapHeight, stepDown, stepUp, tapHeight } from './sheetHeights.js';
 import { invalidate } from './state.js';

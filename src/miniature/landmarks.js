@@ -930,7 +930,9 @@ function cubeEdit(shader) {
         vec3 dir = reflect(-toEye, worldNormal);
         // The wall's direction, snapped to whole degrees exactly as the window grid does it.
         vec3 face = normalize(cross(dFdx(vRel), dFdy(vRel)));
-        float angle = atan(face.z, face.x);
+        // On the roof the face points straight up and has no direction: atan(0, 0) is not a
+        // number, and one such pixel, spread by the night's bloom, blacks out the whole view.
+        float angle = abs(face.x) + abs(face.z) > 1e-4 ? atan(face.z, face.x) : 0.0;
         angle = floor(angle / 0.017453 + 0.5) * 0.017453;
         vec2 facing = vec2(cos(angle), sin(angle));
         vec2 along = vec2(-facing.y, facing.x);

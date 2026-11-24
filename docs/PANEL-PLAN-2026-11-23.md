@@ -132,3 +132,20 @@ strip at 390 px (the spec's "five fit" was for icon cards; a frame needs the wid
 with the day view is 53 % of a 390 x 844 screen; the ticket is one line taller (17 %) when it was
 opened from a shot. The date list at eye level ("Dates") still uses plain rows with the body's
 disc: its entries are dates, mostly beyond the forecast, and were not asked for.
+
+## Glass, quality fixes and the Molecule Man (added 2026-11-24, same branch)
+
+- **Glass across the planner.** `.surface` is frosted glass (translucent paper over a blur of the
+  map, a lit top edge); the panel, layers menu, share menu and intro use a deeper pane, and the
+  controls inside are lighter panes. Measured on a desktop GPU with the scene redrawing every
+  frame: about 5% of frames dropped with the blur, none without. Hence the budget in `glass.js`
+  and `?glass=off`. Not measured on a phone.
+- **Landing page.** Header and ghost button in the same glass; dark theme in the planner's navy;
+  the three how-it-works stills re-shot from this build (they showed the old panel); step 1
+  describes the day view.
+- **Night map black on desktop (live site too).** The Cube's facade shader took `atan(0, 0)` on
+  its flat roof; the night's bloom spread that one bad pixel over the frame. Found by hiding
+  scene objects one at a time; fixed in `landmarks.js` (the Cube block).
+- **Molecule Man.** The Molecule Man session's two commits (rebuilt model, re-shot sprite) are
+  cherry-picked here; its notes and open points are in `src/miniature/moleculeManShape.js`.
+- **Not done:** `/map/` and `/classic` keep their older look (the spec lets them follow).

@@ -322,3 +322,32 @@ describe('the shot row', () => {
     expect(glideAt(800, 878, 999, 400)).toBe(878);
   });
 });
+
+import { parseGlass, roughStreak, slowShare, MIN_FRAMES, ROUGH_DRAGS } from '../../src/miniature/glassBudget.js';
+
+describe('glass budget', () => {
+  const smooth = Array(60).fill(16.7);
+  const rough = Array(60).fill(16.7).map((ms, i) => (i % 2 ? 33.4 : ms));
+  it('ignores a drag too short to judge', () => {
+    expect(slowShare(Array(MIN_FRAMES - 1).fill(50))).toBeNull();
+    expect(roughStreak(2, Array(5).fill(50))).toBe(2);
+  });
+  it('measures the share of slow frames', () => {
+    expect(slowShare(smooth)).toBe(0);
+    expect(slowShare(rough)).toBe(0.5);
+  });
+  it('drops the glass only after rough drags in a row', () => {
+    let streak = 0;
+    streak = roughStreak(streak, rough);
+    streak = roughStreak(streak, rough);
+    expect(streak).toBe(2);
+    expect(roughStreak(streak, smooth)).toBe(0);
+    expect(roughStreak(streak, rough)).toBe(ROUGH_DRAGS);
+  });
+  it('reads the option', () => {
+    expect(parseGlass('off')).toBe('off');
+    expect(parseGlass('0')).toBe('off');
+    expect(parseGlass(null)).toBe('on');
+    expect(parseGlass('on')).toBe('on');
+  });
+});
