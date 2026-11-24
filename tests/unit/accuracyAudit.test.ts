@@ -26,6 +26,9 @@ import { LICHTENBERGER_BRUECKE, STRASSE_DES_17_JUNI } from '../../src/lib/vantag
 import { FERNSEHTURM, SIEGESSAEULE } from '../../src/lib/landmarks';
 import { lightBands } from '../../src/lib/lightPhases';
 import { berlinDayBounds } from '../../src/lib/berlinTime';
+import { moonTimesBetween } from '../../src/lib/moonTimes';
+// @ts-expect-error plain JS module
+import { horizonAzimuths } from '../../src/miniature/weather.js';
 import { MIN_MOON_ILLUMINATION } from '../../src/lib/dailyPaths';
 // @ts-expect-error plain JS module
 import { TOWER_TARGET, bodyAgainstProfile, curvatureDropDeg, findShots, gridConvergenceDeg } from '../../src/miniature/towerShots.js';
@@ -179,15 +182,38 @@ describe('audit: street bearings are from true north', () => {
   });
 });
 
-describe('audit: known errors, not fixed here', () => {
-  it.fails('the moon header misses a moonrise between Berlin midnight and 01:00 (27 March 2027, 00:18)', () => {
-    // planmode.js asks suncalc for the day of Berlin noon; suncalc scans the UTC day, 01:00 to 01:00 in Berlin.
-    const day = ref.days.find((d) => d.day === '2027-03-27')!;
+describe('audit: the errors known in November 2026 (fixed since, bar the one marked)', () => {
+  it('moonrise and moonset of a Berlin day are all found, the 00:18 rise of 27 March 2027 included (fixed in lib/moonTimes.ts)', () => {
+    // suncalc scans the UTC day, 01:00 to 01:00 in Berlin: asked for Berlin noon it missed that
+    // rise, and on 14 January 2027 it reported a set that falls at 00:01 the next day.
+    for (const day of ref.days) {
+      const { start, end } = berlinDayBounds(day.day);
+      const inDay = (list: string[]) => list.map((x) => Date.parse(x)).filter((t) => t >= start.getTime() && t < end.getTime());
+      const mine = moonTimesBetween(start.getTime(), end.getTime(), ref.observer.lat, ref.observer.lon);
+      for (const [kind, theirs, found] of [['rise', inDay(day.moonrise), mine.rises], ['set', inDay(day.moonset), mine.sets]] as const) {
+        expect(found.length, `${kind} ${day.day}`).toBe(theirs.length);
+        // Measured: 2 to 5 s on all twelve days.
+        theirs.forEach((t, i) => expect(Math.abs(seconds(found[i]!, t)), `${kind} ${day.day}`).toBeLessThan(15));
+      }
+    }
     const { start, end } = berlinDayBounds('2027-03-27');
-    const rise = day.moonrise.map((r) => new Date(r)).find((r) => r >= new Date(start.getTime() - 3_600_000) && r < end);
-    expect(rise?.toISOString()).toBe('2027-03-26T23:18:49.000Z');
-    const shown = getMoonTimes(new Date(start.getTime() + 43_200_000), ref.observer.lat, ref.observer.lon);
-    expect(shown.rise).toBeDefined();
+    const march = moonTimesBetween(start.getTime(), end.getTime(), ref.observer.lat, ref.observer.lon);
+    expect(Math.abs(seconds(march.rise!, '2027-03-26T23:18:49Z'))).toBeLessThan(15);
+    // What the header did before, kept as the record of the defect.
+    expect(getMoonTimes(new Date(start.getTime() + 43_200_000), ref.observer.lat, ref.observer.lon).rise).toBeFalsy();
+  });
+
+  it('the weather line prints sunrise and sunset within 5 s (was the first 5-minute sample after the centre passed 0 deg: sunrise 3 to 7 min late)', () => {
+    for (const day of ref.days) {
+      const shown = horizonAzimuths(berlinDayBounds(day.day).start.getTime()) as { rise: { t: number; az: number }; set: { t: number; az: number } };
+      expect(Math.abs(seconds(shown.rise.t, day.sunrise)), `sunrise ${day.day}`).toBeLessThan(5);
+      expect(Math.abs(seconds(shown.set.t, day.sunset)), `sunset ${day.day}`).toBeLessThan(5);
+      // The azimuths steer where the horizon's cloud is read: east at rise, west at set.
+      expect(shown.rise.az).toBeGreaterThan(45);
+      expect(shown.rise.az).toBeLessThan(135);
+      expect(shown.set.az).toBeGreaterThan(225);
+      expect(shown.set.az).toBeLessThan(315);
+    }
   });
 
   it('blue hour starts when the sun is 4 deg down (fixed: the bands ran 3.5 to 5 min late while the app still added 0.48 deg of refraction below the horizon)', () => {
