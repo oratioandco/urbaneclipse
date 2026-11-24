@@ -24,7 +24,7 @@ export function applyControl(el, key = el.dataset.control) {
   if ('iconAfter' in el.dataset) el.append(el.querySelector(':scope > [data-ue-slot]'));
   // The toolbars show the tip beside the button (`data-tip`, also on keyboard focus); in the
   // panel the browser's own tooltip does. Never both.
-  if (el.closest('.tools, .topleft')) el.removeAttribute('title');
+  if (el.closest('.tools, .topleft, .ticket-head')) el.removeAttribute('title');
   else delete el.dataset.tip;
 }
 for (const el of document.querySelectorAll('[data-control]')) applyControl(el);

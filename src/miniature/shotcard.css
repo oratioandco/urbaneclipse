@@ -28,12 +28,14 @@
 button.shotcard { cursor: pointer; }
 .shotcard .sc-frame { position: relative; display: block; overflow: hidden; background: #14151f; }
 .shotcard canvas { position: static; inset: auto; display: block; width: 100%; height: 100%; touch-action: auto; }
-.shotcard .sc-verdict { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--text-xs); }
-.shotcard .sc-verdict b { flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; background: var(--pill-none); color: var(--pill-ink); font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
+/* The verdict is a word, written as a word ("Go", not "GO") and at one weight, 600, on every
+   card, on the ticket and in the peek line. */
+.shotcard .sc-verdict { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--text-xs); font-weight: 600; }
+.shotcard .sc-verdict b { flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; background: var(--pill-none); color: var(--pill-ink); font-weight: 600; white-space: nowrap; }
 .shotcard[data-grade='good'] .sc-verdict b { background: var(--pill-go); }
 .shotcard[data-grade='fair'] .sc-verdict b { background: var(--pill-maybe); }
 .shotcard[data-grade='poor'] .sc-verdict b { background: var(--pill-skip); }
-.shotcard[data-grade='none'] .sc-verdict b, .shotcard[data-grade='past'] .sc-verdict b { padding-left: 7px; letter-spacing: 0; text-transform: none; }
+.shotcard[data-grade='none'] .sc-verdict b, .shotcard[data-grade='past'] .sc-verdict b { padding-left: 7px; }
 .shotcard .sc-why { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shotcard .sc-time { font-weight: 600; font-variant-numeric: tabular-nums; }
 /* The day over the time: only in a list whose cards are days apart (class shotcards-dated). */

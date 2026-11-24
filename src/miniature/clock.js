@@ -170,7 +170,9 @@ showDay();
 timeInput.addEventListener('input', () => {
   if (!fine.on) {
     const snap = snapMinute(instantOfMinute(Number(timeInput.value)));
-    if (snap !== null) timeInput.value = String(Math.round(minuteOf(snap)));
+    // To the alignment itself, to five seconds, as a tap on its card sets it. Rounded to the
+    // whole minute, a 19:07:50 alignment read 7:08 here and 7:07 on its card, 10 s off the shot.
+    if (snap !== null) timeInput.value = String(Math.round(minuteOf(snap) * 12) / 12);
   }
   skipMissingHour();
   updateSun();

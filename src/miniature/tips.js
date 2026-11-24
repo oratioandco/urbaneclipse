@@ -37,7 +37,7 @@ let press = null;
 addEventListener('pointerdown', (event) => {
   press = null;
   if (event.pointerType === 'mouse') return;
-  const el = event.target.closest?.('.tools [data-tip], .topleft [data-tip]');
+  const el = event.target.closest?.('.tools [data-tip], .topleft [data-tip], .ticket-head [data-tip]');
   if (!el) return hide();
   press = { el, x: event.clientX, y: event.clientY, tip: el.dataset.tip, held: false };
   const mine = press;

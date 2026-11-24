@@ -9,7 +9,7 @@ import { open, plan, shot, save, close } from './lib.mjs';
 
 // Each: the day, and the time on a card to pick (as the card prints it).
 const CASES = [
-  { date: '2027-03-28', cards: ['7:22 AM', '7:07 PM'], set: [442, 1147] },
+  { date: '2027-03-28', cards: ['7:22 AM', '7:08 PM'], set: [442, 1148] },
   { date: '2027-10-31', cards: ['7:17 AM', '4:15 PM'], set: [437, 975] },
   { date: '2027-06-21', cards: ['6:38 AM'], set: [398] }, // a plain day, as the control
 ];

@@ -18,6 +18,9 @@ import { countdown, shotVerdict } from '../miniature/verdict.js';
 import { cloudsFor, forecastReach } from '../miniature/weather.js';
 import { answer, countsLine, dayLine, dayLink, groupDay, nextWorth, parseNow, planLink, threeDays, withoutContinued } from './grid.js';
 import { dayShots } from '../miniature/dayShots.js';
+import { sampleBody } from '../lib/bodyPosition.ts';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { isNight } from './grid.js';
 
 const root = document.getElementById('next-shots');
 const answerEl = root.querySelector('[data-answer]');
@@ -28,6 +31,12 @@ const toggle = root.querySelector('[data-skip-toggle]');
 const fixed = parseNow(location.search);
 const opened = Date.now();
 const clock = () => (fixed === null ? Date.now() : fixed + (Date.now() - opened));
+
+// Dark by Berlin's night, as the planner is (grid.js `isNight`), not by the device's setting.
+// The page's first script has already guessed it from the hour; this is the sun itself.
+const showNight = () => (document.documentElement.dataset.theme = isNight(sampleBody('sun', new Date(clock()), FERNSEHTURM.lat, FERNSEHTURM.lon).alt) ? 'dark' : 'light');
+showNight();
+setInterval(showNight, 60_000);
 
 /** What is known so far: the data the shots are computed from, the shots, and the forecasts. */
 const state = {

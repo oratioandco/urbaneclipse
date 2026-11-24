@@ -41,6 +41,7 @@ export const CONTROL_NAMES = [
   { key: 'more', id: null, icon: 'more', tip: 'Lens and format', name: 'More: lens and camera format' },
   { key: 'filters', id: null, icon: 'tune', tip: 'Filters', name: 'Filters: which shots to show' },
   { key: 'minimap', id: 'minimap', icon: 'minimap', tip: 'Minimap', name: 'Minimap: where you stand. Tap to go back to the map' },
+  { key: 'minimap-toggle', id: 'minimap-toggle', icon: 'minimap', tip: 'Where you stand', name: 'Show or hide the small map of where you stand' },
   { key: 'lens', id: null, icon: 'lens', tip: 'Lens', name: 'Lens: choose the focal length' },
   { key: 'thirds', id: 'thirds', icon: 'thirds', tip: 'Thirds', name: 'Show lines at thirds' },
   { key: 'reaim', id: null, icon: 'aim', tip: 'Re-aim', name: 'Re-aim the camera at the shot' },

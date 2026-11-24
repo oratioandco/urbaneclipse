@@ -5,6 +5,7 @@
 import { formatMinutes } from './time.js';
 import { drawMoon, drawSun } from './bodies.js';
 import { drawMark, drawNeedle } from './marks.js';
+import { frameRect } from './eye.js';
 
 const canvas = document.getElementById('labels');
 const ctx = canvas.getContext('2d');
@@ -664,7 +665,47 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
     const uy = -rise / length;
     const side = Math.abs(yaw) < 2 ? '' : ` \u00b7 ${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
     const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${side}`;
-    taps.push(drawPill({ text, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body }));
+    // A pill never lies on the picture. Where the full one would (a small phone: the frame
+    // fills the width between the buttons), a shorter one beside the frame is tried, and where
+    // nothing fits beside it, the needle alone stands at the frame's edge, pointing the way.
+    const frame = frameRect();
+    const short = Math.abs(yaw) < 2 ? `${Math.round(body.alt)}\u00b0 up` : `${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
+    let placed = null;
+    for (const words of [text, short]) {
+      const at = pillAt(words, ux, uy, area);
+      const half = pillHalfWidth(words);
+      const onFrame = (x) => x + half > frame.x && x - half < frame.x + frame.w && at.y + PILL_H / 2 > frame.y && at.y - PILL_H / 2 < frame.y + frame.h;
+      // On the rim as it is, or slid along it into the margin on the body's side, then the other.
+      const sides = [at.x, ...(ux >= 0 ? [frame.x + frame.w + half + 4, frame.x - half - 4] : [frame.x - half - 4, frame.x + frame.w + half + 4])];
+      const x = sides.find((cx) => !onFrame(cx) && cx - half >= area.left && cx + half <= area.right);
+      if (x !== undefined) {
+        placed = { text: words, x, y: at.y };
+        break;
+      }
+    }
+    if (placed) taps.push(drawPill({ ...placed, moon: body.moon, ux, uy, night, body }));
+    else taps.push(drawEdgeNeedle({ frame, ux, uy, moon: body.moon, night, body }));
   }
   return taps;
+}
+
+/** Half a pill's width with its needle, as `pillAt` reckons it. */
+function pillHalfWidth(text) {
+  ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
+  return (40 + ctx.measureText(text).width + 12) / 2 + NEEDLE + NEEDLE_GAP + 3;
+}
+
+/** The needle alone, just outside the frame on the side the body lies; a tap on it turns to face it. */
+function drawEdgeNeedle({ frame, ux, uy, moon, night, body }) {
+  const cx = frame.x + frame.w / 2;
+  const cy = frame.y + frame.h / 2;
+  const reach = Math.min(Math.abs(ux) > 1e-3 ? frame.w / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? frame.h / 2 / Math.abs(uy) : Infinity) + NEEDLE / 2 + 4;
+  const x = cx + ux * reach;
+  const y = cy + uy * reach;
+  drawNeedle(ctx, x, y, Math.atan2(uy, ux), NEEDLE, {
+    kind: moon ? 'moon' : 'sun',
+    ink: night ? '#ece8df' : '#24221f',
+    halo: night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)',
+  });
+  return { kind: 'pill', x: x - 22, y: y - 22, w: 44, h: 44, body };
 }

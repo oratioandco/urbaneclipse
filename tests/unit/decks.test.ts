@@ -53,10 +53,17 @@ describe('telling a bridge deck from a roof', () => {
   it('follows a long deck to its end, and gives up on one with no end in reach', () => {
     const long = city((x) => (Math.abs(x) < 300 ? 2 : 9.8), (x, z) => (Math.abs(x) < 300 && Math.abs(z) < 12 ? 9.6 : -Infinity));
     expect(deckTop(0, 0, long)).toBe(9.6);
-    // A built top with a street on it that never comes down to the ground (a deck of a
-    // parking structure, say): not a bridge.
-    const island = city(() => 0, (x, z) => (Math.abs(x) < 100 && Math.abs(z) < 12 ? 9.6 : -Infinity));
+    // A wide built top with a street on it that never comes down to the ground (the deck of a
+    // parking structure, 200 m by 120 m): not a bridge.
+    const island = city(() => 0, (x, z) => (Math.abs(x) < 100 && Math.abs(z) < 60 ? 9.6 : -Infinity));
     expect(deckTop(0, 0, island)).toBeNull();
+  });
+  it('does not take a long narrow top with a way under it for a bridge', () => {
+    // The Stadtbahn viaduct, measured in the planner on 2026-11-24: 7 m over the terrain, 12 m
+    // wide, a way under it along 400 m, and no way down without a step. The Bösebrücke, whose
+    // approaches the model lacks, measures the same and is not recognised either.
+    const viaduct = city(() => 13.5, (x, z) => (Math.abs(x) < 200 && Math.abs(z) < 6 ? 20.5 : -Infinity));
+    expect(deckTop(0, 0, viaduct)).toBeNull();
   });
   it('does not stand on anything higher than a bridge', () => {
     const tall = city((x) => (Math.abs(x) < 100 ? -30 : 0), (x, z) => (Math.abs(x) < 100 && Math.abs(z) < 12 ? 0 : -Infinity));

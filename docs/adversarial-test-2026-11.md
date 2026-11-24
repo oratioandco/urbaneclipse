@@ -109,6 +109,39 @@ or inferred.
   Not checked: that the list equals panel 05's 203 windows, and the model's deck height against
   the surveyed 47.7 to 48.2 m (the scene's vertical datum was not tied down here; the deck may
   sit a few metres low in the model, which moves a pass by seconds, not minutes).
+- **That fix was not enough; corrected on 2026-11-24 after an independent re-test** (retest
+  of d3732ef). Re-run with `scripts/adversarial/bridge.mjs` (checks A, B, C, and `census`):
+  - **A, the eye was inside the deck.** The deck's height was remembered per 3 m cell, from
+    whichever point asked first and from the coarse tiles, so the eye stood 0.55 m under to
+    1.45 m over the deck (reproduced: sued-mitte -0.47, sued-ost -0.55). The height is now
+    read at the very point from the buildings as drawn, and read again when a tile refines
+    (`sightlines.js` `deckAt`, `walk.js` `settleFooting`). Result: 1.6 m over the deck at all
+    six points, desktop and phone; render `bridge-A-desktop-sued-mitte.png` opened.
+  - **B, Dates against `/classic`.** With the eye out of the deck, sued-mitte lists 11 passes,
+    7 of them at the sphere (28 Dec, 21 Feb, 7 to 9 Apr, 3 and 4 Sept), as panel 05 has them.
+    Panel 05 counts 34 "Fenster" because it also lists the shaft, the foot and moons that are
+    not lit; `/plan/` lists the sphere and the antenna only. At nord-mitte 4 antenna rows show
+    and 8 are "hidden by buildings": a look at 2 degrees along 279.7 degrees meets a building
+    17.8 m high 307 m on, at 52.5120, 13.4938, which OpenStreetMap (Nominatim) has as
+    Frankfurter Allee 221; at 2.5 degrees and above the view is clear. `/classic` does not
+    check buildings there. Whether that building really hides the sphere from the north
+    footway needs a look on site.
+  - **C, not any bridge.** A straight bridge has no corner point of a street on it, so its
+    deck had no street. Street points are now taken every 12 m along each street line
+    (`roadsNear`), and "stand here" looks among those. Of 16 road bridges, at the coordinates
+    OpenStreetMap gives them (the tester's were 50 to 350 m off for six), 14 stand where you
+    put them, Moltkebrücke and Warschauer Brücke among them. **Not fixed: Bösebrücke and
+    Swinemünder Brücke** (moved 21 and 14 m). The model has their spans without the
+    approaches: the deck ends 6 m in the air, exactly as a viaduct over a street does. A rule
+    for such decks (long and narrow along its street) was tried and taken out again, because
+    the census showed it also took the Stadtbahn viaduct and the halls of Hauptbahnhof,
+    Ostbahnhof and Friedrichstraße for decks. It needs OpenStreetMap's `bridge` tag in the
+    street data (`scripts/miniature/build_map.py`), which means rebuilding and deploying the
+    city data. **Also not fixed:** Langenscheidtbrücke, Elsenbrücke and Oberbaumbrücke have
+    no deck in the building model at all, so one stands on the terrain under them. The two
+    deck cells near Hardenbergstraße (52.50465, 13.32633, 4 m, and 52.50509, 13.32914,
+    1.8 m) are decks by the first rule (their street comes down without a step); what they
+    are was not looked up.
 
 ### 2. Clock-change days: the day view sets and reads the time one hour off. High on two days a year. Verified.
 
@@ -133,6 +166,12 @@ or inferred.
   show, the card under the thumb lights up, and the readout names the shot
   (`dst-2027-10-31-card-415PM.png` opened: 4:15 PM over a city in daylight). The forecast
   lookups in `verdict.js`, `planmode.js` and `dates.js` read the wall-clock hour.
+
+- **One more on 2026-11-24, found by the re-test and not a clock-change fault:** a card read
+  7:07 PM and the clock it set 7:08 PM on 28 March 2027. The alignment falls at 19:07:59.5;
+  the card cut it to the minute and the clock rounded it to the second. A tower row's minute
+  is now a whole second, and scrubbing snaps to the alignment itself, not to the whole minute
+  beside it. `dst.mjs` re-run: all five cards and clocks agree.
 
 ### 3. "Dates": the minute shown depends on the second you pressed the button, and is cut, not rounded. Medium. Verified.
 
@@ -171,6 +210,19 @@ or inferred.
   it is "Passed" only after the stretch ends and stays the next shot until then, and a stretch
   across midnight is one row in lists of days. Test: `tests/unit/homeGrid.test.ts`, "antenna
   rows". Not changed: where on the 1.6 to 9 km stretch you are put (its middle).
+- **Corrected on 2026-11-24 after the re-test of d3732ef**, which found the 24 December
+  moonrise row opening 6.9 km out, facing a wall, the moon 1.3 degrees over the tip. An
+  antenna row now opens at the minute of its pass, nearest the middle, that has a place on
+  the stretch of the line from which the moon is behind the antenna at that minute and the
+  tower is seen (the viewshed); a pass with no such place is not listed (that moonrise is
+  gone from 24 December). The search for the standing point keeps to that stretch. A pass
+  across midnight is looked for whole and listed once, on the day of its opening minute (it
+  read "11:45 PM–12:00 AM" on 10 September 2027 and came again on the 11th). Re-run:
+  `scripts/adversarial/antenna.mjs` opens every antenna row of six days, 10 rows: each
+  stands 2.9 to 5.1 km out with the moon between the sphere's top and the tip, the view
+  clear, and the line reading "Moon behind the antenna now"; render
+  `antenna-2027-02-20-1.png` opened. Tests in `tests/unit/homeGrid.test.ts`. Not checked:
+  trees, which the sightline check does not count.
 
 ### 5. A low moon looks like the sun. Medium, and on the first screen. Verified.
 
@@ -236,6 +288,13 @@ or inferred.
   "Sun was down Sonnenallee 30 min ago", and a tap goes to the peak; a tower alignment at that
   very minute still comes first. Checked in the page at 08:07 and 07:40; test in
   `tests/unit/homeGrid.test.ts`.
+  **Stale ticket, fixed on 2026-11-24 after the re-test:** one could open the 8:33 shot, walk
+  130 m, set the clock to 9:03, and the ticket, the address and the calendar's title still
+  said 8:33. The card now goes, and with it `shot=…&here=1` and the shot's name in the
+  calendar entry, once one is more than 40 m from where it went up or the clock is more than
+  ten minutes outside the shot's stretch (`shotStillHeld` in `dayShots.js`, `checkTicket` in
+  `daylist.js`). A link that names a shot hours from its own time shows no card. `here=0` is
+  read as "not here". Re-run: `scripts/adversarial/stale.mjs`, four steps, all pass.
 
 ### 8. Switches you forgot make the app say nothing lines up. Medium. Verified.
 
@@ -252,6 +311,9 @@ or inferred.
   with any switch off says "No shots to show with Sun and Streets switched off" with a "Show
   all shots" button, in the day view, the day list and the three-day list; the peek line says
   "No shots to show: … switched off".
+  **Added on 2026-11-24 after the re-test:** a list that has rows, but not all, ends with
+  "Streets switched off: not every shot is listed" and the same button (`filterHint`; the day
+  list and the three-day list; render opened).
 
 ### 9. At eye level the browser's back button leaves the planner, and Escape does nothing. Medium. Verified.
 
@@ -297,6 +359,9 @@ or inferred.
   "This link's standing point is outside the model, which reaches 9 km from the TV tower"
   or "… could not be read", for six seconds. Checked in the page with `at=48.137,11.575`
   and `at=abc`; a link without `at` says nothing.
+  **Far dates, fixed on 2026-11-24 after the re-test:** a date before 1950 or after 2100 opens
+  today (`0000-01-01` and `9999-12-31` hung on "Building Berlin", `0001-01-01` came up as
+  1901). Checked in the page; test in `tests/unit/panelDays.test.ts`.
 
 ### 12. Small phones: the picture at eye level shrinks to a stamp. Medium on 320 px, low on 390. Verified.
 
@@ -325,7 +390,7 @@ or inferred.
 | | Finding | State | File |
 |---|---|---|---|
 | a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | `landmarks.js` `fieldGroundAt`. **Fixed on 2026-11-24**: it was the Holocaust memorial; eight slabs at the field's south edge read a ground probe past the end of the 7x7 grid and got NaN heights (and were not drawn). Re-run: no NaN position in the scene, no console error |
-| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute. Re-run with the faked clock (`edges.mjs day-change`): at 23:58 "Today, Tue 24 Nov", six minutes on "Tue 24 Nov", and the three-day cards call the 25th "Today" | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
+| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute. Re-run with the faked clock (`edges.mjs day-change`): at 23:58 "Today, Tue 24 Nov", six minutes on "Tue 24 Nov", and the three-day cards call the 25th "Today" | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand. **Also fixed on 2026-11-24:** the peek line and the three days are worked out anew within 30 s of midnight, not at the next five-minute round ("Wed 8:35 AM" became "8:35 AM" 50 s after midnight in a faked-clock run) |
 | c | A failed forecast is not asked for again within 65 s and has no "try again" | verified, 3 requests then none | `weather.js`, `forecast.js` |
 | d | "+ 1 min" at 11:59 PM does nothing and is not disabled; typing "24:00" gives 11:59 PM; "noon" is ignored | verified | `dayview.js`, `time.js` |
 | e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back. **Fixed on 2026-11-24** (`link.js` keeps it). Re-run (`edges.mjs glass-off`): the address reads `…&nointro&glass=off` after the first frames and the panel has no backdrop filter | verified, `edges.json` | `link.js` list of kept options |

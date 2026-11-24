@@ -80,19 +80,40 @@ function underRoof(x, z) {
 // as it comes out, and is not taken for a deck.
 const DECK_CELL_M = 64;
 
+/** Street points are asked for at most this far apart along a street. */
+const ROAD_STEP_M = 12;
 let roadCells = null;
-/** The street points, by cell, for looking up the ones near a spot. */
+/**
+ * The street points near a spot, as [x, z] pairs: the streets' own corner points and, between
+ * two that lie far apart, points every 12 m along the line. A straight bridge has no corner
+ * point on it, so with the corners alone its deck had no street on it (Moltkebrücke).
+ */
 export function roadsNear(x, z, radius) {
   if (!app.roadXZ) return [];
   if (!roadCells || roadCells.source !== app.roadXZ) {
     roadCells = { source: app.roadXZ, cells: new Map() };
-    for (let i = 0; i < app.roadXZ.length; i += 2) {
-      const px = app.roadXZ[i] / 2;
-      const pz = app.roadXZ[i + 1] / 2;
+    const add = (px, pz) => {
       const key = `${Math.floor(px / DECK_CELL_M)},${Math.floor(pz / DECK_CELL_M)}`;
       let cell = roadCells.cells.get(key);
       if (!cell) roadCells.cells.set(key, (cell = []));
       cell.push(px, pz);
+    };
+    // The points come in runs, one per street line (map.json `runs`: [count, level]).
+    const runs = app.roadRuns ?? [[app.roadXZ.length / 2, 0]];
+    let at = 0;
+    for (const [count] of runs) {
+      for (let i = 0; i < count; i++) {
+        const px = app.roadXZ[at + i * 2] / 2;
+        const pz = app.roadXZ[at + i * 2 + 1] / 2;
+        add(px, pz);
+        if (i + 1 < count && app.roadRuns) {
+          const qx = app.roadXZ[at + i * 2 + 2] / 2;
+          const qz = app.roadXZ[at + i * 2 + 3] / 2;
+          const pieces = Math.ceil(Math.hypot(qx - px, qz - pz) / ROAD_STEP_M);
+          for (let k = 1; k < pieces; k++) add(px + ((qx - px) * k) / pieces, pz + ((qz - pz) * k) / pieces);
+        }
+      }
+      at += count * 2;
     }
   }
   const found = [];
@@ -106,23 +127,18 @@ export function roadsNear(x, z, radius) {
   return found;
 }
 
-/** Which 3 m cells are on a deck, for the detail the city is drawn at now (`app.tileEpoch`). */
+/** Which 3 m cells are on a deck. */
 const deckMemo = new Map();
-let deckEpoch = -1;
 /**
  * The top of a bridge deck at a point, as a scene height, or null where the point is on plain
  * ground, on a building, or under something (the rule is decks.js `deckTop`).
  *
- * Whether a place is a deck is remembered per 3 m cell; the height never is. It is read at the
- * very point, from the buildings as they are drawn now, and both are asked again whenever a
- * tile changes its detail: the coarse deck and the fine one differ by half a metre, and a
- * height remembered from the first or from a neighbouring point put the eye inside the deck.
+ * Whether a place is a deck is remembered per 3 m cell (the rule walks the street and is not
+ * cheap). The height never is: it is read at the very point, from the buildings as they are
+ * drawn now. The coarse deck and the fine one differ by half a metre, and a height remembered
+ * from the first, or from a neighbouring point, put the eye inside the deck.
  */
 export function deckAt(x, z) {
-  if (deckEpoch !== app.tileEpoch) {
-    deckEpoch = app.tileEpoch;
-    deckMemo.clear();
-  }
   const key = `${Math.round(x / 3)},${Math.round(z / 3)}`;
   if (!deckMemo.has(key)) {
     if (deckMemo.size > 4000) deckMemo.clear();
@@ -146,15 +162,10 @@ const roomy = (x, z) => (!underRoof(x, z) || deckAt(x, z) !== null) && [0, 90, 1
 /** The spot itself if it is roomy, else the nearest roomy point on a street. */
 export function standable(point) {
   if (roomy(point.x, point.z) || !app.roadXZ) return point;
-  const candidates = [];
-  for (let i = 0; i < app.roadXZ.length; i += 2) {
-    const x = app.roadXZ[i] / 2;
-    const z = app.roadXZ[i + 1] / 2;
-    const d = Math.hypot(x - point.x, z - point.z);
-    if (d < 500) candidates.push([d, x, z]);
-  }
+  // Points along the streets, corners and in between, so the nearest one is a few metres off.
+  const candidates = roadsNear(point.x, point.z, 500).map(([x, z]) => [Math.hypot(x - point.x, z - point.z), x, z]);
   candidates.sort((a, b) => a[0] - b[0]);
-  for (const [, x, z] of candidates.slice(0, 40)) {
+  for (const [, x, z] of candidates.slice(0, 120)) {
     if (roomy(x, z)) return new THREE.Vector3(x, app.groundAt(x, z), z);
   }
   return point;

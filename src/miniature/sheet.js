@@ -88,7 +88,13 @@ new MutationObserver(() => {
     history.pushState({ eye: true }, '');
     eyeEntry = true;
     // The keyboard's focus goes where eye level's controls are.
-    if (!document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected || document.activeElement.closest('#sheet-body')) document.getElementById('back').focus({ preventScroll: true });
+    if (!document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected || document.activeElement.closest('#sheet-body')) {
+      // The page moves the focus here, nobody asked what the button is: no tip until they do.
+      const back = document.getElementById('back');
+      back.dataset.tipQuiet = '';
+      back.addEventListener('blur', () => delete back.dataset.tipQuiet, { once: true });
+      back.focus({ preventScroll: true });
+    }
   } else if (!eye && eyeEntry) {
     eyeEntry = false;
     skipPop = true;

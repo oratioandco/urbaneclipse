@@ -1,15 +1,16 @@
 /** The day as a list in the panel's planning: tower alignments and street henges, each a tap away. */
 import { shotCard } from './shotCard.js';
-import { collectRows as collectShots } from './dayShots.js';
+import { collectRows as collectShots, shotStillHeld, towerSeenFrom } from './dayShots.js';
 import { icon } from './icons.js';
 import { layers, showAllShots, switchedOff } from './chrome.js';
-import { dayStart } from './clock.js';
+import { dayStart, instant } from './clock.js';
+import { look } from './eyeLevel.js';
 import { cloudNote } from './forecast.js';
 import { forecastReach } from './weather.js';
 import { shotVerdict, verdict, verdictNote } from './verdict.js';
 import { dateInput } from './clock.js';
 import { FIGURE_TARGETS } from '../lib/landmarkStands.ts';
-import { landmarkPassesFor, landmarkShedCount, toScene } from './plan.js';
+import { getViewshed, landmarkPassesFor, landmarkShedCount, toScene } from './plan.js';
 import { goViewHere } from './pointer.js';
 import { app, invalidate } from './state.js';
 
@@ -28,7 +29,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
     dayPaths.map((path) => path.source ?? path),
     moments,
     from,
-    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false },
+    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false, seesTower: towerSeenFrom(getViewshed()) },
     landmarkPassesFor(from),
   );
   for (const row of rows) row.go = () => goViewHere(flightTo(row));
@@ -47,7 +48,7 @@ function flightTo(row) {
   if (row.where === 'antenna') {
     // The middle of the antenna stretch; the search finds a clear view near it.
     const a = (row.standBearingDeg * Math.PI) / 180;
-    return { kind: 'tower', body: 'moon', t: row.openAt, x: Math.sin(a) * row.standDistanceM, z: -Math.cos(a) * row.standDistanceM, lens: row.lens };
+    return { kind: 'tower', body: 'moon', t: row.openAt, x: Math.sin(a) * row.standDistanceM, z: -Math.cos(a) * row.standDistanceM, lens: row.lens, range: row.standRange };
   }
   return { kind: 'tower', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }) };
 }
@@ -55,7 +56,7 @@ function flightTo(row) {
 /** The chosen day's rows, collected once per day, data and layer state. */
 let rowsMemo = { key: null, rows: [] };
 export function currentRows() {
-  const key = [dayStart(), layers.tower, layers.streets, layers.sun, layers.moon, layers.landmarks, landmarkShedCount()].join('|');
+  const key = [dayStart(), layers.tower, layers.streets, layers.sun, layers.moon, layers.landmarks, landmarkShedCount(), Boolean(getViewshed())].join('|');
   if (rowsMemo.key !== key || rowsMemo.paths !== app.dayPaths || rowsMemo.moments !== app.moments) {
     rowsMemo = {
       key,
@@ -101,12 +102,34 @@ export function showTicket(row, verdict) {
   ticketRow = row;
   // For the status line and the caption, which speak of the open shot's landmark (landmarkView.js).
   app.ticketShot = row;
+  ticketStood = null;
   ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }));
   ticketShot.hidden = false;
 }
 export function openShot(row, verdict) {
   showTicket(row, verdict);
-  row.go();
+  // Until the flight to the shot's spot has been set off, where one stands says nothing.
+  ticketPending = true;
+  Promise.resolve(row.go()).finally(() => (ticketPending = false));
+  invalidate();
+}
+/** Where one stood when the ticket's card went up; null until one stands there. */
+let ticketStood = null;
+let ticketPending = false;
+/**
+ * The ticket's card goes when the view is no longer its shot: walked away from the spot, or
+ * the clock moved out of the shot's stretch (dayShots.js `shotStillHeld`). With it go the
+ * shot's name in the address and in the calendar entry, which read the ticket. Before, one
+ * could open the 8:33 shot, walk 130 m, set the clock to 9:03, and still share "8:33, Go".
+ */
+export function checkTicket() {
+  if (!ticketRow || ticketShot.hidden || ticketPending || !look.active) return;
+  if (!ticketStood) ticketStood = { x: look.x, z: look.z };
+  if (shotStillHeld(ticketRow, ticketStood, look, instant().getTime())) return;
+  ticketShot.hidden = true;
+  ticketRow = null;
+  app.ticketShot = null;
+  ticketStood = null;
   invalidate();
 }
 /** A tap on a landmark's stand point on the map (plan.js, pointer.js) opens that row's shot. */
@@ -154,11 +177,25 @@ export function emptyNote(nothing = 'Nothing lines up on this day. Try another.'
   return note;
 }
 
+/**
+ * Under a list that has rows but not all of them: which kinds are switched off, and the way
+ * back. An empty list says so itself (`emptyNote`); a shortened one gave no hint.
+ */
+export function filterHint() {
+  const off = switchedOff();
+  if (!off) return [];
+  const note = Object.assign(document.createElement('p'), { className: 'muted filter-hint', textContent: `${off} switched off: not every shot is listed. ` });
+  const all = Object.assign(document.createElement('button'), { type: 'button', className: 'pill', textContent: 'Show all shots' });
+  all.addEventListener('click', showAllShots);
+  note.append(all);
+  return [note];
+}
+
 /** The day as a list in planning: the same rows, in time order, each a tap from standing there. */
 export function renderDayList() {
   const rows = currentRows();
   refreshTicket();
-  dayList.replaceChildren(...rows.map((row) => shotRow({ ...row, detail: row.detail + cloudNote(row.t) }, dayVerdict(row), () => openShot(row, dayVerdict(row)))));
+  dayList.replaceChildren(...rows.map((row) => shotRow({ ...row, detail: row.detail + cloudNote(row.t) }, dayVerdict(row), () => openShot(row, dayVerdict(row)))), ...filterHint());
   if (!rows.length) dayList.replaceChildren(emptyNote());
 }
 

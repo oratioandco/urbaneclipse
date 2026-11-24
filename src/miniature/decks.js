@@ -9,10 +9,12 @@
  * where not) carries on without a step until it is plain ground, the built top is a deck that
  * the street comes onto from the ground. A street that passes UNDER something (a rail viaduct,
  * a house over a passage) steps down by the clearance as it comes out, and is not a deck.
+ *
+ * Not recognised: a bridge the model has without its approaches, whose deck ends in the air.
  */
 export const DECK_MAX_ABOVE_M = 25; // no deck stands higher over the terrain than this
 export const DECK_ROAD_NEAR_M = 40; // a street point this near, on the same unbroken surface, is on the deck
-export const DECK_HOP_M = 60; // street points follow each other at most this far apart
+export const DECK_HOP_M = 30; // street points follow each other at most this far apart (they come every 12 m)
 export const DECK_REACH_M = 700; // how far a deck may run before the street is on the ground
 /** A street surface may change this much between two points `d` metres apart. */
 export const deckStep = (d) => Math.min(2.5, 1.2 + 0.04 * d);
@@ -27,9 +29,15 @@ export const deckStep = (d) => Math.min(2.5, 1.2 + 0.04 * d);
 export function deckTop(x, z, h) {
   const top = h.roofAt(x, z);
   if (top === -Infinity || top - h.groundAt(x, z) > DECK_MAX_ABOVE_M) return null;
+  // Each height is a ray cast into the city: asked once per point.
+  const known = new Map();
   const surface = (px, pz) => {
-    const roof = h.roofAt(px, pz);
-    return roof === -Infinity ? { y: h.groundAt(px, pz), built: false } : { y: roof, built: true };
+    const id = `${px},${pz}`;
+    if (!known.has(id)) {
+      const roof = h.roofAt(px, pz);
+      known.set(id, roof === -Infinity ? { y: h.groundAt(px, pz), built: false } : { y: roof, built: true });
+    }
+    return known.get(id);
   };
   // The street points on this same surface, right here.
   const queue = [];
@@ -46,7 +54,7 @@ export function deckTop(x, z, h) {
     seen.add(`${px},${pz}`);
   }
   // Along the street, point to point, for as long as the surface carries on without a step.
-  for (let n = 0; queue.length && n < 400; n++) {
+  for (let n = 0; queue.length && n < 600; n++) {
     const at = queue.shift();
     for (const [px, pz] of h.roadsNear(at.x, at.z, DECK_HOP_M)) {
       const id = `${px},${pz}`;
@@ -59,5 +67,12 @@ export function deckTop(x, z, h) {
       queue.push({ x: px, z: pz, y: s.y });
     }
   }
+  // The street never comes down: a built top that only crosses over it, or a bridge the model
+  // has without its approaches (Bösebrücke, Swinemünder Brücke: the deck ends 6 m in the air).
+  // The two cannot be told apart from heights alone. Measured on 2026-11-24: the Stadtbahn
+  // viaduct and the halls of Hauptbahnhof, Ostbahnhof and Friedrichstraße have ways running
+  // under them along their whole length, as long and narrow as a bridge. So: not a deck. What
+  // would settle it is OpenStreetMap's `bridge` tag on the street, which the street data
+  // (scripts/miniature/build_map.py) does not carry yet.
   return null;
 }

@@ -2,3 +2,4 @@
 import type { ShotRow } from '../miniature/dayShots.js';
 export function planLink(shot: ShotRow): string;
 export function dayLink(date: string): string;
+export function isNight(sunAltitudeDeg: number): boolean;

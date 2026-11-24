@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
-import { collectRows, computeDayPaths, dayShots, findShot, shotKey, streetStatus } from '../../src/miniature/dayShots.js';
+import { addDays, answer, berlinDate, isNight, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
+import { collectRows, computeDayPaths, dayShots, findShot, shotKey, shotStillHeld, streetStatus } from '../../src/miniature/dayShots.js';
 import { decodeStreets, streetMoments } from '../../src/lib/streets';
 import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { decodeViewshed } from '../../src/lib/viewshed';
@@ -197,7 +197,7 @@ describe('one row logic for the planner and the home page', () => {
     const source = read('miniature/dayShots.js');
     expect(source).not.toMatch(/from 'three'|document\.|from '\.\/(plan|daylist|pointer|chrome|eye|clock)\.js'/);
     // The planner's rows are these rows, with `go` added; home has no copy of its own.
-    expect(read('miniature/daylist.js')).toMatch(/import \{ collectRows as collectShots \} from '\.\/dayShots\.js'/);
+    expect(read('miniature/daylist.js')).toMatch(/import \{ collectRows as collectShots[^}]*\} from '\.\/dayShots\.js'/);
     expect(read('miniature/plan.js')).toMatch(/from '\.\/dayShots\.js'/);
     expect(read('home/home.js')).toMatch(/from '\.\.\/miniature\/dayShots\.js'/);
     expect(() => read('home/shots.js')).toThrow();
@@ -273,6 +273,82 @@ describe('the status line under a street shot', () => {
   it('has nothing to say of a tower row or of no row', () => {
     expect(streetStatus({ kind: 'tower', body: 'sun' }, from)).toBeNull();
     expect(streetStatus(null, from)).toBeNull();
+  });
+});
+
+describe('a tower row\u2019s minute', () => {
+  it('is a whole second, so its card and the clock it sets read the same minute', () => {
+    // 28 March 2027: the evening alignment falls at 19:07:59.5. Needs the viewshed for a path.
+    const header = JSON.parse(readFileSync('public/viewshed/fernsehturm.json', 'utf8'));
+    const shed = decodeViewshed(header, new Uint8Array(readFileSync(`public/viewshed/${header.binary}`)));
+    const rows = collectRows(computeDayPaths(berlinDayStart('2027-03-28'), shed), [], berlinDayStart('2027-03-28')).filter((r: { where?: string }) => r.where === 'sphere');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(row.t % 1000).toBe(0);
+  });
+});
+
+describe('light and dark', () => {
+  it('is night with the sun more than 3 degrees down, the planner\u2019s line', () => {
+    expect(isNight(-3.1)).toBe(true);
+    expect(isNight(-2.9)).toBe(false);
+    expect(isNight(20)).toBe(false);
+    // The planner's own line, so the two pages turn together.
+    expect(readFileSync(new URL('../../src/miniature/lighting.js', import.meta.url), 'utf8')).toMatch(/app\.night = sunAt\.alt < -3;/);
+    // And the home page does not ask the device.
+    expect(readFileSync(new URL('../../src/home/home.js', import.meta.url), 'utf8')).toMatch(/dataset\.theme = isNight\(/);
+  });
+});
+
+describe('the card on the ticket', () => {
+  const t0 = wallToInstant('2026-11-26', 8 * 60 + 33);
+  const sphere = { kind: 'tower', where: 'sphere', body: 'sun', t: t0 };
+  const stood = { x: 100, z: 200 };
+  it('stays while one stands there within the shot\u2019s minutes', () => {
+    expect(shotStillHeld(sphere, stood, { x: 110, z: 205 }, t0 + 4 * 60_000)).toBe(true);
+  });
+  it('goes when one walks off or moves the clock on', () => {
+    // The tester's steps on 2026-11-24: 130 m to the side, then 9:03 for an 8:33 shot.
+    expect(shotStillHeld(sphere, stood, { x: 230, z: 200 }, t0)).toBe(false);
+    expect(shotStillHeld(sphere, stood, stood, t0 + 30 * 60_000)).toBe(false);
+  });
+  it('holds through an antenna pass and a street\u2019s minutes, which are longer', () => {
+    const antenna = { kind: 'tower', where: 'antenna', body: 'moon', t: t0, start: t0 - 30 * 60_000, until: t0 + 25 * 60_000 };
+    expect(shotStillHeld(antenna, stood, stood, t0 + 30 * 60_000)).toBe(true);
+    expect(shotStillHeld(antenna, stood, stood, t0 + 40 * 60_000)).toBe(false);
+    const street = { kind: 'street', body: 'sun', t: t0, until: t0 + 3 * 60_000, moment: { from: t0 - 3 * 60_000 } };
+    expect(shotStillHeld(street, stood, stood, t0 - 12 * 60_000)).toBe(true);
+    expect(shotStillHeld(street, stood, stood, t0 - 14 * 60_000)).toBe(false);
+  });
+});
+
+describe('an antenna row is a shot one can see', () => {
+  const from = Date.UTC(2026, 11, 23, 23);
+  const antenna = (seesTower: null | ((lat: number, lon: number) => boolean)) => collectRows([], [], from, { seesTower }).filter((r: { where?: string }) => r.where === 'antenna');
+  it('stands on the stretch of the line from which the moon is behind the antenna at its minute', () => {
+    for (const row of antenna(() => true)) {
+      expect(row.standDistanceM).toBeGreaterThanOrEqual(row.standRange[0]);
+      expect(row.standDistanceM).toBeLessThanOrEqual(row.standRange[1]);
+      // The antenna runs from the sphere's top (229 m) to the tip (368 m): from the standing
+      // point the moon's altitude at that minute lies between the two.
+      const alt = row.look[1];
+      const up = (h: number) => (Math.atan((h - 1.6) / row.standDistanceM) * 180) / Math.PI;
+      expect(alt).toBeGreaterThan(up(229) - 0.05);
+      expect(alt).toBeLessThan(up(368) + 0.05);
+    }
+  });
+  it('is not listed where the tower is seen from nowhere on that stretch', () => {
+    expect(antenna(() => true).length).toBeGreaterThan(0);
+    expect(antenna(() => false)).toEqual([]);
+    // Without a viewshed nothing is known: the row is listed, at the middle of its stretch.
+    expect(antenna(null).length).toBe(antenna(() => true).length);
+  });
+  it('opens at another minute of the pass when its middle has no clear place', () => {
+    const open = antenna(() => true)[0];
+    // Only far out, past 6 km, is the tower seen: the row opens when the moon is low enough.
+    const far = antenna((lat, lon) => Math.hypot((lat - FERNSEHTURM.lat) * 111_320, (lon - FERNSEHTURM.lon) * 67_750) > 6000)[0];
+    expect(far.standDistanceM).toBeGreaterThan(5900);
+    expect(far.look[1]).toBeLessThan(open.look[1]);
+    expect(far.t).not.toBe(open.t);
   });
 });
 
