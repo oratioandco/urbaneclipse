@@ -6,7 +6,11 @@ import * as THREE from 'three';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { cityUniforms } from './shading.js';
 import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromLatLon } from './eye.js';
-import { dateInput, setFine, timeInput } from './clock.js';
+import { dateInput, instant, setFine, timeInput } from './clock.js';
+import { findShot } from './dayShots.js';
+import { currentRows, dayVerdict, openShot } from './daylist.js';
+import { getViewshed } from './plan.js';
+import { setPanelMode } from './planmode.js';
 import { params } from './config.js';
 import { enterEye, look } from './eyeLevel.js';
 import { eyeCamera } from './render.js';
@@ -40,8 +44,27 @@ export function syncLink(now) {
   lastLink = query;
   history.replaceState(null, '', `${location.pathname}?${query}`);
 }
+/**
+ * A link that names its shot (`shot=sphere-sun`, `antenna-moon`, `street-sun:Sonnenallee`; the
+ * home page's cards) opens it as a tap on its card would: the planner finds the day's row,
+ * searches for a confirmed clear spot to stand on and puts the shot's card on the ticket.
+ * False when the day has no such row (the layer is switched off, or the link is old): the
+ * link's own `at` and `look` then open the view as before.
+ */
+async function openLinkedShot(key) {
+  // The rows are checked against the buildings once the viewshed is in: wait for it, briefly.
+  for (let i = 0; i < 40 && !(app.dayReady && getViewshed()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
+  const row = findShot(currentRows(), key, instant().getTime());
+  if (!row) return false;
+  setPanelMode('shoot');
+  openShot(row, dayVerdict(row));
+  return true;
+}
+
 /** Open the view a shared link names, once the city is there to stand in. */
-export function openLinkedView() {
+export async function openLinkedView() {
+  const shot = params.get('shot');
+  if (shot && (await openLinkedShot(shot))) return;
   const at = params.get('at')?.split(',').map(Number);
   if (!at || at.length !== 2 || at.some((v) => !Number.isFinite(v))) return;
   const [x, z] = sceneFromLatLon(at[0], at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);

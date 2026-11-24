@@ -7,6 +7,7 @@
  * 'poor' (Skip) or null (no forecast). Skip is hidden until asked for; a shot without a
  * forecast is shown, since nothing says it is not worth taking.
  */
+import { shotKey, withoutContinued } from '../miniature/dayShots.js';
 import { berlinDayStart, wallMinutesOf } from '../miniature/berlinClock.js';
 
 export const DAYS = 3;
@@ -46,16 +47,8 @@ export function threeDays(now) {
   });
 }
 
-/**
- * A day's shots without those that only continue a pass from the evening before. The planner
- * works a day at a time, so a moon that is low across midnight is one row late in the evening
- * and a second at 00:00 the next day: side by side in a grid of days that reads as two shots.
- * A row at its day's very start is dropped when the day before has the same shot (place, body,
- * kind) still running at midnight (`until`).
- */
-export function withoutContinued(shots, from, dayBefore = []) {
-  return shots.filter((shot) => shot.t !== from || !dayBefore.some((b) => b.kind === shot.kind && b.body === shot.body && b.short === shot.short && (b.until ?? b.t) >= from - 60_000));
-}
+// A list of days side by side drops the midnight repeat of a pass: the rule is the planner's too.
+export { withoutContinued };
 
 /** Whether a rated shot is worth taking: anything but Skip. */
 export const worthTaking = (rated) => rated.verdict?.grade !== 'poor';
@@ -156,6 +149,9 @@ export function planLink(shot) {
     const heading = Math.round((((shot.look[0] % 360) + 360) % 360) * 10) / 10;
     query += `&at=${shot.at[0].toFixed(6)},${shot.at[1].toFixed(6)}&look=${heading},${Math.round(shot.look[1] * 10) / 10}&lens=${Math.round(shot.lens ?? 50)}&cam=ff`;
   }
+  // Which shot it is, so the planner opens it as its own card would (link.js): it searches for
+  // a clear spot and shows the shot's card. `at` and `look` stay, for a planner that finds no such row.
+  if (shot.kind) query += `&shot=${encodeURIComponent(shotKey(shot)).replace(/%3A/g, ':').replace(/%20/g, '+')}`;
   return `/plan/?${query}`;
 }
 

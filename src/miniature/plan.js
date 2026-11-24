@@ -5,14 +5,14 @@
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { streetMoments } from '../lib/streets.ts';
-import { alignmentLine, applyView, computeDayPath, MIN_MOON_ILLUMINATION, pointAtTime } from '../lib/dailyPaths.ts';
-import { loadViewshed, sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
+import { alignmentLine, pointAtTime } from '../lib/dailyPaths.ts';
+import { loadViewshed } from '../lib/viewshed.ts';
 import { formatHour } from './time.js';
 import { sceneFromLatLon } from './eye.js';
-import { antennaRange, visibleMoon } from './towerShots.js';
+import { antennaRange } from './towerShots.js';
 import { layers, shownBody } from './chrome.js';
 import { dayEnd, dayStart, instant, showPhases } from './clock.js';
-import { dayEndOf } from './dayMath.js';
+import { computeDayPaths as towerPaths } from './dayShots.js';
 import { renderDayList } from './daylist.js';
 import { renderDayView } from './dayview.js';
 import { renderPlanCards } from './planmode.js';
@@ -74,17 +74,10 @@ export const toScene = (p) => {
 };
 export const getViewshed = () => viewshed;
 
-/** The day's paths for any date, in scene coordinates, checked against the buildings once the
- * viewshed is in — the same pipeline the selected day runs, kept pure so the plan's three
- * days can share it. */
+/** The day's paths for any date (dayShots.js, shared with the home page), put into scene
+ * coordinates for the map; `source` keeps the path as computed, which the rows are read from. */
 export function computeDayPaths(from, shed = viewshed) {
-  const to = dayEndOf(from);
-  return ['sun', 'moon']
-    .map((body) => computeDayPath({ body, start: new Date(from), end: new Date(to), landmark: FERNSEHTURM }))
-    .filter((path) => path.body === 'sun' || path.illumination >= MIN_MOON_ILLUMINATION)
-    .map((path) => (shed ? applyView(path, (lat, lon) => sampleViewshed(shed, lat, lon) === VIEW_VISIBLE) : path))
-    .map(visibleMoon)
-    .map((path) => ({
+  return towerPaths(from, shed).map((path) => ({
       body: path.body,
       source: path,
       faint: path.body === 'moon' && path.illumination < 0.5,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
-import { dayShots } from '../../src/home/shots.js';
+import { collectRows, computeDayPaths, dayShots, findShot, shotKey } from '../../src/miniature/dayShots.js';
 import { decodeStreets } from '../../src/lib/streets';
 import { decodeViewshed } from '../../src/lib/viewshed';
 import { berlinDayStart, wallToInstant } from '../../src/miniature/berlinClock.js';
@@ -164,7 +164,7 @@ describe('the home grid: real shots of a day', () => {
       expect(['sun', 'moon']).toContain(row.body);
       expect(row.title && row.short && row.detail).toBeTruthy();
       expect(row.distanceM).toBeGreaterThan(0);
-      expect(planLink(row)).toMatch(/^\/plan\/\?date=2026-11-2[56]&time=[\d.]+&at=52\.\d{6},13\.\d{6}&look=[\d.]+,[\d.]+&lens=\d+&cam=ff$/);
+      expect(planLink(row)).toMatch(/^\/plan\/\?date=2026-11-2[56]&time=[\d.]+&at=52\.\d{6},13\.\d{6}&look=[\d.]+,[\d.]+&lens=\d+&cam=ff&shot=(sphere-(sun|moon)|antenna-moon|street-(sun|moon):[^&]+)$/);
     }
     // At most twelve street views a day, each street once per body: the planner's own limit.
     const streets = rows.filter((r) => r.kind === 'street');
@@ -187,5 +187,51 @@ describe('the home grid: real shots of a day', () => {
     const blind = dayShots(from, { views });
     expect(blind.some((r) => r.where === 'sphere')).toBe(false);
     expect(blind.filter((r) => r.kind === 'street')).toEqual(rows.filter((r) => r.kind === 'street'));
+  });
+});
+
+describe('one row logic for the planner and the home page', () => {
+  const read = (path: string) => readFileSync(new URL(`../../src/${path}`, import.meta.url), 'utf8');
+  it('is one module, free of three.js and of the planner\u2019s DOM', () => {
+    const source = read('miniature/dayShots.js');
+    expect(source).not.toMatch(/from 'three'|document\.|from '\.\/(plan|daylist|pointer|chrome|eye|clock)\.js'/);
+    // The planner's rows are these rows, with `go` added; home has no copy of its own.
+    expect(read('miniature/daylist.js')).toMatch(/import \{ collectRows as collectShots \} from '\.\/dayShots\.js'/);
+    expect(read('miniature/plan.js')).toMatch(/from '\.\/dayShots\.js'/);
+    expect(read('home/home.js')).toMatch(/from '\.\.\/miniature\/dayShots\.js'/);
+    expect(() => read('home/shots.js')).toThrow();
+  });
+  it('names a shot in a link and finds its row again', () => {
+    const sphere = { kind: 'tower', where: 'sphere', body: 'sun', short: 'TV tower', t: 1000 * 3_600_000 };
+    const later = { ...sphere, t: 1008 * 3_600_000 };
+    const antenna = { kind: 'tower', where: 'antenna', body: 'moon', short: 'TV antenna', t: 1001 * 3_600_000, openAt: 1001.5 * 3_600_000 };
+    const street = { kind: 'street', body: 'sun', short: 'An der Wuhlheide', t: 1002 * 3_600_000 };
+    expect([sphere, antenna, street].map(shotKey)).toEqual(['sphere-sun', 'antenna-moon', 'street-sun:An der Wuhlheide']);
+    const rows = [sphere, antenna, street, later];
+    // A tower shot can come twice a day: the link's time says which.
+    expect(findShot(rows, 'sphere-sun', sphere.t + 60_000)).toBe(sphere);
+    expect(findShot(rows, 'sphere-sun', later.t - 60_000)).toBe(later);
+    // The antenna opens at the middle of its stretch, not at its start.
+    expect(findShot(rows, 'antenna-moon', antenna.openAt)).toBe(antenna);
+    expect(findShot(rows, 'street-sun:An der Wuhlheide', street.t)).toBe(street);
+    // No such row that day, or the wrong street, or hours away: nothing, and the link's own view opens.
+    expect(findShot(rows, 'street-sun:Sonnenallee', street.t)).toBeNull();
+    expect(findShot(rows, 'sphere-moon', sphere.t)).toBeNull();
+    expect(findShot(rows, 'sphere-sun', sphere.t - 4 * 3_600_000)).toBeNull();
+  });
+  it('keeps old links as they were: no shot named, no parameter', () => {
+    expect(planLink({ t: Date.UTC(2027, 5, 10, 19, 4) })).toBe('/plan/?date=2027-06-10&time=1264');
+    expect(planLink({ t: Date.UTC(2027, 5, 10, 19, 4), kind: 'street', body: 'sun', short: 'Straße des 17. Juni' })).toBe('/plan/?date=2027-06-10&time=1264&shot=street-sun:Stra%C3%9Fe+des+17.+Juni');
+    expect(new URLSearchParams('shot=street-sun:Stra%C3%9Fe+des+17.+Juni').get('shot')).toBe('street-sun:Straße des 17. Juni');
+  });
+  it('switches kinds and bodies off by flag, as the planner\u2019s layers do', () => {
+    const from = Date.UTC(2026, 10, 24, 23);
+    const paths = computeDayPaths(from);
+    const all = collectRows(paths, [], from);
+    expect(all.some((r) => r.body === 'sun')).toBe(true);
+    expect(collectRows(paths, [], from, { sun: false }).some((r) => r.body === 'sun')).toBe(false);
+    expect(collectRows(paths, [], from, { moon: false }).some((r) => r.body === 'moon')).toBe(false);
+    expect(collectRows(paths, [], from, { tower: false })).toEqual([]);
+    for (const row of all) expect(row.go).toBeUndefined();
   });
 });

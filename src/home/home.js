@@ -1,7 +1,7 @@
 /**
  * The home page's grid of the next three days' shots: one hero card for the next shot worth
  * taking, with a countdown, then a grid per day. It answers "is anything worth shooting
- * soon?" without the 3D scene: the shots come from shots.js, the verdicts from the planner's
+ * soon?" without the 3D scene: the shots come from the planner's own dayShots.js, the verdicts from the planner's
  * own `shotVerdict` and forecast (`cloudsFor`), and every card is the planner's `shotCard`.
  * The logic of days, order and empty days is in grid.js.
  *
@@ -16,7 +16,7 @@ import { formatClock } from '../miniature/time.js';
 import { countdown, shotVerdict } from '../miniature/verdict.js';
 import { cloudsFor, forecastReach } from '../miniature/weather.js';
 import { answer, countsLine, dayLine, dayLink, groupDay, nextWorth, parseNow, planLink, threeDays, withoutContinued } from './grid.js';
-import { dayShots } from './shots.js';
+import { dayShots } from '../miniature/dayShots.js';
 
 const root = document.getElementById('next-shots');
 const answerEl = root.querySelector('[data-answer]');
@@ -63,10 +63,9 @@ function forecastState() {
 /** A shot's card, as a link into the planner at that shot. */
 function card(rated, day, { hero = false, now } = {}) {
   const { shot, verdict } = rated;
-  const node = shotCard(shot, verdict, { size: 'card', tag: 'a' });
+  // A link: the card names itself (its day, time, shot and verdict) for a screen reader.
+  const node = shotCard(shot, verdict, { size: 'card', tag: 'a', day: day.name });
   node.href = planLink(shot);
-  const when = `${day.name} ${formatClock(shot.t)}`;
-  node.setAttribute('aria-label', `${when}, ${shot.title}. ${verdict.label}. Open in the planner.`);
   if (hero) {
     node.classList.add('home-hero');
     // A wider frame for the hero, drawn by the card's own drawing.

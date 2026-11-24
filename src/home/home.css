@@ -1,17 +1,16 @@
 /*
  * The home page's grid of the next three days' shots (home.js fills it).
  *
- * The cards are the planner's `shotCard`, styled by the `.shotcard` block of miniature.css, so
- * that file is loaded here whole, in a cascade layer: everything outside a layer wins over
- * it, so the page's own rules (index.astro and below) hold whatever their weight. The
- * planner's page rules (a page that does not scroll, text that cannot be selected) are undone
- * first. Its tokens (--text, --radius-s, --control-s, the pill colours) come along; the
- * page's own --ink, --surface, --line and --accent in index.astro stand over them.
+ * The cards are the planner's `shotCard`, styled by its own stylesheet, shotcard.css, which
+ * brings the card's sizes as tokens (--text-s, --radius-s, --control-s). Nothing else of the
+ * planner's is loaded here; the colours the card reads (--ink, --muted, --line, --accent) are
+ * this page's own, from index.astro.
  */
-@import '../miniature/miniature.css' layer(planner);
+@import '../miniature/shotcard.css';
 
-html, body { height: auto; overflow: visible; }
-html { touch-action: auto; user-select: auto; -webkit-user-select: auto; }
+/* What is hidden stays hidden, whatever display a rule below gives it (the planner's sheet said
+   this for the page while it was loaded here whole). */
+.next [hidden] { display: none !important; }
 
 .next { display: grid; gap: 14px; max-width: 1120px; margin: 0 auto; padding: calc(max(12px, env(safe-area-inset-top)) + 64px) var(--gutter) 0; }
 .next-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 16px; }
@@ -27,10 +26,8 @@ html { touch-action: auto; user-select: auto; -webkit-user-select: auto; }
 .home-chip[aria-pressed='true'] { background: var(--ink); color: var(--bg); }
 .home-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* The cards are links here. The page's `a { color: inherit }` stands over the layer, so the
-   card's light ink on its frame is said again. */
-a.shotcard { text-decoration: none; transition: transform 0.18s; }
-a.shotcard--card { color: var(--on-photo); }
+/* The cards are links here: they lift a little under the pointer. */
+a.shotcard { transition: transform 0.18s; }
 a.shotcard:hover { transform: translateY(-2px); }
 @media (prefers-reduced-motion: reduce) { a.shotcard { transition: none; } a.shotcard:hover { transform: none; } }
 
