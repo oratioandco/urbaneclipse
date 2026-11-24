@@ -145,6 +145,8 @@ let lastShadowed = false;
 // Frames drawn since the shadow map was.
 let sinceShadow = 99;
 let wasScrubbing = false;
+// `?scrub=full` draws every frame of a drag whole, to measure what the cheaper drag saves.
+const CHEAP_DRAG = params.get('scrub') !== 'full';
 
 function frame(now) {
   requestAnimationFrame(frame);
@@ -174,7 +176,7 @@ function frame(now) {
   const moved = controls.enabled && controls.update();
   if (moved) app.shadowsDirty = true;
   // A drag of the clock draws cheaper (quality.js); when it rests, one whole frame is owed.
-  const inScrub = scrubbing(entered);
+  const inScrub = CHEAP_DRAG && scrubbing(entered);
   if (inScrub !== wasScrubbing) {
     wasScrubbing = inScrub;
     for (const mesh of treeMeshes) mesh.castShadow = !inScrub;
