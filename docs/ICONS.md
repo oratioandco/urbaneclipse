@@ -13,9 +13,8 @@ One icon set for `/plan/`, and the one sun and one moon. Written 2026-11-23.
 
 Adopted in `/plan/` on 2026-11-24 (branch `claude/panel-finish-3c13ce`): the panel, the toolbar,
 the layers menu, the map's pills, spots and minimap draw from these modules, and the interim
-discs, marks and glyphs are deleted. Two small modules sit on top: `bodyAt.js` (the body of an
-instant, for rows and buttons) and `shotPicture.js` (the body behind the set's tower or down
-its street, for shot cards and list rows). Not swapped: the `#eclipse` status dot at eye level
+discs, marks and glyphs are deleted. `bodyAt.js` sits on top (the body of an instant, for rows and buttons); shots are shown by
+the shot card, `shotCard.js`, whose frame draws its sun and moon with `drawSun`/`drawMoon`. Not swapped: the `#eclipse` status dot at eye level
 (a status light in the body's line colour, beside words) and the legend's line samples.
 The mapping table at the end of this note is kept as the record of what was replaced.
 

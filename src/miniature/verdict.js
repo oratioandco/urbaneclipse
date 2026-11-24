@@ -118,14 +118,15 @@ export function assess({ low, mid, high, vis = 24_000, rain = 0, altDeg = null, 
 export const gradeSky = (sky) => assess(sky).grade;
 
 /**
- * The verdict for a sky, or for none: `{ grade, word, reason, label, colour, horizonChecked }`.
+ * The verdict for a sky, or for none: `{ grade, word, reason, label, colour, horizonChecked,
+ * sky }`; `sky` is the sky it was read from, which the shot card's frame is drawn with.
  * Without a forecast the grade is null and the label says which kind of nothing it is.
  */
 export function verdict(sky, missing = 'No forecast yet') {
   if (!sky) return { grade: null, word: missing, reason: '', label: missing, colour: false, horizonChecked: true };
   const { grade, reason, colour, horizonChecked } = assess(sky);
   const word = VERDICT_WORD[grade];
-  return { grade, word, reason, label: `${word} · ${reason}`, colour, horizonChecked };
+  return { grade, word, reason, label: `${word} · ${reason}`, colour, horizonChecked, sky };
 }
 
 /** What a verdict leaves unsaid in two words, for a tooltip or a detail line; '' when nothing. */

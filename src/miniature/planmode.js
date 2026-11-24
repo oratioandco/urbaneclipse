@@ -15,10 +15,9 @@ import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
 import { shotVerdict } from './verdict.js';
 import { layers } from './chrome.js';
 import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js';
-import { shotPicture } from './shotPicture.js';
-import { icon, iconEl } from './icons.js';
+import { iconEl } from './icons.js';
 import { moonSvg } from './bodies.js';
-import { collectRows, renderDayList, showVerdict } from './daylist.js';
+import { collectRows, openShot, renderDayList, shotRow } from './daylist.js';
 import { computeDayPaths, getViewshed } from './plan.js';
 import { renderPeek } from './peek.js';
 import { onPeek } from './sheet.js';
@@ -239,8 +238,7 @@ export function renderPlanCards() {
     // along first, or setMinute clamps a Tomorrow shot into tonight.
     if (svDate(from) !== dateInput.value) setDay(svDate(from));
     setPanelMode('shoot');
-    row.go();
-    invalidate();
+    openShot(row, row.verdict);
   };
   const stripHandlers = {
     onTick: flyTo,
@@ -272,18 +270,7 @@ export function renderPlanCards() {
       heading.dataset.date = svDate(from);
       return [
         heading,
-      ...picks.map((row) => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'dayrow planrow';
-        item.dataset.body = row.body;
-        item.innerHTML = `${shotPicture(row, { size: 28 })}<span><b></b><em class="verdict"></em><small></small></span>${icon('chevron-right', { size: 16, className: 'chev' })}`;
-        item.querySelector('b').textContent = row.title;
-        showVerdict(item.querySelector('.verdict'), row.verdict);
-        item.querySelector('small').textContent = row.detail + noteAt(day, from, row.t);
-        item.addEventListener('click', () => flyTo(row, from));
-        return item;
-      }),
+      ...picks.map((row) => shotRow({ ...row, detail: row.detail + noteAt(day, from, row.t) }, row.verdict, () => flyTo(row, from))),
       ];
     }),
   );

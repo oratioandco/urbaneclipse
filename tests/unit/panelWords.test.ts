@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { breakable, peekVariants, shortStreet } from '../../src/miniature/shotWords.js';
-import { shotPicture } from '../../src/miniature/shotPicture.js';
+import { FRAME_PIXELS, shotWhat } from '../../src/miniature/shotCard.js';
 import { bodyIcon, bodyState } from '../../src/miniature/bodyAt.js';
 
 describe('short words for a shot', () => {
@@ -53,14 +53,24 @@ describe('one sun, one moon, one set of marks', () => {
     expect(bodyIcon('sun', t)).toContain('ue-sun');
     expect(bodyIcon('moon', t)).toContain('ue-moon');
   });
-  it('pictures a shot as that body with the set’s tower or street', () => {
-    const tower = shotPicture({ body: 'sun', kind: 'tower', where: 'sphere', t });
-    const street = shotPicture({ body: 'moon', kind: 'street', t });
-    expect(tower).toContain('ue-shot-tower');
-    expect(street).toContain('ue-shot-street');
-    expect(tower).not.toBe(shotPicture({ body: 'sun', kind: 'tower', where: 'antenna', t }));
-    // Decorative: the words stand beside it.
-    expect(tower).toContain('aria-hidden="true"');
+  it('says on a shot card which body, and behind what', () => {
+    expect(shotWhat({ body: 'sun', kind: 'tower', where: 'sphere', stand: '5.3 km SE' })).toBe('Sun \u00b7 5.3 km SE');
+    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'sphere' })).toBe('Moon behind the sphere');
+    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'antenna', stand: '1.7 km+ SE' })).toBe('Moon on the antenna \u00b7 1.7 km+ SE');
+    expect(shotWhat({ body: 'sun', kind: 'street' })).toBe('Sun down the street');
+    expect(Object.keys(FRAME_PIXELS)).toEqual(['card', 'row', 'ticket']);
+  });
+  it('has one shot card: the strip, the lists and the ticket all build it from shotCard.js', () => {
+    const read = (file: string) => readFileSync(new URL(`../../src/miniature/${file}`, import.meta.url), 'utf8');
+    expect(read('dayview.js')).toMatch(/shotCard\(row, verdict\)/);
+    expect(read('daylist.js')).toMatch(/shotCard\(shot, verdict, \{ size: 'row' \}\)/);
+    expect(read('daylist.js')).toMatch(/size: 'ticket'/);
+    expect(read('planmode.js')).toMatch(/shotRow\(/);
+    // The frame's sun and moon are the canonical ones, its marks the one set.
+    expect(read('shotCard.js')).toMatch(/drawSun\(/);
+    expect(read('shotCard.js')).toMatch(/drawMoon\(/);
+    expect(read('shotCard.js')).toMatch(/markSvg\(/);
+    expect(read('miniature.css')).not.toMatch(/\.shot \{|\.shot-name|ue-shot/);
   });
   it('leaves no sun, moon or mark drawn by hand in the planner', () => {
     const dir = new URL('../../src/miniature/', import.meta.url);

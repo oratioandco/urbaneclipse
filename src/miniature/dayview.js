@@ -16,11 +16,10 @@ import { cssRgb } from '../lib/mapBodyLook.ts';
 import { skyPalette } from '../lib/skyPalette.ts';
 import { dateInput, dayStart } from './clock.js';
 import { bodyIcon } from './bodyAt.js';
-import { currentRows, dayVerdict, emptyDay, markKind, showVerdict } from './daylist.js';
+import { currentRows, dayVerdict, emptyDay, markKind, openShot, showVerdict } from './daylist.js';
 import { icon } from './icons.js';
 import { MARK_NAMES, markBody } from './marks.js';
-import { shotPicture } from './shotPicture.js';
-import { breakable, shortStreet } from './shotWords.js';
+import { shotCard } from './shotCard.js';
 import {
   DAY_MINUTES,
   altitudeToY,
@@ -178,9 +177,6 @@ function drawPlot() {
   dots = '';
 }
 
-/** A card's two lines: the verdict's word and its reason. Without a forecast, one quiet line says so. */
-const cardWords = (verdict) => (verdict.grade === null ? ['', verdict.label.startsWith('No') ? 'no forecast' : 'forecast…'] : [verdict.word, verdict.reason]);
-
 /** The row of shots above the scale: the same rows the day list holds, as cards. */
 function drawShots() {
   const rows = drawn.rows;
@@ -193,38 +189,25 @@ function drawShots() {
     shotsCount.textContent = '';
     return;
   }
-  // Five cards fit a phone; on the narrowest (320 px) four, so a name still has room.
-  const layout = shotRowLayout(shotsRow.clientWidth, rows.length, { min: shotsRow.clientWidth < 330 ? 4 : 5 });
+  // Three frames fit a phone, so each is large enough to be read as a picture; more scroll.
+  const layout = shotRowLayout(shotsRow.clientWidth, rows.length, { min: 3, ideal: 112 });
   shotsRow.style.setProperty('--card', `${layout.card.toFixed(2)}px`);
   shotsRow.dataset.scrolls = String(layout.scrolls);
   shotsRow.replaceChildren(
     ...rows.map((row, i) => {
       const verdict = drawn.verdicts[i];
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'shot';
-      card.dataset.body = row.body;
-      card.dataset.grade = verdict.grade ?? 'none';
+      // The one shot card (shotCard.js), at its card size.
+      const card = shotCard(row, verdict);
       card.dataset.index = String(i);
-      // Top to bottom, what tells one shot from the next: when, a picture of which body behind
-      // the tower or down a street, where, and the verdict with its reason.
-      card.innerHTML = `<b></b>${shotPicture(row, { size: 32 })}<i class="shot-body"></i><span class="shot-name" lang="de"></span><em class="verdict"></em><small></small>`;
-      card.querySelector('b').textContent = formatClock(row.t);
-      card.querySelector('.shot-body').textContent = row.body === 'moon' ? 'Moon' : 'Sun';
-      card.querySelector('.shot-name').textContent = breakable(shortStreet(row.short));
-      // Two shots at the tower differ in where to stand for them: how far out, and on which side.
-      if (row.stand) card.querySelector('.shot-name').append(Object.assign(document.createElement('span'), { className: 'shot-stand', textContent: row.stand }));
-      if (verdict.grade !== null) showVerdict(card.querySelector('.verdict'), verdict, { reason: false });
-      card.querySelector('small').textContent = cardWords(verdict)[1];
-      card.setAttribute('aria-label', `${formatClock(row.t)}, ${row.title}. ${verdict.label}. ${row.detail}`);
       card.title = `${row.title} (${MARK_NAMES[markKind(row)].toLowerCase()}) · ${row.detail}`;
+      const go = Object.assign(document.createElement('span'), { className: 'sc-go', textContent: 'View from here' });
+      go.insertAdjacentHTML('beforeend', icon('chevron-right', { size: 12 }));
+      card.querySelector('.sc-meta').append(go);
       card.addEventListener('click', () => {
         // A first tap brings the time to the shot; a tap on the shot the thumb stands on opens
         // the view from where to stand for it.
-        if (shotAt(drawn.minutes, Number(timeInput.value)) === i) {
-          row.go();
-          invalidate();
-        } else glideTo(drawn.minutes[i]);
+        if (shotAt(drawn.minutes, Number(timeInput.value)) === i) openShot(row, verdict);
+        else glideTo(drawn.minutes[i]);
       });
       return card;
     }),
@@ -278,19 +261,15 @@ function place() {
   }
 
   const index = shotAt(drawn.minutes, minute);
-  for (const card of shotsRow.querySelectorAll('.shot')) {
+  for (const card of shotsRow.querySelectorAll('.shotcard')) {
     const on = Number(card.dataset.index) === index;
-    if (on === (card.getAttribute('aria-current') === 'true')) continue;
     if (on) card.setAttribute('aria-current', 'true');
     else card.removeAttribute('aria-current');
-    const small = card.querySelector('small');
-    small.textContent = on ? 'View' : cardWords(drawn.verdicts[Number(card.dataset.index)])[1];
-    if (on) small.insertAdjacentHTML('beforeend', icon('chevron-right', { size: 12 }));
   }
   // The card the thumb has just come to stand on is brought into the row's view.
   if (index !== drawn.current) {
     drawn.current = index;
-    const card = index >= 0 ? shotsRow.querySelector(`.shot[data-index="${index}"]`) : null;
+    const card = index >= 0 ? shotsRow.querySelector(`.shotcard[data-index="${index}"]`) : null;
     if (card && (card.offsetLeft < shotsRow.scrollLeft || card.offsetLeft + card.offsetWidth > shotsRow.scrollLeft + shotsRow.clientWidth)) {
       shotsRow.scrollTo({ left: card.offsetLeft - (shotsRow.clientWidth - card.offsetWidth) / 2, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     }

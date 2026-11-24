@@ -4,7 +4,7 @@ import { getMoonIllumination } from 'suncalc';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { compassPoint } from '../lib/dailyPaths.ts';
-import { shotPicture } from './shotPicture.js';
+import { shotCard } from './shotCard.js';
 import { icon } from './icons.js';
 import { formatClock } from './time.js';
 import { EYE_HEIGHT } from './eye.js';
@@ -193,30 +193,37 @@ export function snapMinute(t) {
   return best ? best.t : null;
 }
 
+/** A list row: the shot card at its row size, with the chevron that says it opens. */
+export function shotRow(shot, verdict, onClick) {
+  const item = shotCard(shot, verdict, { size: 'row' });
+  item.insertAdjacentHTML('beforeend', icon('chevron-right', { size: 16, className: 'chev' }));
+  item.addEventListener('click', onClick);
+  return item;
+}
+
+// At eye level the ticket shows the card of the shot that was opened, at its smallest.
+const ticketShot = document.getElementById('ticket-shot');
+/** Open a shot: fly to where to stand for it, at its minute, and put its card on the ticket. */
+export function openShot(row, verdict) {
+  ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }));
+  ticketShot.hidden = false;
+  row.go();
+  invalidate();
+}
+// Back on the map the ticket's card goes: the next visit to eye level may be for no shot at all.
+new MutationObserver(() => {
+  if (document.body.dataset.eye === 'true') return;
+  ticketShot.hidden = true;
+  ticketShot.replaceChildren();
+}).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });
+
 /** Why a day shows no shots: the filters hide them all, or nothing lines up. */
 export const emptyDay = () => (!layers.tower && !layers.streets ? 'Tower and street shots are both switched off. Switch one on under \u201cThis day\u201d.' : !layers.sun && !layers.moon ? 'Sun and moon are both switched off. Switch one on under \u201cThis day\u201d.' : 'Nothing lines up on this day. Try another.');
 
 /** The day as a list in planning: the same rows, in time order, each a tap from standing there. */
 export function renderDayList() {
   const rows = currentRows();
-  dayList.replaceChildren(
-    ...rows.map((row) => {
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'dayrow';
-      item.dataset.body = row.body;
-      item.dataset.kind = row.kind;
-      item.innerHTML = `${shotPicture(row, { size: 28 })}<span><b></b><em class="verdict"></em><small></small></span>${icon('chevron-right', { size: 16, className: 'chev' })}`;
-      item.querySelector('b').textContent = row.title;
-      showVerdict(item.querySelector('.verdict'), dayVerdict(row));
-      item.querySelector('small').textContent = row.detail + cloudNote(row.t);
-      item.addEventListener('click', () => {
-        row.go();
-        invalidate();
-      });
-      return item;
-    }),
-  );
+  dayList.replaceChildren(...rows.map((row) => shotRow({ ...row, detail: row.detail + cloudNote(row.t) }, dayVerdict(row), () => openShot(row, dayVerdict(row)))));
   if (!rows.length) dayList.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: emptyDay() }));
 }
 

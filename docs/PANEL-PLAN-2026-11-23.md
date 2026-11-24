@@ -122,3 +122,13 @@ Open after this phase:
 - The sunrise time in the weather line is still 3 to 7 minutes late (audit defect 5, `weather.js`).
 - Day view at half is 51 % of a phone screen, up from 46 %: the tabs row is the cost of showing
   one timeline at a time.
+
+### Change to point 3, same day: the approved shot card
+
+The ring-and-name cards of point 3 are replaced by the owner-approved card of
+`next-shots-grid.html`, as one component (`shotCard.js`, documented in `src/miniature/README.md`)
+used for the day view's strip, both lists' rows and the eye-level ticket. Three cards fit the
+strip at 390 px (the spec's "five fit" was for icon cards; a frame needs the width). Half height
+with the day view is 53 % of a 390 x 844 screen; the ticket is one line taller (17 %) when it was
+opened from a shot. The date list at eye level ("Dates") still uses plain rows with the body's
+disc: its entries are dates, mostly beyond the forecast, and were not asked for.

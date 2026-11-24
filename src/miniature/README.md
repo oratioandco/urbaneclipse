@@ -51,10 +51,47 @@ fires its `input` event, so `clock.js`, `lighting.js` and `link.js` follow; the 
 the timeline, unseen, as the slider for keyboards and screen readers. Verdicts are words with a
 reason, never a bare dot, and every one comes from the one grade, `assess` in `verdict.js`.
 Sun, moon, marks, icons and tooltips come from `bodies.js`, `marks.js`, `icons.js` and
-`controlNames.js` (see `docs/ICONS.md`); `bodyAt.js` and `shotPicture.js` put them to use. The day view's arithmetic is in `dayTimeline.js`.
+`controlNames.js` (see `docs/ICONS.md`); `bodyAt.js` gives the body of an instant. The day view's arithmetic is in `dayTimeline.js`.
 All three pure files are tested in `tests/unit/panel.test.ts`. `main.js` reads `.bottom`'s
 height as what covers the map from below, so `.bottom` is only ever as tall as what really
 sits at the bottom of the screen (zero for the side panel).
+
+### The shot card
+
+`shotCard.js` is the one way a shot is shown in `/plan/`: the day view's strip, the rows of
+"This day" and "Next 3 days", and the line on the eye-level ticket. Its styles are the
+`.shotcard` block in `miniature.css`. The home grid of the coming days is to be built from it.
+
+```js
+import { shotCard, drawShotFrame } from './shotCard.js';
+const card = shotCard(shot, verdict, { size: 'card' });   // 'card' | 'row' | 'ticket'; tag: 'button' | 'div'
+card.addEventListener('click', () => openShot(shot, verdict));   // openShot is in daylist.js
+```
+
+| Input | What | Needed |
+|---|---|---|
+| `shot.t` | the instant, ms | yes |
+| `shot.body` | `'sun'` or `'moon'` | yes |
+| `shot.kind` | `'tower'` or `'street'` | yes |
+| `shot.where` | `'sphere'` or `'antenna'`: what the disc is behind | tower shots |
+| `shot.landmark` | a file name in `public/landmark-sprites/` without `.png`; default `fernsehturm` | no |
+| `shot.distanceM` | distance to the landmark: sizes the disc against the sphere | no |
+| `shot.title`, `shot.short` | the shot in a sentence; the place alone | one of them |
+| `shot.stand` | where to stand, short ("5.3 km SE") | no |
+| `shot.detail` | the row's small print | rows |
+| `verdict` | what `shotVerdict` returns; its `sky` draws the frame's cloud and rain. `null`: no pill, clear sky | no |
+
+The rows of `collectRows` (`daylist.js`) already are shots. `size: 'card'` takes the width of
+its container (set `--card` or a grid column) at 4:5 and puts the words on the frame; `'row'`
+puts a 76 px frame beside the words; `'ticket'` is one line. `drawShotFrame(canvas, shot,
+verdict)` draws the frame alone on any canvas, for a larger hero. The frame: the sky of
+`skyPalette` for the sun's height, the sun or moon of `bodies.js`, the forecast's three cloud
+layers and rain, and the landmark's sprite as a silhouette, close enough that the disc has
+its true size against the sphere. Only `fernsehturm` has its sphere and antenna positions
+recorded (`SPRITE` in `shotCard.js`); another landmark needs its own entry there before it is
+framed correctly. A street has no sprite: it is drawn as the street, two rows of houses
+running to the point where the body stands, with its light on the road.
+
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
 More dates from where you stand (the Dates button at eye level) search a year in
