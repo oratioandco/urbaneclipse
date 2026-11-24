@@ -1,0 +1,121 @@
+/**
+ * The sun or moon behind the Viktoria on the Siegessäule and the quadriga on the Brandenburger
+ * Tor, as rows for a day: the same rows the TV tower's shots are (dayShots.js), so the cards,
+ * the links (`shot=viktoria-sun`, `shot=quadriga-moon`), the planner's fly-to and the calendar
+ * entry take them as they are. No three.js and no DOM.
+ *
+ *   computeLandmarkPasses(from, sheds)   a day's passes behind the two figures, checked against
+ *                                        each landmark's viewshed (src/lib/viewshed.ts)
+ *   landmarkRows(passes, flags)          the passes as rows
+ *
+ * The geometry, the strips of open ground one may stand on, and where every number comes from
+ * are in src/lib/landmarkStands.ts. What a row has checked and what not is in its `checked`
+ * and in its small print: buildings (LoD2, the viewshed) yes, trees no.
+ */
+import { getMoonIllumination } from 'suncalc';
+import { compassPoint, MIN_MOON_ILLUMINATION } from '../lib/dailyPaths.ts';
+import { DISC_DEG, FIGURE_TARGETS, figureHeight, figurePasses } from '../lib/landmarkStands.ts';
+import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
+import { dayEndOf } from './dayMath.js';
+import { formatClock } from './time.js';
+
+/** Each landmark's picture in public/landmark-sprites (shotCard.js `SPRITE`). */
+const SPRITE_OF = { siegessaeule: 'siegessaeule', 'brandenburger-tor': 'brandenburger_tor' };
+const BODY_NAME = { sun: 'Sun', moon: 'Moon' };
+const rad = (d) => (d * Math.PI) / 180;
+const deg = (r) => (r * 180) / Math.PI;
+const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
+
+/** What every one of these rows has and has not been checked against. */
+export const LANDMARK_CHECK = 'buildings checked, trees not';
+
+/**
+ * A day's passes behind the two figures, for the day that starts at `from` (a Berlin midnight,
+ * ms). `sheds` holds each landmark's viewshed by its id (`siegessaeule`, `brandenburger-tor`).
+ * A landmark without its viewshed gives no passes: an unchecked standing point is not offered
+ * as a shot. A moon under a quarter lit is too faint to read behind a figure and is left out.
+ */
+export function computeLandmarkPasses(from, sheds = {}) {
+  const to = dayEndOf(from);
+  const passes = [];
+  for (const target of FIGURE_TARGETS) {
+    const shed = sheds?.[target.id];
+    if (!shed) continue;
+    const isClear = (lat, lon) => sampleViewshed(shed, lat, lon) === VIEW_VISIBLE;
+    for (const body of ['sun', 'moon']) {
+      for (const pass of figurePasses(target, body, from, to, { isClear })) {
+        if (body === 'moon' && getMoonIllumination(new Date(pass.best.t)).fraction < MIN_MOON_ILLUMINATION) continue;
+        passes.push(pass);
+      }
+    }
+  }
+  return passes;
+}
+
+const LENSES = [85, 105, 135, 200, 300, 400, 500, 600];
+/**
+ * A lens (35 mm equivalent) that gives the figure and the disc room: about seven times the
+ * larger of the two across the frame's short side, as the nearest common focal length.
+ */
+export function lensFor(target, distanceM) {
+  const figureDeg = deg(2 * Math.atan(figureHeight(target) / 2 / distanceM));
+  const focal = 12 / Math.tan(rad((7 * Math.max(figureDeg, DISC_DEG)) / 2));
+  return LENSES.reduce((best, f) => (Math.abs(Math.log(f / focal)) < Math.abs(Math.log(best / focal)) ? f : best));
+}
+
+/**
+ * The spectacle of a pass, on the scale the tower's and the streets' rows use (dayShots.js):
+ * the further out, the larger the disc against the figure. A sun smaller than the figure is a
+ * modest shot (1.1, under the tower's plain 1.2); one that holds the whole figure 1.5. The
+ * moon runs from 0.6 at half the figure to 2.0, under the tower's big moon (2.4).
+ */
+export const landmarkScore = (body, share) => (body === 'moon' ? Math.min(2, 1.2 * share) : share >= 1 ? 1.5 : 1.1);
+
+/**
+ * The passes as rows, in time order. `flags` switch bodies off (`sun`, `moon`; both on by
+ * default). A row's minute is the one whose stand point is nearest the middle of the strip; its
+ * small print gives the whole stretch, since every minute of it has a stand point of its own.
+ */
+export function landmarkRows(passes, flags = {}) {
+  const { sun = true, moon = true } = flags;
+  const rows = [];
+  for (const pass of passes) {
+    if (pass.body === 'moon' ? !moon : !sun) continue;
+    const { target, body, corridor, best } = pass;
+    const first = pass.points[0];
+    const last = pass.points[pass.points.length - 1];
+    const big = best.discShare >= 1.25;
+    const place = `${target.short}’s ${target.figure === 'Quadriga' ? 'quadriga' : target.figure}`;
+    const lit = body === 'moon' ? getMoonIllumination(new Date(best.t)).fraction : 1;
+    const side = compassPoint(best.bearingDeg);
+    rows.push({
+      t: best.t,
+      body,
+      kind: 'tower',
+      landmark: SPRITE_OF[target.id],
+      target: target.id,
+      short: target.short,
+      where: target.where,
+      side: corridor.side,
+      stand: `${distanceText(best.distanceM)} ${side}, looking ${corridor.looking === 'west' ? 'W' : 'E'}`,
+      brief: `${BODY_NAME[body]} behind ${target.short}`,
+      compact: `${BODY_NAME[body]} · ${target.short}`,
+      distanceM: best.distanceM,
+      score: landmarkScore(body, best.discShare),
+      title: big ? `Big ${body} behind the ${place}, ${best.discShare.toFixed(1)}× the figure` : `${BODY_NAME[body]} behind the ${place}`,
+      detail:
+        `${first.t === last.t ? formatClock(best.t) : `${formatClock(first.t)}–${formatClock(last.t)}`} · ` +
+        `on ${corridor.street}, ${distanceText(best.distanceM)} ${corridor.side} of ${target.noun}, looking ${corridor.looking} · ` +
+        `${Math.round(best.bodyAlt)}° up${body === 'moon' ? ` · ${Math.round(lit * 100)}% lit` : ''} · ${LANDMARK_CHECK}`,
+      checked: { buildings: true, trees: false },
+      discShare: best.discShare,
+      openAt: best.t,
+      at: [best.lat, best.lon],
+      look: [best.bodyAz, Math.max(0, best.bodyAlt)],
+      lens: lensFor(target, best.distanceM),
+      standBearingDeg: best.bearingDeg,
+      standDistanceM: best.distanceM,
+    });
+  }
+  return rows.sort((a, b) => a.t - b.t);
+}
