@@ -3,7 +3,7 @@ import { cloudsAt, cloudsFor, forecastReach, readSky, visibilityAt } from './wea
 import { formatClock } from './time.js';
 import { readingVerdict } from './verdict.js';
 import { layers, setCloudHint } from './chrome.js';
-import { dateInput, dayStart } from './clock.js';
+import { dateInput, dayStart, minuteOf } from './clock.js';
 import { renderDayList } from './daylist.js';
 import { renderPlanCards } from './planmode.js';
 import { updateSun } from './lighting.js';
@@ -73,7 +73,8 @@ function showWeather() {
 /** Cloud and sight at an instant, as a short note for the list. */
 export function cloudNote(t) {
   if (!app.weather || !layers.weather) return '';
-  const minutes = (t - dayStart()) / 60_000;
+  // The forecast's hours are Berlin wall-clock hours, so not minutes elapsed since midnight.
+  const minutes = minuteOf(t);
   const c = cloudsAt(app.weather, minutes);
   const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
   const vis = visibilityAt(app.weather, minutes);
