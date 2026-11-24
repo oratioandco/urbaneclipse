@@ -16,7 +16,7 @@ import { cssRgb } from '../lib/mapBodyLook.ts';
 import { skyPalette } from '../lib/skyPalette.ts';
 import { dateInput, dayStart } from './clock.js';
 import { bodyIcon } from './bodyAt.js';
-import { currentRows, dayVerdict, markKind, showVerdict } from './daylist.js';
+import { currentRows, dayVerdict, emptyDay, markKind, showVerdict } from './daylist.js';
 import { icon } from './icons.js';
 import { MARK_NAMES, markBody } from './marks.js';
 import { shotPicture } from './shotPicture.js';
@@ -136,8 +136,6 @@ function drawPlot() {
       const w = inner / 24;
       nodes.push(el('rect', { class: 'tl-rain', x: (PAD_X + h * w + w * 0.2).toFixed(1), y: RAIN.y, width: (w * 0.6).toFixed(1), height: (rain.height * RAIN.h).toFixed(1), rx: 1, opacity: rain.strength.toFixed(2) }));
     });
-  } else {
-    nodes.push(el('text', { class: 'tl-note', x: width / 2, y: BAND.y + BAND.h - 1, 'text-anchor': 'middle' }, dayVerdict(null).label.toLowerCase()));
   }
 
   // The light: the sun's curve, solid while it is up, and the moon's, dotted.
@@ -189,13 +187,14 @@ function drawShots() {
   const now = Date.now();
   const isToday = now >= drawn.from && now < drawn.from + 86_400_000;
   if (!rows.length) {
-    const note = Object.assign(document.createElement('p'), { className: 'muted', textContent: app.dayReady ? 'Nothing lines up on this day. Try another.' : 'Working out the day…' });
+    const note = Object.assign(document.createElement('p'), { className: 'muted', textContent: app.dayReady ? emptyDay() : 'Working out the day…' });
     shotsRow.replaceChildren(note);
     shotsRow.dataset.scrolls = 'false';
     shotsCount.textContent = '';
     return;
   }
-  const layout = shotRowLayout(shotsRow.clientWidth, rows.length);
+  // Five cards fit a phone; on the narrowest (320 px) four, so a name still has room.
+  const layout = shotRowLayout(shotsRow.clientWidth, rows.length, { min: shotsRow.clientWidth < 330 ? 4 : 5 });
   shotsRow.style.setProperty('--card', `${layout.card.toFixed(2)}px`);
   shotsRow.dataset.scrolls = String(layout.scrolls);
   shotsRow.replaceChildren(
@@ -213,6 +212,8 @@ function drawShots() {
       card.querySelector('b').textContent = formatClock(row.t);
       card.querySelector('.shot-body').textContent = row.body === 'moon' ? 'Moon' : 'Sun';
       card.querySelector('.shot-name').textContent = breakable(shortStreet(row.short));
+      // Two shots at the tower differ in where to stand for them: how far out, and on which side.
+      if (row.stand) card.querySelector('.shot-name').append(Object.assign(document.createElement('span'), { className: 'shot-stand', textContent: row.stand }));
       if (verdict.grade !== null) showVerdict(card.querySelector('.verdict'), verdict, { reason: false });
       card.querySelector('small').textContent = cardWords(verdict)[1];
       card.setAttribute('aria-label', `${formatClock(row.t)}, ${row.title}. ${verdict.label}. ${row.detail}`);
@@ -228,8 +229,14 @@ function drawShots() {
       return card;
     }),
   );
+  // "Possible" is a claim about the weather: only with a forecast. Without one, the count
+  // is the geometry's, and says so.
+  const graded = drawn.verdicts.some((v) => v.grade !== null && v.grade !== 'past');
   const open = drawn.verdicts.filter((v) => v.grade !== 'past' && v.grade !== 'poor').length;
-  shotsCount.textContent = `${open} possible${isToday ? ' from now' : ''}${layout.scrolls ? ` · ${rows.length} in all` : ''}`;
+  const ahead = drawn.verdicts.filter((v) => v.grade !== 'past').length;
+  if (graded) shotsCount.textContent = `${open} possible${isToday ? ' from now' : ''}${layout.scrolls ? ` · ${rows.length} in all` : ''}`;
+  else if (!ahead) shotsCount.textContent = `all ${rows.length} passed`;
+  else shotsCount.textContent = `${ahead} line up${isToday ? ' from now' : ''} · ${dayVerdict(null).label.toLowerCase()}`;
   // A new day opens at its next shot; a redraw of the same day leaves the row where it is.
   const key = `${dateInput.value}|${rows.length}|${Math.round(layout.card)}`;
   if (key !== drawn.key) {
@@ -298,7 +305,7 @@ function place() {
     const at = skyAt(app.weather, minute);
     const cover = Math.round(100 * Math.max(at.low, at.mid, at.high));
     sky = ` · ${cover < 10 ? 'clear sky' : `cloud ${cover}%`}${at.rain >= 0.2 ? ` · rain ${Math.round(at.rain * 100)}%` : ''}`;
-  }
+  } else sky = ` · ${dayVerdict(null).label.toLowerCase()}`;
   if (index >= 0) {
     const shot = Object.assign(document.createElement('b'), { textContent: drawn.rows[index].title });
     const verdict = document.createElement('em');

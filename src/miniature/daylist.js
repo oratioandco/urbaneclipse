@@ -30,7 +30,8 @@ const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m /
  * before which the day's chances have already passed. Each row also carries a spectacle
  * score, so the plan can rank the big moon over a short henge, and a short name for the day
  * view's cards (the place: the card's picture says sun or moon, tower or street), and the
- * shot in a few words (`brief`) for the peek line.
+ * shot in a few words (`brief`) for the peek line. Tower rows also say where to stand
+ * (`stand`: how far and which side of the tower), which is all that tells two of them apart.
  */
 export function collectRows(dayPaths, moments, from, flags = {}) {
   const { tower = true, streets = true, moon = true } = flags;
@@ -71,6 +72,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           kind: 'tower',
           short: 'TV tower',
           where: 'sphere',
+          stand: `${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)}`,
           brief: path.body === 'moon' ? 'Moon behind TV tower' : discOverSphere(mid.distanceM) > 1 ? 'Sun ring at TV tower' : 'Sun behind TV tower',
           distanceM: mid.distanceM,
           // The closer the tower, the larger the body behind it: the spectacle, scored.
@@ -117,6 +119,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           kind: 'tower',
           short: 'TV antenna',
           where: 'antenna',
+          stand: `${distanceText(near)}+ ${compassPoint(bearing)}`,
           brief: `${rising ? 'Moonrise' : 'Moonset'} on TV antenna`,
           distanceM: (near + far) / 2,
           score: 2,
@@ -190,6 +193,9 @@ export function snapMinute(t) {
   return best ? best.t : null;
 }
 
+/** Why a day shows no shots: the filters hide them all, or nothing lines up. */
+export const emptyDay = () => (!layers.tower && !layers.streets ? 'Tower and street shots are both switched off. Switch one on under \u201cThis day\u201d.' : !layers.sun && !layers.moon ? 'Sun and moon are both switched off. Switch one on under \u201cThis day\u201d.' : 'Nothing lines up on this day. Try another.');
+
 /** The day as a list in planning: the same rows, in time order, each a tap from standing there. */
 export function renderDayList() {
   const rows = currentRows();
@@ -211,7 +217,7 @@ export function renderDayList() {
       return item;
     }),
   );
-  if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up on this day. Try another.</p>';
+  if (!rows.length) dayList.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: emptyDay() }));
 }
 
 /**

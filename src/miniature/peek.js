@@ -67,7 +67,9 @@ export function renderPeek(shot, now, sentence = 'Looking for the next shot…')
   fit();
   const said = `Next shot: ${row.title}, ${when}, ${wait}${verdict ? `. ${verdict.label}` : ''}`;
   toggle.setAttribute('aria-label', said);
-  rail.innerHTML = icon;
+  // Drawn again, not copied: the body's gradients are found by id, and the peek line's copy
+  // is out of sight while the rail shows.
+  rail.innerHTML = bodyIcon(row.body, row.t, { size: 20 });
   rail.append(node('b', '', clock), node('small', '', wait.replace(/^in /, '')));
   rail.setAttribute('aria-label', `${said}. Show it.`);
   rail.title = `${row.title} · ${when} · ${wait}`;

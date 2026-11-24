@@ -255,10 +255,13 @@ export function renderPlanCards() {
   // are the answer to "when, then?".
   renderSparkstrip(strip, blocks, stripHandlers);
   if (!total) {
-    const why = filter === 'all' ? 'Nothing lines up' : `No ${filter === 'sun' ? 'sun' : 'moon'} shots line up`;
-    panel.replaceChildren(
-      Object.assign(document.createElement('p'), { className: 'muted', textContent: `${why} in the next three days. Try another day.` }),
-    );
+    // Two different nothings: the geometry has none, or the cloud hides what there is.
+    const what = filter === 'all' ? 'shots' : `${filter} shots`;
+    const cloudy = blocks.some((block) => block.rows > 0);
+    const text = cloudy
+      ? `Skip: too much cloud for the ${blocks.reduce((sum, block) => sum + block.rows, 0)} ${what} that line up in the next three days. Open a day above to see them.`
+      : `No ${what} line up in the next three days. Try another day.`;
+    panel.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: text }));
     return;
   }
   panel.replaceChildren(

@@ -212,6 +212,19 @@ addEventListener('keydown', (event) => {
   if (document.querySelector('dialog[open]') || !document.getElementById('layers-menu').hidden) return;
   if (event.target instanceof HTMLElement && event.target.matches('input, select, textarea')) return;
   setHeight(stepDown(height));
+  // Folded to peek, whatever had the focus is out of reach: hand it to the peek line.
+  if (height === 'peek' && body.contains(document.activeElement)) toggle.focus({ preventScroll: true });
+});
+
+// A keyboard can walk into what lies under the fold at half height (the step buttons, the
+// list). The sheet opens fully for it, so the focus is never on something out of sight.
+body.addEventListener('focusin', (event) => {
+  if (!isSheet() || height !== 'half' || drag || document.body.dataset.eye === 'true') return;
+  if (body.scrollTop > 0 || event.target.getBoundingClientRect().top > innerHeight - 12) {
+    body.scrollTop = 0;
+    setHeight('full', { remember: false });
+    event.target.scrollIntoView?.({ block: 'nearest' });
+  }
 });
 
 // Moving the map means looking at the map: the sheet gets out of the way.
