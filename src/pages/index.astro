@@ -1,7 +1,9 @@
 ---
-// The landing page: what the planner is for, the shots it finds, and how to use it. The
-// planner itself is at /plan/. Clips and stills in public/media come from the planner
+// The landing page: first the shots of the next three days (src/home/), then what the planner
+// is for, the shots it finds, and how to use it. The planner itself is at /plan/. Clips and stills in public/media come from the planner
 // (scripts/miniature/record_clips.mjs), not from photographs.
+import '../home/home.css';
+
 const SHOTS = [
   {
     id: 'sun-sphere',
@@ -74,15 +76,31 @@ const FEATURES = [
       <a class="button small" href="/plan/">Open the planner</a>
     </header>
 
+    <section id="next-shots" class="next" data-state="loading" aria-labelledby="next-title">
+      <div class="next-head">
+        <div>
+          <p class="next-eyebrow">Sun and moon lined up with Berlin · the next three days</p>
+          <h1 id="next-title">Is anything worth shooting?</h1>
+          <p class="next-answer" data-answer aria-live="polite">Working out what lines up…</p>
+        </div>
+        <button class="home-chip" type="button" data-skip-toggle aria-pressed="false" hidden>Show skipped shots</button>
+      </div>
+      <div class="next-list" data-list>
+        <div class="home-skeleton" aria-hidden="true"></div>
+        <noscript><p class="home-note">The next shots are worked out in your browser, which needs JavaScript. <a href="/plan/">Open the planner</a></p></noscript>
+      </div>
+      <p class="next-foot">Each frame is drawn for its minute: the sky from the sun’s height, cloud and rain from the Open-Meteo forecast. Go, Maybe and Skip say whether the disc and the landmark will be seen. Buildings are checked; trees are not. Tap a shot to stand there in the planner.</p>
+    </section>
+
     <section class="hero">
       <video class="hero-video" src="/media/berlin-day.mp4" poster="/media/berlin-day.jpg" autoplay muted loop playsinline aria-hidden="true"></video>
       <div class="hero-text">
         <p class="eyebrow">For photographers in Berlin</p>
-        <h1>Line up the sun and moon with&nbsp;Berlin</h1>
+        <h2 class="hero-title">Line up the sun and moon with&nbsp;Berlin</h2>
         <p class="lead">Find where to stand so the sun or moon sits behind the TV tower, or shines straight down a street. To the minute, with the city’s real buildings, light and clouds.</p>
         <div class="actions">
           <a class="button" href="/plan/">Open the planner</a>
-          <a class="button ghost" href="#shots">See the shots</a>
+          <a class="button ghost" href="#shots">See example shots</a>
         </div>
       </div>
     </section>
@@ -90,15 +108,15 @@ const FEATURES = [
     <main>
       <section id="shots" class="section">
         <h2>Three shots the planner finds</h2>
-        <p class="intro">Each clip is the planner’s viewfinder on a real date: what the photo would show. Open it and you stand on the spot, with the time and lens set.</p>
-        <div class="shots">
+        <p class="lede">Each clip is the planner’s viewfinder on a real date: what the photo would show. Open it and you stand on the spot, with the time and lens set.</p>
+        <div class="clips">
           {SHOTS.map((shot) => (
             <article class="shot">
               <a class="shot-media" href={shot.href} aria-label={`Open this shot: ${shot.title}`}>
                 <video data-src={`/media/${shot.id}.mp4`} poster={`/media/${shot.id}.jpg`} muted loop playsinline preload="none" />
               </a>
               <div class="shot-body">
-                <h3><i class:list={['dot', shot.body]} />{shot.title}</h3>
+                <h3><i class:list={['dot', `of-${shot.body}`]} />{shot.title}</h3>
                 <p>{shot.text}</p>
                 <p class="example"><b>{shot.when}</b><br />{shot.where}</p>
                 <a class="more" href={shot.href}>Open this shot ›</a>
@@ -158,6 +176,8 @@ const FEATURES = [
     </footer>
 
     <script>
+      import '../home/home.js';
+
       // Clips play while they are on screen, and only load once they come near it.
       const observer = new IntersectionObserver(
         (entries) => {
@@ -192,6 +212,9 @@ const FEATURES = [
         --glass: rgba(20, 23, 38, 0.46);
         --glass-edge: rgba(236, 232, 223, 0.16);
         --glass-blur: blur(22px) saturate(1.7);
+        /* The planner's paper glass, for panes that lie on the page itself: the bar, the chips. */
+        --pane: rgba(255, 253, 249, 0.7);
+        --pane-edge: rgba(40, 34, 24, 0.12);
         color-scheme: light;
       }
       @media (prefers-color-scheme: dark) {
@@ -201,6 +224,8 @@ const FEATURES = [
           --ink: #ece8df;
           --muted: #a7a7b4;
           --line: #2b3050;
+          --pane: rgba(20, 23, 38, 0.6);
+          --pane-edge: rgba(236, 232, 223, 0.16);
           color-scheme: dark;
         }
       }
@@ -210,6 +235,9 @@ const FEATURES = [
         --ink: #ece8df;
         --muted: #a7a7b4;
         --line: #2b3050;
+        --pane: rgba(20, 23, 38, 0.6);
+        --pane-edge: rgba(236, 232, 223, 0.16);
+        color-scheme: dark;
       }
       * { box-sizing: border-box; }
       html { scroll-behavior: smooth; }
@@ -217,7 +245,7 @@ const FEATURES = [
       a { color: inherit; }
       h1, h2, h3 { line-height: 1.15; letter-spacing: -0.015em; margin: 0; }
 
-      .bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: max(12px, env(safe-area-inset-top)) var(--gutter) 12px; color: #fff; background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 -0.5px 0 var(--glass-edge); }
+      .bar { position: fixed; z-index: 10; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: max(12px, env(safe-area-inset-top)) var(--gutter) 12px; color: var(--ink); background: var(--pane); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 -0.5px 0 var(--pane-edge); }
       .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
       .brand img { width: 28px; height: 28px; border-radius: 7px; }
 
@@ -226,22 +254,22 @@ const FEATURES = [
       .button.small { height: 36px; padding: 0 16px; font-size: 14px; }
       .button.ghost { background: var(--glass); color: #fff; box-shadow: inset 0 0 0 0.5px rgba(236, 232, 223, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 
-      .hero { position: relative; min-height: min(92vh, 820px); display: grid; align-items: end; overflow: hidden; color: #fff; background: #111013; }
+      .hero { position: relative; min-height: min(78vh, 720px); margin-top: clamp(40px, 7vw, 80px); display: grid; align-items: end; overflow: hidden; color: #fff; background: #111013; }
       .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
       .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10, 10, 14, 0.72) 0%, rgba(10, 10, 14, 0.38) 45%, rgba(10, 10, 14, 0) 75%), linear-gradient(180deg, rgba(10, 10, 14, 0) 40%, rgba(10, 10, 14, 0.7) 100%); }
       @media (max-width: 860px) { .hero::after { background: linear-gradient(180deg, rgba(10, 10, 14, 0.15) 0%, rgba(10, 10, 14, 0.55) 45%, rgba(10, 10, 14, 0.85) 100%); } }
       .hero-text { position: relative; z-index: 1; max-width: 760px; padding: 0 var(--gutter) clamp(40px, 8vh, 88px); margin-left: max(0px, calc((100vw - 1120px) / 2)); }
       .eyebrow { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
-      h1 { font-size: clamp(36px, 6.4vw, 68px); font-weight: 750; letter-spacing: -0.03em; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35); }
+      .hero-title { font-size: clamp(36px, 6.4vw, 68px); font-weight: 750; letter-spacing: -0.03em; text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35); }
       .lead { max-width: 600px; margin: 18px 0 26px; font-size: clamp(17px, 2vw, 20px); opacity: 0.92; }
       .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
       main { max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
       .section { padding: clamp(56px, 9vw, 104px) 0 0; }
       .section h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 720; }
-      .intro { max-width: 620px; margin: 12px 0 0; color: var(--muted); font-size: 17px; }
+      .lede { max-width: 620px; margin: 12px 0 0; color: var(--muted); font-size: 17px; }
 
-      .shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 32px; }
+      .clips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 32px; }
       .shot { display: grid; grid-template-rows: auto 1fr; overflow: hidden; border-radius: var(--radius); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 30px rgba(40, 34, 24, 0.08); }
       .shot-media { display: block; aspect-ratio: 3 / 2; background: #1b1a1f; }
       .shot-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -250,8 +278,8 @@ const FEATURES = [
       .shot p { margin: 0; color: var(--muted); font-size: 15px; }
       .shot .example { padding: 10px 12px; border-radius: 10px; background: var(--bg); color: var(--ink); font-size: 14px; }
       .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; }
-      .dot.sun { background: var(--sun); }
-      .dot.moon { background: var(--moon); }
+      .dot.of-sun { background: var(--sun); }
+      .dot.of-moon { background: var(--moon); }
       .more { justify-self: start; color: var(--accent); font-weight: 650; text-decoration: none; }
       .more:hover { text-decoration: underline; }
 
@@ -279,7 +307,7 @@ const FEATURES = [
       .footer p { margin: 6px 0; }
 
       @media (max-width: 860px) {
-        .shots, .features { grid-template-columns: minmax(0, 1fr); }
+        .clips, .features { grid-template-columns: minmax(0, 1fr); }
         .step { grid-template-columns: minmax(0, 1fr); }
         .step:nth-child(even) img { order: 0; }
       }

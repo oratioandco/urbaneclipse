@@ -1,0 +1,65 @@
+/*
+ * The home page's grid of the next three days' shots (home.js fills it).
+ *
+ * The cards are the planner's `shotCard`, styled by the `.shotcard` block of miniature.css, so
+ * that file is loaded here whole, in a cascade layer: everything outside a layer wins over
+ * it, so the page's own rules (index.astro and below) hold whatever their weight. The
+ * planner's page rules (a page that does not scroll, text that cannot be selected) are undone
+ * first. Its tokens (--text, --radius-s, --control-s, the pill colours) come along; the
+ * page's own --ink, --surface, --line and --accent in index.astro stand over them.
+ */
+@import '../miniature/miniature.css' layer(planner);
+
+html, body { height: auto; overflow: visible; }
+html { touch-action: auto; user-select: auto; -webkit-user-select: auto; }
+
+.next { display: grid; gap: 14px; max-width: 1120px; margin: 0 auto; padding: calc(max(12px, env(safe-area-inset-top)) + 64px) var(--gutter) 0; }
+.next-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 16px; }
+.next-eyebrow { margin: 0 0 4px; color: var(--muted); font-size: var(--text-s); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.next h1 { font-size: clamp(26px, 4.4vw, 40px); font-weight: 750; letter-spacing: -0.025em; }
+.next-answer { margin: 6px 0 0; font-size: clamp(15px, 1.8vw, 17px); font-weight: 600; }
+.next-list { display: grid; gap: 18px; }
+.next-foot { max-width: 70ch; margin: 0; color: var(--muted); font-size: 12.5px; }
+
+/* A small control, as the planner's: glass on the page, a hairline edge, one height. */
+.home-chip { flex: none; display: inline-flex; align-items: center; height: var(--control-s); padding: 0 14px; border: 0; border-radius: calc(var(--control-s) / 2); background: var(--pane); box-shadow: inset 0 0 0 0.5px var(--pane-edge), 0 1px 2px rgba(0, 0, 0, 0.06); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; line-height: 1; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.home-chip:hover { background: var(--surface); }
+.home-chip[aria-pressed='true'] { background: var(--ink); color: var(--bg); }
+.home-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The cards are links here. The page's `a { color: inherit }` stands over the layer, so the
+   card's light ink on its frame is said again. */
+a.shotcard { text-decoration: none; transition: transform 0.18s; }
+a.shotcard--card { color: var(--on-photo); }
+a.shotcard:hover { transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { a.shotcard { transition: none; } a.shotcard:hover { transform: none; } }
+
+/* The hero: the same card, wide, with the day, the countdown and the shot in a sentence. */
+.shotcard--card.home-hero { aspect-ratio: 16 / 9; max-height: min(62vh, 560px); width: 100%; }
+@media (max-width: 560px) { .shotcard--card.home-hero { aspect-ratio: 5 / 4; } }
+.home-hero canvas { object-fit: cover; object-position: 50% 32%; }
+.home-hero .sc-verdict { top: 14px; left: 14px; right: 14px; font-size: 12.5px; }
+.home-hero .sc-verdict b { font-size: 11.5px; }
+.home-upnext { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.home-hero .sc-meta { padding: 64px 16px 14px; }
+.home-hero .sc-time { font-size: clamp(30px, 7vw, 44px); line-height: 1.1; }
+.home-eta { margin-left: 10px; font-size: 13.5px; font-weight: 600; opacity: 0.9; white-space: nowrap; }
+.home-hero .sc-name { font-size: clamp(17px, 3.4vw, 22px); }
+.shotcard--card.home-hero .sc-title { display: block; font-size: 13.5px; line-height: 1.3; opacity: 0.92; }
+.home-hero .sc-what { font-size: 12.5px; }
+
+/* A day: its name with the count in words, its cards in time order, and what is not shown. */
+.home-day { display: grid; gap: 10px; }
+.home-day-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font-size: 18px; }
+.home-day-name small { color: var(--muted); font-size: 12.5px; font-weight: 500; letter-spacing: 0; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; }
+.home-grid .sc-time { font-size: 20px; }
+.home-grid .sc-meta { padding: 28px 11px 10px; }
+.home-grid .sc-verdict { top: 9px; left: 9px; right: 9px; font-size: var(--text-s); }
+.home-line, .home-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin: 0; padding: 10px 14px; border-radius: var(--radius); font-size: 14.5px; }
+.home-line { border: 1px dashed var(--line); color: var(--muted); }
+.home-note { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* Before the shots are worked out: the hero's place, held. */
+.home-skeleton { aspect-ratio: 16 / 9; max-height: min(62vh, 560px); border-radius: var(--radius); background: linear-gradient(180deg, #2a3350, #6b5a66 62%, #1a1b26 62%); opacity: 0.35; }
+@media (max-width: 560px) { .home-skeleton { aspect-ratio: 5 / 4; } }
