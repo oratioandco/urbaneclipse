@@ -323,4 +323,39 @@ describe('dynamic resolution', () => {
     // Gaps while the renderer idles are not frame times.
     for (let i = 0; i < 30; i++) expect(sampleFrame(500, 40_000 + i)).toBeNull();
   });
+
+  it('thins the shadow redraws before it gives up sharpness', async () => {
+    const { quality, sampleFrame } = await import('../../src/miniature/quality.js');
+    const ratio = quality.ratio;
+    expect(quality.shadowEvery).toBe(1);
+    // A drag: every frame redraws the shadow map and misses the refresh; the GPU is what is slow.
+    for (let i = 0; i < 30; i++) expect(sampleFrame(33, 100_000 + i * 33, { main: 6, shadowed: true })).toBeNull();
+    expect(quality.shadowEvery).toBe(2);
+    expect(quality.ratio).toBe(ratio);
+    // Still slow with every second frame spared: now the pixels go.
+    let changed = null;
+    for (let i = 0; i < 30; i++) changed = sampleFrame(33, 102_000 + i * 33, { main: 6, shadowed: i % 2 === 0 }) ?? changed;
+    expect(changed).toBeLessThan(ratio);
+    expect(quality.shadowEvery).toBe(2);
+  });
+
+  it('keeps the resolution when the main thread is what is slow', async () => {
+    const { quality, sampleFrame } = await import('../../src/miniature/quality.js');
+    const ratio = quality.ratio;
+    // Most of each frame goes by inside the frame function: fewer pixels would not help.
+    for (let k = 0; k < 4; k++) for (let i = 0; i < 30; i++) expect(sampleFrame(40, 200_000 + k * 2000 + i * 40, { main: 34, shadowed: i % 2 === 0 })).toBeNull();
+    expect(quality.ratio).toBe(ratio);
+    expect(quality.shadowEvery).toBe(2);
+    // Shadow frames at twice the slow mark: every third.
+    for (let i = 0; i < 30; i++) sampleFrame(i % 2 === 0 ? 60 : 30, 300_000 + i * 45, { main: i % 2 === 0 ? 52 : 26, shadowed: i % 2 === 0 });
+    expect(quality.shadowEvery).toBe(3);
+    expect(quality.ratio).toBe(ratio);
+  });
+
+  it('gives the shadows back once their frames keep pace at full sharpness', async () => {
+    const { quality, sampleFrame } = await import('../../src/miniature/quality.js');
+    for (let k = 0; k < 30; k++) for (let i = 0; i < 30; i++) sampleFrame(12, 400_000 + k * 1000 + i * 12, { main: 4, shadowed: i % 2 === 0 });
+    expect(quality.ratio).toBe(2);
+    expect(quality.shadowEvery).toBe(1);
+  });
 });

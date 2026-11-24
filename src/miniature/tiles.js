@@ -1,6 +1,6 @@
 /** City tiles: loading levels of detail by size on screen, within a triangle budget. */
 import * as THREE from 'three';
-import { MeshoptDecoder } from 'meshoptimizer';
+import { MeshoptDecoder } from 'meshoptimizer/decoder';
 import { CITY, CITY_VERSION, ERROR_PX, TRIANGLE_BUDGET } from './config.js';
 import { buildingMaterial, controls, eyeCamera, scene } from './render.js';
 import { app, invalidate, invalidateShadows } from './state.js';
@@ -16,8 +16,10 @@ export async function loadLevel(tile, lod) {
   const head = new Uint32Array(data.buffer, 0, 2);
   const vertices = new Uint16Array(lod.vertices * 4);
   MeshoptDecoder.decodeVertexBuffer(new Uint8Array(vertices.buffer), lod.vertices, 8, data.subarray(8, 8 + head[0]));
-  const indices = new Uint32Array(lod.indexCount);
-  MeshoptDecoder.decodeIndexBuffer(new Uint8Array(indices.buffer), lod.indexCount, 4, data.subarray(8 + head[0], 8 + head[0] + head[1]));
+  // No level in the city has more than 65,535 vertices, so two bytes an index do: half the
+  // memory, here and on the graphics card, of the largest thing a tile holds.
+  const indices = lod.vertices <= 65_535 ? new Uint16Array(lod.indexCount) : new Uint32Array(lod.indexCount);
+  MeshoptDecoder.decodeIndexBuffer(new Uint8Array(indices.buffer), lod.indexCount, indices.BYTES_PER_ELEMENT, data.subarray(8 + head[0], 8 + head[0] + head[1]));
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.InterleavedBufferAttribute(new THREE.InterleavedBuffer(vertices, 4), 3, 0));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
@@ -86,8 +88,11 @@ export function updateLevels() {
       entry.lod = coarser;
     }
   }
+  // A tile waits for its coarse level, which the start-up pass is bringing in: asking here as
+  // well fetched most of the city twice, and a finer level that arrived first was thrown away
+  // when the coarse one landed on top of it.
   const toLoad = wanted
-    .filter((e) => e.tile.level !== e.lod.level && !loading.has(e.tile.id))
+    .filter((e) => e.tile.coarse && e.tile.level !== e.lod.level && !loading.has(e.tile.id))
     .sort((a, b) => a.distance - b.distance)
     .slice(0, Math.max(0, 6 - loading.size));
   for (const { tile, lod } of toLoad) {

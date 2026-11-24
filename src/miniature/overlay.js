@@ -25,7 +25,17 @@ export function resizeOverlay() {
   canvas.height = innerHeight * dpr;
 }
 
+/**
+ * Where the names went, kept while the view stands still: placing them means projecting some
+ * nine thousand anchors, and during a drag of the time slider none of them moves.
+ */
+let labelsFor = '';
+let labels = [];
+/** The day's paths as screen points, kept per path for as long as the view stands still. */
+const pathsOnScreen = new WeakMap();
+
 export function setLabels(map, groundAt) {
+  labelsFor = '';
   names = map.names;
   anchors = map.anchors
     .map(([name, x, z, angle, run, level]) => ({ name, x, y: groundAt(x, z) + 2, z, cos: Math.cos(angle), sin: Math.sin(angle), run, level }))
@@ -164,6 +174,8 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   const m = camera.projectionMatrix.clone().multiply(camera.matrixWorldInverse).elements;
   const w2 = innerWidth / 2;
   const h2 = innerHeight / 2;
+  // Everything a projected point depends on: the same key, the same pixels.
+  const viewKey = `${m.join()}|${innerWidth}|${innerHeight}`;
   const ortho = camera.isOrthographicCamera;
   const p11 = camera.projectionMatrix.elements[5];
   const project = (x, y, z, out) => {
@@ -203,7 +215,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
 
   const metresPerPx = (w) => (ortho ? 2 / (p11 * innerHeight) : (2 * w) / (p11 * innerHeight));
   drawHourRays(hourRays, project, night, taps, bottomInset);
-  drawPaths(paths, project, night, taps);
+  drawPaths(paths, project, night, taps, viewKey);
   for (const ray of rays) drawRay(ray, project, night);
   for (const spot of spots) {
     if (!project(spot.x, spot.y, spot.z, here)) continue;
@@ -232,27 +244,35 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     drawName(s.name, here.x, here.y - 18, 0, '700 13px', fill, halo);
   }
 
-  for (const anchor of showNames ? anchors : []) {
-    if (placed.length >= MAX_LABELS) break;
-    if (!project(anchor.x, anchor.y, anchor.z, here)) continue;
-    if (here.x < -40 || here.x > innerWidth + 40 || here.y < 0 || here.y > innerHeight - bottomInset) continue;
-    const metres = ortho ? 2 / (p11 * innerHeight) : (2 * here.w) / (p11 * innerHeight);
-    if (metres > MAX_METRES_PER_PX[anchor.level]) continue;
-    const half = anchor.run / 2;
-    if (!project(anchor.x - anchor.cos * half, anchor.y, anchor.z - anchor.sin * half, a)) continue;
-    if (!project(anchor.x + anchor.cos * half, anchor.y, anchor.z + anchor.sin * half, b)) continue;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const length = Math.hypot(dx, dy);
-    const width = textWidth(anchor.name, anchor.level);
-    if (length < width * 1.05) continue;
-    const cos = dx / length;
-    const sin = dy / length;
-    if (placed.some((p) => p.name === anchor.name && Math.hypot(p.x - here.x, p.y - here.y) < SAME_NAME_PX)) continue;
-    if (!reserve(here.x, here.y, cos, sin, width / 2 + 4)) continue;
-    const angle = Math.atan2(sin, cos);
-    const upright = angle > Math.PI / 2 ? angle - Math.PI : angle < -Math.PI / 2 ? angle + Math.PI : angle;
-    placed.push({ name: anchor.name, x: here.x, y: here.y, angle: upright, level: anchor.level });
+  // The stands reserve room first, so they are part of what a placement depends on.
+  const labelKey = `${viewKey}|${bottomInset}|${showNames}|${stands.map((st) => `${st.x},${st.z}`).join(';')}`;
+  if (labelKey === labelsFor) {
+    for (const label of labels) placed.push(label);
+  } else {
+    for (const anchor of showNames ? anchors : []) {
+      if (placed.length >= MAX_LABELS) break;
+      if (!project(anchor.x, anchor.y, anchor.z, here)) continue;
+      if (here.x < -40 || here.x > innerWidth + 40 || here.y < 0 || here.y > innerHeight - bottomInset) continue;
+      const metres = ortho ? 2 / (p11 * innerHeight) : (2 * here.w) / (p11 * innerHeight);
+      if (metres > MAX_METRES_PER_PX[anchor.level]) continue;
+      const half = anchor.run / 2;
+      if (!project(anchor.x - anchor.cos * half, anchor.y, anchor.z - anchor.sin * half, a)) continue;
+      if (!project(anchor.x + anchor.cos * half, anchor.y, anchor.z + anchor.sin * half, b)) continue;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      const width = textWidth(anchor.name, anchor.level);
+      if (length < width * 1.05) continue;
+      const cos = dx / length;
+      const sin = dy / length;
+      if (placed.some((p) => p.name === anchor.name && Math.hypot(p.x - here.x, p.y - here.y) < SAME_NAME_PX)) continue;
+      if (!reserve(here.x, here.y, cos, sin, width / 2 + 4)) continue;
+      const angle = Math.atan2(sin, cos);
+      const upright = angle > Math.PI / 2 ? angle - Math.PI : angle < -Math.PI / 2 ? angle + Math.PI : angle;
+      placed.push({ name: anchor.name, x: here.x, y: here.y, angle: upright, level: anchor.level });
+    }
+    labelsFor = labelKey;
+    labels = placed.slice();
   }
   for (const label of placed) drawName(names[label.name], label.x, label.y, label.angle, FONT[label.level], fill, halo);
 
@@ -336,34 +356,41 @@ function drawStandDot(x, y, z, metresPerPx, project, night, centre) {
  * The day's eclipse paths: solid where no building hides the tower, dashed where one does.
  * The hours are on the hour lines; each point here can still be tapped to go to its time.
  */
-function drawPaths(paths, project, night, taps) {
+function drawPaths(paths, project, night, taps, viewKey) {
   const p = {};
   for (const path of paths) {
-    const colour = PATH_CSS[path.body];
-    for (const segment of path.segments) {
-      // Runs of one state, each drawn as its own line.
-      let run = [];
-      let clear = null;
-      const flush = () => {
-        if (run.length > 1) strokeRun(run, colour, clear, path.faint, night);
-        run = [];
-      };
-      for (const point of segment) {
-        if (!project(point.x, point.y, point.z, p) || p.x < -200 || p.x > innerWidth + 200 || p.y < -200 || p.y > innerHeight + 200) {
-          flush();
-          continue;
-        }
-        const state = point.clear !== false;
-        if (state !== clear && run.length) {
+    let kept = pathsOnScreen.get(path);
+    if (!kept || kept.key !== viewKey || kept.segments !== path.segments) {
+      kept = { key: viewKey, segments: path.segments, runs: [], taps: [] };
+      for (const segment of path.segments) {
+        // Runs of one state, each drawn as its own line.
+        let run = [];
+        let clear = null;
+        const flush = () => {
+          if (run.length > 1) kept.runs.push({ points: run, clear });
+          run = [];
+        };
+        for (const point of segment) {
+          if (!project(point.x, point.y, point.z, p) || p.x < -200 || p.x > innerWidth + 200 || p.y < -200 || p.y > innerHeight + 200) {
+            flush();
+            continue;
+          }
+          const state = point.clear !== false;
+          if (state !== clear && run.length) {
+            run.push({ x: p.x, y: p.y });
+            flush();
+          }
+          clear = state;
           run.push({ x: p.x, y: p.y });
-          flush();
+          kept.taps.push({ kind: 'path', x: p.x - 9, y: p.y - 9, w: 18, h: 18, body: path.body, t: point.t });
         }
-        clear = state;
-        run.push({ x: p.x, y: p.y });
-        taps.push({ kind: 'path', x: p.x - 9, y: p.y - 9, w: 18, h: 18, body: path.body, t: point.t });
+        flush();
       }
-      flush();
+      pathsOnScreen.set(path, kept);
     }
+    const colour = PATH_CSS[path.body];
+    for (const run of kept.runs) strokeRun(run.points, colour, run.clear, path.faint, night);
+    for (const tap of kept.taps) taps.push(tap);
   }
 }
 

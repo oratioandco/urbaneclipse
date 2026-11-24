@@ -15,7 +15,7 @@
  * light or the view moves.
  */
 import * as THREE from 'three';
-import { MeshoptDecoder } from 'meshoptimizer';
+import { MeshoptDecoder } from 'meshoptimizer/decoder';
 import { decodeStreets } from '../lib/streets.ts';
 import { cityUniforms, makeTerrainTexture } from './shading.js';
 import { makeHighlights, paintGroundMap, ribbonUniforms } from './map.js';
@@ -107,9 +107,15 @@ function updateViewArea() {
   }
 }
 const frameTimes = [];
+// What the last drawn frame was, for the quality sampler: the time to the next frame is its cost.
+let lastMainMs = 0;
+let lastShadowed = false;
+// Frames drawn since the shadow map was.
+let sinceShadow = 99;
 
 function frame(now) {
   requestAnimationFrame(frame);
+  const entered = performance.now();
   stepFlight(now);
   stepOrbit(now);
   stepLook(now);
@@ -140,7 +146,7 @@ function frame(now) {
   app.dirty = false;
   frameTimes.push(now - lastFrame);
   if (frameTimes.length > 60) frameTimes.shift();
-  const ratio = sampleFrame(now - lastFrame, now);
+  const ratio = sampleFrame(now - lastFrame, now, { main: lastMainMs, shadowed: lastShadowed });
   if (ratio) {
     renderer.setPixelRatio(ratio);
     resize({ shadows: false });
@@ -169,9 +175,19 @@ function frame(now) {
   setTrees({ date: new Date(dayStart() + 43_200_000), on: layers.trees });
   updateTrees();
   // Without a key light the existing shadow map goes unread, so it can wait.
+  // On a device that cannot keep pace it is redrawn every second or third frame (quality.js),
+  // and the frame it is owed comes straight after, so the picture at rest is always complete.
+  lastShadowed = false;
+  sinceShadow++;
   if (app.shadowsDirty && sun.intensity > 0) {
-    fitShadow();
-    app.shadowsDirty = false;
+    if (sinceShadow >= quality.shadowEvery) {
+      fitShadow();
+      app.shadowsDirty = false;
+      lastShadowed = true;
+      sinceShadow = 0;
+    } else {
+      app.dirty = true;
+    }
   }
   renderer.info.reset();
   updateHaze(street);
@@ -222,20 +238,30 @@ function frame(now) {
   stats.triangles = renderer.info.render.triangles;
   stats.calls = renderer.info.render.calls;
   stats.frames++;
+  if (lastShadowed) stats.shadowFrames++;
+  lastMainMs = performance.now() - entered;
   if (stats.frames % 6 === 0 && params.has('stats')) {
     const sorted = [...frameTimes].sort((a, b) => a - b);
-    statsEl.textContent = `frame ${sorted[sorted.length >> 1]?.toFixed(1)} ms   ${(stats.triangles / 1e6).toFixed(2)} M tris incl. shadow   ${stats.calls} calls\nshadow texel ${stats.texel.toFixed(2)} m   loaded ${(app.bytesLoaded / 1e6).toFixed(1)} MB   ${loading.size} loading   pixel ratio ${quality.ratio.toFixed(2)}`;
+    statsEl.textContent = `frame ${sorted[sorted.length >> 1]?.toFixed(1)} ms   ${(stats.triangles / 1e6).toFixed(2)} M tris incl. shadow   ${stats.calls} calls\nshadow texel ${stats.texel.toFixed(2)} m   loaded ${(app.bytesLoaded / 1e6).toFixed(1)} MB   ${loading.size} loading   pixel ratio ${quality.ratio.toFixed(2)}   shadows every ${quality.shadowEvery}`;
   }
 }
 
 async function start() {
-  const manifest = await (await fetch(`${CITY}manifest.json${CITY_VERSION}`)).json();
-  const mapData = await (await fetch(`${CITY}map.json${CITY_VERSION}`)).json();
-  const roadPoints = new Int16Array(await (await fetch(`${CITY}roads.bin${CITY_VERSION}`)).arrayBuffer());
+  // All six at once: one after another, each waited a round trip for the one before it.
+  const get = (name) => fetch(`${CITY}${name}${CITY_VERSION}`);
+  const json = (name) => get(name).then((response) => response.json());
+  const binary = (name) => get(name).then((response) => response.arrayBuffer());
+  const [manifest, mapData, roadBytes, streetsDoc, terrainInfo, terrainBytes] = await Promise.all([
+    json('manifest.json'),
+    json('map.json'),
+    binary('roads.bin'),
+    json('streets.json'),
+    json('terrain.json'),
+    binary('terrain.bin'),
+  ]);
+  const roadPoints = new Int16Array(roadBytes);
   app.roadXZ = roadPoints;
-  const streetsDoc = await (await fetch(`${CITY}streets.json${CITY_VERSION}`)).json();
-  const terrainInfo = await (await fetch(`${CITY}terrain.json${CITY_VERSION}`)).json();
-  const terrain = new Int16Array(await (await fetch(`${CITY}terrain.bin${CITY_VERSION}`)).arrayBuffer());
+  const terrain = new Int16Array(terrainBytes);
   const { size, half } = terrainInfo;
   const plane = new THREE.PlaneGeometry(half * 2, half * 2, size - 1, size - 1);
   plane.rotateX(-Math.PI / 2);
@@ -356,4 +382,4 @@ updateSun();
 requestAnimationFrame(frame);
 start().then(openLinkedView);
 window.__sky = skyUniforms;
-window.__mini = { frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, get camera() { return app.camera; }, get controls() { return controls; }, renderer };
+window.__mini = { frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, shadowEvery: () => quality.shadowEvery, get camera() { return app.camera; }, get controls() { return controls; }, renderer };

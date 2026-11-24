@@ -49,6 +49,9 @@ Median frame while the sun moves, re-rendering the shadow map each frame: 17 ms 
 views, 18 ms in 3D, 27 ms for the whole 18 km area (slow spikes while tiles arrive).
 Ambient occlusion took frames to about 170 ms and barely changed the picture, so it was dropped.
 
+A fuller measurement from 2026-11-23 (network, start-up, what a frame and a slider drag cost,
+and the script that produces the numbers) is in `docs/performance-2026-11.md`.
+
 ## Not known yet
 
 Real phones, Safari, and memory use. Trees and water are not in the data. Ground heights
