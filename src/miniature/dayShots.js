@@ -28,6 +28,7 @@ import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
 import { formatClock } from './time.js';
 import { computeLandmarkPasses, landmarkRows } from './landmarkShots.js';
+import { paleMoon } from './spectacle.js';
 import { alignmentMinute, discOverSphere, EYE_HEIGHT, SPHERE_TOP_AGL, TIP_AGL, visibleMoon } from './towerShots.js';
 
 export { computeLandmarkPasses };
@@ -104,7 +105,8 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           // The closer the tower, the larger the body behind it: the spectacle, scored.
           score: path.body === 'moon' ? Math.min(2.4, 1.5 * over) : over > 1 ? 1.8 : 1.2,
           title: path.body === 'moon' ? `Big moon behind the TV tower, ${over.toFixed(1)}\u00d7 the sphere` : over > 1 ? 'Ring of sun round the TV tower\u2019s sphere' : 'Sun behind the TV tower\u2019s sphere',
-          detail: `${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
+          // Every row's small print starts with its own minute; a stretch follows it.
+          detail: `${formatClock(align)} \u00b7 ${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
           openAt: align,
           at: [mid.lat, mid.lon],
           look: [sky.az, Math.max(0, sky.alt)],
@@ -156,7 +158,7 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           distanceM: (near + far) / 2,
           score: 2,
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
-          detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
+          detail: `${formatClock(mid.t)} \u00b7 ${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
           openAt: mid.t,
           at: [spot.lat, spot.lon],
           look: [mid.az, Math.max(0, mid.alt)],
@@ -199,6 +201,8 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
       });
     }
   }
+  // The moon by day counts for less, whatever it is behind or down (spectacle.js).
+  for (const row of rows) row.score *= paleMoon(row.body, row.t);
   rows.sort((a, b) => a.t - b.t);
   return rows;
 }
