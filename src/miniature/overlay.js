@@ -204,7 +204,9 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   }
 
   const metresPerPx = (w) => (ortho ? 2 / (p11 * innerHeight) : (2 * w) / (p11 * innerHeight));
-  drawHourRays(hourRays, project, night, taps, bottomInset);
+  // The hour lines lie under everything; their labels are placed further down, once it is
+  // known where the sun's and the moon's pills go, and keep clear of them.
+  const hourLabels = drawHourRays(hourRays, project, night, bottomInset);
   drawPaths(paths, project, night, taps, viewKey);
   for (const ray of rays) drawRay(ray, project, night);
   for (const spot of spots) {
@@ -298,6 +300,11 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   }
   // Two bodies in nearly the same direction would otherwise stack.
   if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < 130 && Math.abs(pills[0].y - pills[1].y) < PILL_H + 6) pills[1].y += pills[1].y >= pills[0].y ? PILL_H + 6 : -(PILL_H + 6);
+  hourLabels(pills.map((pill) => {
+    ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
+    const half = (40 + ctx.measureText(pill.text).width + 12) / 2;
+    return { x0: pill.x - half - 4, x1: pill.x + half + 4, y0: pill.y - PILL_H / 2 - 4, y1: pill.y + PILL_H / 2 + 4 };
+  }), taps);
   for (const pill of pills) taps.push(drawPill(pill));
   return taps;
 }
@@ -396,7 +403,7 @@ function groundLine(a, b, project) {
  * The hour lines: faint, each labelled where it leaves the view, so the hours sit around the
  * edge like a clock face, with the sun and moon pills, rather than on the map like names.
  */
-function drawHourRays(hourRays, project, night, taps, bottomInset) {
+function drawHourRays(hourRays, project, night, bottomInset) {
   const top = 64;
   const bottom = innerHeight - bottomInset - 8;
   const left = 10;
@@ -442,6 +449,9 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
   // Where two would lie on each other only one is shown: the hour nearest the clock's first,
   // then outward from it, so the one being looked at always stays. "10 AM" is twice as wide as
   // "10", and on a phone a ring of them was a heap; they are told apart by their boxes now.
+  // Returned, not drawn yet: `taken` are the boxes of the body pills, which come first.
+  return (taken, taps) => {
+  placed.push(...taken);
   const nowHour = Number(document.getElementById('time')?.value ?? 720) / 60;
   const apart = (hour) => Math.min(Math.abs(hour - nowHour), 24 - Math.abs(hour - nowHour));
   wanted.sort((a, b) => apart(a.ray.hour) - apart(b.ray.hour));
@@ -463,6 +473,7 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
     ctx.fillText(text, label.x, label.y + 0.5);
     taps.push({ kind: 'path', x: label.x - width / 2 - 4, y: label.y - 13, w: width + 8, h: 26, body: ray.body, t: ray.t });
   }
+  };
 }
 
 /** Away from the body: bright to where the disc reaches the tower's tip. Toward it: faint. */
