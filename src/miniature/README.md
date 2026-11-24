@@ -64,15 +64,33 @@ All three pure files are tested in `tests/unit/panel.test.ts`. `main.js` reads `
 height as what covers the map from below, so `.bottom` is only ever as tall as what really
 sits at the bottom of the screen (zero for the side panel).
 
+### The day's shots, for the planner and the home page
+
+`dayShots.js` works out a day's shots and is the only place that does: `computeDayPaths` (the
+tower's paths), `collectRows` (every shot, in time order) and `dayShots` (both, from the city
+data alone). It has no three.js and no DOM, so the home page (`src/home/`) loads it without
+the planner. In the planner, `plan.js` puts the paths into scene coordinates and `daylist.js`
+adds `go` to each row (fly to where to stand). A list of several days drops the 00:00 repeat
+of a pass that runs across midnight (`withoutContinued`): home's grid and the planner's
+"3 days" list do; the planner's "1 day" view keeps that row, since it is all that day has of
+the pass.
+
+A link can name its shot: `?date=…&time=…&shot=sphere-sun` (or `sphere-moon`, `antenna-moon`,
+`street-sun:Sonnenallee`; `shotKey`). `link.js` then opens it as a tap on its card would:
+it finds the day's row (`findShot`), searches for a confirmed clear spot and puts the shot's
+card on the ticket. A link without `shot`, or one whose row the day does not have, opens at
+its own `at` and `look` as before. Home's cards link this way (`planLink` in `src/home/grid.js`).
+
 ### The shot card
 
 `shotCard.js` is the one way a shot is shown in `/plan/`: the day view's strip, the rows of
-"This day" and "Next 3 days", and the line on the eye-level ticket. Its styles are the
-`.shotcard` block in `miniature.css`. The home grid of the coming days is to be built from it.
+"This day" and "Next 3 days", and the line on the eye-level ticket. Its styles are its own file,
+`shotcard.css`, which also holds the sizes it is built from as tokens; `miniature.css` imports
+it, and so does the home page, which loads nothing else of the planner's styles.
 
 ```js
 import { shotCard, drawShotFrame } from './shotCard.js';
-const card = shotCard(shot, verdict, { size: 'card' });   // 'card' | 'row' | 'ticket'; tag: 'button' | 'div'; pixels: [w, h]
+const card = shotCard(shot, verdict, { size: 'card' });   // 'card' | 'row' | 'ticket'; tag: 'button' | 'a' | 'div'; pixels: [w, h]; day: 'Tomorrow'
 card.addEventListener('click', () => openShot(shot, verdict));   // openShot is in daylist.js
 ```
 

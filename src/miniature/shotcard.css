@@ -1,0 +1,89 @@
+/*
+ * The shot card's own stylesheet (shotCard.js), loaded by every page that shows a shot: the
+ * planner (through miniature.css) and the home page. It brings the few sizes the card is built
+ * from, as tokens on :root, so a page needs nothing else of the planner's to show a card. The
+ * colours it reads are the page's own: --ink, --muted, --line, --accent, --field.
+ */
+:root {
+  /* Two control heights, two radii, four type sizes: the planner's, and the card's. */
+  --control: 40px;
+  --control-s: 32px;
+  --radius: 14px;
+  --radius-s: 10px;
+  --gap: 8px;
+  --text-l: 20px;
+  --text: 13px;
+  --text-s: 11.5px;
+  --text-xs: 10.5px;
+}
+
+/*
+ * The shot card (shotCard.js): the one way a shot is shown. A frame of the landmark in the
+ * light and weather of its minute; on it or beside it the verdict, the time, the place and
+ * which body. Three sizes of the same card: card (words over the frame), row (frame left,
+ * words right) and ticket (one line). The words on the frame are light in both themes: the
+ * frame is a picture, not a surface.
+ */
+.shotcard { --on-photo: #f6f4ee; --photo-scrim: rgba(12, 11, 16, 0.78); --pill-ink: #16151a; --pill-go: #4cc27d; --pill-maybe: #edb245; --pill-skip: #a9adb9; --pill-none: #d9d6cf; position: relative; box-sizing: border-box; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; }
+button.shotcard { cursor: pointer; }
+.shotcard .sc-frame { position: relative; display: block; overflow: hidden; background: #14151f; }
+.shotcard canvas { position: static; inset: auto; display: block; width: 100%; height: 100%; touch-action: auto; }
+.shotcard .sc-verdict { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--text-xs); }
+.shotcard .sc-verdict b { flex: none; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px 2px 5px; border-radius: 999px; background: var(--pill-none); color: var(--pill-ink); font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
+.shotcard[data-grade='good'] .sc-verdict b { background: var(--pill-go); }
+.shotcard[data-grade='fair'] .sc-verdict b { background: var(--pill-maybe); }
+.shotcard[data-grade='poor'] .sc-verdict b { background: var(--pill-skip); }
+.shotcard[data-grade='none'] .sc-verdict b, .shotcard[data-grade='past'] .sc-verdict b { padding-left: 7px; letter-spacing: 0; text-transform: none; }
+.shotcard .sc-why { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shotcard .sc-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+.shotcard .sc-what { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.shotcard .sc-what .ue-mark { margin: 0 1px; }
+.shotcard[data-grade='poor'] canvas, .shotcard[data-grade='past'] canvas { filter: saturate(0.55); }
+.shotcard[data-grade='past'] { opacity: 0.6; }
+.shotcard[data-grade='past'][aria-current='true'] { opacity: 1; }
+.shotcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* card: the frame fills it, the words lie on it. Its container sets the width. */
+.shotcard--card { display: block; aspect-ratio: var(--shot-aspect, 4 / 5); border-radius: var(--radius); overflow: hidden; color: var(--on-photo); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 14px -8px rgba(0, 0, 0, 0.45); }
+.shotcard--card .sc-frame { position: absolute; inset: 0; }
+.shotcard--card .sc-verdict { position: absolute; top: 7px; left: 7px; right: 7px; flex-wrap: wrap; row-gap: 2px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); font-weight: 600; }
+.shotcard--card .sc-why { overflow: visible; white-space: normal; line-height: 1.15; }
+.shotcard--card .sc-verdict b { text-shadow: none; }
+.shotcard--card .sc-meta { position: absolute; left: 0; right: 0; bottom: 0; display: grid; padding: 22px 9px 7px; background: linear-gradient(180deg, transparent, var(--photo-scrim)); }
+.shotcard--card .sc-time { font-size: 17px; line-height: 1.15; }
+.shotcard--card .sc-name { font-size: var(--text); font-weight: 700; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }
+.shotcard--card .sc-what, .shotcard--card .sc-go { font-size: var(--text-xs); line-height: 1.25; opacity: 0.9; align-items: flex-start; }
+.shotcard--card .sc-what .ue-mark { margin-top: 2px; }
+.shotcard--card .sc-title, .shotcard--card .sc-detail, .shotcard--card .sc-go { display: none; }
+.shotcard--card[aria-current='true'] { outline: 2.5px solid var(--accent); outline-offset: -2.5px; }
+.shotcard--card[aria-current='true'] .sc-what { display: none; }
+.shotcard--card[aria-current='true'] .sc-go { display: flex; align-items: center; opacity: 1; font-weight: 700; }
+
+/* row: the frame as a thumbnail, the words beside it on the panel's surface. */
+.shotcard--row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; grid-template-areas: 'frame title chev' 'frame verdict chev' 'frame detail chev'; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; padding: 8px 6px; border-top: 1px solid var(--line); }
+.shotcard--row:first-child { border-top: 0; }
+.shotcard--row:hover { background: var(--field); }
+.shotcard--row .sc-frame { grid-area: frame; align-self: start; width: 76px; height: 57px; border-radius: var(--radius-s); }
+.shotcard--row .sc-meta { display: contents; }
+.shotcard--row .sc-title { grid-area: title; font-weight: 600; }
+.shotcard--row .sc-verdict { grid-area: verdict; font-size: var(--text-s); font-weight: 600; color: var(--muted); }
+.shotcard--row .sc-verdict b { font-size: var(--text-xs); }
+.shotcard--row .sc-detail { grid-area: detail; color: var(--muted); font-size: var(--text-s); }
+.shotcard--row .sc-time, .shotcard--row .sc-name, .shotcard--row .sc-what { display: none; }
+.shotcard--row .chev { grid-area: chev; color: var(--muted); }
+
+/* ticket: one line at eye level. The shot's frame small, its minute, its place, its verdict. */
+.shotcard--ticket { display: flex; align-items: center; gap: var(--gap); min-height: var(--control); }
+.shotcard--ticket .sc-frame { flex: none; width: 36px; height: 36px; border-radius: var(--radius-s); }
+.shotcard--ticket .sc-meta { order: 1; flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; }
+.shotcard--ticket .sc-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.shotcard--ticket .sc-what { font-size: var(--text-s); color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.shotcard--ticket .sc-verdict { order: 2; flex: none; }
+.shotcard--ticket .sc-why, .shotcard--ticket .sc-title, .shotcard--ticket .sc-detail { display: none; }
+
+/* The icon set's signs inside a card keep their own box (the planner says this for all of them). */
+.shotcard .ue-icon, .shotcard .ue-mark { flex: none; display: block; }
+/* A card that is a link is still a card: no underline, and its own colours, whatever the page
+   says of links. */
+a.shotcard { text-decoration: none; }
+a.shotcard--card { color: var(--on-photo); }

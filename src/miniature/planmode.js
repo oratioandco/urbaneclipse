@@ -10,6 +10,7 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { phaseName } from '../lib/moonPhase.ts';
 import { getMoonIllumination } from 'suncalc';
 import { dayEndOf, daysFrom, moonOfDay, wallMinute } from './dayMath.js';
+import { withoutContinued } from './dayShots.js';
 import { formatClock } from './time.js';
 import { params } from './config.js';
 import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
@@ -214,7 +215,9 @@ export function renderPlanCards() {
   for (let i = 0; i < DAYS; i++) {
     // Each day from its own midnight: a day is 23 or 25 hours when the clocks change.
     const { from, to } = days[i];
-    const rows = rowsFor(from, i === 0 ? now : null).filter((row) => filter === 'all' || row.body === filter);
+    // Days side by side: a pass that runs across midnight is one shot, shown on the evening
+    // it starts (dayShots.js `withoutContinued`). "This day" keeps its 00:00 row.
+    const rows = withoutContinued(rowsFor(from, i === 0 ? now : null), from, i > 0 ? rowsFor(days[i - 1].from, null) : []).filter((row) => filter === 'all' || row.body === filter);
     const day = forecastFor(from);
     // A poor sky is not a shot: over 75% cloud or grey soup hides the disc entirely. The
     // strip still shows those days — light and cloud are exactly what a covered week is for

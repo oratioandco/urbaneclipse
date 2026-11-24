@@ -308,9 +308,11 @@ export function shotWhat(shot) {
  * The card as an element. `size` is 'card', 'row' or 'ticket'; `tag` the element ('button'
  * where the card does something, 'div' where it only shows); `pixels` the frame's drawing size
  * when the card is given another shape than its size's own (a card is 4:5 unless its container
- * sets `--shot-aspect`). The caller adds the click.
+ * sets `--shot-aspect`); `day` a day's name to say before the time in the card's accessible name
+ * ("Tomorrow"), for lists of several days. The caller adds the click, or for `tag: 'a'` the href.
+ * Styles: shotcard.css.
  */
-export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', pixels = FRAME_PIXELS[size] ?? FRAME_PIXELS.card } = {}) {
+export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', pixels = FRAME_PIXELS[size] ?? FRAME_PIXELS.card, day = '' } = {}) {
   const card = document.createElement(tag);
   if (tag === 'button') card.type = 'button';
   card.className = `shotcard shotcard--${size}`;
@@ -347,6 +349,8 @@ export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', 
   meta.append(span('sc-time', formatClock(shot.t)), name, span('sc-title', shot.title ?? ''), what, span('sc-detail', shot.detail ?? ''));
 
   card.append(frame, said, meta);
-  if (tag === 'button') card.setAttribute('aria-label', `${formatClock(shot.t)}, ${shot.title ?? shot.short}. ${verdict ? `${verdict.label}. ` : ''}${shot.detail ?? ''}`);
+  // A card that does something (a button, a link) names itself in full; one that only shows
+  // is read as its text.
+  if (tag === 'button' || tag === 'a') card.setAttribute('aria-label', `${day ? `${day} ` : ''}${formatClock(shot.t)}, ${shot.title ?? shot.short}. ${verdict ? `${verdict.label}. ` : ''}${shot.detail ?? ''}`.trim());
   return card;
 }

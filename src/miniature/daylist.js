@@ -1,18 +1,9 @@
 /** The day as a list in the panel's planning: tower alignments and street henges, each a tap away. */
-import * as THREE from 'three';
-import { getMoonIllumination } from 'suncalc';
-import { sampleBody } from '../lib/bodyPosition.ts';
-import { FERNSEHTURM } from '../lib/landmarks.ts';
-import { compassPoint } from '../lib/dailyPaths.ts';
 import { shotCard } from './shotCard.js';
-import { dayEndOf } from './dayMath.js';
+import { collectRows as collectShots } from './dayShots.js';
 import { icon } from './icons.js';
-import { formatClock } from './time.js';
-import { EYE_HEIGHT } from './eye.js';
-import { alignmentMinute, discOverSphere, SPHERE_TOP_AGL, TIP_AGL } from './towerShots.js';
 import { layers, shownBody } from './chrome.js';
 import { dayStart } from './clock.js';
-import { BODY_NAME } from './eclipse.js';
 import { cloudNote } from './forecast.js';
 import { forecastReach } from './weather.js';
 import { shotVerdict, verdict, verdictNote } from './verdict.js';
@@ -22,144 +13,28 @@ import { goViewHere } from './pointer.js';
 import { app, invalidate } from './state.js';
 
 const dayList = document.getElementById('daylist');
-const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
 /**
- * Every chance of a day, in time order: tower alignments, moonrise and moonset behind the
- * antenna, and street henges \u2014 the rows both the day list and the plan cards draw from.
- * `from` is the day's start; `flags` carry the layer switches and, when given, a instant
- * before which the day's chances have already passed. Each row also carries a spectacle
- * score, so the plan can rank the big moon over a short henge, and a short name for the day
- * view's cards (the place: the card's picture says sun or moon, tower or street), and the
- * shot in a few words (`brief`) for the peek line. Tower rows also say where to stand
- * (`stand`: how far and which side of the tower), which is all that tells two of them apart.
+ * Every chance of a day, in time order, as the planner uses them: the rows of dayShots.js
+ * (shared with the home page), filtered by the layer switches, each with `go`, which flies to
+ * where to stand for it. `dayPaths` are the planner's (plan.js), `moments` the day's street
+ * moments, `from` the day's start; `flags` carry the tower, streets and moon switches.
  */
 export function collectRows(dayPaths, moments, from, flags = {}) {
-  const { tower = true, streets = true, moon = true } = flags;
-  const rows = [];
-  if (tower) {
-    for (const path of dayPaths.filter(shownBody)) {
-      // Stretches with a clear view of the tower, joined across short gaps (a building in
-      // the way for a few minutes), and kept only when long enough to get to.
-      const windows = [];
-      for (const segment of path.source.segments) {
-        for (const p of segment) {
-          if (p.clear === false) continue;
-          const last = windows[windows.length - 1];
-          if (last && p.t - last.points[last.points.length - 1].t <= 12 * 60_000) {
-            if (p.t - last.points[last.points.length - 1].t > 4 * 60_000) last.broken = true;
-            last.points.push(p);
-          } else windows.push({ points: [p], broken: false });
-        }
-      }
-      for (const w of windows) {
-        const first = w.points[0];
-        const lastPoint = w.points[w.points.length - 1];
-        if (lastPoint.t - first.t < 4 * 60_000) continue;
-        const mid = w.points[Math.floor(w.points.length / 2)];
-        // The geometric alignment minute for this standpoint: when the body's azimuth crosses the
-        // bearing from here to the tower — not the window's start, and not a middle sample.
-        const align =
-          alignmentMinute(
-            (body, t) => sampleBody(body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon),
-            path.body,
-            (mid.bearingDeg + 180) % 360,
-            first.t,
-            lastPoint.t,
-          ) ?? mid.t;
-        rows.push({
-          t: align,
-          body: path.body,
-          kind: 'tower',
-          short: 'TV tower',
-          where: 'sphere',
-          stand: `${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)}`,
-          brief: path.body === 'moon' ? 'Moon behind TV tower' : discOverSphere(mid.distanceM) > 1 ? 'Sun ring at TV tower' : 'Sun behind TV tower',
-          distanceM: mid.distanceM,
-          // The closer the tower, the larger the body behind it: the spectacle, scored.
-          score: path.body === 'moon' ? Math.min(2.4, 1.5 * discOverSphere(mid.distanceM)) : discOverSphere(mid.distanceM) > 1 ? 1.8 : 1.2,
-          title:
-            path.body === 'moon'
-              ? `Big moon behind the TV tower, ${discOverSphere(mid.distanceM).toFixed(1)}\u00d7 the sphere`
-              : discOverSphere(mid.distanceM) > 1
-                ? 'Ring of sun round the TV tower\u2019s sphere'
-                : 'Sun behind the TV tower\u2019s sphere',
-          detail: `${formatClock(first.t)}\u2013${formatClock(lastPoint.t)}${w.broken ? ' (with breaks)' : ''} \u00b7 ${distanceText(mid.distanceM)} ${compassPoint(mid.bearingDeg)} of the tower \u00b7 ${Math.round(mid.bodyAlt)}\u00b0 up`,
-          go: () => goViewHere({ kind: 'tower', body: path.body, t: align, ...toScene(mid) }),
-        });
-      }
-    }
-  }
-  // Moonrise and moonset behind the antenna: the moon low, more than half lit, and visible
-  // round the thin mast from a few kilometres out.
-  if (tower && moon) {
-    const lit = getMoonIllumination(new Date(from + 43_200_000)).fraction;
-    if (lit >= 0.5) {
-      let window = null;
-      const windows = [];
-      for (let t = from; t <= dayEndOf(from); t += 5 * 60_000) {
-        const p = sampleBody('moon', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
-        const low = p.alt >= 1 && p.alt <= 8;
-        if (low && !window) windows.push((window = { start: t, end: t, rising: null, samples: [] }));
-        if (low) {
-          window.end = t;
-          window.samples.push({ t, ...p });
-        } else window = null;
-      }
-      for (const w of windows) {
-        if (w.samples.length < 2) continue;
-        const rising = w.samples[w.samples.length - 1].alt > w.samples[0].alt;
-        const mid = w.samples[Math.floor(w.samples.length / 2)];
-        const reach = (h, alt) => Math.min(9000, (h - EYE_HEIGHT) / Math.tan(THREE.MathUtils.degToRad(alt)));
-        const near = reach(SPHERE_TOP_AGL, Math.max(...w.samples.map((p) => p.alt)));
-        const far = reach(TIP_AGL, Math.min(...w.samples.map((p) => p.alt)));
-        const bearing = (mid.az + 180) % 360;
-        rows.push({
-          t: w.start,
-          body: 'moon',
-          kind: 'tower',
-          short: 'TV antenna',
-          where: 'antenna',
-          stand: `${distanceText(near)}+ ${compassPoint(bearing)}`,
-          brief: `${rising ? 'Moonrise' : 'Moonset'} on TV antenna`,
-          distanceM: (near + far) / 2,
-          score: 2,
-          title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
-          detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
-          go: () => {
-            // Start from the middle of the antenna stretch; the search finds a clear view near it.
-            const a = THREE.MathUtils.degToRad(bearing);
-            const d = (reach(SPHERE_TOP_AGL, mid.alt) + reach(TIP_AGL, mid.alt)) / 2;
-            goViewHere({ kind: 'tower', body: 'moon', t: mid.t, x: Math.sin(a) * d, z: -Math.cos(a) * d, lens: 400 });
-          },
-        });
-      }
-    }
-  }
-  if (streets) {
-    const seen = new Set();
-    // The longest views are the ones worth a trip; the rest still show on the map and slider.
-    for (const m of [...moments].filter(shownBody).sort((a, b) => b.view.lengthM - a.view.lengthM)) {
-      const key = `${m.view.name}${m.body}`;
-      if (seen.has(key) || seen.size >= 12) continue;
-      seen.add(key);
-      rows.push({
-        t: m.peak,
-        body: m.body,
-        kind: 'street',
-        short: m.view.name,
-        brief: `${BODY_NAME[m.body]} down ${m.view.name}`,
-        compact: `${BODY_NAME[m.body]} \u00b7 ${m.view.name}`,
-        distanceM: m.view.lengthM,
-        score: Math.min(1.6, m.view.lengthM / 800),
-        title: `${BODY_NAME[m.body]} down ${m.view.name}`,
-        detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
-        go: () => goViewHere({ kind: 'street', body: m.body, t: m.peak, x: m.view.a[0], z: m.view.a[1], moment: m }),
-      });
-    }
-  }
-  rows.sort((a, b) => a.t - b.t);
+  const rows = collectShots(dayPaths.map((path) => path.source ?? path), moments, from, { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false });
+  for (const row of rows) row.go = () => goViewHere(flightTo(row));
   return rows;
+}
+
+/** Where `goViewHere` starts its search for a clear view of a row's shot, in the scene. */
+function flightTo(row) {
+  if (row.kind === 'street') return { kind: 'street', body: row.body, t: row.t, x: row.moment.view.a[0], z: row.moment.view.a[1], moment: row.moment };
+  if (row.where === 'antenna') {
+    // The middle of the antenna stretch; the search finds a clear view near it.
+    const a = (row.standBearingDeg * Math.PI) / 180;
+    return { kind: 'tower', body: 'moon', t: row.openAt, x: Math.sin(a) * row.standDistanceM, z: -Math.cos(a) * row.standDistanceM, lens: row.lens };
+  }
+  return { kind: 'tower', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }) };
 }
 
 /** The chosen day's rows, collected once per day, data and layer state. */
@@ -205,15 +80,22 @@ export function shotRow(shot, verdict, onClick) {
 // At eye level the ticket shows the card of the shot that was opened, at its smallest.
 const ticketShot = document.getElementById('ticket-shot');
 /** Open a shot: fly to where to stand for it, at its minute, and put its card on the ticket. */
+let ticketRow = null;
 export function openShot(row, verdict) {
+  ticketRow = row;
   ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }));
   ticketShot.hidden = false;
   row.go();
   invalidate();
 }
+/** The ticket's card again, once the day's forecast is in: a shot opened from a link arrives before it. */
+function refreshTicket() {
+  if (ticketRow && !ticketShot.hidden) ticketShot.replaceChildren(shotCard(ticketRow, dayVerdict(ticketRow), { size: 'ticket', tag: 'div' }));
+}
 // Back on the map the ticket's card goes: the next visit to eye level may be for no shot at all.
 new MutationObserver(() => {
   if (document.body.dataset.eye === 'true') return;
+  ticketRow = null;
   ticketShot.hidden = true;
   ticketShot.replaceChildren();
 }).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });
@@ -224,6 +106,7 @@ export const emptyDay = () => (!layers.tower && !layers.streets ? 'Tower and str
 /** The day as a list in planning: the same rows, in time order, each a tap from standing there. */
 export function renderDayList() {
   const rows = currentRows();
+  refreshTicket();
   dayList.replaceChildren(...rows.map((row) => shotRow({ ...row, detail: row.detail + cloudNote(row.t) }, dayVerdict(row), () => openShot(row, dayVerdict(row)))));
   if (!rows.length) dayList.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: emptyDay() }));
 }
