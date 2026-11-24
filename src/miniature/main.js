@@ -192,6 +192,7 @@ function frame(now) {
   skyUniforms.uFade.value = street;
   // At street level the real sun or moon is down the street; the beams are a map device.
   ribbonUniforms.uBeams.value = (1 - street) * app.cloudPasses;
+  ribbonUniforms.uEye.value = street;
   // The sun's disc needs bloom at street level; from above only the city's lights do.
   bloom.enabled = app.bloomLights > 0.02 || street > 0.5;
   bloom.strength = Math.max(0.55 * app.bloomLights, 0.45 * street);
