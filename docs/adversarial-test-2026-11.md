@@ -590,3 +590,17 @@ headline. What still separates them is the scheme (1), the clip (13i) and the tr
     every third or fourth frame while scrubbing, since the sun moves 0.02 degrees in a 5 s
     step; trees left out of the shadow pass beyond some distance. Each changes the picture and
     wants a look before it ships.
+  - **A cheaper scene while the clock is dragged, added on 2026-11-24** (`scrub.js`, `main.js`,
+    `trees.js` `setTreeDetail`): during a drag and for 200 ms after its last step the shadow
+    map is redrawn on every third frame at most, the trees stay out of it, and the trees are
+    drawn in a quarter of their triangles (750,000 to 231,000 in the test view). At rest one
+    whole frame is drawn again. **The resting picture is unchanged: 0 % of pixels differ**
+    between a still before a drag and one after it (`scripts/adversarial/scrubstill.mjs`; the
+    control, two stills with nothing done, also 0 %); the in-drag still was looked at beside
+    them (crowns a little more angular, no tree shadows). **The speed target (median 16.7 ms,
+    95th percentile 33 ms at 1280 x 800) is not shown.** When this was measured the machine's
+    load average was 288 from other test browsers, and a frame took 50 ms even with trees,
+    buildings and shadows all hidden, so no timing from that hour says anything, including
+    whether the trees were the cost: the two earlier ablation runs said so, on a machine whose
+    load was not recorded. Re-run `eyescrub.mjs desktop` with `VARIANT=baseline` on a quiet
+    machine, before and after this commit, to know.

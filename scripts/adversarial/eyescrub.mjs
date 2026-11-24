@@ -18,6 +18,8 @@ const LINK = 'date=2026-11-26&time=513&at=52.537829,13.438970&look=226.6,4.4&len
 const VARIANTS = process.env.PROFILE
   ? { baseline: '' }
   : { baseline: '', 'glass off': '&glass=off', 'no edge blur': '&blur=0', 'no water mirror': '&mirror=0.01', 'shadow map 1024': '&shadow=1024', 'few trees': '&trees=1', 'half the pixels': '&pixels=1.8e6', 'more off, minimap closed': '&more=closed&minimap=closed', 'more and minimap open': '&more=open&minimap=open' };
+// VARIANT=baseline runs that one alone.
+if (process.env.VARIANT) for (const key of Object.keys(VARIANTS)) if (key !== process.env.VARIANT) delete VARIANTS[key];
 const quantile = (sorted, q) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * q))];
 const out = { size, variants: {} };
 
