@@ -112,6 +112,12 @@ or inferred.
   wrong hour on those days.
 - Fix: `instantOfMinute`, `minuteOf` and `dayEnd` from `clock.js`, as the audit wrote. Add the
   two cases of `dst.mjs` as a test.
+- **Fixed on 2026-11-24** (commit 8e76276, `src/miniature/dayMath.js`; tests in
+  `tests/unit/panelDays.test.ts` for both days). `dst.mjs` re-run on b46eb58: the 7:22 AM and
+  7:07 PM cards of 28 March and the 7:17 AM and 4:15 PM cards of 31 October set the clock they
+  show, the card under the thumb lights up, and the readout names the shot
+  (`dst-2027-10-31-card-415PM.png` opened: 4:15 PM over a city in daylight). The forecast
+  lookups in `verdict.js`, `planmode.js` and `dates.js` read the wall-clock hour.
 
 ### 3. "Dates": the minute shown depends on the second you pressed the button, and is cut, not rounded. Medium. Verified.
 
