@@ -5,6 +5,7 @@ import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { compassPoint } from '../lib/dailyPaths.ts';
 import { shotCard } from './shotCard.js';
+import { dayEndOf } from './dayMath.js';
 import { icon } from './icons.js';
 import { formatClock } from './time.js';
 import { EYE_HEIGHT } from './eye.js';
@@ -96,7 +97,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
     if (lit >= 0.5) {
       let window = null;
       const windows = [];
-      for (let t = from; t <= from + 86_400_000; t += 5 * 60_000) {
+      for (let t = from; t <= dayEndOf(from); t += 5 * 60_000) {
         const p = sampleBody('moon', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
         const low = p.alt >= 1 && p.alt <= 8;
         if (low && !window) windows.push((window = { start: t, end: t, rising: null, samples: [] }));

@@ -149,3 +149,22 @@ disc: its entries are dates, mostly beyond the forecast, and were not asked for.
 - **Molecule Man.** The Molecule Man session's two commits (rebuilt model, re-shot sprite) are
   cherry-picked here; its notes and open points are in `src/miniature/moleculeManShape.js`.
 - **Not done:** `/map/` and `/classic` keep their older look (the spec lets them follow).
+
+## Phase 3: the merged page (2026-11-24, after the merge of glass and the accuracy fixes)
+
+1. **Merge check.** With glass on the page held up; with `?glass=off` the map's labels showed
+   through the top of the sheet (95 % paper). The panel is now solid without glass.
+2. **Clock-change days.** `dayMath.js`: the day view's scale, the strips, the three-day steps and
+   the forecast lookups use wall-clock minutes and each day's true length. Tests for 28 March and
+   31 October 2027 (`tests/unit/panelDays.test.ts`).
+3. **Moon header.** `moonOfDay` over `src/lib/moonTimes.ts`; the 00:18 rise of 27 March 2027 is found.
+4. **Audit defects 4 and 6.** 4: the date list shows a pass as its span ("19:32–19:35") with the
+   axis crossing to the second; the row still opens at the best-looking minute. 6: closed by
+   `assess` in `verdict.js` (phase 2), now reading the forecast at the wall-clock hour.
+5. **Shot card.** Street frames carry the street's own houses, its length and the body's height;
+   the disc keeps to the band the words leave free; `SPRITE` frames the Siegessäule and the
+   Brandenburger Tor.
+6. **Half sheet 44.7 %** of 390 x 844 (from 53 %): tabs ("3 days" / "1 day") and the day
+   navigation share one bar, the typed clock sits on the readout line, and the strip's cards are
+   6:5 with two and a half in view. `?view=day` opens the day view.
+7. **Glass and frames.** See the session's report: the card canvases draw nothing during a scrub.

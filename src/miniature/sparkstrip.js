@@ -5,8 +5,8 @@
  * its shot, a day's name opens that day in the day view, and hovering reads the hour off the
  * curve. The cards below are the same shots as text, so no value lives only here.
  */
-import { lightBands, lightGradientStops } from '../lib/lightPhases.ts';
-import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { wallToInstant } from './berlinClock.js';
+import { berlinDate, dayEndOf, phaseStops, wallShare } from './dayMath.js';
 import { icon } from './icons.js';
 import { formatClock } from './time.js';
 import { PHASE_COLOURS } from './plan.js';
@@ -25,7 +25,8 @@ const el = (name, attrs = {}) => {
 };
 
 /** One day's strip: the label button, and the band with phases, cloud and shot ticks. */
-function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
+function sparkRow(mount, { from, to = dayEndOf(from), name, picks, day, now }, { onTick, onDay }) {
+  const date = berlinDate(from);
   const row = document.createElement('div');
   row.className = 'sparkrow';
 
@@ -47,7 +48,7 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   // rect: the stretched viewBox would pull the pill's round ends into ellipses.
   const phases = document.createElement('div');
   phases.className = 'spark-phases';
-  phases.style.background = `linear-gradient(90deg, ${lightGradientStops(lightBands(from, from + 86_400_000, FERNSEHTURM.lat, FERNSEHTURM.lon, 10 * 60_000), from, from + 86_400_000).map(({ phase, at }) => `${PHASE_COLOURS[phase]} ${(at * 100).toFixed(2)}%`).join(', ')})`;
+  phases.style.background = `linear-gradient(90deg, ${phaseStops(date, 10 * 60_000).map(({ phase, at }) => `${PHASE_COLOURS[phase]} ${(at * 100).toFixed(2)}%`).join(', ')})`;
   band.append(phases);
 
   // The cloud forecast, once the day's fetch is in: cover runs 0..1 across the top, as a
@@ -64,10 +65,10 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   band.append(svg);
 
   // Where the day has got to, on today's strip.
-  if (now !== null && now >= from && now < from + 86_400_000) {
+  if (now !== null && now >= from && now < to) {
     const nowMark = document.createElement('span');
     nowMark.className = 'spark-now';
-    nowMark.style.left = `${(((now - from) / 86_400_000) * 100).toFixed(2)}%`;
+    nowMark.style.left = `${(wallShare(now, date) * 100).toFixed(2)}%`;
     band.append(nowMark);
   }
 
@@ -82,7 +83,7 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
     // The head is the mark of marks.js: a ring for the tower, a bar for a street.
     tick.className = `spark-tick spark-${pick.body}`;
     tick.style.setProperty('--score', pick.score.toFixed(2));
-    const trueLeft = ((pick.t - from) / 86_400_000) * 100;
+    const trueLeft = wallShare(pick.t, date) * 100;
     const left = Math.min(97, Math.max(3, trueLeft, prevLeft + MIN_GAP));
     prevLeft = left;
     tick.style.left = `${left.toFixed(2)}%`;
@@ -111,7 +112,7 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
     // The same hour centres the cloud line is drawn at.
     const hour = Math.min(23, Math.floor(at * 24));
     // Short stamps: the readout shares the label column, so "10 AM · 98%", not a full clock.
-    let text = formatClock(from + hour * 3_600_000).replace(':00 ', ' ');
+    let text = formatClock(wallToInstant(date, hour * 60)).replace(':00 ', ' ');
     if (day) {
       const h = Math.min(day.berlin.low.length - 1, hour);
       const cover = Math.round(100 * Math.max(day.berlin.low[h], day.berlin.mid[h], day.berlin.high[h]));

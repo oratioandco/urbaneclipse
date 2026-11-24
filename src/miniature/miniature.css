@@ -75,6 +75,9 @@
          near-opaque paper where it is not supported and wherever `data-glass` is off (the
          `?glass=off` option, and automatically when frames run slow; see chrome.js). */
       .surface { background: var(--surface); box-shadow: var(--shadow); }
+      /* Without the frost the panel is solid: at 95% the map's labels and hour pills showed
+         through behind the peek line and the tabs. With glass on, the blur takes care of them. */
+      .panel.surface { background: var(--surface-solid); }
       /* The one icon set (icons.js), sun and moon (bodies.js) and marks (marks.js). Their weight
          and colour are their own: no rule here restyles them. */
       .ue-icon, .ue-body, .ue-mark { flex: none; display: block; }
@@ -220,13 +223,28 @@
       /* One timeline at a time. "Next 3 days" is the overview: three days side by side, to pick
          a day and a shot. "This day" is the day view: one day's light and weather, and the time
          control. The tabs switch between them; at eye level the ticket keeps the day view's scrubber. */
-      body[data-mode='plan']:not([data-eye='true']) .dayview, body[data-mode='shoot'] .overview, body[data-eye='true'] .overview, body[data-eye='true'] .tabs { display: none; }
+      body[data-mode='plan']:not([data-eye='true']) .dayview, body[data-mode='shoot'] .overview, body[data-eye='true'] .overview, body[data-eye='true'] .viewbar, body[data-mode='plan'] .viewbar .daynav { display: none; }
+      /* One bar for both views: which view, and (for the day view) which day. On the map the
+         typed clock sits on the day view's line of text, so the day view costs one row less. */
+      .viewbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+      .viewbar .daynav { flex: 1 1 232px; min-width: 0; justify-content: flex-end; }
+      .viewbar .daypick { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+      .viewbar #day-label { overflow: hidden; text-overflow: ellipsis; }
+      body[data-mode='plan'] .viewbar .tabs { flex: 1; }
+      body:not([data-eye='true']) .dayview { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'shots shots' 'timeline timeline' 'clock readout' 'nav nav'; column-gap: 6px; align-items: center; }
+      body:not([data-eye='true']) .dayview > .shots { grid-area: shots; }
+      body:not([data-eye='true']) .dayview > .timeline { grid-area: timeline; }
+      body:not([data-eye='true']) .dayview > #moment-row { grid-area: clock; min-height: 0; }
+      body:not([data-eye='true']) .dayview > .dv-readout { grid-area: readout; }
+      body:not([data-eye='true']) .dayview > .dv-nav { grid-area: nav; }
+      body:not([data-eye='true']) .clock { width: 5.2ch; height: 22px; margin: 0; padding: 0 3px; font-size: var(--text); font-weight: 600; text-align: center; background: var(--field); box-shadow: inset 0 0 0 1px var(--line); }
+      body:not([data-eye='true']) .clock.h12 { width: 7.4ch; }
       .dayview, .planning, .overview { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap); min-width: 0; }
       .planning { padding-top: var(--gap); border-top: 1px solid var(--line); }
       body[data-mode='plan'] #planning .mode-shoot, body[data-mode='shoot'] #planning .mode-plan { display: none; }
       /* Two lists, one switch. */
-      .tabs { display: flex; gap: 2px; padding: 3px; border-radius: calc(var(--control-s) / 2 + 3px); background: color-mix(in srgb, var(--line) 60%, transparent); }
-      .tabs button { flex: 1; height: var(--control-s); padding: 0 12px; border: 0; border-radius: calc(var(--control-s) / 2); background: none; color: var(--muted); font-size: var(--text-s); font-weight: 600; cursor: pointer; }
+      .tabs { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: calc(var(--control-s) / 2 + 3px); background: color-mix(in srgb, var(--line) 60%, transparent); }
+      .tabs button { flex: 1; height: calc(var(--control-s) - 6px); padding: 0 10px; white-space: nowrap; border: 0; border-radius: calc(var(--control-s) / 2); background: none; color: var(--muted); font-size: var(--text-s); font-weight: 600; cursor: pointer; }
       .tabs button[aria-pressed='true'] { background: var(--field); color: var(--ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
 
       /* Credit: a small line riding on the panel's top edge, so it shows at every height. */
@@ -271,7 +289,7 @@
       .shots { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
       .shots-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--gap); font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
       .shots-head .muted { font-weight: 500; letter-spacing: 0; text-transform: none; }
-      .shots-row { position: relative; display: flex; gap: 6px; min-height: 84px; padding: 1px 0 10px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-snap-type: x proximity; }
+      .shots-row { position: relative; display: flex; gap: 6px; min-height: 84px; padding: 1px 0 6px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-snap-type: x proximity; }
       .shots-row::-webkit-scrollbar { display: none; }
       .shots-row > p { margin: auto; font-size: var(--text-s); text-align: center; }
       .shots-row[data-after='true'] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
@@ -304,7 +322,7 @@
       .shotcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
       /* card: the frame fills it, the words lie on it. Its container sets the width. */
-      .shotcard--card { display: block; aspect-ratio: 4 / 5; border-radius: var(--radius); overflow: hidden; color: var(--on-photo); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 14px -8px rgba(0, 0, 0, 0.45); }
+      .shotcard--card { display: block; aspect-ratio: var(--shot-aspect, 4 / 5); border-radius: var(--radius); overflow: hidden; color: var(--on-photo); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 6px 14px -8px rgba(0, 0, 0, 0.45); }
       .shotcard--card .sc-frame { position: absolute; inset: 0; }
       .shotcard--card .sc-verdict { position: absolute; top: 7px; left: 7px; right: 7px; flex-wrap: wrap; row-gap: 2px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); font-weight: 600; }
       .shotcard--card .sc-why { overflow: visible; white-space: normal; line-height: 1.15; }
@@ -318,7 +336,15 @@
       .shotcard--card[aria-current='true'] { outline: 2.5px solid var(--accent); outline-offset: -2.5px; }
       .shotcard--card[aria-current='true'] .sc-what { display: none; }
       .shotcard--card[aria-current='true'] .sc-go { display: flex; align-items: center; opacity: 1; font-weight: 700; }
-      .shots-row .shotcard--card { flex: none; width: var(--card, 112px); scroll-snap-align: start; }
+      /* In the day view's strip the card is wider than tall, to keep the sheet low; its words
+         are sized for that: one line each, the place on two when it must. */
+      .shots-row { --shot-aspect: 6 / 5; }
+      .shots-row .shotcard--card { flex: none; width: var(--card, 140px); scroll-snap-align: start; }
+      .shots-row .shotcard--card .sc-meta { padding: 16px 9px 6px; }
+      .shots-row .shotcard--card .sc-time { font-size: 15px; }
+      .shots-row .shotcard--card .sc-name { font-size: 12px; line-height: 1.15; }
+      .shots-row .shotcard--card :is(.sc-what, .sc-go) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .shots-row .shotcard--card .sc-verdict { top: 6px; left: 6px; right: 6px; }
 
       /* row: the frame as a thumbnail, the words beside it on the panel's surface. */
       .shotcard--row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; grid-template-areas: 'frame title chev' 'frame verdict chev' 'frame detail chev'; column-gap: 10px; row-gap: 2px; align-items: center; width: 100%; padding: 8px 6px; border-top: 1px solid var(--line); }

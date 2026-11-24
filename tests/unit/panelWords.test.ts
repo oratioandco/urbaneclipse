@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { breakable, peekVariants, shortStreet } from '../../src/miniature/shotWords.js';
-import { FRAME_PIXELS, shotWhat } from '../../src/miniature/shotCard.js';
+import { FRAME_PIXELS, SPRITE, shotWhat } from '../../src/miniature/shotCard.js';
 import { bodyIcon, bodyState } from '../../src/miniature/bodyAt.js';
 
 describe('short words for a shot', () => {
@@ -55,14 +55,19 @@ describe('one sun, one moon, one set of marks', () => {
   });
   it('says on a shot card which body, and behind what', () => {
     expect(shotWhat({ body: 'sun', kind: 'tower', where: 'sphere', stand: '5.3 km SE' })).toBe('Sun \u00b7 5.3 km SE');
-    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'sphere' })).toBe('Moon behind the sphere');
-    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'antenna', stand: '1.7 km+ SE' })).toBe('Moon on the antenna \u00b7 1.7 km+ SE');
-    expect(shotWhat({ body: 'sun', kind: 'street' })).toBe('Sun down the street');
+    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'antenna', stand: '1.7 km+ SE' })).toBe('Moon \u00b7 1.7 km+ SE');
+    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'sphere' })).toBe('Moon behind it');
+    expect(shotWhat({ body: 'moon', kind: 'tower', where: 'antenna' })).toBe('Moon on the antenna');
+    // A street shot says how high the body stands: what differs between two streets' cards.
+    expect(shotWhat({ body: 'sun', kind: 'street', t })).toMatch(/^Sun \u00b7 -?\d+\u00b0 up$/);
     expect(Object.keys(FRAME_PIXELS)).toEqual(['card', 'row', 'ticket']);
+    // Every landmark the date search knows is framed: the tower, the column, the gate.
+    expect(Object.keys(SPRITE)).toEqual(['fernsehturm', 'siegessaeule', 'brandenburger_tor']);
+    for (const f of Object.values(SPRITE)) expect(f.at > 0 && f.at < 1 && f.discR > 0 && f.scale > 0).toBe(true);
   });
   it('has one shot card: the strip, the lists and the ticket all build it from shotCard.js', () => {
     const read = (file: string) => readFileSync(new URL(`../../src/miniature/${file}`, import.meta.url), 'utf8');
-    expect(read('dayview.js')).toMatch(/shotCard\(row, verdict\)/);
+    expect(read('dayview.js')).toMatch(/shotCard\(row, verdict, /);
     expect(read('daylist.js')).toMatch(/shotCard\(shot, verdict, \{ size: 'row' \}\)/);
     expect(read('daylist.js')).toMatch(/size: 'ticket'/);
     expect(read('planmode.js')).toMatch(/shotRow\(/);

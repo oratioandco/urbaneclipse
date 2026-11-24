@@ -8,7 +8,8 @@ import { streetMoments } from '../lib/streets.ts';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { phaseName } from '../lib/moonPhase.ts';
-import { getMoonIllumination, getMoonTimes } from 'suncalc';
+import { getMoonIllumination } from 'suncalc';
+import { dayEndOf, daysFrom, moonOfDay, wallMinute } from './dayMath.js';
 import { formatClock } from './time.js';
 import { params } from './config.js';
 import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
@@ -50,9 +51,11 @@ function renderMoonHead() {
   const moon = getMoonIllumination(mid);
   // Tonight's moon, as it stands high in a dark sky: the phase is what this line is about.
   moonDisc.innerHTML = moonSvg({ fraction: moon.fraction, waxing: moon.waxing ?? moon.phase < 0.5, altitudeDeg: 40, sunAltitudeDeg: -18, size: 18, glow: false });
-  const times = getMoonTimes(mid, FERNSEHTURM.lat, FERNSEHTURM.lon);
-  const rise = times.rise ? formatClock(times.rise.getTime()) : '';
-  const set = times.set ? formatClock(times.set.getTime()) : '';
+  // Berlin's day, midnight to midnight (dayMath.js): suncalc's own day is UTC's and misses a
+  // rise or set in Berlin's first hour or two.
+  const times = moonOfDay(sv);
+  const rise = times.rise ? formatClock(times.rise) : '';
+  const set = times.set ? formatClock(times.set) : '';
   const phase = `${phaseName(moon.fraction, moon.waxing)} ${Math.round(moon.fraction * 100)}%`;
   // Rise and set as the set's two signs, with the words for a screen reader.
   moonText.replaceChildren(phase);
@@ -89,7 +92,8 @@ for (const chip of planHead.querySelectorAll('[data-filter]')) {
 // A link that names a spot or a look is someone arriving for a shot: that day's list, not
 // the coming days. On a timeout, so the first paint (and the city fetches) are not stuck
 // behind the three days of alignment math.
-setTimeout(() => setPanelMode(params.get('at') || params.get('look') ? 'shoot' : 'plan'), 0);
+// `view=day` opens the day view outright (a link to one day's light; the measuring scripts).
+setTimeout(() => setPanelMode(params.get('at') || params.get('look') || params.get('view') === 'day' ? 'shoot' : 'plan'), 0);
 
 // The afternoon moves under an open panel: today's now-marker drifts and shots pass, so
 // re-grade on a slow beat, and keep the countdown honest in between.
@@ -127,7 +131,7 @@ function verdictAt(day, from, row) {
 /** The same reading as a short note, in the weather line's words. */
 function noteAt(day, from, t) {
   if (!day) return '';
-  const minutes = (t - from) / 60_000;
+  const minutes = wallMinute(t, svDate(from));
   const c = cloudsAt(day, minutes);
   const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
   const vis = visibilityAt(day, minutes);
@@ -173,7 +177,7 @@ function rowsFor(from, now) {
   ].join('|');
   if (!rowsMemo.has(key)) {
     const views = app.views ?? [];
-    const to = from + 86_400_000;
+    const to = dayEndOf(from);
     // The selected day's paths are already built for the map; only the other days need solving.
     const paths = from === dayStart() && app.dayPaths.length ? app.dayPaths : computeDayPaths(from, shed);
     const moments = [
@@ -199,7 +203,7 @@ export function renderPlanCards() {
   // would run twice), and not while standing in the street, where the plan is out of sight.
   if (!app.dayReady || document.body.dataset.eye === 'true') return;
   const now = Date.now();
-  const base = realToday();
+  const days = daysFrom(svDate(realToday()), DAYS);
   renderMoonHead();
   const filter = app.planFilter ?? 'all';
   for (const chip of planHead.querySelectorAll('[data-filter]')) {
@@ -208,7 +212,8 @@ export function renderPlanCards() {
   const blocks = [];
   let total = 0;
   for (let i = 0; i < DAYS; i++) {
-    const from = base + i * 86_400_000;
+    // Each day from its own midnight: a day is 23 or 25 hours when the clocks change.
+    const { from, to } = days[i];
     const rows = rowsFor(from, i === 0 ? now : null).filter((row) => filter === 'all' || row.body === filter);
     const day = forecastFor(from);
     // A poor sky is not a shot: over 75% cloud or grey soup hides the disc entirely. The
@@ -223,7 +228,7 @@ export function renderPlanCards() {
       .sort((a, b) => GRADE_WEIGHT[b.grade ?? 'fair'] * b.score - GRADE_WEIGHT[a.grade ?? 'fair'] * a.score)
       .slice(0, PER_DAY);
     total += picks.length;
-    blocks.push({ from, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
+    blocks.push({ from, to, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }
   // The one line: the earliest of the picks, whichever day it falls on.
   const first = blocks.flatMap((block) => block.picks.map((row) => ({ row, from: block.from, verdict: row.verdict, day: block.i === 0 ? '' : block.name, dayShort: block.i === 0 ? '' : weekday(block.from) }))).sort((a, b) => a.row.t - b.row.t)[0];

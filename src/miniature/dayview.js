@@ -11,10 +11,11 @@
  */
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
-import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../lib/lightPhases.ts';
+import { LIGHT_PHASE_NAMES, lightPhaseAt } from '../lib/lightPhases.ts';
 import { cssRgb } from '../lib/mapBodyLook.ts';
 import { skyPalette } from '../lib/skyPalette.ts';
-import { dateInput, dayStart } from './clock.js';
+import { dateInput, dayEnd, dayStart, instantOfMinute, minuteOf } from './clock.js';
+import { phaseStops } from './dayMath.js';
 import { bodyIcon } from './bodyAt.js';
 import { currentRows, dayVerdict, emptyDay, markKind, openShot, showVerdict } from './daylist.js';
 import { icon } from './icons.js';
@@ -77,6 +78,10 @@ const STEP_MIN = 10;
 /** A mark's 16-unit box on the scale: 11 px, the size the set was judged at. */
 const MARK_SCALE = 11 / 16;
 const DOT = 14;
+// For the headless renders of the card on its own (the landmarks no list shows yet).
+window.__shotCard = shotCard;
+/** The strip's cards are 6:5 (miniature.css `--shot-aspect`): their frames are drawn to that. */
+const STRIP_PIXELS = [336, 280];
 
 const atEye = () => document.body.dataset.eye === 'true';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -100,7 +105,9 @@ function drawPlot() {
 
   const samples = [];
   for (let minute = 0; minute <= DAY_MINUTES; minute += STEP_MIN) {
-    const t = from + minute * 60_000;
+    // The scale is the wall clock's: each minute on it is that reading's own instant, which is
+    // not midnight plus that many minutes on the two days the clocks change.
+    const t = instantOfMinute(minute);
     samples.push({ minute, sun: here('sun', t).alt, moon: here('moon', t).alt });
   }
   const top = topAltitude(Math.max(...samples.map((s) => s.sun)), Math.max(...samples.map((s) => s.moon)));
@@ -161,8 +168,8 @@ function drawPlot() {
     nodes.push(tick);
   }
   // Where today has got to.
-  if (now >= from && now < from + 86_400_000) {
-    const at = x((now - from) / 60_000).toFixed(1);
+  if (now >= from && now < dayEnd()) {
+    const at = x(minuteOf(now)).toFixed(1);
     nodes.push(el('path', { class: 'tl-now', d: `M${at},${BAR.y - 4}V${BAR.y + BAR.h + 4}` }));
   }
   const hours = uses12h ? [0, 6, 12, 18] : [0, 3, 6, 9, 12, 15, 18, 21, 24];
@@ -172,7 +179,7 @@ function drawPlot() {
   plot.replaceChildren(defs, ...nodes);
 
   // The light bar: one continuous gradient, in the colours the app gives the phases.
-  const stops = lightGradientStops(lightBands(from, from + 86_400_000, FERNSEHTURM.lat, FERNSEHTURM.lon, 300_000), from, from + 86_400_000);
+  const stops = phaseStops(dateInput.value);
   bar.style.background = `linear-gradient(90deg, ${stops.map((s) => `${PHASE_COLOURS[s.phase]} ${(s.at * 100).toFixed(1)}%`).join(',')})`;
   dots = '';
 }
@@ -181,7 +188,7 @@ function drawPlot() {
 function drawShots() {
   const rows = drawn.rows;
   const now = Date.now();
-  const isToday = now >= drawn.from && now < drawn.from + 86_400_000;
+  const isToday = now >= drawn.from && now < dayEnd();
   if (!rows.length) {
     const note = Object.assign(document.createElement('p'), { className: 'muted', textContent: app.dayReady ? emptyDay() : 'Working out the day…' });
     shotsRow.replaceChildren(note);
@@ -189,15 +196,17 @@ function drawShots() {
     shotsCount.textContent = '';
     return;
   }
-  // Three frames fit a phone, so each is large enough to be read as a picture; more scroll.
-  const layout = shotRowLayout(shotsRow.clientWidth, rows.length, { min: 3, ideal: 112 });
+  // Two and a half frames show on a phone: each wide enough for its words on one line, the
+  // half one saying there are more. On a wider row, as many as fit at that width.
+  const whole = shotRowLayout(shotsRow.clientWidth, rows.length, { min: 2, ideal: 140 });
+  const layout = whole.fits === 2 && rows.length > 2 ? { ...whole, card: (shotsRow.clientWidth - 2 * whole.gap) / 2.5 } : whole;
   shotsRow.style.setProperty('--card', `${layout.card.toFixed(2)}px`);
   shotsRow.dataset.scrolls = String(layout.scrolls);
   shotsRow.replaceChildren(
     ...rows.map((row, i) => {
       const verdict = drawn.verdicts[i];
       // The one shot card (shotCard.js), at its card size.
-      const card = shotCard(row, verdict);
+      const card = shotCard(row, verdict, { pixels: STRIP_PIXELS });
       card.dataset.index = String(i);
       card.title = `${row.title} (${MARK_NAMES[markKind(row)].toLowerCase()}) · ${row.detail}`;
       const go = Object.assign(document.createElement('span'), { className: 'sc-go', textContent: 'View from here' });
@@ -240,7 +249,7 @@ shotsRow.addEventListener('scroll', showEdges, { passive: true });
 function place() {
   if (!drawn.width || atEye()) return;
   const minute = clampMinute(Number(timeInput.value));
-  const t = drawn.from + minute * 60_000;
+  const t = instantOfMinute(minute);
   thumb.style.transform = `translateX(${scaleX(minute).toFixed(2)}px)`;
   const stamp = formatMinutes(minute);
   label.textContent = stamp;
@@ -300,7 +309,8 @@ export function renderDayView() {
   const rows = currentRows();
   drawn.rows = rows;
   drawn.from = dayStart();
-  drawn.minutes = rows.map((row) => (row.t - drawn.from) / 60_000);
+  // Where a shot stands on the scale is what the clock reads at it.
+  drawn.minutes = rows.map((row) => minuteOf(row.t));
   drawn.verdicts = rows.map((row) => dayVerdict(row));
   // Out of sight (the panel shows the next three days): draw when it comes back, at its width.
   if (!timeline.clientWidth) {

@@ -19,6 +19,7 @@
  */
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { wallMinutesOf } from './berlinClock.js';
 import { cloudsAt, visibilityAt } from './weather.js';
 
 export const VERDICT_WORD = { good: 'Go', fair: 'Maybe', poor: 'Skip' };
@@ -63,7 +64,9 @@ export function horizonLowToward(day, azDeg, minutes) {
  * the landmark stands from the photographer.
  */
 export function shotSky(day, from, t, { body = 'sun', distanceM = null } = {}) {
-  const minutes = (t - from) / 60_000;
+  // The forecast's hours are Berlin's wall-clock hours of that day, which is not the time
+  // elapsed since its midnight on the two days the clocks change.
+  const minutes = wallMinutesOf(new Date(from).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' }), t);
   const at = sampleBody(body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
   const sky = { ...skyAt(day, minutes), altDeg: at.alt, distanceM };
   if (at.alt < LOW_BODY_DEG) sky.horizonLow = horizonLowToward(day, at.az, minutes);

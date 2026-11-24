@@ -160,22 +160,24 @@ import '../miniature/miniature.css';
             <button id="ticket-more" class="pill" type="button" aria-expanded="false" aria-controls="camera-rows">More</button>
             <button id="minimap-toggle" class="icon-btn" type="button" aria-pressed="false" data-control="minimap" data-icon-size="20"></button>
           </div>
-          <div class="tabs" role="group" aria-label="Which shots to list">
-            <button type="button" data-mode="plan" aria-pressed="true">Next 3 days</button>
-            <button type="button" data-mode="shoot" aria-pressed="false">This day</button>
+          <div class="viewbar" id="viewbar">
+            <div class="tabs" role="group" aria-label="Which shots to list">
+              <button type="button" data-mode="plan" aria-pressed="true" aria-label="The next three days">3 days</button>
+              <button type="button" data-mode="shoot" aria-pressed="false" aria-label="This day">1 day</button>
+            </div>
+            <div class="daynav">
+              <button id="prev-day" type="button" data-control="prev-day" data-icon-size="18"></button>
+              <label class="daypick" data-icon="calendar" data-icon-size="16">
+                <span id="day-label"></span>
+                <input id="date" type="date" aria-label="Choose a date" />
+              </label>
+              <button id="today" type="button" hidden>Today</button>
+              <button id="next-day" type="button" data-control="next-day" data-icon-size="18"></button>
+            </div>
           </div>
           <section class="dayview" id="dayview" aria-label="The day">
             <div class="row" id="moment-row">
               <input class="clock" id="clock" type="text" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Time: type one, such as 17:50 or 5:50 pm" />
-              <div class="daynav">
-                <button id="prev-day" type="button" data-control="prev-day" data-icon-size="18"></button>
-                <label class="daypick" data-icon="calendar" data-icon-size="16">
-                  <span id="day-label"></span>
-                  <input id="date" type="date" aria-label="Choose a date" />
-                </label>
-                <button id="today" type="button" hidden>Today</button>
-                <button id="next-day" type="button" data-control="next-day" data-icon-size="18"></button>
-              </div>
               <span class="muted" id="sun" hidden></span>
             </div>
             <div class="shots">

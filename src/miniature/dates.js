@@ -9,8 +9,9 @@ import { getMoonIllumination } from 'suncalc';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightPhaseOf } from '../lib/lightPhases.ts';
 import { EYE_HEIGHT, latLonFromScene } from './eye.js';
-import { formatClock, formatDay } from './time.js';
+import { formatClock, formatDay, formatSeconds } from './time.js';
 import { discOverSphere, gridConvergenceDeg } from './towerShots.js';
+import { wallMinutesOf } from './berlinClock.js';
 import { cloudsAt, cloudsFor, forecastReach } from './weather.js';
 import { setDay, setFine, setMinute } from './clock.js';
 import { bodyIcon } from './bodyAt.js';
@@ -91,13 +92,18 @@ async function addClouds(small, t, body, distanceM) {
   const start = berlinMidnight(day);
   const clouds = await cloudsFor(day, start);
   if (!clouds) return;
-  const c = cloudsAt(clouds, (t - start) / 60_000);
+  const c = cloudsAt(clouds, wallMinutesOf(day, t));
   const cover = Math.round(100 * Math.max(c.low, c.mid, c.high));
   const said = document.createElement('em');
   said.className = 'verdict';
   showVerdict(said, shotVerdict(clouds, start, t, { body, distanceM }));
   small.append(' \u00b7 ', said, ` \u00b7 ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}`);
 }
+
+/** A pass as its span on the clock: "19:32\u201319:35", or one time when it is a single minute. */
+export const passText = (s) => (s.end > s.start ? `${formatClock(s.start)}\u2013${formatClock(s.end)}` : formatClock(s.peak));
+/** When the body crosses the landmark's axis, to the second, where the search found it. */
+const crossingText = (s) => (Number.isFinite(s.align) && s.end > s.start ? ` \u00b7 on the axis ${formatSeconds(s.align)}` : '');
 
 function row({ body, t, title, detail, go, distanceM = null }) {
   const item = document.createElement('button');
@@ -226,9 +232,11 @@ async function refresh() {
             row({
               body: s.body,
               t: s.peak,
-              title: `${dateLabel(s.peak)} · ${formatClock(s.peak)}`,
+              // A pass lasts two to four minutes: the row says so, and gives the moment the
+              // body crosses the landmark's axis to the second (audit defect 4).
+              title: `${dateLabel(s.peak)} · ${passText(s)}`,
               distanceM: flat,
-              detail: `${what} · ${Math.round(s.alt)}° up · ${describeLight(s.body, s.peak, lat, lon)}`,
+              detail: `${what}${crossingText(s)} · ${Math.round(s.alt)}° up · ${describeLight(s.body, s.peak, lat, lon)}`,
               go: () => {
                 setDay(dayOf(s.peak));
                 setMinute(s.peak);
