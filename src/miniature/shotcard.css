@@ -36,6 +36,9 @@ button.shotcard { cursor: pointer; }
 .shotcard[data-grade='none'] .sc-verdict b, .shotcard[data-grade='past'] .sc-verdict b { padding-left: 7px; letter-spacing: 0; text-transform: none; }
 .shotcard .sc-why { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shotcard .sc-time { font-weight: 600; font-variant-numeric: tabular-nums; }
+/* The day over the time: only in a list whose cards are days apart (class shotcards-dated). */
+.shotcard .sc-day { display: none; }
+.shotcards-dated .shotcard--card .sc-day { display: block; font-size: var(--text-xs); font-weight: 700; line-height: 1.25; }
 .shotcard .sc-what { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .shotcard .sc-what .ue-mark { margin: 0 1px; }
 .shotcard[data-grade='poor'] canvas, .shotcard[data-grade='past'] canvas { filter: saturate(0.55); }
@@ -55,7 +58,8 @@ button.shotcard { cursor: pointer; }
 .shotcard--card .sc-what, .shotcard--card .sc-go { font-size: var(--text-xs); line-height: 1.25; opacity: 0.9; align-items: flex-start; }
 .shotcard--card .sc-what .ue-mark { margin-top: 2px; }
 .shotcard--card .sc-title, .shotcard--card .sc-detail, .shotcard--card .sc-go { display: none; }
-.shotcard--card[aria-current='true'] { outline: 2.5px solid var(--accent); outline-offset: -2.5px; }
+/* The chosen card's ring lies over the frame: an outline would be painted under it. */
+.shotcard--card[aria-current='true']::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2.5px var(--accent); pointer-events: none; }
 .shotcard--card[aria-current='true'] .sc-what { display: none; }
 .shotcard--card[aria-current='true'] .sc-go { display: flex; align-items: center; opacity: 1; font-weight: 700; }
 
