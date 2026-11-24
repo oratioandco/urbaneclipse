@@ -227,7 +227,7 @@
       /* One bar for both views: which view, and (for the day view) which day. On the map the
          typed clock sits on the day view's line of text, so the day view costs one row less. */
       .viewbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
-      .viewbar .daynav { flex: 1 1 200px; min-width: 0; justify-content: flex-end; }
+      .viewbar .daynav { flex: 1 1 232px; min-width: 0; justify-content: flex-end; }
       .viewbar .daypick { flex: 0 1 auto; min-width: 0; overflow: hidden; }
       .viewbar #day-label { overflow: hidden; text-overflow: ellipsis; }
       body[data-mode='plan'] .viewbar .tabs { flex: 1; }

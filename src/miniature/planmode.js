@@ -92,7 +92,8 @@ for (const chip of planHead.querySelectorAll('[data-filter]')) {
 // A link that names a spot or a look is someone arriving for a shot: that day's list, not
 // the coming days. On a timeout, so the first paint (and the city fetches) are not stuck
 // behind the three days of alignment math.
-setTimeout(() => setPanelMode(params.get('at') || params.get('look') ? 'shoot' : 'plan'), 0);
+// `view=day` opens the day view outright (a link to one day's light; the measuring scripts).
+setTimeout(() => setPanelMode(params.get('at') || params.get('look') || params.get('view') === 'day' ? 'shoot' : 'plan'), 0);
 
 // The afternoon moves under an open panel: today's now-marker drifts and shots pass, so
 // re-grade on a slow beat, and keep the countdown honest in between.

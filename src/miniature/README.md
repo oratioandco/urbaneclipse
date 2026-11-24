@@ -42,8 +42,8 @@ without it. The landing page uses the same glass for its header.
 One block of markup in `plan.astro` (`.bottom` > `.panel`), three shapes, all in `miniature.css`:
 
 - **Phone:** a bottom sheet at one of three heights. Peek is one line, the next shot in full
-  (`peek.js`, wordings in `shotWords.js`). Under it, two views behind the tabs, one timeline at
-  a time: "Next 3 days" (the overview strips of `sparkstrip.js` and each day's best shots,
+  (`peek.js`, wordings in `shotWords.js`). Under it one bar (`.viewbar`: which view, and for the
+  day view which day) and two views, one timeline at a time: "Next 3 days" (the overview strips of `sparkstrip.js` and each day's best shots,
   `planmode.js`) and "This day" (the day view, `dayview.js`, which is also the time control,
   and the day's list, `daylist.js`). Half shows the top of the view that is up, full the list
   under it. `sheet.js` does the dragging, snapping, Escape, back button, the drop to peek when
@@ -54,7 +54,9 @@ One block of markup in `plan.astro` (`.bottom` > `.panel`), three shapes, all in
 
 The time lives in the `#time` input, as it always has. The day view's thumb writes to it and
 fires its `input` event, so `clock.js`, `lighting.js` and `link.js` follow; the input stays over
-the timeline, unseen, as the slider for keyboards and screen readers. Verdicts are words with a
+the timeline, unseen, as the slider for keyboards and screen readers. Days are Berlin's own:
+23 or 25 hours when the clocks change, so the panel takes a day's end, its wall-clock minutes
+and its three-day steps from `dayMath.js` (over `berlinClock.js`), never from `+ 86_400_000`. Verdicts are words with a
 reason, never a bare dot, and every one comes from the one grade, `assess` in `verdict.js`.
 Sun, moon, marks, icons and tooltips come from `bodies.js`, `marks.js`, `icons.js` and
 `controlNames.js` (see `docs/ICONS.md`); `bodyAt.js` gives the body of an instant. The day view's arithmetic is in `dayTimeline.js`.
@@ -70,7 +72,7 @@ sits at the bottom of the screen (zero for the side panel).
 
 ```js
 import { shotCard, drawShotFrame } from './shotCard.js';
-const card = shotCard(shot, verdict, { size: 'card' });   // 'card' | 'row' | 'ticket'; tag: 'button' | 'div'
+const card = shotCard(shot, verdict, { size: 'card' });   // 'card' | 'row' | 'ticket'; tag: 'button' | 'div'; pixels: [w, h]
 card.addEventListener('click', () => openShot(shot, verdict));   // openShot is in daylist.js
 ```
 
@@ -80,23 +82,33 @@ card.addEventListener('click', () => openShot(shot, verdict));   // openShot is 
 | `shot.body` | `'sun'` or `'moon'` | yes |
 | `shot.kind` | `'tower'` or `'street'` | yes |
 | `shot.where` | `'sphere'` or `'antenna'`: what the disc is behind | tower shots |
-| `shot.landmark` | a file name in `public/landmark-sprites/` without `.png`; default `fernsehturm` | no |
-| `shot.distanceM` | distance to the landmark: sizes the disc against the sphere | no |
+| `shot.landmark` | `fernsehturm` (default), `siegessaeule` or `brandenburger_tor`: a sprite in `public/landmark-sprites/` with an entry in `SPRITE` | no |
+| `shot.distanceM` | distance to the landmark: sizes the disc against the tower's sphere. For a street, its length: the longer, the narrower the gap at its far end | no |
 | `shot.title`, `shot.short` | the shot in a sentence; the place alone | one of them |
 | `shot.stand` | where to stand, short ("5.3 km SE") | no |
 | `shot.detail` | the row's small print | rows |
 | `verdict` | what `shotVerdict` returns; its `sky` draws the frame's cloud and rain. `null`: no pill, clear sky | no |
 
 The rows of `collectRows` (`daylist.js`) already are shots. `size: 'card'` takes the width of
-its container (set `--card` or a grid column) at 4:5 and puts the words on the frame; `'row'`
-puts a 76 px frame beside the words; `'ticket'` is one line. `drawShotFrame(canvas, shot,
-verdict)` draws the frame alone on any canvas, for a larger hero. The frame: the sky of
-`skyPalette` for the sun's height, the sun or moon of `bodies.js`, the forecast's three cloud
-layers and rain, and the landmark's sprite as a silhouette, close enough that the disc has
-its true size against the sphere. Only `fernsehturm` has its sphere and antenna positions
-recorded (`SPRITE` in `shotCard.js`); another landmark needs its own entry there before it is
-framed correctly. A street has no sprite: it is drawn as the street, two rows of houses
-running to the point where the body stands, with its light on the road.
+its container (set `--card` or a grid column) and puts the words on the frame; it is 4:5 unless
+the container sets `--shot-aspect` (the day view's strip sets 6:5 and passes `pixels: [336, 280]`
+so the frame is drawn to that shape). `'row'` puts a 76 px frame beside the words; `'ticket'` is
+one line. `drawShotFrame(canvas, shot, verdict, { words })` draws the frame alone on any canvas,
+for a larger hero; `words: true` keeps the disc in the band a card's words leave free.
+
+The frame: the sky of `skyPalette` for the sun's height, the sun or moon of `bodies.js`, the
+forecast's three cloud layers and rain, and the landmark's sprite as a silhouette, placed so
+the part the body is behind sits on the disc. `SPRITE` in `shotCard.js` holds that framing for
+the Fernsehturm (sphere and antenna; the disc has its true size against the sphere), the
+Siegessäule (the figure on top) and the Brandenburger Tor (the quadriga); a new landmark needs
+its sprite and an entry there. A street has no sprite: it is drawn as the street, two rows of
+houses running to the point where the body stands, with its light on the road. The houses are
+that street's own (seeded by its name), the gap narrows with its length, and the roofs drop
+away under a higher body, so two street cards are not the same picture.
+
+The card's words: the verdict's pill and reason, the time, the place (`short`), and one line of
+what tells this shot from its neighbours (`shotWhat`): "Sun · 5.3 km SE" at the tower,
+"Sun · 2° up" down a street.
 
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
