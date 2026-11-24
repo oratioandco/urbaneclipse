@@ -29,6 +29,7 @@ export interface ShotFlags {
   streets?: boolean;
   sun?: boolean;
   moon?: boolean;
+  seesTower?: ((lat: number, lon: number) => boolean) | null;
 }
 export const BODY_NAME: Record<Body, string>;
 export function computeDayPaths(from: number, shed?: Viewshed | null): DayPath[];
@@ -38,3 +39,5 @@ export function shotKey(row: ShotRow): string;
 export function findShot(rows: ShotRow[], key: string, t: number): ShotRow | null;
 export function dayShots(from: number, data?: { shed?: Viewshed | null; views?: StreetView[] }): ShotRow[];
 export function streetStatus(row: ShotRow | null | undefined, t: number): { text: string; state: 'now' | 'soon'; body: Body; jumpTo: number | null } | null;
+export function towerSeenFrom(shed: Viewshed | null): ((lat: number, lon: number) => boolean) | null;
+export function shotStillHeld(row: ShotRow, stoodAt: { x: number; z: number }, here: { x: number; z: number }, t: number): boolean;

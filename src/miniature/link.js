@@ -8,7 +8,7 @@ import { cityUniforms } from './shading.js';
 import { camera as cameraFormat, FORMATS, latLonFromScene, lensRange, sceneFromLatLon } from './eye.js';
 import { dateInput, instant, setFine, timeInput } from './clock.js';
 import { findShot, shotKey } from './dayShots.js';
-import { currentRows, dayVerdict, openShot, showTicket, ticketShotRow, ticketVerdict } from './daylist.js';
+import { checkTicket, currentRows, dayVerdict, openShot, showTicket, ticketShotRow, ticketVerdict } from './daylist.js';
 import { shotFromKey, targetOfKey } from './fromHere.js';
 import { TARGETS } from './targets.js';
 import { getViewshed, landmarksSettled } from './plan.js';
@@ -51,6 +51,8 @@ function linkQuery() {
 export function syncLink(now) {
   if (now - lastLinkCheck < 400 || !window.__ready) return;
   lastLinkCheck = now;
+  // A ticket that no longer names the view goes first, so the address drops its shot with it.
+  checkTicket();
   const query = linkQuery();
   if (query === lastLink) return;
   lastLink = query;
@@ -108,8 +110,9 @@ export function linkSpotProblem(text, half) {
 export async function openLinkedView() {
   const shot = params.get('shot');
   // The planner's own links carry the spot it stood on (`here`): open there, and name the shot.
-  if (shot && !params.has('here') && (await openLinkedShot(shot))) return;
-  if (shot && params.has('here')) nameLinkedShot(shot);
+  const here = params.has('here') && params.get('here') !== '0';
+  if (shot && !here && (await openLinkedShot(shot))) return;
+  if (shot && here) nameLinkedShot(shot);
   const at = params.get('at')?.split(',').map(Number);
   // A standing point that cannot be used is said, not dropped in silence: the map opens instead.
   const message = linkSpotProblem(params.get('at'), cityUniforms.uHalf.value);

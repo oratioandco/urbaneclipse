@@ -165,7 +165,8 @@ export async function goViewHere(target) {
     // look toward the body must reach the tower without a building in between.
     const length = Math.hypot(target.x, target.z) || 1;
     // Stay on the line's useful part: out from the tower, within the model.
-    const keep = (x, z) => Math.hypot(x, z) > 150 && Math.abs(x) < 9000 && Math.abs(z) < 9000 && x * target.x + z * target.z > 0;
+    // For the antenna, only the stretch of the line from which the moon is behind it (`range`).
+    const keep = (x, z) => Math.hypot(x, z) > 150 && Math.abs(x) < 9000 && Math.abs(z) < 9000 && x * target.x + z * target.z > 0 && (!target.range || (Math.hypot(x, z) >= target.range[0] && Math.hypot(x, z) <= target.range[1]));
     const spot = await confirmedSpotAlong(target.x, target.z, target.x / length, target.z / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x, z) - 40) }), keep);
     if (!spot) return noClearView(target);
     // Face the body: on a tower line it is behind some part of the tower, not always the sphere.

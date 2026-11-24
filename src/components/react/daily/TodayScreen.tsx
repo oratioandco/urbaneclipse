@@ -36,7 +36,7 @@ import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
-import { collectRows, computeDayPaths, type ShotRow } from '../../../miniature/dayShots.js';
+import { collectRows, computeDayPaths, towerSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
 import { planLink } from '../../../home/grid.js';
 
 interface Props {
@@ -140,7 +140,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
   // Every shot of the day, as `/plan/` lists them (src/miniature/dayShots.js). Without the
   // building data no standing point is checked, so no tower shot is offered.
   const allRows = useMemo(
-    () => collectRows(view ? computeDayPaths(bounds.start.getTime(), view) : [], allMoments, bounds.start.getTime()),
+    () => collectRows(view ? computeDayPaths(bounds.start.getTime(), view) : [], allMoments, bounds.start.getTime(), { seesTower: towerSeenFrom(view) }),
     [bounds, view, allMoments],
   );
   const towerShots = useMemo(() => allRows.filter((r) => r.kind === 'tower'), [allRows]);
