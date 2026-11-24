@@ -17,6 +17,7 @@ import { look, turnTo } from './eyeLevel.js';
 import { landmarkStatus } from './landmarkView.js';
 import { goViewHere } from './pointer.js';
 import { eyeCamera } from './render.js';
+import { clearView } from './sightlines.js';
 import { app, invalidate, toDirection } from './state.js';
 
 const eyePoint = () => new THREE.Vector3(look.x, look.y + EYE_HEIGHT + (look.lift ?? 0), look.z);
@@ -76,6 +77,21 @@ function moonBeside(here) {
   );
 }
 
+/**
+ * Whether the look from the eye toward a body reaches the tower with nothing built in between.
+ * A ray cast into the city, so it is asked again only when the eye, the body (to 0.05 degrees)
+ * or the buildings' detail have changed.
+ */
+let sightMemo = { key: '', clear: true };
+function seesToTower(item) {
+  const key = [Math.round(look.x), Math.round(look.z), Math.round((look.lift ?? 0) * 2), Math.round(item.az * 20), Math.round(item.alt * 20), app.tileEpoch].join('|');
+  if (sightMemo.key !== key) {
+    const flat = Math.hypot(look.x, look.z);
+    sightMemo = { key, clear: clearView(look.x, look.z, toDirection(new THREE.Vector3(), item.az, item.alt), Math.max(20, flat - 40) / Math.cos(THREE.MathUtils.degToRad(item.alt)), look.lift ?? 0) };
+  }
+  return sightMemo.clear;
+}
+
 /** One line in the camera card: covered now, how long until, or where to go instead. */
 export function showEclipseStatus(now) {
   const here = eclipseNow();
@@ -122,6 +138,13 @@ export function showEclipseStatus(now) {
       // Stepping sideways moves the sphere across the moon; this far puts the moon on its edge.
       const metres = covering.flat * Math.tan(THREE.MathUtils.degToRad(Math.max(0, here.radiusDeg - Math.abs(covering.signedOff))));
       text = `Moon hidden behind the sphere: step ${Math.max(1, Math.round(metres))} m left or right, or move further away`;
+    }
+    // The same look Dates takes (dates.js): from the eye toward the body, as far as the tower.
+    // The line said "Sun at the edge of the sphere now" where Dates, rightly, said a building
+    // hides it (nord-mitte on the Lichtenberger Brücke, 8 April 2027, 19:36).
+    if (!seesToTower(covering)) {
+      state = 'warn';
+      text = `${text.replace(/ now$/, '').replace(/: .*$/, '')}, but a building hides it from here`;
     }
   } else if (streetStatus(ticketShotRow(), t)) {
     // The card above is a street's: the line speaks of that street, not of the tower.
