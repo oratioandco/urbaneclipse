@@ -298,6 +298,16 @@ or inferred.
   At 320 px a card's reason overlaps its time (`edge-width-narrow-thisday.png`). No horizontal
   overflow at any width; 2560 px is fine (`edge-width-wide-thisday.png`).
 - File: `src/miniature/miniature.css` (eye-level ticket, `.walkpad`, `.tools`), `shotCard.js`.
+- **Partly fixed on 2026-11-24.** At 320 x 568 with More open the frame is 124 x 186 px
+  (was 87 x 131): where it fits between the walk stick and the minimap it now takes the room
+  beside them, down to the credit line (`main.js` `updateViewArea`; 390 x 844 is unchanged at
+  271 x 407). The six eye-level buttons are 40 px on screens under 600 px high and end above
+  the credit line. The horizon strip behind More was blank until the view moved; it is drawn
+  when it opens. The half sheet is at most half the screen: 49.7 % at 320 x 568 in "1 day"
+  (was 69 %), the rest shows at full (`sheetHeights.js`, test in `tests/unit/panel.test.ts`).
+  Renders opened: 320 x 568 map and eye level. Not fixed: the ticket's line and the frame's
+  caption are still cut at 320 px ("08:08 Sonne…", "Tower 4.3 km · s"), and at 390 px the
+  Dates list still covers the frame.
 - Fix: Dates as a full sheet of its own; hide the walk pad while More is open; let the ticket's
   line wrap.
 

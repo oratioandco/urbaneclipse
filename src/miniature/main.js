@@ -92,6 +92,10 @@ thirdsButton.addEventListener('click', () => {
   invalidate();
 });
 let panelTop = innerHeight;
+const creditLine = document.querySelector('.credit');
+const ticket = document.getElementById('panel');
+const walkStick = document.getElementById('stick');
+const minimapEl = document.getElementById('minimap');
 /**
  * The viewfinder sits in the view between the buttons above and the card below, and the lens's
  * axis goes through its middle. The card's height while the dates list is open does not count.
@@ -99,7 +103,26 @@ let panelTop = innerHeight;
 function updateViewArea() {
   if (document.body.dataset.dates !== 'open') panelTop = panel.getBoundingClientRect().top;
   const top = document.querySelector('.topleft').getBoundingClientRect().bottom;
-  if (setViewArea({ left: 0, top: top + 4, right: innerWidth, bottom: panelTop - 4 })) invalidateShadows();
+  let area = { left: 0, top: top + 4, right: innerWidth, bottom: panelTop - 4 };
+  // On a small phone the walk stick's row above the ticket takes a third of what is left, and
+  // the picture shrinks to a stamp (87 x 131 px at 320 x 568 with More open). Where the frame
+  // fits beside the stick and the minimap, it takes that room too, down to the credit line.
+  if (document.body.dataset.eye === 'true' && document.body.dataset.dates !== 'open') {
+    const box = (el) => (el && el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden' ? el.getBoundingClientRect() : null);
+    const credit = box(creditLine);
+    const lower = { ...area, bottom: (credit ? credit.top : ticket.getBoundingClientRect().top) - 4 };
+    if (lower.bottom > area.bottom + 8) {
+      // As tall as leaves the frame, centred, clear of both: the width between them sets it.
+      const f = frameRect(undefined, lower);
+      const stick = box(walkStick);
+      const map = box(minimapEl);
+      const side = Math.max(stick ? stick.right + 2 : 0, map ? innerWidth - map.left + 2 : 0);
+      const width = Math.min(f.w, innerWidth - 2 * side);
+      const bottom = Math.min(lower.bottom, lower.top + (width * f.h) / f.w + 28);
+      if (bottom > area.bottom + 8) area = { ...lower, bottom };
+    }
+  }
+  if (setViewArea(area)) invalidateShadows();
   const frame = frameRect();
   const dx = innerWidth / 2 - (frame.x + frame.w / 2);
   const dy = innerHeight / 2 - (frame.y + frame.h / 2);

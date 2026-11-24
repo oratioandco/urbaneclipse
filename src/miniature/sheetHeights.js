@@ -20,12 +20,15 @@ export const tapHeight = (height) => (height === 'peek' ? 'half' : 'peek');
 /**
  * The three heights in pixels. `head` is the handle row, `day` the day view under it, `all`
  * everything in the sheet; `viewport` the screen's height and `topGap` what stays map at full.
- * A sheet whose planning adds next to nothing has no full height of its own.
+ * A sheet whose planning adds next to nothing has no full height of its own. Half is at most
+ * `halfShare` of the screen.
  */
-export function sheetSizes({ viewport, head, day, all, topGap = 56 }) {
+export function sheetSizes({ viewport, head, day, all, topGap = 56, halfShare = 0.5 }) {
   const most = Math.max(head, viewport - topGap);
   const peek = Math.min(head, most);
-  const half = Math.min(head + day, most);
+  // Half never takes more than half the screen: on a 320 x 568 phone the day view's cards and
+  // timeline together came to 69 %, and the map was a strip. What does not fit waits at full.
+  const half = Math.min(head + day, most, Math.max(head, Math.round(viewport * halfShare)));
   const full = Math.max(half, Math.min(head + all, most));
   return { peek, half, full };
 }

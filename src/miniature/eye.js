@@ -49,9 +49,9 @@ export function setViewArea(area) {
  * The viewfinder: the photo's frame on screen, as large as fits the view area, landscape on a
  * landscape screen and portrait on a portrait one, as a photographer would hold the camera.
  */
-export function frameRect(format = camera.format) {
+export function frameRect(format = camera.format, within = viewArea) {
   const { aspect } = frameSize(format);
-  const area = viewArea ?? { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+  const area = within ?? { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
   const margin = 14;
   const portrait = innerHeight > innerWidth;
   const ratio = portrait ? 1 / aspect : aspect;
