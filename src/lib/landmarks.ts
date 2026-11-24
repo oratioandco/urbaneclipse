@@ -230,14 +230,21 @@ export const SIEGESSAEULE: RevolutionLandmark = {
  * quadriga above it. Axis at the centre of OSM way 518071791; the gate hall itself is not
  * round: 34.8 m along its face by 16.6 m deep, and the revolution's 25.8 m diameter is the
  * compromise between the two. Published height 26 m including the quadriga; OSM's height
- * tag agrees. Base ground about 34.5 m NHN, approximate.
+ * tag agrees. Base 34.9 m NHN from DGM1 (2026-11-24): the 1 m points read 34.89-34.97 m
+ * within 5 m of the axis, in the middle passage, and 34.3-35.2 m within 40 m. (Was 34.5,
+ * an estimate.)
+ *
+ * The quadriga, for the day's shots (src/lib/landmarkStands.ts): de.wikipedia, "Brandenburger
+ * Tor" (read 2026-11-24), has the gate 20.3 m high and the quadriga's tip at about 26 m. The
+ * Viktoria on the Siegessäule above is 8.32 m (de.wikipedia, "Siegessäule (Berlin)"), which
+ * is the 58.7-67 m of that profile.
  */
 export const BRANDENBURGER_TOR: RevolutionLandmark = {
   id: 'brandenburger-tor',
   name: 'Brandenburger Tor',
   lat: 52.516273,
   lon: 13.377704,
-  baseOrthometric: 34.5,
+  baseOrthometric: 34.9,
   profile: [
     [0, 12.9],
     [20.5, 12.9], // the gate's mass, columns to entablature
