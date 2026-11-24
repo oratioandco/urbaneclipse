@@ -8,7 +8,7 @@
  * Open, the list is a third of the screen high, and never less than its head, the switches and
  * the cards need (--half).
  */
-#dates { --half: clamp(250px, 34dvh, 300px); display: none; max-height: var(--half); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 2px 0 4px; }
+#dates { --half: clamp(284px, 34dvh, 300px); display: none; max-height: var(--half); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; margin: 2px 0 4px; }
 body[data-eye='true'][data-dates='open'] #dates { display: block; }
 /* "Show more": the list takes the ticket's height. The horizon strip and the lens wait under
    it meanwhile, and on a phone for as long as the list is open, so the ticket stays at about
@@ -28,7 +28,7 @@ body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > 
 #dates .plan-day { margin: 10px 0 4px; }
 
 /* The best few: the day view's row of cards, upright (4:5) so the day fits over the time. */
-#dates .fh-best { --shot-aspect: 4 / 5; padding-bottom: 2px; min-height: 0; }
+#dates .fh-best { --shot-aspect: 3 / 4; padding-bottom: 2px; min-height: 0; }
 #dates .fh-best .shotcard--card .sc-what { white-space: normal; }
 #dates .shotcard--card[aria-current='true'] .sc-what { display: flex; }
 
@@ -42,6 +42,11 @@ body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > 
    height), and no chevron, so a row is three lines at most. */
 #dates .fh-brief { display: none; grid-area: detail; color: var(--muted); font-size: var(--text-s); }
 @media (max-width: 359px) {
+  /* The five switches on one line, pushed sideways rather than onto a second. */
+  #dates .shotfilter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  #dates .shotfilter::-webkit-scrollbar { display: none; }
+  #dates .shotfilter button { flex: none; }
+  #dates { --half: clamp(282px, 34dvh, 300px); }
   #dates .shotcard--row { column-gap: 8px; }
   #dates .shotcard--row :is(.sc-detail, .chev, .fh-weekday) { display: none; }
   #dates .fh-brief { display: block; }
@@ -68,6 +73,14 @@ body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > 
 #dates .fh-steps li[data-done]::before { border-color: var(--accent); background: var(--accent); animation: none; }
 #dates .fh-steps .muted { margin-left: -4px; }
 @keyframes fh-wait { 50% { opacity: 0.35; } }
+
+/* The walk pad stands over the view the list has already taken: it waits while the list is open. */
+body[data-eye='true'][data-dates='open'] #stick.walkpad { display: none; }
+/* A wide window: the open list stands at the side, as the panel does on the map, so the
+   viewfinder in the middle stays in sight. */
+@media (min-width: 900px) {
+  body[data-eye='true'][data-dates='open'] #sheet.bottom { margin: 0; max-width: var(--side); }
+}
 
 /* "You have moved": stays in sight over the list it puts out of date. */
 .dates-again { position: sticky; top: 0; z-index: 1; display: block; height: var(--control-s); margin: 6px 0 2px; padding: 0 12px; border: 0; border-radius: calc(var(--control-s) / 2); background: var(--accent); color: #fff; font: 600 var(--text-s) ui-sans-serif, system-ui, sans-serif; cursor: pointer; }

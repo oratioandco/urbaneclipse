@@ -82,7 +82,7 @@ async function nameLinkedShot(key) {
     // How far the spot is from the shot's landmark, and on which bearing from it: the card's "400 m east".
     const target = TARGETS.find((entry) => entry.id === targetOfKey(key));
     const [dx, dz] = target ? [x - target.x, z - target.z] : [NaN, NaN];
-    const shot = shotFromKey(key, instant().getTime(), Math.hypot(dx, dz) || null, (THREE.MathUtils.radToDeg(Math.atan2(dx, -dz)) + 360) % 360);
+    const shot = shotFromKey(key, instant().getTime(), { distanceM: Math.hypot(dx, dz) || null, fromDeg: (THREE.MathUtils.radToDeg(Math.atan2(dx, -dz)) + 360) % 360, at: Number.isFinite(x) ? at : null });
     if (shot) showTicket(shot, ticketVerdict(shot));
     return;
   }

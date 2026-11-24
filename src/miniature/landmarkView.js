@@ -26,9 +26,10 @@ export function landmarkAtEye(eye, t) {
   const target = FIGURE_TARGETS.find((item) => item.id === shot.target);
   if (!target) return null;
   const [x, z] = sceneFromLatLon(target.landmark.lat, target.landmark.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
-  const [sx, sz] = sceneFromLatLon(shot.at[0], shot.at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);
+  // A shot that does not say where it was made for (`at`) has no spot to have moved from.
+  const [sx, sz] = Array.isArray(shot.at) ? sceneFromLatLon(shot.at[0], shot.at[1], FERNSEHTURM.lat, FERNSEHTURM.lon) : [NaN, NaN];
   const body = sampleBody(shot.body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
-  return { shot, target, figure: figureWord(target), body, movedM: Math.hypot(eye.x - sx, eye.z - sz), ...figureView(target, eye, { x, z }, body) };
+  return { shot, target, figure: figureWord(target), body, movedM: Array.isArray(shot.at) ? Math.hypot(eye.x - sx, eye.z - sz) : Infinity, ...figureView(target, eye, { x, z }, body) };
 }
 
 /**

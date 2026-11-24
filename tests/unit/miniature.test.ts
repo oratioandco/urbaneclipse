@@ -269,29 +269,30 @@ describe('passes behind the other landmarks', () => {
     expect(profileRadius(BRANDENBURGER_TOR.profile, 26)).toBe(0); // nothing above the quadriga
   });
 
-  it('hides the sun behind the column up close, and crosses it at its edge from far out', () => {
+  it('takes the sun on the Viktoria for a shot, and the sun behind the shaft for none', () => {
     const target = TARGETS.find((t: { id: string }) => t.id === 'siegessaeule');
-    const eyeNear = { x: target.x, y: base + 1.6, z: target.z + 500 };
-    const eyeFar = { x: target.x, y: base + 1.6, z: target.z + 2000 };
-    const altOf = (eye: { y: number; z: number }, height: number) => (Math.atan2(base + height - eye.y, eye.z - target.z) * 180) / Math.PI;
-    const run = (eye: { x: number; y: number; z: number }, alt: number) =>
-      findShots({ eye, base, start: t0, end: t0 + 90 * 60_000, targets: [target], bodyAt: sweep(alt), moonLit: () => 1 });
-    const near = run(eyeNear, altOf(eyeNear, 30)).filter((s: { body: string }) => s.body === 'sun');
-    expect(near.map((s: { state: string }) => s.state)).toEqual(['hidden']);
-    // The column is a tall band on the sky, so the disc never rings it: it crosses at the edge.
-    const far = run(eyeFar, altOf(eyeFar, 30)).filter((s: { body: string }) => s.body === 'sun');
-    expect(far.map((s: { state: string }) => s.state)).toEqual(['edge']);
+    const eye = { x: target.x, y: 1.6, z: target.z + 1000 };
+    // The scene's zero is 34.6 m; the column's base 35.2 m (landmarkShots.js, landmarkStands.ts).
+    const altOf = (height: number) => (Math.atan2(35.2 - 34.6 + height - eye.y, 1000) * 180) / Math.PI;
+    const run = (alt: number, from = eye) => findShots({ eye: from, base, start: t0, end: t0 + 90 * 60_000, targets: [target], bodyAt: sweep(alt), moonLit: () => 1 });
+    expect(run(altOf(63)).map((s: { state: string }) => s.state)).toEqual(['figure', 'figure']); // sun and moon
+    // Half way up the shaft the column hides the disc, and that is not the Viktoria.
+    expect(run(altOf(30))).toEqual([]);
+    // Above the figure's head by more than the disc: nothing either.
+    expect(run(altOf(67) + 0.6)).toEqual([]);
   });
 
-  it('never fakes a ring of moon round the gate from far away', () => {
+  it('wants the body a degree up and the spot far enough for the disc to count', () => {
     const target = TARGETS.find((t: { id: string }) => t.id === 'brandenburger-tor');
-    // From 3 km the disc is tiny against the 35 m gate: no ring, only an edge or nothing.
-    const eye = { x: target.x, y: base + 1.6, z: target.z + 3000 };
-    const alt = (Math.atan2(base + 23 - eye.y, 3000) * 180) / Math.PI; // against the quadriga band
-    const moon = findShots({ eye, base, start: t0, end: t0 + 90 * 60_000, targets: [target], bodyAt: sweep(alt), moonLit: () => 1 }).filter(
-      (s: { body: string }) => s.body === 'moon',
-    );
-    expect(moon.map((s: { state: string }) => s.state)).not.toContain('ring');
+    const at = (metres: number) => ({ x: target.x, y: 1.6, z: target.z + metres });
+    const altOf = (metres: number) => (Math.atan2(34.9 - 34.6 + 23 - 1.6, metres) * 180) / Math.PI;
+    const run = (metres: number) => findShots({ eye: at(metres), base, start: t0, end: t0 + 90 * 60_000, targets: [target], bodyAt: sweep(altOf(metres)), moonLit: () => 1 });
+    expect(run(600).length).toBe(2);
+    // From 200 m the disc is a third of the quadriga: the day list offers no stand point there.
+    expect(run(200)).toEqual([]);
+    // From 1.5 km the quadriga stands 0.8 degrees up: the body behind it is in the murk.
+    expect(altOf(1500)).toBeLessThan(1);
+    expect(run(1500)).toEqual([]);
   });
 });
 

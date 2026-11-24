@@ -190,8 +190,15 @@ what tells this shot from its neighbours (`shotWhat`): "Sun · 5.3 km SE" at the
 ### From here: the year from where you stand
 
 At eye level, "Dates" (behind "More" on the ticket) searches the next twelve months from the
-spot you stand on: the street you are in, and the sun and moon behind each landmark of
-`targets.js`. Three files, so the search and what is shown of it stay apart:
+spot you stand on: the street you are in, the sun and moon behind the TV tower, and behind the
+Viktoria and the quadriga (`targets.js`). For those two the search asks, from the spot, the
+day list's own three questions (`landmarkStands.ts`): is the disc on the figure's height band
+(`figureView`, which the eye-level line reads too), is the body a degree up, is the spot far
+enough for the disc to be half the figure. A pass behind the shaft or the gate's columns is
+not a shot and is not listed; closer than that the list says "Too close". So from a stand
+point of the day list the year holds that day's shot at its minute, in its words
+(`tests/unit/fromHereFigures.test.ts`). Off the day list's strips a date is still offered:
+buildings are checked from the spot, trees are not, and every card and row says so. Three files, so the search and what is shown of it stay apart:
 
 - `dates.js` and `dates.worker.js` search (a street's henges; passes by the `towerShots.js`
   rules), check every date against the buildings and word it. The worker posts how far the year
@@ -209,7 +216,7 @@ What a photographer sees:
 | Searching | "Searching the next 12 months from this spot…", a bar that follows the search, and each thing looked for with its count once it is done |
 | Found | "Best from here": up to three cards in the day view's row of cards (4:5, the day over the time; they scroll sideways on a phone). Under it every date by month as shot rows: the body's disc, date and time, the verdict, then place, pass, height and light |
 | Nothing | "Nothing lines up from here in the next twelve months. Try a few steps along." and what the search knows of why (hidden by buildings, or no pass at all) |
-| Failed | "The search did not finish." with "Search again" and the error: no answer is not the same as nothing |
+| Failed | "The search did not finish." with "Search again" and the error: no answer is not the same as nothing. Also when the worker does not load or says nothing for 15 s |
 | Switched off | The day list's own sentence and its "Show all shots" |
 | Moved | "You have moved: search from here" stays at the top of the list |
 
@@ -242,12 +249,15 @@ which is about the chosen minute) names the next date instead: "Next from here: 
 the idle line; what `eclipse.js` says of the minute is untouched, and comes back when the list
 closes.
 
-The list opens a third of the screen high (250 to 300 px); the chevron beside the count gives
+The list opens a third of the screen high (284 to 300 px, the height of its head, switches and cards); the chevron beside the count gives
 it the ticket's whole height (hidden on a screen under 600 px high, where there is none to
 give). The horizon strip and the lens row fold away meanwhile, and on a phone for as long as
 the list is open: the ticket is then 51 % of a 390 x 844 screen, 77 % with the whole list.
 Under 360 px wide a row drops the weekday, the chevron, and the light and lit share from its
-small print (place, pass, height: `brief`), so it is three lines at most, a verdict's line apart.
+small print (`brief`: place, pass, height, and "trees unchecked" where that holds), the
+switches stay on one line and scroll, and two cards show at a time with a long name in its
+short form. While the list is open the walk pad is hidden, and from 900 px the ticket stands
+at the left (372 px), so the viewfinder stays in sight.
 
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
