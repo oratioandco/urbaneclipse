@@ -56,6 +56,9 @@ Shared state that several modules change lives on `app` in `state.js`.
 More dates from where you stand (the Dates button at eye level) search a year in
 `dates.worker.js`: a street's henges, and passes behind the tower by the `towerShots.js` rules.
 A browser walk-through of the main features: `node scripts/miniature/walkthrough.mjs <url> <shots dir>`.
+`#time` holds minutes on the Berlin wall clock. A Berlin day is 23 or 25 hours long when the
+clocks change, so never add those minutes to midnight: use `instantOfMinute`, `minuteOf` and `dayEnd`
+from `clock.js` (arithmetic in `berlinClock.js`, tests in `tests/unit/clockChange.test.ts`).
 The rules for moon and sun shots with the tower are in `towerShots.js`, tested in
 `tests/unit/miniature.test.ts`.
 

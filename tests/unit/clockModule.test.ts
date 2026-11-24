@@ -39,12 +39,13 @@ vi.stubGlobal('document', {
 });
 vi.stubGlobal('MutationObserver', class { observe() {} });
 
-let clock: typeof import('../../src/miniature/clock.js');
+let clock: { setDay(day: string): void; setMinute(t: number): void; instant(): Date; dayStart(): number; dayEnd(): number };
 const utc = (s: string) => Date.parse(s);
 const slider = () => elements.get('time')!;
 
 describe('clock.js on the days the clocks change', () => {
   beforeAll(async () => {
+    // @ts-expect-error plain JS module
     clock = await import('../../src/miniature/clock.js');
   });
 
