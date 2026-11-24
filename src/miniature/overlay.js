@@ -4,7 +4,7 @@
  */
 import { formatMinutes } from './time.js';
 import { drawMoon, drawSun } from './bodies.js';
-import { drawMark, drawNeedle } from './marks.js';
+import { drawMark } from './marks.js';
 import { frameRect } from './eye.js';
 
 const canvas = document.getElementById('labels');
@@ -79,8 +79,9 @@ function drawBody(body, x, y, radius) {
 
 const PILL_H = 30;
 /** The direction needle beside a pill: its length, and the gap between it and the pill's rim. */
-const NEEDLE = 28;
-const NEEDLE_GAP = 5;
+/** The beak on a pill's rim that points to its body: how far it stands out, and half its root. */
+const BEAK = 11;
+const BEAK_HALF = 7;
 
 /**
  * A compass pill, not a sun in the scene: the arrow says which way the body lies, whereas a
@@ -91,7 +92,32 @@ function drawPill({ text, moon, x, y, ux, uy, night, body }) {
   const width = 40 + ctx.measureText(text).width + 12;
   const left = x - width / 2;
   const top = y - PILL_H / 2;
-  ctx.fillStyle = night ? 'rgba(20, 23, 38, 0.86)' : 'rgba(255, 253, 249, 0.92)';
+  // Which way the body lies: a beak on the pill's own rim, in the body's colour, the pill
+  // drawn over its root so the two are one shape. It was a separate needle, a kite with a
+  // notched tail, which read as a mouse cursor and lay on other pills and on the buttons
+  // (release tests, 2026-11-24). A beak belongs to its pill and needs 11 px, not 36.
+  {
+    const reach = Math.min(Math.abs(ux) > 1e-3 ? width / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? PILL_H / 2 / Math.abs(uy) : Infinity);
+    // On the round ends the rim lies inside the box: come in to it.
+    const ex = Math.max(-(width / 2 - PILL_H / 2), Math.min(width / 2 - PILL_H / 2, ux * reach));
+    const rim = Math.abs(ux * reach) > width / 2 - PILL_H / 2 ? { x: ex + Math.sign(ux) * Math.sqrt(Math.max(0, (PILL_H / 2) ** 2 - (uy * reach) ** 2)), y: uy * reach } : { x: ux * reach, y: uy * reach };
+    const rx = x + rim.x;
+    const ry = y + rim.y;
+    const px = -uy;
+    const py = ux;
+    ctx.beginPath();
+    ctx.moveTo(rx + ux * BEAK, ry + uy * BEAK);
+    ctx.lineTo(rx - ux * 4 + px * BEAK_HALF, ry - uy * 4 + py * BEAK_HALF);
+    ctx.lineTo(rx - ux * 4 - px * BEAK_HALF, ry - uy * 4 - py * BEAK_HALF);
+    ctx.closePath();
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = PATH_CSS[moon ? 'moon' : 'sun'];
+    ctx.fill();
+  }
+  ctx.fillStyle = night ? 'rgb(20, 23, 38)' : 'rgb(255, 253, 249)';
   ctx.beginPath();
   ctx.roundRect(left, top, width, PILL_H, PILL_H / 2);
   ctx.fill();
@@ -100,19 +126,6 @@ function drawPill({ text, moon, x, y, ux, uy, night, body }) {
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, left + 29, y + 0.5);
-  // The needle of marks.js stands off the pill's rim on the side the body lies: a long kite,
-  // ink behind and the body's colour in front, so the coloured end is the one that points.
-  // At 28 px it is as long as the pill is high, which is what makes the tip plain on a phone.
-  const reach = Math.min(Math.abs(ux) > 1e-3 ? width / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? PILL_H / 2 / Math.abs(uy) : Infinity);
-  // Leaving through an edge at a slant, the tail's wings would lean back over the pill: stand
-  // further off by the wing's half width, as much as the slant.
-  const throughSide = Math.abs(ux) * PILL_H > Math.abs(uy) * width;
-  const out = reach + NEEDLE_GAP + NEEDLE / 2 + NEEDLE * 0.3 * Math.abs(throughSide ? uy : ux);
-  drawNeedle(ctx, x + ux * out, y + uy * out, Math.atan2(uy, ux), NEEDLE, {
-    kind: moon ? 'moon' : 'sun',
-    ink: night ? '#ece8df' : '#24221f',
-    halo: night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)',
-  });
   return { kind: 'pill', x: left, y: top, w: width, h: PILL_H, body };
 }
 
@@ -137,8 +150,8 @@ function safeArea(bottomInset) {
 function pillAt(text, ux, uy, area) {
   ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
   // Half the pill, plus room for its needle.
-  const halfW = (40 + ctx.measureText(text).width + 12) / 2 + NEEDLE + NEEDLE_GAP + 3;
-  const halfH = PILL_H / 2 + NEEDLE + NEEDLE_GAP + 3;
+  const halfW = (40 + ctx.measureText(text).width + 12) / 2 + BEAK + 5;
+  const halfH = PILL_H / 2 + BEAK + 5;
   const cx = (area.left + area.right) / 2;
   const cy = (area.top + area.bottom) / 2;
   const reach = Math.max(0, Math.min(Math.abs(ux) > 1e-3 ? ((area.right - area.left) / 2 - halfW) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? ((area.bottom - area.top) / 2 - halfH) / Math.abs(uy) : Infinity));
@@ -299,7 +312,19 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     pills.push({ text, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body });
   }
   // Two bodies in nearly the same direction would otherwise stack.
-  if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < 130 && Math.abs(pills[0].y - pills[1].y) < PILL_H + 6) pills[1].y += pills[1].y >= pills[0].y ? PILL_H + 6 : -(PILL_H + 6);
+  // Two bodies in nearly the same direction: the second moves clear of the first, by their real
+  // widths and with room for a beak between them (one pill's pointer lay on the other's words).
+  if (pills.length === 2) {
+    ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
+    const half = (pill) => (40 + ctx.measureText(pill.text).width + 12) / 2;
+    const clear = PILL_H + BEAK + 8;
+    if (Math.abs(pills[0].x - pills[1].x) < half(pills[0]) + half(pills[1]) + BEAK + 6 && Math.abs(pills[0].y - pills[1].y) < clear) {
+      const down = pills[1].y >= pills[0].y ? 1 : -1;
+      const y = pills[0].y + down * clear;
+      // Not off the area either: then to the other side of the first.
+      pills[1].y = y - PILL_H / 2 - BEAK < area.top || y + PILL_H / 2 + BEAK > area.bottom ? pills[0].y - down * clear : y;
+    }
+  }
   hourLabels(pills.map((pill) => {
     ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
     const half = (40 + ctx.measureText(pill.text).width + 12) / 2;
@@ -716,7 +741,7 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
 /** Half a pill's width with its needle, as `pillAt` reckons it. */
 function pillHalfWidth(text) {
   ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
-  return (40 + ctx.measureText(text).width + 12) / 2 + NEEDLE + NEEDLE_GAP + 3;
+  return (40 + ctx.measureText(text).width + 12) / 2 + BEAK + 5;
 }
 
 /**
