@@ -1,9 +1,11 @@
 /** The tool buttons: layers and their menu, the intro, the compass and the 2D/3D switch. */
 import * as THREE from 'three';
-import { getMoonIllumination } from 'suncalc';
-import { litDiscPath } from '../lib/moonPhase.ts';
+import { bodyIcon } from './bodyAt.js';
+import { moonSvg, sunSvg } from './bodies.js';
+import { nameControl } from './controlNames.js';
+import { icon, phaseIcon } from './icons.js';
 import { orbitTo } from './camera.js';
-import { dateInput, dayStart } from './clock.js';
+import { dateInput, instant } from './clock.js';
 import { params } from './config.js';
 import { exitEye, look, turnTo } from './eyeLevel.js';
 import { introLogo } from './introLogo.js';
@@ -11,6 +13,27 @@ import { updateSun } from './lighting.js';
 import { updateDay } from './plan.js';
 import { controls, eyeCamera } from './render.js';
 import { app, invalidate } from './state.js';
+
+/**
+ * Every icon in the page comes from the one set (icons.js), and every icon-only control takes
+ * its icon, tooltip and accessible name from the one table (controlNames.js). The markup only
+ * says which: `data-icon="calendar"`, `data-control="layers"`.
+ */
+export function applyControl(el, key = el.dataset.control) {
+  nameControl(el, key, { size: Number(el.dataset.iconSize) || 22 });
+  if ('iconAfter' in el.dataset) el.append(el.querySelector(':scope > [data-ue-slot]'));
+  // The toolbars show the tip beside the button (`data-tip`, also on keyboard focus); in the
+  // panel the browser's own tooltip does. Never both.
+  if (el.closest('.tools, .topleft')) el.removeAttribute('title');
+  else delete el.dataset.tip;
+}
+for (const el of document.querySelectorAll('[data-control]')) applyControl(el);
+for (const el of document.querySelectorAll('[data-icon]')) el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon, { size: Number(el.dataset.iconSize) || 20 }));
+for (const el of document.querySelectorAll('[data-phase]')) el.insertAdjacentHTML('afterbegin', phaseIcon(el.dataset.phase, { size: 20 }));
+// The intro's example cards: the low sun and the full moon those pictures show.
+for (const el of document.querySelectorAll('[data-body]')) {
+  el.innerHTML = el.dataset.body === 'moon' ? moonSvg({ fraction: 1, altitudeDeg: 6, sunAltitudeDeg: -8, size: 14, glow: false }) : sunSvg({ altitudeDeg: 3, size: 14, glow: false });
+}
 
 export const layers = { tower: true, streets: true, trees: true, clouds: true, names: true, sun: true, moon: true, weather: true };
 try {
@@ -77,8 +100,10 @@ let cloudHeavy = false;
 function refreshCloudHint() {
   const covered = cloudHeavy && layers.clouds;
   layersButton.classList.toggle('clouds-heavy', covered);
-  layersButton.dataset.tip = covered ? 'Map layers: the forecast’s clouds cover the map' : 'Map layers';
-  layersButton.setAttribute('aria-label', covered ? 'Map layers: the forecast’s clouds cover the map. Switch off “Clouds on the map” here' : 'Map layers: choose what the map shows');
+  applyControl(layersButton, 'layers');
+  if (!covered) return;
+  layersButton.dataset.tip = 'Map layers: the forecast’s clouds cover the map';
+  layersButton.setAttribute('aria-label', 'Map layers: the forecast’s clouds cover the map. Switch off “Clouds on the map” here');
 }
 /** Called by the weather code when the day's peak cloud cover crosses in or out of the heavy band. */
 export function setCloudHint(heavy) {
@@ -95,12 +120,20 @@ addEventListener('pointerdown', (event) => {
     layersButton.setAttribute('aria-expanded', 'false');
   }
 });
-// The moon in the layers menu shows today's phase.
-function showLayersMoon() {
-  const moon = getMoonIllumination(new Date(dayStart() + 43_200_000));
-  document.getElementById('layers-moon').innerHTML = `<circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/>`;
+// The sun and moon in the layers menu are the ones of the chosen minute.
+function showLayersBodies() {
+  const t = instant().getTime();
+  for (const body of ['sun', 'moon']) document.getElementById(`layers-${body}`).innerHTML = bodyIcon(body, t, { size: 16 });
 }
-layersButton.addEventListener('click', showLayersMoon);
+layersButton.addEventListener('click', showLayersBodies);
+// At eye level, the buttons that turn to the sun and the moon show them as they are now.
+let faces = '';
+export function showFaceBodies(t, sunAlt, moonAlt) {
+  const key = `${Math.round(sunAlt * 2)}|${Math.round(moonAlt * 2)}|${Math.floor(t / 86_400_000)}`;
+  if (key === faces) return;
+  faces = key;
+  for (const body of ['sun', 'moon']) document.getElementById(`face-${body}`).innerHTML = bodyIcon(body, t, { size: 26, glow: true });
+}
 // The earlier flat map, on the same day.
 const flatMap = document.getElementById('flatmap');
 layersButton.addEventListener('click', () => (flatMap.href = `/map/#/day=${dateInput.value}`));
@@ -115,6 +148,11 @@ compass.addEventListener('click', () => {
   else orbitTo(null, 0);
 });
 export const tiltButton = document.getElementById('tilt');
+// Its word flips between 2D and 3D (main.js); the tip and the name follow.
+new MutationObserver(() => {
+  const key = tiltButton.textContent === '3D' ? 'tilt-angled' : 'tilt-flat';
+  if (tiltButton.dataset.control !== key) applyControl(tiltButton, (tiltButton.dataset.control = key));
+}).observe(tiltButton, { childList: true, characterData: true, subtree: true });
 tiltButton.addEventListener('click', () => orbitTo(controls.getPolarAngle() < 0.2 ? THREE.MathUtils.degToRad(55) : 0, null));
 
 /** The list's filters are the map's layers, so both always agree. */

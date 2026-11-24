@@ -5,6 +5,7 @@
  * so "which way and how far" is one look while framing. A tap on any of the three turns to
  * face it. Nothing here is only for looking.
  */
+import { drawMoon, drawSun } from './bodies.js';
 import { controls, eyeCamera } from './render.js';
 import { look } from './eyeLevel.js';
 import { compassName } from './eye.js';
@@ -45,8 +46,6 @@ export function renderHorizon() {
   const css = getComputedStyle(document.body);
   const ink = css.getPropertyValue('--ink').trim() || '#24221f';
   const muted = css.getPropertyValue('--muted').trim() || '#6f6a62';
-  const sunCol = css.getPropertyValue('--sun').trim() || '#f26a12';
-  const moonCol = css.getPropertyValue('--moon').trim() || '#5b82ff';
   const heading = viewHeading();
   const px = w / SPAN;
   const mid = w / 2;
@@ -99,20 +98,11 @@ export function renderHorizon() {
     ctx.globalAlpha = fade(delta);
     if (body.moon) {
       mark(x, y, (cx, cy) => {
-        ctx.beginPath();
-        ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-        ctx.fillStyle = moonCol;
-        ctx.fill();
+        drawMoon(ctx, cx, cy, 4.5, { fraction: body.moon.fraction, waxing: body.moon.waxing ?? body.moon.phase < 0.5, altitudeDeg: body.alt, sunAltitudeDeg: body.sunAlt, glow: false });
       }, 'moon', body.az, null);
     } else {
       mark(x, y, (cx, cy) => {
-        ctx.beginPath();
-        ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = sunCol;
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        drawSun(ctx, cx, cy, 4.5, body.alt, { glow: false });
       }, 'sun', body.az, null);
     }
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { coverage, parseHeight, sheetSizes, snapHeight, stepDown, stepUp, tapHeight } from '../../src/miniature/sheetHeights.js';
-import { PASSED, countdown, gradeSky, readingVerdict, shotVerdict, skyAt, verdict } from '../../src/miniature/verdict.js';
+import { PASSED, assess, countdown, gradeSky, horizonLowToward, shotSky, shotVerdict, skyAt, verdict, verdictNote } from '../../src/miniature/verdict.js';
 import {
   altitudeToY,
   clampMinute,
@@ -81,17 +81,22 @@ describe('the sheet’s three heights', () => {
 describe('verdicts in words', () => {
   const sky = (low: number, mid: number, high: number, vis = 24_000, rain = 0) => ({ low, mid, high, vis, rain });
 
-  it('keeps the plan’s thresholds: 75% cloud or 3 km is poor, 50% or 9 km fair', () => {
+  it('grades by how much of the disc is hidden: over 75% is poor, over 50% fair', () => {
     expect(gradeSky(sky(0.76, 0, 0))).toBe('poor');
     expect(gradeSky(sky(0.75, 0, 0))).toBe('fair');
-    expect(gradeSky(sky(0, 0.51, 0))).toBe('fair');
-    expect(gradeSky(sky(0, 0.5, 0))).toBe('good');
+    expect(gradeSky(sky(0.5, 0, 0))).toBe('good');
+    // Middle cloud hides nearly as well as low cloud (0.85), high cloud much less (0.4).
+    expect(gradeSky(sky(0, 0.6, 0))).toBe('fair');
+    expect(gradeSky(sky(0, 0.58, 0))).toBe('good');
+    expect(gradeSky(sky(0, 0.9, 0))).toBe('poor');
+    expect(gradeSky(sky(0, 0, 1))).toBe('good');
+    // Without a distance: 3 km of sight is poor, 9 km fair.
     expect(gradeSky(sky(0, 0, 0, 2999))).toBe('poor');
     expect(gradeSky(sky(0, 0, 0, 8999))).toBe('fair');
   });
   it('says the word and the reason', () => {
     expect(verdict(sky(0, 0, 0.05)).label).toBe('Go · clear light');
-    expect(verdict(sky(0, 0.6, 0.3)).label).toBe('Maybe · mixed cloud');
+    expect(verdict(sky(0, 0.7, 0.3)).label).toBe('Maybe · mixed cloud');
     expect(verdict(sky(0.2, 0.9, 0.9)).label).toBe('Skip · overcast');
   });
   it('names what decides it: low cloud, haze, fog, rain, thin high cloud', () => {
@@ -109,13 +114,82 @@ describe('verdicts in words', () => {
     for (const s of samples) expect(verdict(s).reason.length).toBeLessThanOrEqual(11);
   });
   it('says so in words when there is no forecast', () => {
-    expect(verdict(null)).toEqual({ grade: null, word: 'No forecast yet', reason: '', label: 'No forecast yet' });
+    expect(verdict(null)).toMatchObject({ grade: null, word: 'No forecast yet', reason: '', label: 'No forecast yet' });
     expect(verdict(null, 'Forecast loading').label).toBe('Forecast loading');
     expect(PASSED.label).toBe('Passed');
   });
-  it('words a sunrise or sunset reading', () => {
-    expect(readingVerdict({ grade: 'good', text: 'clouds above to catch the colour' }).label).toBe('Go · clouds above to catch the colour');
-    expect(readingVerdict({ grade: 'poor', text: 'overcast, little direct light' }).word).toBe('Skip');
+  // The audit's defect 6 (docs/accuracy-audit-2026-11.md): one sky, three grades, and none
+  // that looked toward the low sun. Each case below is one of its examples.
+  it('calls 80% thin cirrus over a clear lower sky a Go, as the date list and the sunset line did', () => {
+    const cirrus = verdict(sky(0, 0, 0.8));
+    expect(cirrus.label).toBe('Go · high cloud');
+    // Low to the horizon, the same sky may also colour: a note beside the verdict, not a grade.
+    expect(assess({ ...sky(0, 0, 0.6), altDeg: 1, horizonLow: 0 })).toMatchObject({ grade: 'good', colour: true });
+    expect(assess({ ...sky(0, 0, 0.6), altDeg: 30 }).colour).toBe(false);
+    expect(verdictNote(verdict({ ...sky(0, 0, 0.6), altDeg: 1, horizonLow: 0 }))).toMatch(/colour/);
+  });
+  it('grades a low body on the cloud toward it: a bank on the horizon hides it over a clear Berlin', () => {
+    const clear = sky(0, 0, 0);
+    expect(verdict({ ...clear, altDeg: 2, horizonLow: 0.8 }).label).toBe('Skip · horizon cloud');
+    expect(verdict({ ...clear, altDeg: 2, horizonLow: 0.6 }).label).toBe('Maybe · horizon cloud');
+    expect(verdict({ ...clear, altDeg: 2, horizonLow: 0.1 }).label).toBe('Go · clear light');
+    // Higher up the same bank is under the line of sight.
+    expect(verdict({ ...clear, altDeg: 20, horizonLow: 0.8 }).label).toBe('Go · clear light');
+    // Low, and the forecast does not look that way: graded on Berlin, and it says so.
+    const unknown = verdict({ ...clear, altDeg: 2, horizonLow: null });
+    expect(unknown).toMatchObject({ grade: 'good', reason: 'clear here', horizonChecked: false });
+    expect(verdictNote(unknown)).toMatch(/horizon/);
+  });
+  it('compares the haze with the distance of the shot', () => {
+    // 4 km of sight: fine from 1.3 km, the tower is gone from 6.1 km.
+    expect(gradeSky({ ...sky(0, 0, 0, 4000), distanceM: 1300 })).toBe('good');
+    expect(verdict({ ...sky(0, 0, 0, 4000), distanceM: 6100 }).label).toBe('Skip · thick haze');
+    // 9 km from 6.1 km washes the tower out; from 1.3 km it does not.
+    expect(verdict({ ...sky(0, 0, 0, 9000), distanceM: 6100 }).label).toBe('Maybe · hazy');
+    expect(gradeSky({ ...sky(0, 0, 0, 9000), distanceM: 1300 })).toBe('good');
+    // Fog is fog at any distance.
+    expect(verdict({ ...sky(0, 0, 0, 800), distanceM: 300 }).label).toBe('Skip · fog');
+  });
+  it('finds the horizon forecast only toward sunrise and sunset', () => {
+    const hours = (v: number) => Array.from({ length: 24 }, () => v);
+    const day = { rise: { az: 122, t: 0 }, set: { az: 238, t: 0 }, riseHorizon: { low: hours(0.2) }, setHorizon: { low: hours(0.9) } };
+    expect(horizonLowToward(day, 240, 16 * 60)).toBe(0.9);
+    expect(horizonLowToward(day, 110, 8 * 60)).toBe(0.2);
+    expect(horizonLowToward(day, 180, 12 * 60)).toBeNull();
+    expect(horizonLowToward({ rise: null, set: null }, 240, 600)).toBeNull();
+  });
+  it('gives one verdict for one sky, whoever asks', () => {
+    // 24 November 2026, Berlin, a quarter of an hour before sunset; Berlin clear, a bank of
+    // low cloud out toward the sunset. The sun's place comes from the app's own sampleBody;
+    // the assertions below hold it to "low, just above the horizon, toward 235 degrees".
+    const hours = (v: number) => Array.from({ length: 24 }, () => v);
+    const from = Date.UTC(2026, 10, 23, 23);
+    const day = {
+      berlin: { low: hours(0), mid: hours(0), high: hours(0) },
+      vis: hours(24_000),
+      rain: { prob: hours(0), mm: hours(0) },
+      rise: { az: 125, t: from + 7.7 * 3_600_000 },
+      set: { az: 235, t: from + 16 * 3_600_000 },
+      riseHorizon: { low: hours(0) },
+      setHorizon: { low: hours(0.85) },
+    };
+    const t = from + 15.75 * 3_600_000;
+    const seen = shotSky(day, from, t, { body: 'sun', distanceM: 2000 });
+    expect(seen.altDeg).toBeGreaterThan(0);
+    expect(seen.altDeg).toBeLessThan(3);
+    expect(seen.horizonLow).toBe(0.85);
+    // A card, a list row, a date row and the sunset line all call this with the same arguments.
+    expect(shotVerdict(day, from, t, { body: 'sun', distanceM: 2000 }).label).toBe('Skip · horizon cloud');
+    expect(shotVerdict(day, from, t, { body: 'sun' }).label).toBe('Skip · horizon cloud');
+    // At noon the bank does not matter.
+    expect(shotVerdict(day, from, from + 12 * 3_600_000, { body: 'sun' }).label).toBe('Go · clear light');
+  });
+  it('leaves no second grading rule in the planner', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const file of ['planmode.js', 'daylist.js', 'dates.js', 'forecast.js', 'dayview.js', 'sparkstrip.js', 'peek.js']) {
+      const source = readFileSync(new URL(`../../src/miniature/${file}`, import.meta.url), 'utf8');
+      expect(source, file).not.toMatch(/readSky|sunState|gradeAt|readingVerdict/);
+    }
   });
   it('reads a shot\u2019s sky from the forecast day, between the hours', () => {
     const hours = (v: (h: number) => number) => Array.from({ length: 24 }, (_, h) => v(h));

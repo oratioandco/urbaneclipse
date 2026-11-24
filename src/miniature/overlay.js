@@ -2,8 +2,8 @@
  * Everything that stays flat to the screen: street names, pills pointing to the sun and moon,
  * and where to stand on a lit-up street. A plain canvas redrawn when the view changes.
  */
-import { litDiscPath } from '../lib/moonPhase.ts';
-import { cssRgb, moonLook, sunLook } from '../lib/mapBodyLook.ts';
+import { drawMoon, drawSun } from './bodies.js';
+import { drawMark, drawNeedle } from './marks.js';
 
 const canvas = document.getElementById('labels');
 const ctx = canvas.getContext('2d');
@@ -69,37 +69,22 @@ function drawName(text, x, y, angle, font, fill, halo) {
   ctx.restore();
 }
 
-function drawDisc(look, x, y, radius, moon) {
-  if (moon) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(radius, radius);
-    ctx.fillStyle = '#20263a';
-    ctx.beginPath();
-    ctx.arc(0, 0, 1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = cssRgb(look.core);
-    ctx.fill(new Path2D(litDiscPath(moon.fraction, moon.waxing)));
-    ctx.restore();
-    return;
-  }
-  const disc = ctx.createRadialGradient(x, y, 0, x, y, radius);
-  disc.addColorStop(0, cssRgb(look.core));
-  disc.addColorStop(0.65, cssRgb(look.core));
-  disc.addColorStop(1, cssRgb(look.limb));
-  ctx.fillStyle = disc;
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.fill();
+/** The canonical sun or moon (bodies.js) for a body of the scene: `{ alt, sunAlt, moon? }`. */
+function drawBody(body, x, y, radius) {
+  if (body.moon) drawMoon(ctx, x, y, radius, { fraction: body.moon.fraction, waxing: body.moon.waxing ?? body.moon.phase < 0.5, altitudeDeg: body.alt, sunAltitudeDeg: body.sunAlt, glow: false });
+  else drawSun(ctx, x, y, radius, body.alt, { glow: false });
 }
 
 const PILL_H = 30;
+/** The direction needle beside a pill: its length, and the gap between it and the pill's rim. */
+const NEEDLE = 28;
+const NEEDLE_GAP = 5;
 
 /**
  * A compass pill, not a sun in the scene: the arrow says which way the body lies, whereas a
  * disc on the map would be read as a position that the shadows then seem to contradict.
  */
-function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
+function drawPill({ text, moon, x, y, ux, uy, night, body }) {
   ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
   const width = 40 + ctx.measureText(text).width + 12;
   const left = x - width / 2;
@@ -108,38 +93,24 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
   ctx.beginPath();
   ctx.roundRect(left, top, width, PILL_H, PILL_H / 2);
   ctx.fill();
-  drawDisc(look, left + 16, y, 7.5, moon);
+  drawBody(body, left + 16, y, 7.5);
   ctx.fillStyle = night ? '#ece8df' : '#24221f';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, left + 29, y + 0.5);
-  // The arrow sits on the pill's rim on the side the body lies.
+  // The needle of marks.js stands off the pill's rim on the side the body lies: a long kite,
+  // ink behind and the body's colour in front, so the coloured end is the one that points.
+  // At 28 px it is as long as the pill is high, which is what makes the tip plain on a phone.
   const reach = Math.min(Math.abs(ux) > 1e-3 ? width / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? PILL_H / 2 / Math.abs(uy) : Infinity);
-  ctx.save();
-  ctx.translate(x + ux * (reach + 7), y + uy * (reach + 7));
-  ctx.rotate(Math.atan2(uy, ux));
-  // A compass needle, so the tip cannot be mistaken: long and narrow, the shaft in ink with
-  // a halo to hold on any map, and the pointing end in the compass's red.
-  const needle = (from, to) => {
-    const half = (x) => (5 * (11 - x)) / 15;
-    ctx.beginPath();
-    ctx.moveTo(from, -half(from));
-    ctx.lineTo(to, -half(to));
-    ctx.lineTo(to, half(to));
-    ctx.lineTo(from, half(from));
-    ctx.closePath();
-  };
-  needle(-4, 11);
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = night ? 'rgba(20, 23, 38, 0.9)' : 'rgba(255, 253, 249, 0.95)';
-  ctx.stroke();
-  ctx.fillStyle = night ? '#ece8df' : '#24221f';
-  ctx.fill();
-  needle(3, 11);
-  ctx.fillStyle = '#e0352b';
-  ctx.fill();
-  ctx.restore();
+  // Leaving through an edge at a slant, the tail's wings would lean back over the pill: stand
+  // further off by the wing's half width, as much as the slant.
+  const throughSide = Math.abs(ux) * PILL_H > Math.abs(uy) * width;
+  const out = reach + NEEDLE_GAP + NEEDLE / 2 + NEEDLE * 0.3 * Math.abs(throughSide ? uy : ux);
+  drawNeedle(ctx, x + ux * out, y + uy * out, Math.atan2(uy, ux), NEEDLE, {
+    kind: moon ? 'moon' : 'sun',
+    ink: night ? '#ece8df' : '#24221f',
+    halo: night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)',
+  });
   return { kind: 'pill', x: left, y: top, w: width, h: PILL_H, body };
 }
 
@@ -163,9 +134,9 @@ function safeArea(bottomInset) {
 /** Where a pill goes: on the safe area's rim, along a direction from its centre. */
 function pillAt(text, ux, uy, area) {
   ctx.font = '600 12px ui-sans-serif, system-ui, sans-serif';
-  // Half the pill, plus room for its arrow.
-  const halfW = (40 + ctx.measureText(text).width + 12) / 2 + 12;
-  const halfH = PILL_H / 2 + 12;
+  // Half the pill, plus room for its needle.
+  const halfW = (40 + ctx.measureText(text).width + 12) / 2 + NEEDLE + NEEDLE_GAP + 3;
+  const halfH = PILL_H / 2 + NEEDLE + NEEDLE_GAP + 3;
   const cx = (area.left + area.right) / 2;
   const cy = (area.top + area.bottom) / 2;
   const reach = Math.max(0, Math.min(Math.abs(ux) > 1e-3 ? ((area.right - area.left) / 2 - halfW) / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? ((area.bottom - area.top) / 2 - halfH) / Math.abs(uy) : Infinity));
@@ -237,26 +208,16 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
   for (const spot of spots) {
     if (!project(spot.x, spot.y, spot.z, here)) continue;
     drawGroundDisc(spot.x, spot.y, spot.z, 11 * metresPerPx(here.w), project, PATH_CSS[spot.body], 0.28);
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = PATH_CSS[spot.body];
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.arc(here.x, here.y, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // Where to stand for the sphere: the tower mark of marks.js, as on the timeline.
+    drawMark(ctx, `tower-${spot.body}`, here.x, here.y, 24);
     taps.push({ kind: 'spot', x: here.x - 16, y: here.y - 16, w: 32, h: 32, body: spot.body, t: spot.t });
   }
   if (drop && project(drop.x, drop.y, drop.z, here)) drawStandDot(drop.x, drop.y, drop.z, metresPerPx(here.w), project, night, here);
 
   for (const s of stands) {
     if (!project(s.x, s.y, s.z, here)) continue;
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = s.css;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(here.x, here.y, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    // The near end of a street that is lined up now: the street mark, a bar.
+    drawMark(ctx, `henge-${s.body}`, here.x, here.y, 18, halo);
     reserve(here.x, here.y - 18, 1, 0, 60);
     drawName(s.name, here.x, here.y - 18, 0, '700 13px', fill, halo);
   }
@@ -328,9 +289,8 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     const length = Math.hypot(dx, dy) || 1;
     const ux = dx / length;
     const uy = dy / length;
-    const look = body.moon ? moonLook(body.alt, body.sunAlt, body.moon.fraction) : sunLook(body.alt);
     const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up`;
-    pills.push({ text, look, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body });
+    pills.push({ text, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body });
   }
   // Two bodies in nearly the same direction would otherwise stack.
   if (pills.length === 2 && Math.abs(pills[0].x - pills[1].x) < 130 && Math.abs(pills[0].y - pills[1].y) < PILL_H + 6) pills[1].y += pills[1].y >= pills[0].y ? PILL_H + 6 : -(PILL_H + 6);
@@ -693,10 +653,9 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
     const length = Math.hypot(yaw, rise) || 1;
     const ux = yaw / length;
     const uy = -rise / length;
-    const look = body.moon ? moonLook(body.alt, body.sunAlt, body.moon.fraction) : sunLook(body.alt);
     const side = Math.abs(yaw) < 2 ? '' : ` \u00b7 ${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
     const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${side}`;
-    taps.push(drawPill({ text, look, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body }));
+    taps.push(drawPill({ text, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body }));
   }
   return taps;
 }

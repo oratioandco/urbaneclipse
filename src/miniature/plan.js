@@ -37,7 +37,7 @@ export function updateHighlights(t) {
   const azimuth = { sun: sampleBody('sun', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az, moon: sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az };
   app.highlights.set(live.map((m) => ({ a: m.view.a, b: m.view.b, body: m.body, az: azimuth[m.body], colour: RAY_COLOUR[m.body], altitude: m.bodyAlt, strength: m.body === 'moon' ? 0.3 : 1 })));
   app.liveStreets = live;
-  app.stands = live.map((m) => ({ x: m.view.a[0], z: m.view.a[1], y: app.groundAt(m.view.a[0], m.view.a[1]) + 2, name: m.view.name, css: NEON_CSS[m.body] }));
+  app.stands = live.map((m) => ({ x: m.view.a[0], z: m.view.a[1], y: app.groundAt(m.view.a[0], m.view.a[1]) + 2, name: m.view.name, body: m.body, css: NEON_CSS[m.body] }));
 }
 
 export function updateDay() {

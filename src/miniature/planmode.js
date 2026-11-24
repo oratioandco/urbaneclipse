@@ -7,7 +7,7 @@
 import { streetMoments } from '../lib/streets.ts';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
-import { litDiscPath, phaseName } from '../lib/moonPhase.ts';
+import { phaseName } from '../lib/moonPhase.ts';
 import { getMoonIllumination, getMoonTimes } from 'suncalc';
 import { formatClock } from './time.js';
 import { params } from './config.js';
@@ -15,7 +15,9 @@ import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
 import { shotVerdict } from './verdict.js';
 import { layers } from './chrome.js';
 import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js';
-import { bodyIcon, collectRows, renderDayList, showVerdict } from './daylist.js';
+import { iconEl } from './icons.js';
+import { moonSvg } from './bodies.js';
+import { collectRows, openShot, renderDayList, shotRow } from './daylist.js';
 import { computeDayPaths, getViewshed } from './plan.js';
 import { renderPeek } from './peek.js';
 import { onPeek } from './sheet.js';
@@ -46,19 +48,29 @@ function renderMoonHead() {
   moonHeadDate = sv;
   const mid = new Date(from + 43_200_000);
   const moon = getMoonIllumination(mid);
-  moonDisc.innerHTML = `<circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing)}" transform="scale(0.92)" fill="#e8ecff"/>`;
+  // Tonight's moon, as it stands high in a dark sky: the phase is what this line is about.
+  moonDisc.innerHTML = moonSvg({ fraction: moon.fraction, waxing: moon.waxing ?? moon.phase < 0.5, altitudeDeg: 40, sunAltitudeDeg: -18, size: 18, glow: false });
   const times = getMoonTimes(mid, FERNSEHTURM.lat, FERNSEHTURM.lon);
-  const rise = times.rise ? `↑ ${formatClock(times.rise.getTime())}` : '';
-  const set = times.set ? `↓ ${formatClock(times.set.getTime())}` : '';
-  const times_ = rise && set ? `${rise} · ${set}` : rise || set || (sampleMoonUp(mid) ? 'up all day' : 'down all day');
-  moonText.textContent = `${phaseName(moon.fraction, moon.waxing)} ${Math.round(moon.fraction * 100)}% · ${times_}`;
+  const rise = times.rise ? formatClock(times.rise.getTime()) : '';
+  const set = times.set ? formatClock(times.set.getTime()) : '';
+  const phase = `${phaseName(moon.fraction, moon.waxing)} ${Math.round(moon.fraction * 100)}%`;
+  // Rise and set as the set's two signs, with the words for a screen reader.
+  moonText.replaceChildren(phase);
+  if (rise) moonText.append(' · ', iconEl('rise', { size: 14, label: 'rises' }), rise);
+  if (set) moonText.append(' · ', iconEl('set', { size: 14, label: 'sets' }), set);
+  if (!rise && !set) moonText.append(` · ${sampleMoonUp(mid) ? 'up all day' : 'down all day'}`);
+  moonText.title = `${phase}${rise ? `, rises ${rise}` : ''}${set ? `, sets ${set}` : ''}`;
 }
 /** Whether the moon stands above the horizon at midday. */
 function sampleMoonUp(when) {
   return sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).alt > 0;
 }
 
-/** Which list planning shows: the coming days (plan) or this day (shoot). */
+/**
+ * Which of the panel's two views is up: the coming three days (plan: the overview strips and
+ * the best shots of each day) or this day (shoot: the day view with its timeline, and every
+ * shot of the day). One timeline at a time.
+ */
 export function setPanelMode(mode) {
   document.body.dataset.mode = mode;
   for (const tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.mode === mode));
@@ -100,15 +112,16 @@ function showPeek() {
 onPeek(() => {
   if (!next) return;
   if (svDate(next.from) !== dateInput.value) setDay(svDate(next.from));
+  setPanelMode('shoot');
   setMinute(next.row.t);
   invalidate();
 });
 
 /** The day's sky at an instant as a verdict in words; without a forecast, which kind of none. */
-function verdictAt(day, from, t) {
+function verdictAt(day, from, row) {
   const date = svDate(from);
   const missing = !forecastReach(date).ok ? 'No forecast yet' : retryAfter.has(date) ? 'No forecast' : 'Forecast loading';
-  return shotVerdict(day, from, t, { missing });
+  return shotVerdict(day, from, row.t, { body: row.body, distanceM: row.distanceM, missing });
 }
 
 /** The same reading as a short note, in the weather line's words. */
@@ -175,6 +188,7 @@ function rowsFor(from, now) {
   return now === null ? rows : rows.filter((row) => row.t > now);
 }
 
+const weekday = (from) => new Date(from).toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', weekday: 'short' });
 const dayName = (from, i) =>
   i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : new Date(from).toLocaleDateString('en-GB', { timeZone: 'Europe/Berlin', weekday: 'long' });
 
@@ -202,7 +216,7 @@ export function renderPlanCards() {
     // glancing at — but they earn no cards and no ticks.
     const picks = rows
       .map((row) => {
-        const verdict = verdictAt(day, from, row.t);
+        const verdict = verdictAt(day, from, row);
         return { ...row, verdict, grade: verdict.grade };
       })
       .filter((row) => row.grade !== 'poor')
@@ -212,7 +226,7 @@ export function renderPlanCards() {
     blocks.push({ from, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }
   // The one line: the earliest of the picks, whichever day it falls on.
-  const first = blocks.flatMap((block) => block.picks.map((row) => ({ row, from: block.from, verdict: row.verdict, day: block.i === 0 ? '' : block.i === 1 ? 'Tomorrow' : block.name.slice(0, 3) }))).sort((a, b) => a.row.t - b.row.t)[0];
+  const first = blocks.flatMap((block) => block.picks.map((row) => ({ row, from: block.from, verdict: row.verdict, day: block.i === 0 ? '' : block.name, dayShort: block.i === 0 ? '' : weekday(block.from) }))).sort((a, b) => a.row.t - b.row.t)[0];
   next = first ?? null;
   nextSentence = blocks.some((block) => block.rows > 0)
     ? 'Skip the next three days: too much cloud for a shot'
@@ -224,22 +238,28 @@ export function renderPlanCards() {
     // along first, or setMinute clamps a Tomorrow shot into tonight.
     if (svDate(from) !== dateInput.value) setDay(svDate(from));
     setPanelMode('shoot');
-    row.go();
-    invalidate();
+    openShot(row, row.verdict);
   };
   const stripHandlers = {
     onTick: flyTo,
-    onDay: (from) =>
-      panel.querySelector(`.plan-day[data-date="${svDate(from)}"]`)?.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }),
+    // A day's name opens that day: its own light, weather and shots, on the day view.
+    onDay: (from) => {
+      if (svDate(from) !== dateInput.value) setDay(svDate(from));
+      setPanelMode('shoot');
+      invalidate();
+    },
   };
   // The strip keeps its three days even when nothing is shootable: the light and the cloud
   // are the answer to "when, then?".
   renderSparkstrip(strip, blocks, stripHandlers);
   if (!total) {
-    const why = filter === 'all' ? 'Nothing lines up' : `No ${filter === 'sun' ? 'sun' : 'moon'} shots line up`;
-    panel.replaceChildren(
-      Object.assign(document.createElement('p'), { className: 'muted', textContent: `${why} in the next three days. Try another day.` }),
-    );
+    // Two different nothings: the geometry has none, or the cloud hides what there is.
+    const what = filter === 'all' ? 'shots' : `${filter} shots`;
+    const cloudy = blocks.some((block) => block.rows > 0);
+    const text = cloudy
+      ? `Skip: too much cloud for the ${blocks.reduce((sum, block) => sum + block.rows, 0)} ${what} that line up in the next three days. Open a day above to see them.`
+      : `No ${what} line up in the next three days. Try another day.`;
+    panel.replaceChildren(Object.assign(document.createElement('p'), { className: 'muted', textContent: text }));
     return;
   }
   panel.replaceChildren(
@@ -250,18 +270,7 @@ export function renderPlanCards() {
       heading.dataset.date = svDate(from);
       return [
         heading,
-      ...picks.map((row) => {
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'dayrow planrow';
-        item.dataset.body = row.body;
-        item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">›</i>`;
-        item.querySelector('b').textContent = row.title;
-        showVerdict(item.querySelector('.verdict'), row.verdict);
-        item.querySelector('small').textContent = row.detail + noteAt(day, from, row.t);
-        item.addEventListener('click', () => flyTo(row, from));
-        return item;
-      }),
+      ...picks.map((row) => shotRow({ ...row, detail: row.detail + noteAt(day, from, row.t) }, row.verdict, () => flyTo(row, from))),
       ];
     }),
   );

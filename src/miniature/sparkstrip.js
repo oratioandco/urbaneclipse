@@ -2,13 +2,16 @@
  * The days at a glance, above the cards: one strip per day on a shared 24-hour axis —
  * the light phases as a band, the cloud forecast as a line, and a tick per planned
  * shot, tall for the big spectacles. Nothing here is only for looking: a tick flies to
- * its shot, a day's name scrolls to its cards, and hovering reads the hour off the
+ * its shot, a day's name opens that day in the day view, and hovering reads the hour off the
  * curve. The cards below are the same shots as text, so no value lives only here.
  */
 import { lightBands, lightGradientStops } from '../lib/lightPhases.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { icon } from './icons.js';
 import { formatClock } from './time.js';
 import { PHASE_COLOURS } from './plan.js';
+import { markKind } from './daylist.js';
+import { MARK_NAMES, markSvg } from './marks.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const W = 240; // The strip's drawing width; stretched to the row, strokes stay 2px.
@@ -29,9 +32,12 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   const label = document.createElement('button');
   label.type = 'button';
   label.className = 'spark-day';
-  label.setAttribute('aria-label', `Show ${name}'s shots`);
+  label.setAttribute('aria-label', `Open ${name} in the day view`);
+  label.title = `Open ${name}: its light, weather and shots`;
   const readout = document.createElement('small');
-  label.append(Object.assign(document.createElement('b'), { textContent: name }), readout);
+  const title = Object.assign(document.createElement('b'), { textContent: name });
+  title.insertAdjacentHTML('beforeend', icon('chevron-right', { size: 12 }));
+  label.append(title, readout);
   label.addEventListener('click', () => onDay?.(from));
 
   const band = document.createElement('div');
@@ -73,8 +79,8 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   for (const pick of [...picks].sort((a, b) => a.t - b.t)) {
     const tick = document.createElement('button');
     tick.type = 'button';
-    // The head says what kind: a ring for the tower, a bar for a street.
-    tick.className = `spark-tick spark-${pick.body} spark-${pick.kind}`;
+    // The head is the mark of marks.js: a ring for the tower, a bar for a street.
+    tick.className = `spark-tick spark-${pick.body}`;
     tick.style.setProperty('--score', pick.score.toFixed(2));
     const trueLeft = ((pick.t - from) / 86_400_000) * 100;
     const left = Math.min(97, Math.max(3, trueLeft, prevLeft + MIN_GAP));
@@ -82,12 +88,13 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
     tick.style.left = `${left.toFixed(2)}%`;
     const when = formatClock(pick.t);
     const verdict = pick.verdict ? ` ${pick.verdict.label}.` : '';
-    tick.title = `${when} — ${pick.title}${pick.verdict ? ` — ${pick.verdict.label}` : ''}`;
+    tick.title = `${when} · ${pick.title} (${MARK_NAMES[markKind(pick)].toLowerCase()})${pick.verdict ? ` · ${pick.verdict.label}` : ''}`;
     tick.setAttribute('aria-label', `${when}, ${pick.title}.${verdict} ${pick.detail}. Tap to fly there.`);
     tick.addEventListener('click', () => onTick?.(pick, from));
     const stem = document.createElement('i');
     stem.setAttribute('aria-hidden', 'true');
     tick.append(stem);
+    tick.insertAdjacentHTML('beforeend', markSvg(markKind(pick), { size: 12, halo: 'var(--surface-solid)' }));
     band.append(tick);
   }
 

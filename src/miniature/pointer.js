@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { drawPhotographer } from './overlay.js';
+import { bodyIcon } from './bodyAt.js';
 import { formatClock } from './time.js';
 import { towerItems } from './chrome.js';
 import { instant, setFine, setMinute } from './clock.js';
@@ -120,7 +121,7 @@ export function showViewHere(target, clientX, clientY) {
   viewHere.hidden = !target;
   if (!target) return;
   const what = target.kind === 'street' ? target.moment.view.name : `${BODY_NAME[target.body]} & tower`;
-  viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>View from here <small>${what} \u00b7 ${formatClock(target.t)}</small>`;
+  viewHere.innerHTML = `${bodyIcon(target.body, target.t ?? instant().getTime(), { size: 16 })}View from here <small>${what} \u00b7 ${formatClock(target.t)}</small>`;
   // Centred on the pointer, so a click where it already is lands on the button.
   const width = viewHere.offsetWidth || 220;
   const height = viewHere.offsetHeight || 36;
@@ -136,7 +137,7 @@ viewHere.addEventListener('pointerleave', (event) => {
 function noClearView(target) {
   viewTarget = null;
   viewHere.hidden = false;
-  viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>No clear view along here <small>try another line or time</small>`;
+  viewHere.innerHTML = `${bodyIcon(target.body, target.t ?? instant().getTime(), { size: 16 })}No clear view along here <small>try another line or time</small>`;
   setTimeout(() => {
     if (!viewTarget) viewHere.hidden = true;
   }, 2500);
@@ -147,7 +148,7 @@ viewHere.addEventListener('click', () => {
   if (!target) return;
   viewTarget = null;
   // The search can take a moment among dense blocks; say so, and let that show before it runs.
-  viewHere.innerHTML = `<i style="background: var(--${target.body})"></i>Finding a clear view\u2026`;
+  viewHere.innerHTML = `${bodyIcon(target.body, target.t ?? instant().getTime(), { size: 16 })}Finding a clear view\u2026`;
   setTimeout(() => goViewHere(target), 30);
 });
 

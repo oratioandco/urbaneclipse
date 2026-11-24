@@ -83,3 +83,52 @@ Open points for the next phase:
 Also: the sun's curve takes the sun's colour for its height from `skyPalette`, as the dot and the
 card discs already did from `sunLook`. The event ticks stay in the app's sun and moon colours:
 they mark events, and a near-white ring would not show on the light surface.
+
+## Phase 2: finishing for release (2026-11-24, branch `claude/panel-finish-3c13ce`)
+
+1. **Icon set adopted.** One sun and moon (`bodies.js` through `bodyAt.js`), one set of marks
+   (`marks.js`), one icon set and one table of tooltips and names (`icons.js`,
+   `controlNames.js`; the markup says `data-icon` or `data-control`, `chrome.js` fills them).
+   `markShape`, `markIcon`, the old `bodyIcon` and every inline SVG in `plan.astro` except the
+   legend's line samples are gone. `tests/unit/panelWords.test.ts` fails if one comes back.
+2. **Peek line.** `peek.js` words the next shot in up to six ways (`peekVariants` in
+   `shotWords.js`) and takes the fullest that fits: the countdown gives way first, then
+   "Straße" becomes "Str." and "Tomorrow" the weekday. Time and verdict are in every wording;
+   the type stays 13 px.
+3. **Shot cards.** Time, a picture (`shotPicture.js`: the body behind the tower's sphere, on
+   its antenna or at the end of a street), SUN or MOON, the place on up to three lines (for a
+   tower shot, where to stand: "5.3 km SE"), the verdict with its sign, the reason. More than
+   five scroll sideways with a fade at each edge that has more, snap to cards, open at the next
+   shot, and the heading counts them ("6 possible from now · 21 in all").
+4. **Needle.** `drawPill` draws `drawNeedle` at 28 px, as long as the pill is high.
+5. **One timeline at a time.** The tabs moved to the top of the panel and switch two views:
+   "Next 3 days" (use case 1: the three overview strips, the filter, the best shots per day)
+   and "This day" (use case 2: the day view, which is also the time control, and every shot of
+   the day). A day's name on a strip opens that day. Half height is the top of whichever view
+   is up: 30 % of a 390 x 844 screen for the overview, 51 % for the day view, whose four step
+   buttons now lie just under the fold (full shows them; a keyboard reaching them opens the
+   sheet).
+6. **One weather grade.** `assess` in `verdict.js`; see its header. Used by the cards, the day
+   list, the three days, the date list (`dates.js`) and the sunrise and sunset line
+   (`forecast.js`). `readSky` in `weather.js` is no longer called by the planner.
+
+Open after this phase:
+
+- The horizon forecast only looks toward sunrise and sunset. A low moon elsewhere is graded on
+  Berlin's sky and says "clear here"; asking Open-Meteo for the moon's own direction needs a
+  change in `weather.js`.
+- The thresholds (cloud weights 1 / 0.85 / 0.4, 4 degrees, 2.5 times the distance) are reasoned,
+  not validated against photographs.
+- The sunrise time in the weather line is still 3 to 7 minutes late (audit defect 5, `weather.js`).
+- Day view at half is 51 % of a phone screen, up from 46 %: the tabs row is the cost of showing
+  one timeline at a time.
+
+### Change to point 3, same day: the approved shot card
+
+The ring-and-name cards of point 3 are replaced by the owner-approved card of
+`next-shots-grid.html`, as one component (`shotCard.js`, documented in `src/miniature/README.md`)
+used for the day view's strip, both lists' rows and the eye-level ticket. Three cards fit the
+strip at 390 px (the spec's "five fit" was for icon cards; a frame needs the width). Half height
+with the day view is 53 % of a 390 x 844 screen; the ticket is one line taller (17 %) when it was
+opened from a shot. The date list at eye level ("Dates") still uses plain rows with the body's
+disc: its entries are dates, mostly beyond the forecast, and were not asked for.

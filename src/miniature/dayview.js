@@ -9,15 +9,17 @@
  * address follow as before, and the input itself stays in place, unseen, as the slider for
  * keyboards and screen readers. The arithmetic is in dayTimeline.js.
  */
-import { getMoonIllumination } from 'suncalc';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { LIGHT_PHASE_NAMES, lightBands, lightGradientStops, lightPhaseAt } from '../lib/lightPhases.ts';
-import { cssRgb, moonLook, sunLook } from '../lib/mapBodyLook.ts';
+import { cssRgb } from '../lib/mapBodyLook.ts';
 import { skyPalette } from '../lib/skyPalette.ts';
-import { litDiscPath } from '../lib/moonPhase.ts';
 import { dateInput, dayStart } from './clock.js';
-import { bodyIcon, currentRows, dayVerdict, MARK_WORD, markIcon, markShape, showVerdict } from './daylist.js';
+import { bodyIcon } from './bodyAt.js';
+import { currentRows, dayVerdict, emptyDay, markKind, openShot, showVerdict } from './daylist.js';
+import { icon } from './icons.js';
+import { MARK_NAMES, markBody } from './marks.js';
+import { shotCard } from './shotCard.js';
 import {
   DAY_MINUTES,
   altitudeToY,
@@ -72,11 +74,16 @@ const CURVES = { y: 28, h: 46 };
 const BAR = { y: 78, h: 8 };
 const HOURS_Y = 97;
 const STEP_MIN = 10;
+/** A mark's 16-unit box on the scale: 11 px, the size the set was judged at. */
+const MARK_SCALE = 11 / 16;
+const DOT = 14;
 
 const atEye = () => document.body.dataset.eye === 'true';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const here = (body, t) => sampleBody(body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
 
+/** The look the thumb's two dots were last drawn for. */
+let dots = '';
 /** What the last drawing was made for, so a scrub only moves the thumb. */
 let drawn = { width: 0, from: 0, top: 30, rows: [], minutes: [], verdicts: [], key: '', current: -1 };
 const scaleX = (minute) => PAD_X + minuteToX(minute) * (drawn.width - 2 * PAD_X);
@@ -128,8 +135,6 @@ function drawPlot() {
       const w = inner / 24;
       nodes.push(el('rect', { class: 'tl-rain', x: (PAD_X + h * w + w * 0.2).toFixed(1), y: RAIN.y, width: (w * 0.6).toFixed(1), height: (rain.height * RAIN.h).toFixed(1), rx: 1, opacity: rain.strength.toFixed(2) }));
     });
-  } else {
-    nodes.push(el('text', { class: 'tl-note', x: width / 2, y: BAND.y + BAND.h - 1, 'text-anchor': 'middle' }, dayVerdict(Infinity).label.toLowerCase()));
   }
 
   // The light: the sun's curve, solid while it is up, and the moon's, dotted.
@@ -144,14 +149,15 @@ function drawPlot() {
   );
 
   // The shots, as ticks standing on the light bar at their minute.
-  // Their heads say what kind: a ring for the tower, a bar for a street (markShape). Streets
-  // first, so a tower's ring lies on top where the two meet.
+  // Their heads are the marks of marks.js: a ring for the tower, a bar for a street, white
+  // inside for the sun and dark for the moon. Streets first, so a tower's ring lies on top
+  // where the two meet.
   const now = Date.now();
   const order = drawn.rows.map((row, i) => ({ row, i })).sort((a, b) => (a.row.kind === 'tower') - (b.row.kind === 'tower'));
   for (const { row, i } of order) {
     const at = x(drawn.minutes[i]).toFixed(1);
     const tick = el('g', { class: `tl-tick tl-tick-${row.body}${row.t < now ? ' tl-past' : ''}` });
-    tick.innerHTML = `<path d="M${at},${CURVES.y + 4}V${BAR.y}"/>${markShape(row.kind, row.body, Number(at), CURVES.y + 4)}`;
+    tick.innerHTML = `<path d="M${at},${CURVES.y + 4}V${BAR.y}"/><g transform="translate(${at} ${CURVES.y + 4}) scale(${MARK_SCALE})">${markBody(markKind(row), 'var(--surface-solid)')}</g>`;
     nodes.push(tick);
   }
   // Where today has got to.
@@ -168,15 +174,8 @@ function drawPlot() {
   // The light bar: one continuous gradient, in the colours the app gives the phases.
   const stops = lightGradientStops(lightBands(from, from + 86_400_000, FERNSEHTURM.lat, FERNSEHTURM.lon, 300_000), from, from + 86_400_000);
   bar.style.background = `linear-gradient(90deg, ${stops.map((s) => `${PHASE_COLOURS[s.phase]} ${(s.at * 100).toFixed(1)}%`).join(',')})`;
-
-  // The moon's dot carries the day's phase; its tint follows the minute.
-  const lit = getMoonIllumination(new Date(from + 43_200_000));
-  moonDot.dataset.lit = String(lit.fraction);
-  moonDot.innerHTML = `<svg viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.95" fill="#2a3150"/><path d="${litDiscPath(lit.fraction, lit.waxing ?? lit.phase < 0.5)}" transform="scale(0.95)"/></svg>`;
+  dots = '';
 }
-
-/** A card's two lines: the verdict's word and its reason. Without a forecast, one quiet line says so. */
-const cardWords = (verdict) => (verdict.grade === null ? ['', verdict.label.startsWith('No') ? 'no forecast' : 'forecast…'] : [verdict.word, verdict.reason]);
 
 /** The row of shots above the scale: the same rows the day list holds, as cards. */
 function drawShots() {
@@ -184,46 +183,43 @@ function drawShots() {
   const now = Date.now();
   const isToday = now >= drawn.from && now < drawn.from + 86_400_000;
   if (!rows.length) {
-    const note = Object.assign(document.createElement('p'), { className: 'muted', textContent: app.dayReady ? 'Nothing lines up on this day. Try another.' : 'Working out the day…' });
+    const note = Object.assign(document.createElement('p'), { className: 'muted', textContent: app.dayReady ? emptyDay() : 'Working out the day…' });
     shotsRow.replaceChildren(note);
     shotsRow.dataset.scrolls = 'false';
     shotsCount.textContent = '';
     return;
   }
-  const layout = shotRowLayout(shotsRow.clientWidth, rows.length);
+  // Three frames fit a phone, so each is large enough to be read as a picture; more scroll.
+  const layout = shotRowLayout(shotsRow.clientWidth, rows.length, { min: 3, ideal: 112 });
   shotsRow.style.setProperty('--card', `${layout.card.toFixed(2)}px`);
   shotsRow.dataset.scrolls = String(layout.scrolls);
   shotsRow.replaceChildren(
     ...rows.map((row, i) => {
       const verdict = drawn.verdicts[i];
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'shot';
-      card.dataset.body = row.body;
-      card.dataset.grade = verdict.grade ?? 'none';
+      // The one shot card (shotCard.js), at its card size.
+      const card = shotCard(row, verdict);
       card.dataset.index = String(i);
-      card.innerHTML = `<b></b>${bodyIcon(row.body, row.t)}<span class="shot-name">${markIcon(row.kind, row.body)}<span></span></span><em class="verdict"></em><small></small>`;
-      card.querySelector('b').textContent = formatClock(row.t);
-      card.querySelector('.shot-name span').textContent = row.short;
-      const [word, why] = cardWords(verdict);
-      card.querySelector('.verdict').textContent = word;
-      card.querySelector('.verdict').dataset.grade = verdict.grade ?? 'none';
-      card.querySelector('small').textContent = why;
-      card.setAttribute('aria-label', `${formatClock(row.t)}, ${row.title}. ${verdict.label}. ${row.detail}`);
-      card.title = `${row.title} (${MARK_WORD[row.kind]}) · ${row.detail}`;
+      card.title = `${row.title} (${MARK_NAMES[markKind(row)].toLowerCase()}) · ${row.detail}`;
+      const go = Object.assign(document.createElement('span'), { className: 'sc-go', textContent: 'View from here' });
+      go.insertAdjacentHTML('beforeend', icon('chevron-right', { size: 12 }));
+      card.querySelector('.sc-meta').append(go);
       card.addEventListener('click', () => {
         // A first tap brings the time to the shot; a tap on the shot the thumb stands on opens
         // the view from where to stand for it.
-        if (shotAt(drawn.minutes, Number(timeInput.value)) === i) {
-          row.go();
-          invalidate();
-        } else glideTo(drawn.minutes[i]);
+        if (shotAt(drawn.minutes, Number(timeInput.value)) === i) openShot(row, verdict);
+        else glideTo(drawn.minutes[i]);
       });
       return card;
     }),
   );
+  // "Possible" is a claim about the weather: only with a forecast. Without one, the count
+  // is the geometry's, and says so.
+  const graded = drawn.verdicts.some((v) => v.grade !== null && v.grade !== 'past');
   const open = drawn.verdicts.filter((v) => v.grade !== 'past' && v.grade !== 'poor').length;
-  shotsCount.textContent = `${open} possible${isToday ? ' from now' : ''}${layout.scrolls ? ` · ${rows.length} in all` : ''}`;
+  const ahead = drawn.verdicts.filter((v) => v.grade !== 'past').length;
+  if (graded) shotsCount.textContent = `${open} possible${isToday ? ' from now' : ''}${layout.scrolls ? ` · ${rows.length} in all` : ''}`;
+  else if (!ahead) shotsCount.textContent = `all ${rows.length} passed`;
+  else shotsCount.textContent = `${ahead} line up${isToday ? ' from now' : ''} · ${dayVerdict(null).label.toLowerCase()}`;
   // A new day opens at its next shot; a redraw of the same day leaves the row where it is.
   const key = `${dateInput.value}|${rows.length}|${Math.round(layout.card)}`;
   if (key !== drawn.key) {
@@ -251,28 +247,29 @@ function place() {
 
   const sun = here('sun', t);
   const moon = here('moon', t);
-  // One sun and one moon: their colours come from the map's own look, never from here.
-  const sunIs = sunLook(Math.max(0, sun.alt));
+  // One sun and one moon: the dots on the curves are the canonical bodies of that minute
+  // (bodyAt.js), redrawn only when their look can have changed (half a degree).
   sunDot.style.top = `${curveY(sun.alt).toFixed(1)}px`;
-  sunDot.style.background = `radial-gradient(circle, ${cssRgb(sunIs.core)} 35%, ${cssRgb(sunIs.limb)} 100%)`;
-  sunDot.style.boxShadow = sun.alt > 0 ? `0 0 0 1.5px var(--surface-solid), 0 0 7px 1px ${cssRgb(sunIs.glow)}` : '0 0 0 1.5px var(--surface-solid)';
   sunDot.dataset.up = String(sun.alt > 0);
-  const lit = Number(moonDot.dataset.lit ?? 0.5);
   moonDot.style.top = `${curveY(moon.alt).toFixed(1)}px`;
-  moonDot.style.color = cssRgb(moonLook(Math.max(0, moon.alt), sun.alt, lit).core);
   moonDot.dataset.up = String(moon.alt > 0);
+  const look = `${drawn.from}|${Math.round(sun.alt * 2)}|${Math.round(moon.alt * 2)}`;
+  if (look !== dots) {
+    dots = look;
+    sunDot.innerHTML = bodyIcon('sun', t, { size: DOT });
+    moonDot.innerHTML = bodyIcon('moon', t, { size: DOT });
+  }
 
   const index = shotAt(drawn.minutes, minute);
-  for (const card of shotsRow.querySelectorAll('.shot')) {
+  for (const card of shotsRow.querySelectorAll('.shotcard')) {
     const on = Number(card.dataset.index) === index;
     if (on) card.setAttribute('aria-current', 'true');
     else card.removeAttribute('aria-current');
-    card.querySelector('small').textContent = on ? 'View ›' : cardWords(drawn.verdicts[Number(card.dataset.index)])[1];
   }
   // The card the thumb has just come to stand on is brought into the row's view.
   if (index !== drawn.current) {
     drawn.current = index;
-    const card = index >= 0 ? shotsRow.querySelector(`.shot[data-index="${index}"]`) : null;
+    const card = index >= 0 ? shotsRow.querySelector(`.shotcard[data-index="${index}"]`) : null;
     if (card && (card.offsetLeft < shotsRow.scrollLeft || card.offsetLeft + card.offsetWidth > shotsRow.scrollLeft + shotsRow.clientWidth)) {
       shotsRow.scrollTo({ left: card.offsetLeft - (shotsRow.clientWidth - card.offsetWidth) / 2, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     }
@@ -287,7 +284,7 @@ function place() {
     const at = skyAt(app.weather, minute);
     const cover = Math.round(100 * Math.max(at.low, at.mid, at.high));
     sky = ` · ${cover < 10 ? 'clear sky' : `cloud ${cover}%`}${at.rain >= 0.2 ? ` · rain ${Math.round(at.rain * 100)}%` : ''}`;
-  }
+  } else sky = ` · ${dayVerdict(null).label.toLowerCase()}`;
   if (index >= 0) {
     const shot = Object.assign(document.createElement('b'), { textContent: drawn.rows[index].title });
     const verdict = document.createElement('em');
@@ -304,7 +301,12 @@ export function renderDayView() {
   drawn.rows = rows;
   drawn.from = dayStart();
   drawn.minutes = rows.map((row) => (row.t - drawn.from) / 60_000);
-  drawn.verdicts = rows.map((row) => dayVerdict(row.t));
+  drawn.verdicts = rows.map((row) => dayVerdict(row));
+  // Out of sight (the panel shows the next three days): draw when it comes back, at its width.
+  if (!timeline.clientWidth) {
+    drawn.width = 0;
+    return;
+  }
   drawPlot();
   drawShots();
   place();
