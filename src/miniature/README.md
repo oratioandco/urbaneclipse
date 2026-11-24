@@ -186,7 +186,7 @@ spot you stand on: the street you are in, and the sun and moon behind each landm
 - `fromHere.js` (pure, tested in `tests/unit/fromHere.test.ts`) decides what to show: `asShot`
   makes a found date a shot for the card, `spectacle` scores it on `collectRows`' scale (the moon
   by day counts for less), `highlights` picks up to three, `byMonth` groups the year,
-  `shownShots` applies the switches, `gatherNotes` says each of the search's remarks once.
+  `shownShots` applies the five switches, `gatherNotes` says each of the search's remarks once.
 - `fromHereView.js` and `fromhere.css` show it in `#dates`, with the shot card throughout.
 
 What a photographer sees:
@@ -208,22 +208,38 @@ the moon comes round every month; a run of the same henge on neighbouring days g
 Cards are in time order.
 
 A verdict is shown only for a date the forecast reaches (16 days), in the words of `verdict.js`;
-beyond that a card has no pill at all. The switches are the day list's four (`wireSwitches` in
+beyond that a card has no pill at all, and neither has the ticket's card of such a shot
+(`ticketVerdict` in `daylist.js`). The switches are the day list's five (`wireSwitches` in
 `chrome.js`: any `button[data-layer]` shows and sets the one state, and `layerchange` on
-`document` tells other lists); "Tower" stands for every landmark. Picking a card or a row calls
-the date's `go` (day, time, fine timing, turn to face it) and puts the shot on the ticket
-(`showTicket`), so the address carries `shot=…&here=year` and the calendar entry is named
-after it. `here=year` tells `link.js` that the day's own rows do not hold this shot (they are
-for other spots): it makes the ticket's card again from the link alone (`shotFromKey`). A pass
-behind the gate or the column names itself in `where`, so its `shot=` is never read as the
-tower's sphere. The list opens a third of the screen high (250 to 300 px); the chevron beside
-the count gives it the ticket's whole height. The horizon strip and the lens row fold away
-meanwhile, and on a phone for as long as the list is open: the ticket is then 51 % of a
-390 x 844 screen, 77 % with the whole list.
+`document` tells other lists): "Tower" is the TV tower, "Landmarks" the Siegessäule and the
+Brandenburger Tor. A date behind one of those two carries what its day rows carry
+(`landmarkShots.js`): the part it is named after (`viktoria`, `quadriga`), where you stand
+("400 m east": the side from the bearing dates.js gives), "trees unchecked" on the card and
+"buildings checked, trees not" in the row.
+
+Picking a card or a row calls the date's `go` (day, time, fine timing, turn to face it) and
+puts the shot on the ticket (`showTicket`), so the address carries `shot=…&here=year` and the
+calendar entry is named after it. `here=year` tells `link.js` that the day's own rows do not
+hold this shot (they are for other spots): it makes the ticket's card again from the link
+alone (`shotFromKey`, with the spot's distance and bearing from the landmark the name is of).
+
+While the list is open, the ticket's idle line ("Nothing lines up with the tower from here",
+which is about the chosen minute) names the next date instead: "Next from here: Tue, 1 Dec,
+11:38", or "Nothing lines up right now". `fromHereView.js` does that from outside, only for
+the idle line; what `eclipse.js` says of the minute is untouched, and comes back when the list
+closes.
+
+The list opens a third of the screen high (250 to 300 px); the chevron beside the count gives
+it the ticket's whole height (hidden on a screen under 600 px high, where there is none to
+give). The horizon strip and the lens row fold away meanwhile, and on a phone for as long as
+the list is open: the ticket is then 51 % of a 390 x 844 screen, 77 % with the whole list.
+Under 360 px wide a row drops the weekday, the chevron, and the light and lit share from its
+small print (place, pass, height: `brief`), so it is three lines at most, a verdict's line apart.
 
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
-A browser walk-through of the main features: `node scripts/miniature/walkthrough.mjs <url> <shots dir>`.
+A browser walk-through of the main features: `node scripts/miniature/walkthrough.mjs <url> <shots dir>`
+(headless, the city answered from the live site through a cache, as `scripts/adversarial/lib.mjs` does).
 `#time` holds minutes on the Berlin wall clock. A Berlin day is 23 or 25 hours long when the
 clocks change, so never add those minutes to midnight: use `instantOfMinute`, `minuteOf` and `dayEnd`
 from `clock.js` (arithmetic in `berlinClock.js`, tests in `tests/unit/clockChange.test.ts`).

@@ -16,6 +16,7 @@
  */
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { LANDMARK_CAUTION, LANDMARK_CHECK } from './landmarkShots.js';
 import { discOverSphere } from './towerShots.js';
 
 const DAY_MS = 86_400_000;
@@ -33,12 +34,22 @@ const NEXT_DAY_MS = 1.5 * DAY_MS;
 /** A forecast that says Skip halves a shot's rank; one that says Go lifts it a little. */
 const WEATHER = { good: 1.1, fair: 0.9, poor: 0.5 };
 
-/** The sprite (public/landmark-sprites) and the short name of each landmark the search knows. */
+/**
+ * The sprite (public/landmark-sprites) and the short name of each landmark the search knows,
+ * and for the two the day list has as "Landmarks" the part a shot is named after: the same
+ * `where` their day rows carry (landmarkShots.js; tests keep the two in step).
+ */
 const LANDMARK = {
   fernsehturm: { sprite: 'fernsehturm', short: 'TV tower' },
-  'brandenburger-tor': { sprite: 'brandenburger_tor', short: 'Brandenburger Tor' },
-  siegessaeule: { sprite: 'siegessaeule', short: 'Siegessäule' },
+  'brandenburger-tor': { sprite: 'brandenburger_tor', short: 'Brandenburger Tor', where: 'quadriga' },
+  siegessaeule: { sprite: 'siegessaeule', short: 'Siegessäule', where: 'viktoria' },
 };
+const TARGET_OF_PART = { quadriga: 'brandenburger-tor', viktoria: 'siegessaeule' };
+
+const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
+const SIDES = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+/** Which side of a landmark a bearing from it lies on, in a word, as its day rows say "west". */
+export const sideOf = (bearingDeg) => SIDES[Math.round((((bearingDeg % 360) + 360) % 360) / 45) % 8];
 
 /**
  * The spectacle of a date, on the scale `collectRows` (dayShots.js) scores a day's rows with,
@@ -67,13 +78,16 @@ function picture({ kind, body, target, state, distanceM, lengthM }) {
 /**
  * A date the search found, as a shot for `shotCard`. `found` is what dates.js hands over:
  * `{ t, body, kind, when, detail, go, distanceM }` and, for a landmark, `target` (its id),
- * `state` (hidden, ring, edge, antenna), `what` (the pass in words) and `until`; for a street,
- * `place` (its name) and `lengthM`. `altDeg` is the body's height at that minute.
+ * `state` (hidden, ring, edge, antenna), `what` (the pass in words), `until` and `fromDeg`
+ * (the bearing from the landmark to the spot); for a street, `place` (its name) and `lengthM`.
+ * `altDeg` is the body's height at that minute.
  *
  * The shot's `title` is the sentence the ticket and the calendar entry use; `when` is the date
- * and time the year list's row is headed with. `where` names the part of the landmark: the
- * tower's sphere or antenna, and for another landmark its own id, so a link's `shot=` never
- * names the tower's sphere for a pass behind the gate.
+ * and time the year list's row is headed with; `brief` is the row's small print for a narrow
+ * screen (place, pass, height). `where` names the part of the landmark as its day rows do:
+ * the tower's sphere or antenna, the column's `viktoria`, the gate's `quadriga`. The column
+ * and the gate also carry what their day rows carry (landmarkShots.js): `stand` (how far and
+ * on which side), `side`, and the caution that buildings are checked and trees are not.
  */
 export function asShot(found) {
   const street = found.kind === 'street';
@@ -81,6 +95,10 @@ export function asShot(found) {
   const short = street ? found.place : mark.short;
   const bodyName = found.body === 'moon' ? 'Moon' : 'Sun';
   const what = street ? `${bodyName} down ${found.place}` : (found.what ?? `${bodyName} behind the ${short}`);
+  const target = street ? null : (found.target ?? 'fernsehturm');
+  const figure = target !== null && target !== 'fernsehturm';
+  const detail = found.detail ? `${short} · ${found.detail}` : short;
+  const up = Number.isFinite(found.altDeg) ? ` · ${Math.round(found.altDeg)}° up` : '';
   const shot = {
     t: found.t,
     until: found.until ?? found.t,
@@ -88,13 +106,14 @@ export function asShot(found) {
     kind: street ? 'street' : 'tower',
     short,
     // The tower's own passes say "the sphere" and "the antenna": the sentence names the tower too.
-    title: street || (found.target ?? 'fernsehturm') !== 'fernsehturm' || what.includes('TV tower') ? what : `TV tower: ${what[0].toLowerCase()}${what.slice(1)}`,
+    title: street || figure || what.includes('TV tower') ? what : `TV tower: ${what[0].toLowerCase()}${what.slice(1)}`,
     when: found.when,
-    detail: found.detail ? `${short} · ${found.detail}` : short,
+    detail: figure ? `${detail} · ${LANDMARK_CHECK}` : detail,
+    brief: `${short} · ${street ? `${bodyName} down the street` : what}${up}`,
     distanceM: street ? (found.lengthM ?? null) : (found.distanceM ?? null),
     altDeg: found.altDeg ?? null,
     score: spectacle({ ...found, kind: street ? 'street' : 'tower' }),
-    series: `${street ? 'street' : (found.target ?? 'fernsehturm')}|${found.body}`,
+    series: `${street ? 'street' : target}|${found.body}`,
     group: found.group ?? '',
     // A link says so (`here=year`): the day's own rows are for other spots, so the ticket's
     // card is made again from the link itself (`shotFromKey`).
@@ -102,8 +121,15 @@ export function asShot(found) {
     go: found.go,
   };
   if (!street) {
+    shot.target = target;
     shot.landmark = mark.sprite;
-    shot.where = (found.target ?? 'fernsehturm') === 'fernsehturm' ? (found.state === 'antenna' ? 'antenna' : 'sphere') : found.target;
+    shot.where = figure ? mark.where : found.state === 'antenna' ? 'antenna' : 'sphere';
+  }
+  if (figure) {
+    shot.caution = LANDMARK_CAUTION;
+    shot.checked = { buildings: true, trees: false };
+    if (Number.isFinite(found.fromDeg)) shot.side = sideOf(found.fromDeg);
+    if (shot.side && shot.distanceM) shot.stand = `${distanceText(shot.distanceM)} ${shot.side}`;
   }
   return shot;
 }
@@ -111,27 +137,38 @@ export function asShot(found) {
 /**
  * A shot from here again, from what a link carries: its name (`shot=`, the `shotKey` of
  * dayShots.js: "sphere-sun", "antenna-moon", "street-moon:Karl-Marx-Allee", and for the other
- * landmarks "siegessaeule-sun"), the link's instant, and for the tower how far the spot is from
- * it. Enough for the ticket's card and the calendar entry's name; null for a name it cannot read.
+ * landmarks "viktoria-sun" and "quadriga-moon"), the link's instant, and where the spot lies
+ * from the landmark the name is of (`targetOfKey`): how far, and for the column and the gate
+ * on which bearing. Enough for the ticket's card and the calendar entry's name; null for a
+ * name it cannot read.
  */
-export function shotFromKey(key, t, distanceM = null) {
+export function shotFromKey(key, t, distanceM = null, fromDeg = null) {
   const [head, ...rest] = String(key ?? '').split(':');
   const match = /^(.+)-(sun|moon)$/.exec(head);
   if (!match || !Number.isFinite(t)) return null;
   const [, part, body] = match;
   if (part === 'street') return rest.length ? asShot({ t, body, kind: 'street', place: rest.join(':') }) : null;
   const tower = part === 'sphere' || part === 'antenna';
-  if (!tower && !LANDMARK[part]) return null;
+  const figure = TARGET_OF_PART[part];
+  if (!tower && !figure) return null;
   const what = tower ? `${body === 'moon' ? 'Moon' : 'Sun'} behind the TV tower’s ${part}` : undefined;
-  return asShot({ t, body, kind: 'tower', target: tower ? 'fernsehturm' : part, state: part === 'antenna' ? 'antenna' : 'hidden', what, distanceM: tower ? distanceM : null });
+  return asShot({ t, body, kind: 'tower', target: tower ? 'fernsehturm' : figure, state: part === 'antenna' ? 'antenna' : 'hidden', what, distanceM, fromDeg });
+}
+
+/** The landmark a link's `shot=` is of, by its id in targets.js, or null for a street or an unknown name. */
+export function targetOfKey(key) {
+  const part = /^(.+)-(sun|moon)$/.exec(String(key ?? '').split(':')[0])?.[1];
+  return part === 'sphere' || part === 'antenna' ? 'fernsehturm' : (TARGET_OF_PART[part] ?? null);
 }
 
 /**
- * The day list's four switches applied to the year's shots: `sun` and `moon` by body, `tower`
- * for every landmark, `streets` for the street you stand in. A switch that is not false is on.
+ * The day list's five switches applied to the year's shots: `sun` and `moon` by body, `tower`
+ * for the TV tower, `landmarks` for the Siegessäule and the Brandenburger Tor, `streets` for
+ * the street you stand in. A switch that is not false is on.
  */
 export function shownShots(shots, switches = {}) {
-  return shots.filter((s) => switches[s.body] !== false && switches[s.kind === 'street' ? 'streets' : 'tower'] !== false);
+  const kind = (s) => (s.kind === 'street' ? 'streets' : (s.target ?? 'fernsehturm') === 'fernsehturm' ? 'tower' : 'landmarks');
+  return shots.filter((s) => switches[s.body] !== false && switches[kind(s)] !== false);
 }
 
 /** A shot's rank at `now`: its spectacle, less for being far off, weighed by a forecast's grade. */
@@ -193,6 +230,12 @@ export function byMonth(shots) {
  * carries the year, so "Thu, 14 Jan 2027 · 23:34–23:37" is said as "Thu, 14 Jan · 23:34–23:37".
  */
 export const rowWhen = (when) => String(when ?? '').replace(/ \d{4}(?= \u00b7)/, '');
+
+/** A row's date as its weekday ("Thu, ") and the rest, for a screen too narrow for both. */
+export const weekdayApart = (when) => {
+  const [, weekday = '', rest = when] = /^([A-Za-z]+, )(.*)$/.exec(when) ?? [];
+  return [weekday, rest];
+};
 
 /**
  * What the searches said beside their dates ("8 more hidden by buildings"), each once, under

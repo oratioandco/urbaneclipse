@@ -38,6 +38,18 @@ body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > 
 #dates .shotcard--row { padding: 8px 0; }
 #dates .shotcard--row .sc-title svg { display: inline-block; vertical-align: -2px; margin-right: 6px; }
 #dates .shotcard--row[aria-current='true'] { background: var(--field); }
+/* A narrow phone: the date without its weekday and the small print in short (place, pass,
+   height), and no chevron, so a row is three lines at most. */
+#dates .fh-brief { display: none; grid-area: detail; color: var(--muted); font-size: var(--text-s); }
+@media (max-width: 359px) {
+  #dates .shotcard--row { column-gap: 8px; }
+  #dates .shotcard--row :is(.sc-detail, .chev, .fh-weekday) { display: none; }
+  #dates .fh-brief { display: block; }
+}
+/* A short screen has no more room to give the list: its "Show more" would do nothing. */
+@media (max-height: 600px) {
+  #dates .fh-size { display: none; }
+}
 #dates .fh-notes { margin-top: 6px; border-top: 1px solid var(--line); }
 #dates .fh-notes:empty { display: none; }
 #dates .fh-notes b { font-weight: 600; color: var(--ink); }
