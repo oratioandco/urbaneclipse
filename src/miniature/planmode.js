@@ -1,8 +1,8 @@
 /**
- * Plan mode: the panel opens on the coming three days' shots as cards — each a real moment,
- * ranked by weather and spectacle — instead of the camera tools. A tap on a card flies there
- * and flips to the tools (shoot mode), already set to that minute. Shoot mode is the panel as
- * it always was, reached by the same toggle or a card.
+ * Planning: the coming three days' shots as cards, each a real moment, ranked by weather and
+ * spectacle. A tap on a card flies there, already set to that minute. The same three days
+ * give the panel its one line, the next shot (peek.js). The panel's other list, "This day",
+ * is daylist.js; the tabs above them switch `data-mode` between plan and shoot.
  */
 import { streetMoments } from '../lib/streets.ts';
 import { sampleBody } from '../lib/bodyPosition.ts';
@@ -11,19 +11,21 @@ import { litDiscPath, phaseName } from '../lib/moonPhase.ts';
 import { getMoonIllumination, getMoonTimes } from 'suncalc';
 import { formatClock } from './time.js';
 import { params } from './config.js';
-import { cloudsAt, cloudsFor, visibilityAt } from './weather.js';
+import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
+import { shotVerdict } from './verdict.js';
 import { layers } from './chrome.js';
-import { dateDayStart, dateInput, dayStart, setDay } from './clock.js';
-import { bodyIcon, collectRows, renderDayList, setSheet } from './daylist.js';
+import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js';
+import { bodyIcon, collectRows, renderDayList, showVerdict } from './daylist.js';
 import { computeDayPaths, getViewshed } from './plan.js';
+import { renderPeek } from './peek.js';
+import { onPeek } from './sheet.js';
 import { renderSparkstrip } from './sparkstrip.js';
 import { app, invalidate } from './state.js';
 
 const panel = document.getElementById('plancards');
 const strip = document.getElementById('sparkstrip');
 const planHead = document.getElementById('plan-head');
-const modeToggle = document.getElementById('mode-toggle');
-const sheetToggle = document.getElementById('sheet-toggle');
+const tabs = document.querySelectorAll('.tabs [data-mode]');
 const DAYS = 3;
 const PER_DAY = 3;
 const GRADE_WEIGHT = { good: 1.25, fair: 1, poor: 0.55 };
@@ -56,21 +58,14 @@ function sampleMoonUp(when) {
   return sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).alt > 0;
 }
 
-/** The panel's two modes; the body attribute drives what the stylesheet shows. */
+/** Which list planning shows: the coming days (plan) or this day (shoot). */
 export function setPanelMode(mode) {
   document.body.dataset.mode = mode;
-  modeToggle.textContent = mode === 'plan' ? 'Advanced ›' : '‹ Shots';
-  modeToggle.setAttribute('aria-label', mode === 'plan' ? 'Advanced — the camera tools' : 'Shots — back to the coming days');
-  // The handle expands whatever the mode's list is.
-  sheetToggle.setAttribute('aria-controls', mode === 'plan' ? 'plancards' : 'daylist');
-  if (mode === 'plan') {
-    setSheet(true);
-    renderPlanCards();
-  } else {
-    renderDayList();
-  }
+  for (const tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.mode === mode));
+  if (mode === 'plan') renderPlanCards();
+  else renderDayList();
 }
-modeToggle.addEventListener('click', () => setPanelMode(document.body.dataset.mode === 'plan' ? 'shoot' : 'plan'));
+for (const tab of tabs) tab.addEventListener('click', () => setPanelMode(tab.dataset.mode));
 
 for (const chip of planHead.querySelectorAll('[data-filter]')) {
   chip.addEventListener('click', () => {
@@ -79,27 +74,41 @@ for (const chip of planHead.querySelectorAll('[data-filter]')) {
   });
 }
 
-// A link that names a spot or a look is someone arriving for a shot: the tools, not the
-// cards. On a timeout, so the first paint (and the city fetches) are not stuck behind the
-// three days of alignment math.
+// A link that names a spot or a look is someone arriving for a shot: that day's list, not
+// the coming days. On a timeout, so the first paint (and the city fetches) are not stuck
+// behind the three days of alignment math.
 setTimeout(() => setPanelMode(params.get('at') || params.get('look') ? 'shoot' : 'plan'), 0);
 
 // The afternoon moves under an open panel: today's now-marker drifts and shots pass, so
-// re-grade on a slow beat while the plan is showing. renderPlanCards guards the mode.
-setInterval(() => {
-  if (document.body.dataset.mode === 'plan') renderPlanCards();
-}, 5 * 60_000);
+// re-grade on a slow beat, and keep the countdown honest in between.
+setInterval(renderPlanCards, 5 * 60_000);
+setInterval(showPeek, 30_000);
+// Standing in the street the plan is out of sight and waits; back on the map it catches up.
+new MutationObserver(() => {
+  if (document.body.dataset.eye !== 'true') renderPlanCards();
+}).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });
 
-/** The day's clouds and sight at an instant, as a grade for the card's dot. */
-function gradeAt(day, from, t) {
-  if (!day) return null;
-  const minutes = (t - from) / 60_000;
-  const c = cloudsAt(day, minutes);
-  const cover = Math.max(c.low, c.mid, c.high);
-  const vis = visibilityAt(day, minutes);
-  if (cover > 0.75 || vis < 3000) return 'poor';
-  if (cover > 0.5 || vis < 9000) return 'fair';
-  return 'good';
+/** The next shot of the three days, kept so the countdown can tick without the maths. */
+let next = null;
+let nextSentence = undefined;
+function showPeek() {
+  const now = Date.now();
+  if (next && next.row.t <= now) return renderPlanCards();
+  renderPeek(next, now, nextSentence);
+}
+// On a wide screen the line is a heading: a click shows that shot's day and minute.
+onPeek(() => {
+  if (!next) return;
+  if (svDate(next.from) !== dateInput.value) setDay(svDate(next.from));
+  setMinute(next.row.t);
+  invalidate();
+});
+
+/** The day's sky at an instant as a verdict in words; without a forecast, which kind of none. */
+function verdictAt(day, from, t) {
+  const date = svDate(from);
+  const missing = !forecastReach(date).ok ? 'No forecast yet' : retryAfter.has(date) ? 'No forecast' : 'Forecast loading';
+  return shotVerdict(day, from, t, { missing });
 }
 
 /** The same reading as a short note, in the weather line's words. */
@@ -113,20 +122,27 @@ function noteAt(day, from, t) {
   return ` · ${cover < 10 ? 'clear sky' : `${cover}% cloud${c.low > 0.6 ? ', low' : ''}`}${view}`;
 }
 
-/** Cloud forecasts by day, resolved once and kept; a late arrival redraws the cards, and a
- * failed one is forgotten, so the next redraw tries again. */
+/** Cloud forecasts by day, resolved once and kept; a late arrival redraws the cards. A failed
+ * one is not asked for again for a minute and redraws nothing: a redraw would ask again at
+ * once, and with the forecast service down that went round as fast as the network answered. */
 const forecasts = new Map();
+const retryAfter = new Map();
+const RETRY_MS = 60_000;
 function forecastFor(from) {
   const date = svDate(from);
-  if (!forecasts.has(date)) {
+  if (!forecasts.has(date) && (retryAfter.get(date) ?? 0) <= Date.now()) {
     forecasts.set(date, null);
     cloudsFor(date, from).then((day) => {
-      if (day) forecasts.set(date, day);
-      else forecasts.delete(date);
-      renderPlanCards();
+      if (day) {
+        forecasts.set(date, day);
+        renderPlanCards();
+      } else {
+        forecasts.delete(date);
+        retryAfter.set(date, Date.now() + RETRY_MS);
+      }
     });
   }
-  return forecasts.get(date);
+  return forecasts.get(date) ?? null;
 }
 
 /** The collected rows of one day, kept per day and data state so a redraw only re-grades. */
@@ -165,7 +181,9 @@ const dayName = (from, i) =>
 /** The cards: three days, each its best few moments, the best weather and the biggest
  * spectacle first. */
 export function renderPlanCards() {
-  if (document.body.dataset.mode !== 'plan') return;
+  // Not before the city's streets and the day's paths are in (three days of alignment maths
+  // would run twice), and not while standing in the street, where the plan is out of sight.
+  if (!app.dayReady || document.body.dataset.eye === 'true') return;
   const now = Date.now();
   const base = realToday();
   renderMoonHead();
@@ -183,23 +201,30 @@ export function renderPlanCards() {
     // strip still shows those days — light and cloud are exactly what a covered week is for
     // glancing at — but they earn no cards and no ticks.
     const picks = rows
-      .map((row) => ({ ...row, grade: gradeAt(day, from, row.t) }))
+      .map((row) => {
+        const verdict = verdictAt(day, from, row.t);
+        return { ...row, verdict, grade: verdict.grade };
+      })
       .filter((row) => row.grade !== 'poor')
       .sort((a, b) => GRADE_WEIGHT[b.grade ?? 'fair'] * b.score - GRADE_WEIGHT[a.grade ?? 'fair'] * a.score)
       .slice(0, PER_DAY);
     total += picks.length;
-    blocks.push({ from, i, picks, day, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
+    blocks.push({ from, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }
-  sheetToggle.querySelector('span').textContent = total
-    ? `${total} shot${total === 1 ? '' : 's'} in the next ${DAYS === 3 ? 'three days' : `${DAYS} days`}`
-    : 'No shots in the next three days';
+  // The one line: the earliest of the picks, whichever day it falls on.
+  const first = blocks.flatMap((block) => block.picks.map((row) => ({ row, from: block.from, verdict: row.verdict, day: block.i === 0 ? '' : block.i === 1 ? 'Tomorrow' : block.name.slice(0, 3) }))).sort((a, b) => a.row.t - b.row.t)[0];
+  next = first ?? null;
+  nextSentence = blocks.some((block) => block.rows > 0)
+    ? 'Skip the next three days: too much cloud for a shot'
+    : 'Nothing lines up in the next three days';
+  renderPeek(next, now, nextSentence);
+  if (document.body.dataset.mode !== 'plan') return;
   const flyTo = (row, from) => {
     // The flight presets the slider to the shot's minute, on the shot's day: bring the day
     // along first, or setMinute clamps a Tomorrow shot into tonight.
     if (svDate(from) !== dateInput.value) setDay(svDate(from));
     setPanelMode('shoot');
     row.go();
-    modeToggle.focus({ preventScroll: true });
     invalidate();
   };
   const stripHandlers = {
@@ -230,8 +255,9 @@ export function renderPlanCards() {
         item.type = 'button';
         item.className = 'dayrow planrow';
         item.dataset.body = row.body;
-        item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><i class="grade"${row.grade ? ` data-grade="${row.grade}"` : ''} title="${row.grade ?? 'waiting for the forecast'}"></i>`;
+        item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">›</i>`;
         item.querySelector('b').textContent = row.title;
+        showVerdict(item.querySelector('.verdict'), row.verdict);
         item.querySelector('small').textContent = row.detail + noteAt(day, from, row.t);
         item.addEventListener('click', () => flyTo(row, from));
         return item;

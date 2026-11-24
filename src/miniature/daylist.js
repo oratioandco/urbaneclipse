@@ -1,9 +1,10 @@
-/** The day as a list in the expanded sheet: tower alignments and street henges, each with Go. */
+/** The day as a list in the panel's planning: tower alignments and street henges, each a tap away. */
 import * as THREE from 'three';
 import { getMoonIllumination } from 'suncalc';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { compassPoint } from '../lib/dailyPaths.ts';
+import { cssRgb, moonLook, sunLook } from '../lib/mapBodyLook.ts';
 import { litDiscPath } from '../lib/moonPhase.ts';
 import { formatClock } from './time.js';
 import { EYE_HEIGHT } from './eye.js';
@@ -12,12 +13,14 @@ import { layers, shownBody } from './chrome.js';
 import { dayStart } from './clock.js';
 import { BODY_NAME } from './eclipse.js';
 import { cloudNote } from './forecast.js';
+import { forecastReach } from './weather.js';
+import { shotVerdict } from './verdict.js';
+import { dateInput } from './clock.js';
 import { toScene } from './plan.js';
 import { goViewHere } from './pointer.js';
 import { app, invalidate } from './state.js';
 
 const dayList = document.getElementById('daylist');
-const sheetToggle = document.getElementById('sheet-toggle');
 const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 
 /**
@@ -25,7 +28,8 @@ const distanceText = (m) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m /
  * antenna, and street henges \u2014 the rows both the day list and the plan cards draw from.
  * `from` is the day's start; `flags` carry the layer switches and, when given, a instant
  * before which the day's chances have already passed. Each row also carries a spectacle
- * score, so the plan can rank the big moon over a short henge.
+ * score, so the plan can rank the big moon over a short henge, and a short name for the day
+ * view's cards: the place, since the card's disc already says sun or moon.
  */
 export function collectRows(dayPaths, moments, from, flags = {}) {
   const { tower = true, streets = true, moon = true } = flags;
@@ -64,6 +68,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           t: align,
           body: path.body,
           kind: 'tower',
+          short: 'TV tower',
           // The closer the tower, the larger the body behind it: the spectacle, scored.
           score: path.body === 'moon' ? Math.min(2.4, 1.5 * discOverSphere(mid.distanceM)) : discOverSphere(mid.distanceM) > 1 ? 1.8 : 1.2,
           title:
@@ -106,6 +111,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
           t: w.start,
           body: 'moon',
           kind: 'tower',
+          short: 'TV antenna',
           score: 2,
           title: `${rising ? 'Moonrise' : 'Moonset'} behind the TV tower\u2019s antenna`,
           detail: `${formatClock(w.start)}\u2013${formatClock(w.end)} \u00b7 ${distanceText(near)}\u2013${distanceText(far)} ${compassPoint(bearing)} of the tower \u00b7 ${Math.round(lit * 100)}% lit`,
@@ -130,6 +136,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
         t: m.peak,
         body: m.body,
         kind: 'street',
+        short: m.view.name,
         score: Math.min(1.6, m.view.lengthM / 800),
         title: `${m.view.name}`,
         detail: `${formatClock(m.peak)} \u00b7 street henge: the ${BODY_NAME[m.body].toLowerCase()} down the street \u00b7 ${distanceText(m.view.lengthM)} long \u00b7 ${Math.round(m.bodyAlt)}\u00b0 up`,
@@ -141,16 +148,31 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
   return rows;
 }
 
-/** The last rendered day list, so the time slider can snap to a tower alignment near a scrub. */
-let snapRows = [];
+/** The chosen day's rows, collected once per day, data and layer state. */
+let rowsMemo = { key: null, rows: [] };
+export function currentRows() {
+  const key = [dayStart(), layers.tower, layers.streets, layers.sun, layers.moon].join('|');
+  if (rowsMemo.key !== key || rowsMemo.paths !== app.dayPaths || rowsMemo.moments !== app.moments) {
+    rowsMemo = {
+      key,
+      paths: app.dayPaths,
+      moments: app.moments,
+      rows: collectRows(app.dayPaths, app.moments, dayStart(), { tower: layers.tower, streets: layers.streets, moon: layers.moon }),
+    };
+  }
+  return rowsMemo.rows;
+}
+
 /**
  * The tower alignment to snap a scrubbed minute to, or null: the nearest row\u0027s alignment
  * minute within two minutes of it \u2014 the sun needs minutes to cross the sphere, so landing
- * a minute off misses the shot.
+ * a minute off misses the shot. Only the ticket\u0027s scrubber at eye level snaps; the day
+ * view\u0027s thumb moves freely and says so with `app.freeScrub`.
  */
 export function snapMinute(t) {
+  if (app.freeScrub) return null;
   let best = null;
-  for (const row of snapRows) {
+  for (const row of currentRows()) {
     if (row.kind !== 'tower') continue;
     const d = Math.abs(row.t - t);
     if (d <= 2 * 60_000 && (!best || d < best.d)) best = { t: row.t, d };
@@ -158,10 +180,9 @@ export function snapMinute(t) {
   return best ? best.t : null;
 }
 
-/** The day as a list in the expanded sheet: the same rows, in time order, each with Go. */
+/** The day as a list in planning: the same rows, in time order, each a tap from standing there. */
 export function renderDayList() {
-  const rows = collectRows(app.dayPaths, app.moments, dayStart(), { tower: layers.tower, streets: layers.streets, moon: layers.moon });
-  snapRows = rows;
+  const rows = currentRows();
   dayList.replaceChildren(
     ...rows.map((row) => {
       const item = document.createElement('button');
@@ -169,30 +190,62 @@ export function renderDayList() {
       item.className = 'dayrow';
       item.dataset.body = row.body;
       item.dataset.kind = row.kind;
-      item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><small></small></span><em>Go \u203a</em>`;
+      item.innerHTML = `${bodyIcon(row.body, row.t)}<span><b></b><em class="verdict"></em><small></small></span><i class="chev" aria-hidden="true">\u203a</i>`;
       item.querySelector('b').textContent = row.title;
+      showVerdict(item.querySelector('.verdict'), dayVerdict(row.t));
       item.querySelector('small').textContent = row.detail + cloudNote(row.t);
       item.addEventListener('click', () => {
         row.go();
-        setSheet(false);
         invalidate();
       });
       return item;
     }),
   );
-  if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up today. Try another day.</p>';
-  sheetToggle.querySelector('span').textContent = `${rows.length} chance${rows.length === 1 ? '' : 's'} today`;
+  if (!rows.length) dayList.innerHTML = '<p class="muted">Nothing lines up on this day. Try another.</p>';
 }
 
-/** A small sun, or the moon in its phase at that time, for the list. */
+/** A verdict into its element: the word and the reason as text, the grade for the colour. */
+export function showVerdict(el, verdict) {
+  el.textContent = verdict.label;
+  el.dataset.grade = verdict.grade ?? 'none';
+}
+
+/** The verdict for an instant of the chosen day: its forecast, or why there is none. */
+export function dayVerdict(t) {
+  const missing = !forecastReach(dateInput.value).ok ? 'No forecast yet' : app.weather === null && app.weatherFailed ? 'No forecast' : 'Forecast loading';
+  return shotVerdict(app.weather, dayStart(), t, { now: Date.now(), missing });
+}
+
+/**
+ * The mark for a kind of event, the same on the timeline, the strip and the cards, and told
+ * apart by shape and fill, not by colour alone (Dan's feedback): behind the tower is a ring,
+ * white inside for the sun and dark inside for the moon; a street henge is a solid bar, the
+ * moon's dark with a rim. Each has a halo, so two that overlap stay two. Interim, until the
+ * icons session's mark family (marks.js) is merged.
+ */
+export function markShape(kind, body, x = 0, y = 0) {
+  const colour = `var(--${body})`;
+  if (kind === 'tower') {
+    return `<circle class="mark-halo" cx="${x}" cy="${y}" r="4.6"/><circle cx="${x}" cy="${y}" r="3" fill="${body === 'sun' ? '#fff' : '#20263a'}" stroke="${colour}" stroke-width="1.9"/>`;
+  }
+  return `<rect class="mark-halo" x="${x - 3.2}" y="${y - 5.5}" width="6.4" height="11" rx="3.2"/><rect x="${x - 1.7}" y="${y - 4}" width="3.4" height="8" rx="1.7" fill="${body === 'sun' ? colour : '#20263a'}" stroke="${colour}" stroke-width="${body === 'sun' ? 0 : 1.3}"/>`;
+}
+export const MARK_WORD = { tower: 'behind the tower', street: 'street henge' };
+export const markIcon = (kind, body) => `<svg class="mark" viewBox="-6 -6 12 12" aria-hidden="true">${markShape(kind, body)}</svg>`;
+
+/**
+ * A small sun, or the moon in its phase, as it looks at that time. The colours are the map's
+ * own (mapBodyLook.ts): one sun and one moon everywhere, redder when low.
+ */
 export function bodyIcon(body, t) {
-  if (body === 'sun') return '<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#f8a03a"/><circle r="0.62" fill="#ffd27a"/></svg>';
-  const moon = getMoonIllumination(new Date(t));
-  return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="#e8ecff"/><circle r="0.92" fill="none" stroke="#5b82ff" stroke-width="0.12"/></svg>`;
+  const when = new Date(t);
+  const sun = sampleBody('sun', when, FERNSEHTURM.lat, FERNSEHTURM.lon);
+  if (body === 'sun') {
+    const look = sunLook(Math.max(0, sun.alt));
+    return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="${cssRgb(look.limb)}"/><circle r="0.6" fill="${cssRgb(look.core)}"/></svg>`;
+  }
+  const moon = getMoonIllumination(when);
+  const alt = sampleBody('moon', when, FERNSEHTURM.lat, FERNSEHTURM.lon).alt;
+  const look = moonLook(Math.max(0, alt), sun.alt, moon.fraction);
+  return `<svg class="disc" viewBox="-1 -1 2 2" aria-hidden="true"><circle r="0.92" fill="#2a3150"/><path d="${litDiscPath(moon.fraction, moon.waxing ?? moon.phase < 0.5)}" transform="scale(0.92)" fill="${cssRgb(look.core)}"/><circle r="0.92" fill="none" stroke="var(--moon)" stroke-width="0.12"/></svg>`;
 }
-
-export function setSheet(open) {
-  document.body.dataset.sheet = open ? 'open' : 'closed';
-  sheetToggle.setAttribute('aria-expanded', String(open));
-}
-sheetToggle.addEventListener('click', () => setSheet(document.body.dataset.sheet !== 'open'));

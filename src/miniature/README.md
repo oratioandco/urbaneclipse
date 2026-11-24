@@ -28,6 +28,29 @@ After a rebuild, bump `CITY_VERSION` in `main.js`, since the files are cached fo
 URL options: `date`, `time` (minutes after midnight), `at=lat,lon`, `look=heading,pitch`,
 `lens`, `cam` (these four open eye level; the address keeps them up to date, so it can be
 shared), `nointro`, `mode` (top, iso, free), `height`, `shadow`, `budget`, `stats`.
+The panel's state can be opened from the address too, without storing it: `sheet=peek|half|full`
+(phone), `panel=rail` (900 px and wider), `more=open` and `minimap=open` (eye level).
+
+## The panel
+
+One block of markup in `plan.astro` (`.bottom` > `.panel`), three shapes, all in `miniature.css`:
+
+- **Phone:** a bottom sheet at one of three heights. Peek is one line, the next shot and a
+  countdown (`peek.js`); half is the day view (`dayview.js`); full adds planning, the coming
+  days (`planmode.js`, `sparkstrip.js`) and this day's list (`daylist.js`). `sheet.js` does the
+  dragging, snapping, Escape, back button, the drop to peek when the map moves, and remembers
+  the height; its rules are pure and live in `sheetHeights.js`.
+- **900 px and wider:** the same content as a side panel that folds to a rail (`sheet.js`).
+- **Eye level:** a floating ticket: what lines up, the time scrubber, and the camera's rows
+  behind "More"; the minimap waits behind a corner button (`chrome.js`).
+
+The time lives in the `#time` input, as it always has. The day view's thumb writes to it and
+fires its `input` event, so `clock.js`, `lighting.js` and `link.js` follow; the input stays over
+the timeline, unseen, as the slider for keyboards and screen readers. Verdicts are words with a
+reason (`verdict.js`), never a bare dot. The day view's arithmetic is in `dayTimeline.js`.
+All three pure files are tested in `tests/unit/panel.test.ts`. `main.js` reads `.bottom`'s
+height as what covers the map from below, so `.bottom` is only ever as tall as what really
+sits at the bottom of the screen (zero for the side panel).
 Code: `main.js` loads the city and runs the frame loop; its header lists the other modules.
 Shared state that several modules change lives on `app` in `state.js`.
 More dates from where you stand (the Dates button at eye level) search a year in

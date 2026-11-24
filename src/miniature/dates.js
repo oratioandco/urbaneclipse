@@ -107,7 +107,7 @@ function row({ body, t, title, detail, go }) {
   item.type = 'button';
   item.className = 'dayrow';
   item.dataset.body = body;
-  item.innerHTML = `${bodyIcon(body, t)}<span><b></b><small></small></span><em>Go ›</em>`;
+  item.innerHTML = `${bodyIcon(body, t)}<span><b></b><small></small></span><i class="chev" aria-hidden="true">›</i>`;
   item.querySelector('b').textContent = title;
   item.querySelector('small').textContent = detail;
   addClouds(item.querySelector('small'), t);

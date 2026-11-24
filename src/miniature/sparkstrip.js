@@ -73,15 +73,17 @@ function sparkRow(mount, { from, name, picks, day, now }, { onTick, onDay }) {
   for (const pick of [...picks].sort((a, b) => a.t - b.t)) {
     const tick = document.createElement('button');
     tick.type = 'button';
-    tick.className = `spark-tick spark-${pick.body}`;
+    // The head says what kind: a ring for the tower, a bar for a street.
+    tick.className = `spark-tick spark-${pick.body} spark-${pick.kind}`;
     tick.style.setProperty('--score', pick.score.toFixed(2));
     const trueLeft = ((pick.t - from) / 86_400_000) * 100;
     const left = Math.min(97, Math.max(3, trueLeft, prevLeft + MIN_GAP));
     prevLeft = left;
     tick.style.left = `${left.toFixed(2)}%`;
     const when = formatClock(pick.t);
-    tick.title = `${when} — ${pick.title}`;
-    tick.setAttribute('aria-label', `${when}, ${pick.title}. ${pick.detail}. Tap to fly there.`);
+    const verdict = pick.verdict ? ` ${pick.verdict.label}.` : '';
+    tick.title = `${when} — ${pick.title}${pick.verdict ? ` — ${pick.verdict.label}` : ''}`;
+    tick.setAttribute('aria-label', `${when}, ${pick.title}.${verdict} ${pick.detail}. Tap to fly there.`);
     tick.addEventListener('click', () => onTick?.(pick, from));
     const stem = document.createElement('i');
     stem.setAttribute('aria-hidden', 'true');

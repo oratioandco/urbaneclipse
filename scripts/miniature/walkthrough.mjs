@@ -16,8 +16,9 @@ await p.goto(base + '/plan/?nointro&date=2027-03-22&time=1020');
 await p.waitForFunction(() => window.__ready, null, { timeout: 90000 });
 await p.waitForTimeout(1500);
 ok('city loaded', (await p.evaluate(() => window.__mini.tiles.length)) === 355);
-ok('day list filled', (await p.$$eval('#daylist .dayrow', (r) => r.length)) > 5, await p.textContent('#sheet-toggle span'));
-ok('tracks drawn', (await p.$$eval('#tracks .track', (r) => r.length)) >= 2);
+ok('day list filled', (await p.$$eval('#daylist .dayrow', (r) => r.length)) > 5, await p.textContent('#shots-count'));
+ok('day view drawn', (await p.$$eval('#tl-plot .tl-curve', (r) => r.length)) >= 2 && (await p.$$eval('#shots-row .shot', (r) => r.length)) > 5);
+ok('verdicts are words', await p.$$eval('#daylist .verdict', (v) => v.length > 0 && v.every((e) => e.textContent.trim().length > 0)), await p.textContent('#daylist .verdict'));
 ok('rays for now', (await p.evaluate(() => window.__mini.rays.length)) >= 1);
 await shot('overview');
 
@@ -88,7 +89,8 @@ await p.waitForTimeout(800);
 const heading = await p.evaluate(() => window.__mini.look.heading);
 ok('face tower', Number.isFinite(heading));
 
-// More dates from here.
+// More dates from here: the camera's rows wait behind More.
+if ((await p.getAttribute('#ticket-more', 'aria-expanded')) !== 'true') await p.click('#ticket-more');
 await p.click('#dates-toggle');
 await p.waitForFunction(() => document.querySelector('#dates h3') && !document.querySelector('#dates').textContent.includes('Searching'), null, { timeout: 90000 }).catch(() => {});
 ok('dates from here', (await p.$$eval('#dates h3', (h) => h.length)) >= 1, (await p.$$eval('#dates .dayrow', (r) => r.length)) + ' rows');
@@ -103,7 +105,7 @@ await p.waitForTimeout(1800);
 ok('back to overview', await p.evaluate(() => document.body.dataset.eye === 'false'));
 
 // Go from the list.
-await p.click('#sheet-toggle');
+await p.click('.tabs [data-mode="shoot"]');
 await p.waitForTimeout(400);
 await p.click('#daylist .dayrow[data-kind="street"]');
 await p.waitForFunction(() => window.__mini.look.active, null, { timeout: 60000 }).catch(() => {});

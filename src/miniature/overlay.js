@@ -118,12 +118,26 @@ function drawPill({ text, look, moon, x, y, ux, uy, night, body }) {
   ctx.save();
   ctx.translate(x + ux * (reach + 7), y + uy * (reach + 7));
   ctx.rotate(Math.atan2(uy, ux));
+  // A compass needle, so the tip cannot be mistaken: long and narrow, the shaft in ink with
+  // a halo to hold on any map, and the pointing end in the compass's red.
+  const needle = (from, to) => {
+    const half = (x) => (5 * (11 - x)) / 15;
+    ctx.beginPath();
+    ctx.moveTo(from, -half(from));
+    ctx.lineTo(to, -half(to));
+    ctx.lineTo(to, half(to));
+    ctx.lineTo(from, half(from));
+    ctx.closePath();
+  };
+  needle(-4, 11);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = night ? 'rgba(20, 23, 38, 0.9)' : 'rgba(255, 253, 249, 0.95)';
+  ctx.stroke();
   ctx.fillStyle = night ? '#ece8df' : '#24221f';
-  ctx.beginPath();
-  ctx.moveTo(7, 0);
-  ctx.lineTo(-4, -6);
-  ctx.lineTo(-4, 6);
-  ctx.closePath();
+  ctx.fill();
+  needle(3, 11);
+  ctx.fillStyle = '#e0352b';
   ctx.fill();
   ctx.restore();
   return { kind: 'pill', x: left, y: top, w: width, h: PILL_H, body };
@@ -140,6 +154,9 @@ function safeArea(bottomInset) {
   const topLeft = document.querySelector('.topleft');
   const box = topLeft && getComputedStyle(topLeft).display !== 'none' ? topLeft.getBoundingClientRect() : null;
   if (box?.height) area.top = Math.max(area.top, box.bottom + 8);
+  // On a wide screen the panel stands at the left edge, not along the bottom.
+  const side = document.getElementById('panel')?.getBoundingClientRect();
+  if (side?.width && side.left < 40 && side.width < innerWidth / 2) area.left = Math.max(area.left, side.right + 8);
   return area;
 }
 
