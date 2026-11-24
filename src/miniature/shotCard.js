@@ -357,6 +357,8 @@ export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', 
   // The day, where a list runs over more than one: unseen unless the list asks for it (shotcard.css).
   if (day) meta.append(span('sc-day', day));
   meta.append(span('sc-time', formatClock(shot.t)), name, span('sc-title', shot.title ?? ''), what, span('sc-detail', shot.detail ?? ''));
+  // On the ticket the caution is a part of its own, so it wraps whole under a long name.
+  if (shot.caution && size === 'ticket') meta.append(span('sc-caution', shot.caution));
 
   card.append(frame, said, meta);
   // A card that does something (a button, a link) names itself in full; one that only shows
