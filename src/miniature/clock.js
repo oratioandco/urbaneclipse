@@ -1,5 +1,6 @@
 /** The moment: the day and time inputs, and turning them into instants in Berlin time. */
 import { formatDay, formatMinutes, parseTime, uses12h } from './time.js';
+import { berlinDayEnd, berlinDayStart, isLaterReading, isSkipped, wallMinutesOf, wallToInstant } from './berlinClock.js';
 import { params } from './config.js';
 import { updateSun } from './lighting.js';
 import { PHASE_COLOURS, updateDay } from './plan.js';
@@ -26,48 +27,67 @@ clock.addEventListener('change', () => {
   // In fine timing the window moves to the typed time first, or the slider would clamp it.
   if (minutes !== null && fine.on) setFine(true, minutes);
   else if (minutes !== null) timeInput.value = String(minutes);
+  skipMissingHour();
   clock.value = formatMinutes(Number(timeInput.value), fine.on);
   updateSun();
   invalidate();
 });
 
-// The offset only changes on the hour at most; asking Intl every frame showed in profiles.
-const offsets = new Map();
-const berlinOffsetMinutes = (date) => {
-  const hour = Math.floor(date.getTime() / 3_600_000);
-  let offset = offsets.get(hour);
-  if (offset === undefined) {
-    const local = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Berlin' }));
-    const utc = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-    offset = (local - utc) / 60_000;
-    offsets.set(hour, offset);
-  }
-  return offset;
-};
+/**
+ * On the day the clocks go forward there is no 02:00 to 03:00. A time set inside it moves to
+ * what the clock really reads then (02:30 becomes 03:30), so the label and the sky agree.
+ */
+function skipMissingHour() {
+  const minutes = Number(timeInput.value);
+  if (!isSkipped(dateInput.value, minutes)) return;
+  const real = Math.min(Number(timeInput.max), minuteOf(instantOfMinute(minutes)));
+  timeInput.value = String(real);
+}
+
+/**
+ * A shot picked in the hour that happens twice (02:00 to 03:00 when the clocks go back) can
+ * be its second occurrence, which the slider's wall-clock minutes cannot say. It is kept here
+ * for as long as the slider and the day still read what the shot set.
+ */
+let pinned = null;
+
+/** The instant (ms) of a wall-clock minute on the chosen day. */
+export function instantOfMinute(minutes) {
+  return wallToInstant(dateInput.value, minutes);
+}
+
+/** What the Berlin clock reads at an instant, in minutes after the chosen day's midnight. */
+export function minuteOf(t) {
+  return wallMinutesOf(dateInput.value, t);
+}
 
 export function instant() {
-  const [y, m, d] = dateInput.value.split('-').map(Number);
-  const minutes = Number(timeInput.value);
-  const guess = new Date(Date.UTC(y, m - 1, d, 0, minutes));
-  return new Date(guess.getTime() - berlinOffsetMinutes(guess) * 60_000);
+  if (pinned && pinned.day === dateInput.value && pinned.value === timeInput.value) return new Date(pinned.t);
+  return new Date(instantOfMinute(Number(timeInput.value)));
 }
 
 /** Midnight Berlin time for a yyyy-mm-dd, as an instant. */
 export function dateDayStart(value) {
-  const [y, m, d] = value.split('-').map(Number);
-  const guess = new Date(Date.UTC(y, m - 1, d));
-  return guess.getTime() - berlinOffsetMinutes(guess) * 60_000;
+  return berlinDayStart(value);
 }
 
 export function dayStart() {
-  return dateDayStart(dateInput.value);
+  return berlinDayStart(dateInput.value);
+}
+
+/** The midnight that ends the chosen day: 23 or 25 hours after it starts when the clocks change. */
+export function dayEnd() {
+  return berlinDayEnd(dateInput.value);
 }
 
 /** Set the time to an instant on the chosen day, to 5 seconds. */
 export function setMinute(t) {
-  const minutes = Math.round((t - dayStart()) / 5000) / 12;
+  // Wall-clock minutes, not minutes elapsed since midnight: the two differ by an hour after
+  // a clock change, which used to set the scene an hour off the shot.
+  const minutes = Math.round(minuteOf(t) * 12) / 12;
   if (fine.on) setFine(true, minutes);
   else timeInput.value = String(minutes);
+  pinned = isLaterReading(dateInput.value, t) ? { day: dateInput.value, value: timeInput.value, t: Math.round(t / 5000) * 5000 } : null;
   updateSun();
 }
 
@@ -100,8 +120,8 @@ new MutationObserver(() => {
 
 /** The slider's colours: the light through the stretch of time it covers. */
 export function showPhases() {
-  const from = dayStart() + Number(timeInput.min) * 60_000;
-  const to = dayStart() + Number(timeInput.max) * 60_000;
+  const from = instantOfMinute(Number(timeInput.min));
+  const to = instantOfMinute(Number(timeInput.max));
   const stops = lightGradientStops(lightBands(from, to, FERNSEHTURM.lat, FERNSEHTURM.lon, fine.on ? 30_000 : 300_000), from, to);
   timeInput.style.setProperty('--phases', stops.map((s) => `${PHASE_COLOURS[s.phase]} ${(s.at * 100).toFixed(1)}%`).join(','));
 }
@@ -109,6 +129,7 @@ export function showPhases() {
 const startAt = params.get('date') ?? new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
 dateInput.value = startAt;
 timeInput.value = params.get('time') ?? '960';
+skipMissingHour();
 const todayInBerlin = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
 function showDay() {
   const [y, m, d] = dateInput.value.split('-').map(Number);
@@ -122,6 +143,7 @@ function showDay() {
 export function setDay(value) {
   if (!value) return;
   dateInput.value = value;
+  skipMissingHour();
   showDay();
   updateDay();
   updateSun();
@@ -140,8 +162,9 @@ showDay();
 // sphere instead of a minute beside it. Fine timing is the photographer's hand, not a scrub.
 timeInput.addEventListener('input', () => {
   if (!fine.on) {
-    const snap = snapMinute(dayStart() + Number(timeInput.value) * 60_000);
-    if (snap !== null) timeInput.value = String(Math.round((snap - dayStart()) / 60_000));
+    const snap = snapMinute(instantOfMinute(Number(timeInput.value)));
+    if (snap !== null) timeInput.value = String(Math.round(minuteOf(snap)));
   }
+  skipMissingHour();
   updateSun();
 });

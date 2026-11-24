@@ -1007,61 +1007,1311 @@
    "body": "moon",
    "appPeakWhenAudited": "2027-01-12T20:24:00.000Z",
    "refPeak": "2027-01-12T20:25:40Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-01-12T20:26:20Z",
+   "refPlateauStart": "2027-01-12T20:23:35Z",
+   "refPlateauEnd": "2027-01-12T20:27:45Z"
   },
   {
    "body": "moon",
    "appPeakWhenAudited": "2027-01-26T08:13:00.000Z",
    "refPeak": "2027-01-26T08:13:15Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-01-26T08:10:32Z",
+   "refPlateauStart": "2027-01-26T08:13:05Z",
+   "refPlateauEnd": "2027-01-26T08:13:25Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-03-10T16:57:00.000Z",
    "refPeak": "2027-03-10T16:57:00Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-03-10T16:59:15Z",
+   "refPlateauStart": "2027-03-10T16:56:30Z",
+   "refPlateauEnd": "2027-03-10T16:57:30Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-03-11T16:55:30.000Z",
    "refPeak": "2027-03-11T16:57:25Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-03-11T16:57:48Z",
+   "refPlateauStart": "2027-03-11T16:55:35Z",
+   "refPlateauEnd": "2027-03-11T16:59:15Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-03-12T16:56:30.000Z",
    "refPeak": "2027-03-12T16:58:10Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-03-12T16:56:20Z",
+   "refPlateauStart": "2027-03-12T16:56:20Z",
+   "refPlateauEnd": "2027-03-12T16:59:05Z"
   },
   {
    "body": "moon",
    "appPeakWhenAudited": "2027-04-04T14:59:30.000Z",
    "refPeak": "2027-04-04T14:59:40Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-04-04T15:01:53Z",
+   "refPlateauStart": "2027-04-04T14:59:00Z",
+   "refPlateauEnd": "2027-04-04T15:00:20Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-10-01T16:36:30.000Z",
    "refPeak": "2027-10-01T16:37:45Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-10-01T16:36:28Z",
+   "refPlateauStart": "2027-10-01T16:36:15Z",
+   "refPlateauEnd": "2027-10-01T16:39:15Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-10-02T16:35:00.000Z",
    "refPeak": "2027-10-02T16:36:30Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-10-02T16:37:20Z",
+   "refPlateauStart": "2027-10-02T16:34:40Z",
+   "refPlateauEnd": "2027-10-02T16:38:20Z"
   },
   {
    "body": "sun",
    "appPeakWhenAudited": "2027-10-03T16:35:30.000Z",
    "refPeak": "2027-10-03T16:35:45Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-10-03T16:38:12Z",
+   "refPlateauStart": "2027-10-03T16:35:25Z",
+   "refPlateauEnd": "2027-10-03T16:36:00Z"
   },
   {
    "body": "moon",
    "appPeakWhenAudited": "2027-11-09T00:34:30.000Z",
    "refPeak": "2027-11-09T00:36:25Z",
-   "refCovered": 1.0
+   "refCovered": 1.0,
+   "refAxisCrossing": "2027-11-09T00:35:22Z",
+   "refPlateauStart": "2027-11-09T00:34:35Z",
+   "refPlateauEnd": "2027-11-09T00:38:15Z"
+  }
+ ],
+ "bridgeWindowAltitudes": [
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2026-12-28T09:35:26.581Z",
+   "refAltApparent": 1.712
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-01-14T22:33:56.561Z",
+   "refAltApparent": 3.276
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-02-10T20:37:45.701Z",
+   "refAltApparent": 1.328
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-02-21T05:56:17.150Z",
+   "refAltApparent": 1.896
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-02T17:41:39.722Z",
+   "refAltApparent": -0.232
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-03T17:41:06.026Z",
+   "refAltApparent": 0.051
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-04T17:40:13.401Z",
+   "refAltApparent": 0.38
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-05T17:38:46.704Z",
+   "refAltApparent": 0.791
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-04-06T17:11:18.178Z",
+   "refAltApparent": 3.127
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-06T17:37:20.963Z",
+   "refAltApparent": 1.21
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-07T17:35:38.087Z",
+   "refAltApparent": 1.677
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-08T17:34:56.777Z",
+   "refAltApparent": 2.008
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-09T17:33:08.135Z",
+   "refAltApparent": 2.5
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-10T17:31:50.397Z",
+   "refAltApparent": 2.924
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-04-11T17:31:00.952Z",
+   "refAltApparent": 3.283
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-04-17T02:30:05.886Z",
+   "refAltApparent": 0.765
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-05-03T15:10:37.872Z",
+   "refAltApparent": 0.273
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-05-14T00:22:14.106Z",
+   "refAltApparent": 2.776
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-06-27T11:35:50.145Z",
+   "refAltApparent": 1.506
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-07-07T21:08:16.354Z",
+   "refAltApparent": 0.158
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-08-31T17:29:57.785Z",
+   "refAltApparent": 3.414
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-08-31T17:31:50.386Z",
+   "refAltApparent": 0.153
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-01T17:30:32.169Z",
+   "refAltApparent": 3.012
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-02T17:30:53.585Z",
+   "refAltApparent": 2.641
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-03T17:32:17.600Z",
+   "refAltApparent": 2.125
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-04T17:32:21.263Z",
+   "refAltApparent": 1.799
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-05T17:33:13.309Z",
+   "refAltApparent": 1.366
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-06T17:34:01.060Z",
+   "refAltApparent": 0.949
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-07T17:34:48.571Z",
+   "refAltApparent": 0.541
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-08T17:35:36.024Z",
+   "refAltApparent": 0.144
+  },
+  {
+   "point": "nord-west",
+   "body": "sun",
+   "peak": "2027-09-09T17:35:42.083Z",
+   "refAltApparent": -0.159
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-09-17T06:13:33.557Z",
+   "refAltApparent": 1.577
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-11-11T02:43:21.940Z",
+   "refAltApparent": 2.914
+  },
+  {
+   "point": "nord-west",
+   "body": "moon",
+   "peak": "2027-11-21T11:55:07.037Z",
+   "refAltApparent": 1.164
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2026-12-28T09:35:30.781Z",
+   "refAltApparent": 1.702
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-01-14T22:34:10.198Z",
+   "refAltApparent": 3.245
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-02-10T20:38:04.132Z",
+   "refAltApparent": 1.288
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-02-21T05:56:35.395Z",
+   "refAltApparent": 1.854
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-03T17:41:16.623Z",
+   "refAltApparent": 0.029
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-04T17:40:26.654Z",
+   "refAltApparent": 0.352
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-05T17:38:59.976Z",
+   "refAltApparent": 0.762
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-04-06T17:11:31.813Z",
+   "refAltApparent": 3.096
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-06T17:37:34.236Z",
+   "refAltApparent": 1.18
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-07T17:35:47.983Z",
+   "refAltApparent": 1.654
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-08T17:35:06.228Z",
+   "refAltApparent": 1.986
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-09T17:33:21.382Z",
+   "refAltApparent": 2.469
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-10T17:32:02.966Z",
+   "refAltApparent": 2.894
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-04-11T17:31:14.306Z",
+   "refAltApparent": 3.251
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-04-17T02:30:19.835Z",
+   "refAltApparent": 0.735
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-05-03T15:10:55.684Z",
+   "refAltApparent": 0.238
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-05-14T00:22:27.414Z",
+   "refAltApparent": 2.744
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-06-27T11:36:19.314Z",
+   "refAltApparent": 1.444
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-07-07T21:08:18.998Z",
+   "refAltApparent": 0.153
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-08-31T17:30:11.166Z",
+   "refAltApparent": 3.382
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-08-31T17:31:54.992Z",
+   "refAltApparent": 0.144
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-01T17:30:38.218Z",
+   "refAltApparent": 2.997
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-02T17:31:06.545Z",
+   "refAltApparent": 2.61
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-03T17:32:29.373Z",
+   "refAltApparent": 2.098
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-04T17:32:34.874Z",
+   "refAltApparent": 1.768
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-05T17:33:23.137Z",
+   "refAltApparent": 1.344
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-06T17:34:14.357Z",
+   "refAltApparent": 0.92
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-07T17:35:01.858Z",
+   "refAltApparent": 0.513
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-08T17:35:40.135Z",
+   "refAltApparent": 0.135
+  },
+  {
+   "point": "nord-mitte",
+   "body": "sun",
+   "peak": "2027-09-09T17:35:48.154Z",
+   "refAltApparent": -0.171
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-09-17T06:13:47.404Z",
+   "refAltApparent": 1.547
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-11-11T02:43:34.872Z",
+   "refAltApparent": 2.885
+  },
+  {
+   "point": "nord-mitte",
+   "body": "moon",
+   "peak": "2027-11-21T11:55:20.986Z",
+   "refAltApparent": 1.133
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2026-12-28T09:37:05.677Z",
+   "refAltApparent": 1.488
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-01-14T22:35:38.601Z",
+   "refAltApparent": 3.046
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-02-10T20:39:45.477Z",
+   "refAltApparent": 1.074
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-02-21T05:57:56.217Z",
+   "refAltApparent": 1.671
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-03T17:42:50.344Z",
+   "refAltApparent": -0.162
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-04T17:42:06.077Z",
+   "refAltApparent": 0.144
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-05T17:40:39.227Z",
+   "refAltApparent": 0.548
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-04-06T17:12:39.987Z",
+   "refAltApparent": 2.943
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-06T17:39:13.516Z",
+   "refAltApparent": 0.96
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-07T17:37:48.081Z",
+   "refAltApparent": 1.382
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-08T17:36:18.645Z",
+   "refAltApparent": 1.82
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-09T17:35:38.570Z",
+   "refAltApparent": 2.15
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-10T17:33:37.982Z",
+   "refAltApparent": 2.671
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-11T17:32:42.512Z",
+   "refAltApparent": 3.042
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-04-12T17:31:31.432Z",
+   "refAltApparent": 3.452
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-04-17T02:32:04.147Z",
+   "refAltApparent": 0.512
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-05-03T15:12:06.673Z",
+   "refAltApparent": 0.098
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-05-14T00:24:09.565Z",
+   "refAltApparent": 2.506
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-06-27T11:38:07.685Z",
+   "refAltApparent": 1.212
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-07-07T21:09:23.786Z",
+   "refAltApparent": 0.021
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-08-21T08:11:37.548Z",
+   "refAltApparent": 3.316
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-08-31T17:31:51.211Z",
+   "refAltApparent": 3.143
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-08-31T17:33:10.069Z",
+   "refAltApparent": -0.01
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-01T17:32:01.575Z",
+   "refAltApparent": 2.8
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-02T17:33:07.955Z",
+   "refAltApparent": 2.325
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-03T17:33:39.574Z",
+   "refAltApparent": 1.935
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-04T17:33:52.687Z",
+   "refAltApparent": 1.59
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-05T17:35:06.425Z",
+   "refAltApparent": 1.113
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-06T17:35:53.792Z",
+   "refAltApparent": 0.702
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-07T17:36:42.481Z",
+   "refAltApparent": 0.299
+  },
+  {
+   "point": "nord-knick",
+   "body": "sun",
+   "peak": "2027-09-08T17:36:50.003Z",
+   "refAltApparent": -0.009
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-09-17T06:15:53.543Z",
+   "refAltApparent": 1.276
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-11-11T02:45:12.564Z",
+   "refAltApparent": 2.666
+  },
+  {
+   "point": "nord-knick",
+   "body": "moon",
+   "peak": "2027-11-21T11:57:05.347Z",
+   "refAltApparent": 0.905
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2026-12-28T09:37:42.448Z",
+   "refAltApparent": 1.406
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-01-14T22:35:45.154Z",
+   "refAltApparent": 3.031
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-02-10T20:39:58.500Z",
+   "refAltApparent": 1.046
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-02-21T05:58:06.763Z",
+   "refAltApparent": 1.647
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-03T17:42:56.178Z",
+   "refAltApparent": -0.174
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-04T17:42:09.866Z",
+   "refAltApparent": 0.136
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-05T17:40:51.979Z",
+   "refAltApparent": 0.52
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-04-06T17:12:52.465Z",
+   "refAltApparent": 2.915
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-06T17:39:26.279Z",
+   "refAltApparent": 0.932
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-07T17:37:58.227Z",
+   "refAltApparent": 1.359
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-08T17:36:31.637Z",
+   "refAltApparent": 1.79
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-09T17:35:50.051Z",
+   "refAltApparent": 2.123
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-10T17:33:50.429Z",
+   "refAltApparent": 2.641
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-11T17:32:48.946Z",
+   "refAltApparent": 3.027
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-04-12T17:31:44.276Z",
+   "refAltApparent": 3.421
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-04-17T02:32:17.542Z",
+   "refAltApparent": 0.483
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-05-03T15:12:15.630Z",
+   "refAltApparent": 0.08
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-05-14T00:24:46.987Z",
+   "refAltApparent": 2.42
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-06-27T11:38:20.714Z",
+   "refAltApparent": 1.184
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-07-07T21:09:35.425Z",
+   "refAltApparent": -0.003
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-08-03T18:47:41.892Z",
+   "refAltApparent": 3.498
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-08-21T08:11:50.654Z",
+   "refAltApparent": 3.286
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-08-31T17:32:04.055Z",
+   "refAltApparent": 3.112
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-08-31T17:33:22.572Z",
+   "refAltApparent": -0.035
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-01T17:32:13.863Z",
+   "refAltApparent": 2.771
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-02T17:33:20.570Z",
+   "refAltApparent": 2.296
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-03T17:33:44.330Z",
+   "refAltApparent": 1.924
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-04T17:34:05.197Z",
+   "refAltApparent": 1.562
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-05T17:35:19.203Z",
+   "refAltApparent": 1.084
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-06T17:36:06.567Z",
+   "refAltApparent": 0.675
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-07T17:36:59.437Z",
+   "refAltApparent": 0.263
+  },
+  {
+   "point": "sued-west",
+   "body": "sun",
+   "peak": "2027-09-08T17:37:01.756Z",
+   "refAltApparent": -0.033
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-09-17T06:16:06.572Z",
+   "refAltApparent": 1.248
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-11-11T02:45:25.413Z",
+   "refAltApparent": 2.637
+  },
+  {
+   "point": "sued-west",
+   "body": "moon",
+   "peak": "2027-11-21T11:57:18.761Z",
+   "refAltApparent": 0.876
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2026-12-28T09:37:06.439Z",
+   "refAltApparent": 1.485
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-01-14T22:35:53.460Z",
+   "refAltApparent": 3.011
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-02-10T20:39:50.579Z",
+   "refAltApparent": 1.062
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-02-21T05:58:04.018Z",
+   "refAltApparent": 1.652
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-03T17:42:52.307Z",
+   "refAltApparent": -0.167
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-04T17:42:06.406Z",
+   "refAltApparent": 0.142
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-05T17:40:44.211Z",
+   "refAltApparent": 0.536
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-04-06T17:12:46.220Z",
+   "refAltApparent": 2.928
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-06T17:39:18.517Z",
+   "refAltApparent": 0.948
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-07T17:37:53.491Z",
+   "refAltApparent": 1.369
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-08T17:36:26.002Z",
+   "refAltApparent": 1.802
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-09T17:35:42.976Z",
+   "refAltApparent": 2.139
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-10T17:33:43.734Z",
+   "refAltApparent": 2.656
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-11T17:32:56.682Z",
+   "refAltApparent": 3.007
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-04-12T17:31:36.493Z",
+   "refAltApparent": 3.439
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-04-17T02:32:09.386Z",
+   "refAltApparent": 0.5
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-05-03T15:12:09.361Z",
+   "refAltApparent": 0.092
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-05-14T00:24:15.003Z",
+   "refAltApparent": 2.493
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-06-27T11:38:12.795Z",
+   "refAltApparent": 1.2
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-07-07T21:09:27.558Z",
+   "refAltApparent": 0.012
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-08-21T08:11:42.610Z",
+   "refAltApparent": 3.303
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-08-31T17:31:56.178Z",
+   "refAltApparent": 3.13
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-08-31T17:33:14.171Z",
+   "refAltApparent": -0.019
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-01T17:32:07.502Z",
+   "refAltApparent": 2.785
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-02T17:33:13.169Z",
+   "refAltApparent": 2.312
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-03T17:33:51.463Z",
+   "refAltApparent": 1.907
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-04T17:33:58.653Z",
+   "refAltApparent": 1.576
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-05T17:35:11.441Z",
+   "refAltApparent": 1.1
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-06T17:35:58.788Z",
+   "refAltApparent": 0.691
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-07T17:36:48.584Z",
+   "refAltApparent": 0.285
+  },
+  {
+   "point": "sued-mitte",
+   "body": "sun",
+   "peak": "2027-09-08T17:36:53.856Z",
+   "refAltApparent": -0.018
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-09-17T06:15:58.654Z",
+   "refAltApparent": 1.264
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-11-11T02:45:18.307Z",
+   "refAltApparent": 2.652
+  },
+  {
+   "point": "sued-mitte",
+   "body": "moon",
+   "peak": "2027-11-21T11:57:10.605Z",
+   "refAltApparent": 0.893
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2026-12-28T09:37:03.682Z",
+   "refAltApparent": 1.491
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-01-14T22:35:55.266Z",
+   "refAltApparent": 3.007
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-02-10T20:39:48.701Z",
+   "refAltApparent": 1.066
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-02-21T05:58:03.974Z",
+   "refAltApparent": 1.652
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-03T17:42:51.175Z",
+   "refAltApparent": -0.165
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-04T17:42:05.353Z",
+   "refAltApparent": 0.144
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-05T17:40:42.369Z",
+   "refAltApparent": 0.54
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-04-06T17:12:45.498Z",
+   "refAltApparent": 2.929
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-06T17:39:16.678Z",
+   "refAltApparent": 0.952
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-07T17:37:48.884Z",
+   "refAltApparent": 1.379
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-08T17:36:25.672Z",
+   "refAltApparent": 1.803
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-09T17:35:39.713Z",
+   "refAltApparent": 2.146
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-10T17:33:42.208Z",
+   "refAltApparent": 2.659
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-04-11T17:32:57.229Z",
+   "refAltApparent": 3.006
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-04-17T02:32:07.452Z",
+   "refAltApparent": 0.504
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-05-03T15:12:07.758Z",
+   "refAltApparent": 0.095
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-05-14T00:24:13.127Z",
+   "refAltApparent": 2.497
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-06-27T11:38:10.919Z",
+   "refAltApparent": 1.204
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-07-07T21:09:25.649Z",
+   "refAltApparent": 0.016
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-08-21T08:11:40.701Z",
+   "refAltApparent": 3.307
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-08-31T17:31:54.306Z",
+   "refAltApparent": 3.134
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-08-31T17:33:12.165Z",
+   "refAltApparent": -0.015
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-01T17:32:06.042Z",
+   "refAltApparent": 2.788
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-02T17:33:11.420Z",
+   "refAltApparent": 2.316
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-03T17:33:51.528Z",
+   "refAltApparent": 1.906
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-04T17:33:57.296Z",
+   "refAltApparent": 1.579
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-05T17:35:09.602Z",
+   "refAltApparent": 1.104
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-06T17:35:56.945Z",
+   "refAltApparent": 0.694
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-07T17:36:46.220Z",
+   "refAltApparent": 0.29
+  },
+  {
+   "point": "sued-ost",
+   "body": "sun",
+   "peak": "2027-09-08T17:36:51.962Z",
+   "refAltApparent": -0.014
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-09-17T06:15:56.778Z",
+   "refAltApparent": 1.268
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-11-11T02:45:16.712Z",
+   "refAltApparent": 2.655
+  },
+  {
+   "point": "sued-ost",
+   "body": "moon",
+   "peak": "2027-11-21T11:57:08.673Z",
+   "refAltApparent": 0.897
   }
  ]
 }

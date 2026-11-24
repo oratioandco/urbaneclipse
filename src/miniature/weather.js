@@ -7,6 +7,7 @@
  * launch needs their paid plan or the Deutscher Wetterdienst's open data instead. Forecasts
  * reach about 16 days ahead; recent days come from the same service's past forecasts.
  */
+import { getTimes } from 'suncalc';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 
@@ -15,18 +16,23 @@ const PAST_DAYS = 90;
 const HORIZON_KM = [60, 120, 220];
 const cache = new Map();
 
-/** Where the sun meets the horizon on a day: its azimuth at rise and at set, degrees. */
-function horizonAzimuths(dayStart) {
-  let rise = null;
-  let set = null;
-  let last = sampleBody('sun', new Date(dayStart), FERNSEHTURM.lat, FERNSEHTURM.lon);
-  for (let t = dayStart + 300_000; t <= dayStart + 86_400_000; t += 300_000) {
-    const p = sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
-    if (last.alt < 0 && p.alt >= 0) rise = { az: p.az, t };
-    if (last.alt >= 0 && p.alt < 0) set = { az: last.az, t };
-    last = p;
-  }
-  return { rise, set };
+/**
+ * Where and when the sun meets the horizon on a day: its azimuth and instant at rise and at
+ * set. `dayStart` is the day's Berlin midnight (ms).
+ *
+ * The times are suncalc's sunrise and sunset (upper limb on the horizon with standard
+ * refraction), which the audit of November 2026 measured within 3 s of JPL DE421. Before, this
+ * took the first 5-minute sample after the sun's centre had passed 0 degrees, and the weather
+ * line printed sunrise 3 to 7 minutes late (audit defect 5).
+ */
+export function horizonAzimuths(dayStart) {
+  // Noon is safely inside the day, also when it is 23 or 25 hours long.
+  const times = getTimes(new Date(dayStart + 43_200_000), FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const at = (when) => {
+    if (!when || !Number.isFinite(when.getTime())) return null;
+    return { az: sampleBody('sun', when, FERNSEHTURM.lat, FERNSEHTURM.lon).az, t: when.getTime() };
+  };
+  return { rise: at(times.sunrise), set: at(times.sunset) };
 }
 
 /** A point some kilometres out along a bearing, near enough on a sphere. */

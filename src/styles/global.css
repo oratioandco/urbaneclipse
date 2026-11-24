@@ -924,6 +924,24 @@ body,
   letter-spacing: 0.02em;
 }
 
+/* A pass so low that the skyline probably hides it: listed, but visibly not the equal of a
+   clear one. The words carry the meaning; the paler row backs them up. */
+.pv-list__item--low {
+  color: var(--pv-ink-50);
+}
+.pv-list__item--low .pv-list__ord {
+  color: var(--pv-ink-34);
+}
+.pv-list__low {
+  display: block;
+  color: var(--pv-warn);
+}
+.pv-list__note {
+  margin: 8px 0 4px;
+  font-size: 0.85em;
+  color: var(--pv-ink-50);
+}
+
 /* Weather verdict on a vantage row: a dot triageable at arm's length — sage = set the
    alarm, ochre = hole-in-the-clouds gamble, grey = stay home. Colour carries the
    glance; the three honest words beside it carry the meaning. */

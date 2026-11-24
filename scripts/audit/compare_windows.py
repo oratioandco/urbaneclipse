@@ -55,6 +55,8 @@ def compare(entries, landmark, label):
                 'refCoveredAtAppPeak': float(sil.covered_fraction(np.array([reflib.wrap180(az[0] - sil.bearing)]), alt, rad)[0]),
                 'offAtAppPeakDeg': off, 'offAtAppPeakM': off * math.pi / 180 * sil.dist, 'refAltAtAppPeak': float(alt[0]),
                 'refCrossHeightAgl': r['crossHeightAgl'],
+                'refAxisCrossing': iso(r['cross']) if r['cross'] else None, 'refPlateauStart': iso(r['plateauStart']), 'refPlateauEnd': iso(r['plateauEnd']),
+                'dPeakFromAxisCrossingS': (tp - r['cross']) if r['cross'] else None,
             })
         for i, r in enumerate(ref):
             if i not in used:

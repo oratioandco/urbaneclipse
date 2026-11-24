@@ -22,6 +22,8 @@ import { decodeStreets, findStreetPasses } from '../../src/lib/streets.ts';
 import { MIN_MOON_ILLUMINATION } from '../../src/lib/dailyPaths.ts';
 import { lightBands } from '../../src/lib/lightPhases.ts';
 import { berlinDayBounds } from '../../src/lib/berlinTime.ts';
+import { moonTimesBetween } from '../../src/lib/moonTimes.ts';
+import { horizonAzimuths } from '../../src/miniature/weather.js';
 import { findShots, gridConvergenceDeg } from '../../src/miniature/towerShots.js';
 import { TARGETS } from '../../src/miniature/targets.js';
 import { sceneFromLatLon, latLonFromScene } from '../../src/miniature/eye.js';
@@ -154,31 +156,26 @@ const streetPasses = streets
 
 // 6. Sun and moon times and light bands on chosen days (solstices, equinoxes, clock changes, named moon dates).
 const days = ['2026-12-21', '2027-01-14', '2027-03-20', '2027-03-27', '2027-03-28', '2027-03-29', '2027-06-21', '2027-09-23', '2027-09-27', '2027-10-30', '2027-10-31', '2027-11-01'];
-/** The sunrise and sunset the /plan/ weather line prints. Copied from horizonAzimuths in
- * src/miniature/weather.js, which does not export it: 5-minute samples, apparent centre at 0 deg. */
+/** The sunrise and sunset the /plan/ weather line prints (weather.js exports it since the fix of defect 5). */
 function shownRiseSet(dayStart: number) {
-  let rise: number | null = null;
-  let set: number | null = null;
-  let last = sampleBody('sun', new Date(dayStart), FERNSEHTURM.lat, FERNSEHTURM.lon);
-  for (let t = dayStart + 300_000; t <= dayStart + 86_400_000; t += 300_000) {
-    const p = sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
-    if (last.alt < 0 && p.alt >= 0) rise = t;
-    if (last.alt >= 0 && p.alt < 0) set = t;
-    last = p;
-  }
-  return { rise: rise && iso(rise), set: set && iso(set) };
+  const { rise, set } = horizonAzimuths(dayStart) as { rise: { t: number } | null; set: { t: number } | null };
+  return { rise: rise && iso(rise.t), set: set && iso(set.t) };
 }
 const dayTimes = days.map((day) => {
   const noon = new Date(`${day}T11:00:00Z`);
   const t = getTimes(noon, FERNSEHTURM.lat, FERNSEHTURM.lon);
   const m = getMoonTimes(new Date(`${day}T00:00:00Z`), FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const bounds = berlinDayBounds(day);
+  const berlinMoon = moonTimesBetween(bounds.start.getTime(), bounds.end.getTime(), FERNSEHTURM.lat, FERNSEHTURM.lon);
   const from = Date.parse(`${day}T00:00:00Z`) - 2 * 3600_000;
   return {
     day,
     berlinMidnight: iso(berlinDayBounds(day).start),
+    berlinMidnightNext: iso(berlinDayBounds(day).end),
     weatherLine: shownRiseSet(berlinDayBounds(day).start.getTime()),
     sun: Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v instanceof Date ? iso(v) : v])),
     moon: Object.fromEntries(Object.entries(m).map(([k, v]) => [k, v instanceof Date ? iso(v) : v])),
+    berlinDayMoon: { rises: berlinMoon.rises.map(iso), sets: berlinMoon.sets.map(iso) },
     bands: lightBands(from, from + 28 * 3600_000, FERNSEHTURM.lat, FERNSEHTURM.lon).map((b) => ({ phase: b.phase, from: iso(b.from), to: iso(b.to) })),
   };
 });

@@ -236,5 +236,8 @@ def find_transits(eye_lat, eye_lon, eye_orthometric, landmark, body, start_s, en
             'cross': cross,
             'crossAlt': float(np.interp(cross, tf, altf)) if cross else None,
             'crossHeightAgl': float(sil.h_of(np.interp(cross, tf, altf))) if cross else None,
+            # The stretch over which the largest cover is held (one sample long for an ordinary pass).
+            'plateauStart': float(tf[top[0]]),
+            'plateauEnd': float(tf[top[-1]]),
         })
     return sil, out

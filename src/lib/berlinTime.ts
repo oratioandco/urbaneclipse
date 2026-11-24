@@ -97,3 +97,22 @@ export function formatDay(d: Date): string {
 export function formatLongDay(d: Date): string {
   return longDayFormatter.format(d);
 }
+
+const germanDayFormatter = new Intl.DateTimeFormat('de-DE', { timeZone: ZONE, weekday: 'short', day: 'numeric', month: 'short' });
+const germanTimeFormatter = new Intl.DateTimeFormat('de-DE', { timeZone: ZONE, hourCycle: 'h23', hour: '2-digit', minute: '2-digit' });
+
+/**
+ * "So., 28. März, 19:35" in Berlin time, wherever the browser is. Panel 05 printed these in
+ * the browser's own zone without saying so (audit defect 7): an hour or more wrong for anyone
+ * planning from abroad.
+ */
+export function formatWhenDe(d: Date): string {
+  return `${germanDayFormatter.format(d)}, ${germanTimeFormatter.format(d)}`;
+}
+
+/** "MEZ" or "MESZ": which of Berlin's two clocks is running at an instant. */
+export function berlinZoneName(d: Date): 'MEZ' | 'MESZ' {
+  const w = wallClock(d);
+  const offsetMinutes = (Date.UTC(w.y, w.mo - 1, w.da, w.h, w.mi, w.s) - Math.floor(d.getTime() / 1000) * 1000) / 60_000;
+  return offsetMinutes >= 120 ? 'MESZ' : 'MEZ';
+}

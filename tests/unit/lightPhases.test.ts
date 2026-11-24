@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getTimes } from 'suncalc';
 import { berlinDayBounds, berlinInstant } from '../../src/lib/berlinTime';
-import { bandAt, lightBands, lightGradientStops, lightPhaseAt, lightPhaseOf } from '../../src/lib/lightPhases';
+import { HORIZON_REFRACTION_DEG, airlessBelowHorizon, bandAt, lightBands, lightGradientStops, lightPhaseAt, lightPhaseOf } from '../../src/lib/lightPhases';
 
 const LAT = 52.52;
 const LON = 13.41;
@@ -11,14 +11,22 @@ const dayBands = (day: string) => {
 };
 
 describe('lightPhaseAt', () => {
-  it('uses the photography boundaries', () => {
+  it('uses the photography boundaries, on the airless altitude under the horizon', () => {
+    // The app's altitudes carry suncalc's refraction, a constant 0.484 deg under the horizon.
+    const down = (airless: number) => airless + HORIZON_REFRACTION_DEG;
+    expect(HORIZON_REFRACTION_DEG).toBeCloseTo(0.484, 3);
     expect(lightPhaseAt(6)).toBe('day');
     expect(lightPhaseAt(5.9)).toBe('golden');
-    expect(lightPhaseAt(-4)).toBe('golden');
-    expect(lightPhaseAt(-4.1)).toBe('blue');
-    expect(lightPhaseAt(-8)).toBe('blue');
-    expect(lightPhaseAt(-8.1)).toBe('twilight');
-    expect(lightPhaseAt(-12.1)).toBe('night');
+    expect(lightPhaseAt(down(-4))).toBe('golden');
+    expect(lightPhaseAt(down(-4.01))).toBe('blue');
+    expect(lightPhaseAt(down(-8))).toBe('blue');
+    expect(lightPhaseAt(down(-8.01))).toBe('twilight');
+    expect(lightPhaseAt(down(-12))).toBe('twilight');
+    expect(lightPhaseAt(down(-12.01))).toBe('night');
+    // Above the horizon nothing is taken off, and the two meet without a jump.
+    expect(airlessBelowHorizon(2)).toBe(2);
+    expect(airlessBelowHorizon(HORIZON_REFRACTION_DEG)).toBe(HORIZON_REFRACTION_DEG);
+    expect(airlessBelowHorizon(HORIZON_REFRACTION_DEG - 1e-9)).toBeCloseTo(0, 6);
   });
 });
 

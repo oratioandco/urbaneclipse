@@ -27,6 +27,11 @@ that shares no code with the app. Branch `claude/accuracy-audit-929e89`, cut fro
 that moon days are "±2 Tage genau", which is no longer true and undersells the app (defect 8).
 The rest can follow.
 
+**Update, 24 November 2026** (branch `claude/accuracy-fixes-7368f7`): defects 1, 3, 5, 7, 8 and 9
+are fixed and 10 and 13 partly, each with a test against the reference; see the dated note under
+each defect. Two things still stand between this and "yes" on the clock-change days: the `/plan/`
+day view's own timeline and the moon header, both in files another session owns.
+
 **A correction to the handoff:** it says suncalc's lunar theory is 0.3° off and misses the moon
 on 14 January and 27 September 2027. The installed suncalc 2.0.1 uses the full Meeus chapter 47
 series with parallax and delta-T. Measured here it is within 0.009° of JPL DE421 all year. It
@@ -157,7 +162,9 @@ clock (defect 1), the weather-line sunrise (defect 5) and the light bands (defec
 
 ## Defects, ranked
 
-Each has a case you can reproduce. "Fixed" means fixed on this branch with a test.
+Each has a case you can reproduce. "Fixed" means fixed on this branch with a test. Notes dated
+2026-11-24 are from the follow-up branch `claude/accuracy-fixes-7368f7`; its numbers are from a full
+re-run of `scripts/audit/run.sh` before and after.
 
 **1. `/plan/`: picking a shot on a clock-change day sets the scene one hour off.** High, two
 days a year. `clock.js` `setMinute` stores minutes *elapsed* since Berlin midnight; `instant()`
@@ -169,6 +176,16 @@ between 01:00 and 03:00, and `plan.js`, `daylist.js`, `sparkstrip.js`, `planmode
 build a day as 24 hours. Fix: let `setMinute` convert through Berlin wall time
 (`src/lib/berlinTime.ts` already does this correctly with two passes), and take day ends from
 the next Berlin midnight. Not fixed: `clock.js` is not solver code.
+**Fixed on 2026-11-24** in `clock.js`, with the arithmetic in the new `berlinClock.js`: the slider
+is wall-clock minutes in both directions. A 19:35 shot on 28 March set the slider to 18:35 (60
+minutes off); it now sets 19:35 and the same instant, likewise 16:40 on 31 October. A time in the
+missing hour moves to what the clock reads (02:30 becomes 03:30); a shot in the doubled hour keeps
+its own instant. Tests: `clockChange.test.ts`, `clockModule.test.ts` (the real module with a
+stand-in page), and the built page checked in Chrome. **Still open, in the panel's files:**
+`dayview.js`, `daylist.js`, `sparkstrip.js`, `plan.js`, `planmode.js`, `verdict.js` and `dates.js`
+still build a day as 24 hours and turn an instant into minutes by subtracting midnight, so a shot
+picked from the day view's own timeline is still an hour off on those two days. `clock.js` now
+exports `instantOfMinute`, `minuteOf` and `dayEnd` for them.
 
 **2. `/plan/` date search measured a true azimuth against grid north. Fixed.** Medium. The scene
 is a transverse Mercator centred on the tower, so its north is the tower's; the search sampled
@@ -186,37 +203,67 @@ Frankfurter Allee from the same bridge. I could not confirm against the building
 not in this checkout), so this is likely, not proven. Fix: gate the calendar on the skyline
 toward the tower (the Siegessäule preview's machinery, with the surface model rather than bare
 earth), or label these rows "am Horizont, Sicht prüfen".
+**Fixed on 2026-11-24 by labelling.** A window with the disc's centre under 0.8° is listed paler
+with "tief, Scheibenmitte 0,1° hoch · wahrscheinlich von Häusern verdeckt", counted in the summary
+and never offered as "Nächster Termin". 0.8° is the street data's 0.5° skyline plus the 0.27° disc:
+below it part of the disc is behind the roofs. The reference puts 61 of the 203 windows under that
+line on this run (60 when audited; one sits on it) and the panel marks the same ones, bar those
+within 0.1° of the line (`panel05.test.ts`, `lib/lowPass.ts`). Still a likelihood: the building
+model has not been run for the bridge.
 
 **4. `/plan/` lists one whole minute for a pass of two to four.** Medium to low. Up to 30 s of
 rounding, and the chosen minute is the closest to the sphere, not the axis crossing. Case:
 bridge, 4 September 2027: listed 19:33 (before the fix), axis crossing 19:34:19. Fix: show the
 pass as "19:32 to 19:35" and refine the best moment to seconds, as panel 05 does.
+**Left on 2026-11-24:** the row is drawn in `dates.js`, one of the panel session's files.
 
 **5. The weather line's sunrise is 3 to 7 minutes late; sunset is 2 minutes either way.** Low
 to medium. `weather.js` takes the first 5-minute sample after the sun's centre passes 0°.
 Case: 21 June 2027, sunrise shown 7 min after the reference; 27 March 2027, 6 min 40 s. Fix:
 use suncalc `getTimes` (within 3 s).
+**Fixed on 2026-11-24:** `horizonAzimuths` uses suncalc's sunrise and sunset. Sunrise was 178 to
+418 s late and is now within 2 s; sunset was 126 s early to 114 s late and is now within 3 s, on
+all twelve days (`results/streets_times.json`, test in `accuracyAudit.test.ts`).
 
 **6. The weather grades disagree with each other and with the sky a photographer cares about.**
 Medium to low, see the next section.
+**Left on 2026-11-24** to the session that owns the `/plan/` panel, which is unifying the grades.
 
 **7. Panel 05 prints times in the browser's time zone with no label.** Low for Berliners, an
 hour or more wrong for anyone planning from abroad. `VantageCalendar.tsx` `formatWhen`. Fix:
 `timeZone: 'Europe/Berlin'`, as `/plan/` and `/map` do.
+**Fixed on 2026-11-24:** `formatWhenDe` in `lib/berlinTime.ts` prints Europe/Berlin, the panel says
+"Alle Uhrzeiten in Berliner Zeit (MEZ/MESZ)" and the next date carries MEZ or MESZ. Checked with
+the device set to New York, Tokyo and UTC (`panel05.test.ts`) and in Chrome with a New York clock:
+the list is identical. Before, 19:35 printed as 13:35 there.
 
 **8. Panel 05 says "Mond-Tage sind auf ±2 Tage genau (Mondtheorie von suncalc)".** Low, but it
 is a false statement about accuracy. Moon windows are within 20 s (90 %). Remove the sentence.
+**Fixed on 2026-11-24:** the sentence is gone from both targets; the panel now says sun and moon
+times are equally exact.
 
 **9. Blue hour and twilight start 3.5 to 5 minutes late (11 minutes for night at midsummer).**
 Low. Below the horizon the app still adds 0.48° of refraction, so "4° down" is really 4.48°.
 Case: 20 March 2027, blue hour starts 4 min 6 s after the sun's centre reaches −4°. Fix: use
 the unrefracted altitude below the horizon. Expected-fail test.
+**Fixed on 2026-11-24:** `lightPhaseAt` takes suncalc's constant 0.484° off under the horizon, and
+`lightBands` narrows each edge to a second instead of leaving it on the sampling step. Evening
+edges against the reference, twelve days: golden to blue 207 to 312 s late before, 2 to 4 s now;
+blue to twilight 207 to 396 s, now 2 to 4 s; twilight to night 204 to 666 s, now 2 to 6 s. The
+expected-fail test is a plain test.
 
 **10. Siegessäule preview: the listed time wanders when the whole disc is hidden.** Low,
 preview only. From 718 m the hall covers the disc completely for minutes and the "peak" is any
 moment of that plateau: up to 115 s and 0.46° (5.7 m) from the centred moment. Four windows are
 only the sun grazing the 1.1 m terrace, up to 2° beside the column. Fix: among equal cover,
 take the moment nearest the axis; leave the terrace out of the outline. Expected-fail test.
+**Partly fixed on 2026-11-24:** among fully covered instants the window now takes the one nearest
+the axis (`centreOnPlateau` in `vantageWindows.ts`). Against the reference's axis crossing, the six
+passes from "west" whose crossing lies inside the hidden stretch were up to 140 s out and are now
+within 21 s (median 2 s). The reference's own "peak" on such a pass is the middle of the stretch in
+time, not the axis crossing, so the test now compares with the crossing, which the reference
+reports since this run. Not done: the terrace is still part of the outline, so the four grazes
+remain. The expected-fail test is a plain test.
 
 **11. Solid landmarks: "edge" was a bounding-box test. Fixed.** Low. 23 of 365 gate and column
 shots had the disc passing clear. Now the disc's own curve is tested at each height; 7 remain,
@@ -226,16 +273,25 @@ all within 0.05° of touching.
 of meaning. The gate is modelled as a 25.8 m round solid; from 190 m the sun simply sets behind
 a building. The disc's centre is up to 4° from the axis at the listed minute. Consider listing
 only the quadriga band.
+**Left on 2026-11-24:** a decision about what the product should list, not an error to correct.
 
 **13. The moon header misses a moonrise or moonset in the first hour or two after midnight.**
 Low. suncalc scans the UTC day. Case: 27 March 2027, the moon rises at 00:18 Berlin time; the
 header shows only the set. Expected-fail test.
+**Partly fixed on 2026-11-24:** `moonTimesBetween` in the new `lib/moonTimes.ts` finds every rise
+and set inside a Berlin day: on the twelve days all 23 of the reference's are found within 5 s,
+the 00:18 rise included, and the set that suncalc reported for 14 January (really 00:01 on the
+15th) is no longer shown. The expected-fail test is a plain test. **Still open:** the header in
+`planmode.js` (the panel's file) has to call it:
+`moonTimesBetween(from, dateDayStart(tomorrow), FERNSEHTURM.lat, FERNSEHTURM.lon)`.
 
 **14. Small inconsistencies.** Low. `/plan/` uses a fixed disc (0.27° radius) where the true
 one is 0.245 to 0.279°; the sphere centre is 213 m in `dailyPaths.ts` and 213.78 m in
 `landmarks.ts`; its top 229 m against 229.78 m; eye height 1.5 m against 1.6 m. Each is under
 0.01° from the bridge and up to 0.03° from 1.3 km. `findStreetPasses` keeps one pass per UTC
 day, which could split a moon pass at 01:00 or 02:00 Berlin time (none in the sampled year).
+**Left on 2026-11-24:** each is under 0.01° from the bridge, no reference case fails on them, and
+the constants feed the day list that the panel session is working on.
 
 ## Attacking the edges
 
@@ -299,4 +355,6 @@ npx vitest run tests/unit/accuracyAudit.test.ts
 ```
 
 The numbers above are in `scripts/audit/results/`. The tests hold the app to the reference in
-`tests/fixtures/accuracy-reference.json`: 12 pass, 3 are expected failures (defects 9, 10, 13).
+`tests/fixtures/accuracy-reference.json`: 12 passed and 3 were expected failures (defects 9, 10, 13)
+when audited; since 2026-11-24 all pass, with one more for the weather line, and
+`clockChange.test.ts`, `clockModule.test.ts` and `panel05.test.ts` cover defects 1, 3 and 7.

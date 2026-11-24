@@ -18,11 +18,34 @@ export const LIGHT_PHASE_NAMES: Record<LightPhase, string> = {
   day: 'Day',
 };
 
+/**
+ * What suncalc adds to a body under the horizon: its refraction formula (Meeus 16.4) held at
+ * its value for 0 degrees. Real refraction means nothing for a sun you cannot see, and the
+ * twilight boundaries are defined on the airless altitude.
+ */
+export const HORIZON_REFRACTION_DEG = (0.0002967 / Math.tan(0.00312536 / 0.08901179)) * (180 / Math.PI);
+
+/**
+ * The airless altitude of a body under the horizon, from the apparent altitude the app works
+ * with (`sampleBody`). Above the horizon the altitude is returned as it is: there the
+ * refraction is real and the golden hour's upper edge is about the light you see.
+ */
+export function airlessBelowHorizon(apparentAltitudeDeg: number): number {
+  return apparentAltitudeDeg < HORIZON_REFRACTION_DEG ? apparentAltitudeDeg - HORIZON_REFRACTION_DEG : apparentAltitudeDeg;
+}
+
+/**
+ * The phase for the sun's apparent altitude, as `sampleBody` gives it. The boundaries under
+ * the horizon (4, 8 and 12 degrees down) are airless altitudes; before November 2026 they
+ * were applied to the refracted figure, so "4 degrees down" was really 4.48 and blue hour,
+ * twilight and night began 3.5 to 5 minutes late (audit defect 9).
+ */
 export function lightPhaseAt(sunAltitudeDeg: number): LightPhase {
-  if (sunAltitudeDeg >= 6) return 'day';
-  if (sunAltitudeDeg >= -4) return 'golden';
-  if (sunAltitudeDeg >= -8) return 'blue';
-  if (sunAltitudeDeg >= -12) return 'twilight';
+  const alt = airlessBelowHorizon(sunAltitudeDeg);
+  if (alt >= 6) return 'day';
+  if (alt >= -4) return 'golden';
+  if (alt >= -8) return 'blue';
+  if (alt >= -12) return 'twilight';
   return 'night';
 }
 
@@ -37,15 +60,36 @@ export interface LightBand {
   to: number;
 }
 
-/** Consecutive phases across a stretch of time, covering it exactly. */
+/**
+ * Consecutive phases across a stretch of time, covering it exactly. `stepMs` is only how
+ * often the sun is sampled to notice a change; each edge is then narrowed to a second, so a
+ * coarse step no longer draws every band up to a step late.
+ */
 export function lightBands(from: number, to: number, lat: number, lon: number, stepMs = 60_000): LightBand[] {
   if (!(stepMs > 0)) throw new RangeError(`stepMs must be positive, received ${stepMs}`);
-  const bands: LightBand[] = [];
-  for (let t = from; t < to; t += stepMs) {
-    const phase = lightPhaseOf(t, lat, lon);
-    const last = bands[bands.length - 1];
-    if (last?.phase === phase) last.to = Math.min(t + stepMs, to);
-    else bands.push({ phase, from: t, to: Math.min(t + stepMs, to) });
+  if (!(to > from)) return [];
+  let at = from;
+  let phase = lightPhaseOf(from, lat, lon);
+  const bands: LightBand[] = [{ phase, from, to: from }];
+  for (let t = Math.min(from + stepMs, to); ; t = Math.min(t + stepMs, to)) {
+    const next = lightPhaseOf(t, lat, lon);
+    // Usually one edge in a step; at midsummer two can fall close together, so look again.
+    while (phase !== next) {
+      let lo = at;
+      let hi = t;
+      while (hi - lo > 1000) {
+        const mid = Math.round((lo + hi) / 2);
+        if (lightPhaseOf(mid, lat, lon) === phase) lo = mid;
+        else hi = mid;
+      }
+      bands[bands.length - 1]!.to = hi;
+      phase = lightPhaseOf(hi, lat, lon);
+      bands.push({ phase, from: hi, to: hi });
+      at = hi;
+    }
+    bands[bands.length - 1]!.to = t;
+    at = t;
+    if (t >= to) break;
   }
   return bands;
 }
