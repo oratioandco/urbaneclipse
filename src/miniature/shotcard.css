@@ -75,9 +75,12 @@ button.shotcard { cursor: pointer; }
 /* ticket: one line at eye level. The shot's frame small, its minute, its place, its verdict. */
 .shotcard--ticket { display: flex; align-items: center; gap: var(--gap); min-height: var(--control); }
 .shotcard--ticket .sc-frame { flex: none; width: 36px; height: 36px; border-radius: var(--radius-s); }
-.shotcard--ticket .sc-meta { order: 1; flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; }
-.shotcard--ticket .sc-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
-.shotcard--ticket .sc-what { font-size: var(--text-s); color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+/* One line where it fits. Where it does not (a phone, a long name), what stands after the name
+   goes to a second line whole: nothing is cut mid-word, and the time is never hidden. */
+.shotcard--ticket .sc-meta { order: 1; flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; white-space: nowrap; overflow: hidden; }
+.shotcard--ticket .sc-time { flex: none; }
+.shotcard--ticket .sc-name { font-weight: 600; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.shotcard--ticket .sc-what { font-size: var(--text-s); color: var(--muted); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .shotcard--ticket .sc-verdict { order: 2; flex: none; }
 .shotcard--ticket .sc-why, .shotcard--ticket .sc-title, .shotcard--ticket .sc-detail { display: none; }
 

@@ -211,7 +211,8 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     drawGroundDisc(spot.x, spot.y, spot.z, 11 * metresPerPx(here.w), project, PATH_CSS[spot.body], 0.28);
     // Where to stand for the sphere: the tower mark of marks.js, as on the timeline.
     drawMark(ctx, `tower-${spot.body}`, here.x, here.y, 24);
-    taps.push({ kind: 'spot', x: here.x - 16, y: here.y - 16, w: 32, h: 32, body: spot.body, t: spot.t });
+    // A landmark's stand point (plan.js) opens its own shot; the tower's goes to its line.
+    taps.push({ kind: spot.kind ?? 'spot', x: here.x - 16, y: here.y - 16, w: 32, h: 32, body: spot.body, t: spot.t, target: spot.target });
   }
   if (drop && project(drop.x, drop.y, drop.z, here)) drawStandDot(drop.x, drop.y, drop.z, metresPerPx(here.w), project, night, here);
 
@@ -621,7 +622,13 @@ function drawViewfinder(frame, thirds, caption) {
     // Narrow frames drop the words first, then the last figures.
     let text = caption;
     if (ctx.measureText(text).width > w - 24) text = text.replace(' height in frame:', '');
-    while (text.length > 12 && ctx.measureText(text).width > w - 24) text = text.slice(0, text.lastIndexOf(',') > 0 ? text.lastIndexOf(',') : -2);
+    if (ctx.measureText(text).width > w - 24) text = text.replace('Brandenburger Tor', 'Brandenb. Tor');
+    // Whole parts go, at the commas and then at the dots between: never half a word.
+    while (text.length > 12 && ctx.measureText(text).width > w - 24) {
+      const comma = text.lastIndexOf(',');
+      const dot = text.lastIndexOf(' · ');
+      text = text.slice(0, comma > 0 ? comma : dot > 0 ? dot : -2);
+    }
     ctx.fillText(text, x + 12, y + h - 10);
     ctx.shadowBlur = 0;
     ctx.shadowColor = 'transparent';

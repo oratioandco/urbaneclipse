@@ -11,7 +11,9 @@ import { decodeViewshed } from '../../src/lib/viewshed';
 import { planLink } from '../../src/home/grid.js';
 import { berlinDayStart } from '../../src/miniature/berlinClock.js';
 import { collectRows, computeLandmarkPasses, dayShots, findShot, shotKey, withoutContinued } from '../../src/miniature/dayShots.js';
-import { LANDMARK_CHECK, landmarkRows, landmarkScore, lensFor } from '../../src/miniature/landmarkShots.js';
+import { LANDMARK_CHECK, figureView, landmarkRows, landmarkScore, lensFor } from '../../src/miniature/landmarkShots.js';
+import { sceneFromLatLon } from '../../src/miniature/eye.js';
+import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { SPRITE } from '../../src/miniature/shotCard.js';
 
 const load = (id: string) => {
@@ -215,5 +217,49 @@ describe('how many there are', () => {
     // 13 to 18 March from Unter den Linden, 31 March from Straße des 17. Juni; the single
     // minute of 19 March is not a pass.
     expect(gate).toBe(7);
+  });
+});
+
+describe('at eye level: the open landmark shot seen in the planner’s scene (figureView)', () => {
+  // The scene samples the sun at the TV tower and measures bearings from grid north; a row's
+  // spot is true geodesy. The two must agree, or the planner's line would deny its own shot.
+  const from = berlinDayStart('2027-03-17');
+  const rows: Row[] = dayShots(from, { sheds });
+  const cases = rows.filter((row) => row.target && row.body === 'sun');
+  const seen = (row: Row, t: number) => {
+    const target = FIGURE_TARGETS.find((item) => item.id === row.target)!;
+    const [x, z] = sceneFromLatLon(target.landmark.lat, target.landmark.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
+    const [ex, ez] = sceneFromLatLon(row.at[0], row.at[1], FERNSEHTURM.lat, FERNSEHTURM.lon);
+    // The eye on the strip's DGM1 ground, as a scene height (zero at 34.6 m).
+    const pass = figurePasses(target, 'sun', from, from + 86_400_000)[0]!;
+    const eye = { x: ex, y: pass.best.groundM - 34.6 + 1.6, z: ez };
+    return figureView(target, eye, { x, z }, sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon));
+  };
+
+  it('at the row’s spot and minute the disc is on the figure', () => {
+    expect(cases).toHaveLength(2);
+    for (const row of cases) {
+      const view = seen(row, row.t);
+      expect(view.covered).toBe(true);
+      // The flat scene and the tower's sun differ from the row's own geometry by under 0.05°.
+      expect(Math.abs(view.across)).toBeLessThan(0.05);
+      expect(Math.abs(view.up)).toBeLessThan(0.05);
+      expect(Math.abs(view.distanceM - row.distanceM)).toBeLessThan(2);
+      expect(view.discShare).toBeCloseTo(row.discShare, 1);
+    }
+  });
+
+  it('five minutes on it is not, and says which way it went', () => {
+    for (const row of cases) {
+      const view = seen(row, row.t + 5 * 60_000);
+      expect(view.covered).toBe(false);
+      // The evening sun moves right and down.
+      expect(view.across).toBeGreaterThan(0.5);
+      expect(view.up).toBeLessThan(-0.3);
+    }
+  });
+
+  it('every row carries a name short enough for the ticket', () => {
+    expect(cases.map((row) => row.shortest).sort()).toEqual(['Brandenb. Tor', 'Siegessäule']);
   });
 });

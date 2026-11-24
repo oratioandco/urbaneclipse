@@ -18,6 +18,7 @@
  *   title      the shot in a sentence ("Sun behind the TV tower's sphere")
  *   short      the place ("TV tower", "Hohenzollerndamm")
  *   stand      tower shots: where to stand ("5.3 km SE")
+ *   shortest   the place where a line has no room for `short` ("Brandenb. Tor"); the ticket uses it
  *   caution    what is not checked, in two words ("trees unchecked"); shown on the card size
  *   detail     the list row's small print
  * `verdict` is what `shotVerdict` (verdict.js) returns: its word and reason are shown, its
@@ -346,7 +347,9 @@ export function shotCard(shot, verdict = null, { size = 'card', tag = 'button', 
   // A shot with something unchecked says so on the card, which shows no small print; the
   // rows have it in their detail, and the ticket's one line has no room for it.
   what.append(shot.caution && size === 'card' ? `${shotWhat(shot)} \u00b7 ${shot.caution}` : shotWhat(shot));
-  const name = span('sc-name', breakable(shortStreet(shot.short ?? shot.title ?? '')));
+  // The ticket is one line: a name too long for it is shortened on purpose (`shortest`), so
+  // that no ellipsis has to eat it, the time or the distance.
+  const name = span('sc-name', size === 'ticket' && shot.shortest ? shot.shortest : breakable(shortStreet(shot.short ?? shot.title ?? '')));
   name.lang = 'de';
   const meta = span('sc-meta');
   meta.append(span('sc-time', formatClock(shot.t)), name, span('sc-title', shot.title ?? ''), what, span('sc-detail', shot.detail ?? ''));
