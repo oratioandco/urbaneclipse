@@ -35,11 +35,13 @@ The panel's state can be opened from the address too, without storing it: `sheet
 
 One block of markup in `plan.astro` (`.bottom` > `.panel`), three shapes, all in `miniature.css`:
 
-- **Phone:** a bottom sheet at one of three heights. Peek is one line, the next shot and a
-  countdown (`peek.js`); half is the day view (`dayview.js`); full adds planning, the coming
-  days (`planmode.js`, `sparkstrip.js`) and this day's list (`daylist.js`). `sheet.js` does the
-  dragging, snapping, Escape, back button, the drop to peek when the map moves, and remembers
-  the height; its rules are pure and live in `sheetHeights.js`.
+- **Phone:** a bottom sheet at one of three heights. Peek is one line, the next shot in full
+  (`peek.js`, wordings in `shotWords.js`). Under it, two views behind the tabs, one timeline at
+  a time: "Next 3 days" (the overview strips of `sparkstrip.js` and each day's best shots,
+  `planmode.js`) and "This day" (the day view, `dayview.js`, which is also the time control,
+  and the day's list, `daylist.js`). Half shows the top of the view that is up, full the list
+  under it. `sheet.js` does the dragging, snapping, Escape, back button, the drop to peek when
+  the map moves, and remembers the height; its rules are pure and live in `sheetHeights.js`.
 - **900 px and wider:** the same content as a side panel that folds to a rail (`sheet.js`).
 - **Eye level:** a floating ticket: what lines up, the time scrubber, and the camera's rows
   behind "More"; the minimap waits behind a corner button (`chrome.js`).
@@ -47,7 +49,9 @@ One block of markup in `plan.astro` (`.bottom` > `.panel`), three shapes, all in
 The time lives in the `#time` input, as it always has. The day view's thumb writes to it and
 fires its `input` event, so `clock.js`, `lighting.js` and `link.js` follow; the input stays over
 the timeline, unseen, as the slider for keyboards and screen readers. Verdicts are words with a
-reason (`verdict.js`), never a bare dot. The day view's arithmetic is in `dayTimeline.js`.
+reason, never a bare dot, and every one comes from the one grade, `assess` in `verdict.js`.
+Sun, moon, marks, icons and tooltips come from `bodies.js`, `marks.js`, `icons.js` and
+`controlNames.js` (see `docs/ICONS.md`); `bodyAt.js` and `shotPicture.js` put them to use. The day view's arithmetic is in `dayTimeline.js`.
 All three pure files are tested in `tests/unit/panel.test.ts`. `main.js` reads `.bottom`'s
 height as what covers the map from below, so `.bottom` is only ever as tall as what really
 sits at the bottom of the screen (zero for the side panel).
