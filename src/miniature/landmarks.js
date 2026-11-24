@@ -782,8 +782,10 @@ const FIELD_GROUND = [
 ];
 
 function fieldGroundAt(x, z) {
-  const gx = THREE.MathUtils.clamp((x + 2160) / 26.67, 0, 6.999);
-  const gz = THREE.MathUtils.clamp((z - 695) / 25.0, 0, 6.999);
+  // Seven probes a side are six cells: past the last probe (slabs at z over 845) the edge
+  // value holds. Clamping to 6.999 read a probe that is not there and gave NaN heights.
+  const gx = THREE.MathUtils.clamp((x + 2160) / 26.67, 0, 5.999);
+  const gz = THREE.MathUtils.clamp((z - 695) / 25.0, 0, 5.999);
   const i = Math.floor(gx), j = Math.floor(gz);
   const fx = gx - i, fz = gz - j;
   const g = FIELD_GROUND;

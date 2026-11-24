@@ -305,7 +305,7 @@ or inferred.
 
 | | Finding | State | File |
 |---|---|---|---|
-| a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | suspected `landmarks.js` or `moleculeManShape.js`; find the geometry with NaN positions |
+| a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | `landmarks.js` `fieldGroundAt`. **Fixed on 2026-11-24**: it was the Holocaust memorial; eight slabs at the field's south edge read a ground probe past the end of the 7x7 grid and got NaN heights (and were not drawn). Re-run: no NaN position in the scene, no console error |
 | b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute (not re-run with a faked clock) | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
 | c | A failed forecast is not asked for again within 65 s and has no "try again" | verified, 3 requests then none | `weather.js`, `forecast.js` |
 | d | "+ 1 min" at 11:59 PM does nothing and is not disabled; typing "24:00" gives 11:59 PM; "noon" is ignored | verified | `dayview.js`, `time.js` |
