@@ -410,6 +410,12 @@ days (finding 2) and between `/plan/` and `/map` (finding 6).
    `dan-1-marks-timeline-phone3.png`); today's morning on a phone is a knot of blue bars and
    orange rings (`uc-phone-05-uc2-this-day.png`). Suggested: stack a cluster's marks upward, or
    show one mark with a count.
+   **Fixed on 2026-11-24**: on the day timeline three or more marks within a mark's width
+   (11 px) of each other keep their ticks and share one sign with their number, in the body's
+   colour, or in ink when sun and moon are mixed (`clusterMarks`, `clusterBody` in `marks.js`).
+   Pairs stay two marks. Renders opened for 31 October ("6", "7", "3") and 24 November
+   ("6", "4", "6") at 390 px. Test: `tests/unit/miniatureIcons.test.ts`. The three-day strips
+   are unchanged.
 2. **The arrow's tip is unmistakable: yes.** A long kite with a notched tail, the front half in
    the body's colour (`dan-2-arrow-closeup-phone-day.png`). At night the tail is white and
    brighter than the blue tip (`dan-2-arrow-closeup-night.png`); the shape still carries it. The
