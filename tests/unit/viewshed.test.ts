@@ -6,6 +6,7 @@ import {
   VIEW_BLOCKED,
   VIEW_BUILDING,
   VIEW_VISIBLE,
+  applySceneMask,
   decodeViewshed,
   sampleViewshed,
   type ViewshedHeader,
@@ -61,6 +62,48 @@ describe('the shipped Fernsehturm viewshed', () => {
   it('has a clear view from both moved street-level viewpoints', () => {
     for (const viewpoint of [STRAUSBERGER_PLATZ, WEBERWIESE]) {
       expect(sampleViewshed(view, viewpoint.lat, viewpoint.lon)).toBe(VIEW_VISIBLE);
+    }
+  });
+});
+
+describe('applySceneMask: what the planner’s scene refuses is taken out of the viewshed', () => {
+  // A grid of 5 m cells, all visible but one building cell.
+  const grid = (): ReturnType<typeof decodeViewshed> => {
+    const h: ViewshedHeader = { format: 'urban-eclipse-viewshed', version: 1, width: 40, height: 40, latMin: 52.5, lonMin: 13.4, dLat: 5 / 111_320, dLon: 5 / (111_320 * Math.cos((52.5 * Math.PI) / 180)) };
+    const view = decodeViewshed(h, Uint8Array.from({ length: 25 }, () => run(1, 64)));
+    view.cells[20 * 40 + 22] = VIEW_BUILDING;
+    return view;
+  };
+  const at = (row: number, col: number, view: ReturnType<typeof grid>): [number, number] => [view.header.latMin + (row + 0.5) * view.header.dLat, view.header.lonMin + (col + 0.5) * view.header.dLon];
+
+  it('blocks 25 m round each spot and leaves the rest, and a building a building', () => {
+    const view = grid();
+    applySceneMask(view, [at(20, 20, view)]);
+    expect(sampleViewshed(view, ...at(20, 20, view))).toBe(VIEW_BLOCKED);
+    expect(sampleViewshed(view, ...at(20, 24, view))).toBe(VIEW_BLOCKED); // 20 m east
+    expect(sampleViewshed(view, ...at(24, 20, view))).toBe(VIEW_BLOCKED); // 20 m north
+    expect(sampleViewshed(view, ...at(20, 27, view))).toBe(VIEW_VISIBLE); // 35 m east
+    expect(sampleViewshed(view, ...at(24, 24, view))).toBe(VIEW_VISIBLE); // 28 m, across the corner
+    expect(sampleViewshed(view, ...at(20, 22, view))).toBe(VIEW_BUILDING);
+  });
+
+  it('takes a spot at the grid’s edge or outside it without harm', () => {
+    const view = grid();
+    applySceneMask(view, [at(0, 0, view), [10, 10]]);
+    expect(sampleViewshed(view, ...at(0, 0, view))).toBe(VIEW_BLOCKED);
+    expect(sampleViewshed(view, ...at(30, 30, view))).toBe(VIEW_VISIBLE);
+  });
+
+  it('the tower’s header names its mask, and the mask is a list of places in Berlin', () => {
+    const header = JSON.parse(readFileSync(join('public', 'viewshed', 'fernsehturm.json'), 'utf8'));
+    expect(header.sceneMask).toBe('fernsehturm-scene.json');
+    const mask = JSON.parse(readFileSync(join('public', 'viewshed', header.sceneMask), 'utf8'));
+    expect(Array.isArray(mask.spots)).toBe(true);
+    for (const [lat, lon] of mask.spots) {
+      expect(lat).toBeGreaterThan(52.43);
+      expect(lat).toBeLessThan(52.61);
+      expect(lon).toBeGreaterThan(13.26);
+      expect(lon).toBeLessThan(13.56);
     }
   });
 });

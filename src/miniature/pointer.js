@@ -14,7 +14,8 @@ import { instant, setFine, setMinute } from './clock.js';
 import { BODY_NAME, face } from './eclipse.js';
 import { enterEye, fullFrame, look } from './eyeLevel.js';
 import { controls, eyeCamera, overview, renderer } from './render.js';
-import { confirmedSpotAlong, groundUnder, standable } from './sightlines.js';
+import { clearView, confirmedSpotAlong, fineAlong, groundUnder, standable } from './sightlines.js';
+import { toast } from './share.js';
 import { app, invalidate, toDirection } from './state.js';
 
 const tool = document.getElementById('photographer');
@@ -136,14 +137,18 @@ viewHere.addEventListener('pointerleave', (event) => {
   if (!viewableAt(event.clientX, event.clientY)) showViewHere(null);
 });
 
-/** Better to say so than to drop the photographer in front of a wall. */
+/**
+ * Better to say so than to drop the photographer in front of a wall; and to say it where it
+ * is seen. The words used to go into the "View from here" button, which has a place only after
+ * a hover on the map: a tap on a list row or a link that found no clear spot moved the clock
+ * and then said nothing at all (20 December 2026, the antenna's moonset). Returns false.
+ */
 function noClearView(target) {
   viewTarget = null;
-  viewHere.hidden = false;
-  viewHere.innerHTML = `${bodyIcon(target.body, target.t ?? instant().getTime(), { size: 16 })}No clear view along here <small>try another line or time</small>`;
-  setTimeout(() => {
-    if (!viewTarget) viewHere.hidden = true;
-  }, 2500);
+  viewHere.hidden = true;
+  const what = target.kind === 'street' ? `down ${target.moment.view.name}` : target.kind === 'landmark' ? 'of the landmark' : 'of the tower';
+  toast(`No clear view ${what} found for ${formatClock(target.t)}: buildings stand in the way along that line. Try another shot or time.`, 6000);
+  return false;
 }
 
 viewHere.addEventListener('click', () => {
@@ -155,11 +160,35 @@ viewHere.addEventListener('click', () => {
   setTimeout(() => goViewHere(target), 30);
 });
 
+/**
+ * The target's own spot, if the view from it is clear in full detail; else null. A row's spot
+ * has already passed the viewshed (dayShots.js), so it is tried first and as it is. The search
+ * along the line (`confirmedSpotAlong`) looks through whatever detail is loaded and confirms
+ * only what that lets through: over far tiles, loaded coarse, simplified roofs stood in every
+ * sight line, the search found nothing to confirm, and a listed row opened nothing (the
+ * antenna's moonset of 20 December 2026, 3 km out).
+ */
+async function clearAt(target, viewFrom) {
+  // The row's spot, then the others it names: for the antenna further spots on the same line
+  // at the same minute, for the sphere the spots of other minutes of the same pass (each minute
+  // has its own spot, and its own direction to the body).
+  for (const { x, z, t } of [target, ...(target.others ?? [])]) {
+    const view = viewFrom(x, z, t ?? target.t);
+    await fineAlong(x, z, view.direction, view.distance);
+    if (clearView(x, z, view.direction, view.distance)) return { x, z, t: t ?? target.t };
+  }
+  return null;
+}
+
 export async function goViewHere(target) {
   viewHere.hidden = true;
   setMinute(target.t);
-  const p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+  let p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
   const towards = toDirection(new THREE.Vector3(), p.az, Math.max(0, p.alt));
+  const towardsAt = (t) => {
+    const q = sampleBody(target.body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+    return toDirection(new THREE.Vector3(), q.az, Math.max(0, q.alt));
+  };
   if (target.kind === 'tower') {
     // Along the tower line, somewhere the tower and the body behind it are both in view: the
     // look toward the body must reach the tower without a building in between.
@@ -167,11 +196,20 @@ export async function goViewHere(target) {
     // Stay on the line's useful part: out from the tower, within the model.
     // For the antenna, only the stretch of the line from which the moon is behind it (`range`).
     const keep = (x, z) => Math.hypot(x, z) > 150 && Math.abs(x) < 9000 && Math.abs(z) < 9000 && x * target.x + z * target.z > 0 && (!target.range || (Math.hypot(x, z) >= target.range[0] && Math.hypot(x, z) <= target.range[1]));
-    const spot = await confirmedSpotAlong(target.x, target.z, target.x / length, target.z / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x, z) - 40) }), keep);
+    const viewFrom = (x, z, t = target.t) => ({ direction: t === target.t ? towards : towardsAt(t), distance: Math.max(50, Math.hypot(x, z) - 40) });
+    // A row's shot holds only at its own spots (`exact`): a search along the line would find a
+    // clear view of the tower from which the body is no longer where the row says (59 of a
+    // year's 3,037 sphere rows opened with the sun on the antenna, the shaft or beside it).
+    const spot = (await clearAt(target, viewFrom)) ?? (target.exact ? null : await confirmedSpotAlong(target.x, target.z, target.x / length, target.z / length, viewFrom, keep));
     if (!spot) return noClearView(target);
+    if (spot.t && spot.t !== target.t) {
+      setMinute(spot.t);
+      p = sampleBody(target.body, new Date(spot.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+    }
     // Face the body: on a tower line it is behind some part of the tower, not always the sphere.
     enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
     setFine(true);
+    return true;
   } else if (target.kind === 'landmark') {
     // Behind the figure on a low landmark (the Viktoria, the quadriga): the alignment holds
     // at one spot only, so the search stays within a few steps of it along the line through
@@ -180,10 +218,12 @@ export async function goViewHere(target) {
     const dz = target.z - target.axis.z;
     const length = Math.hypot(dx, dz) || 1;
     const keep = (x, z) => Math.hypot(x - target.x, z - target.z) <= 45;
-    const spot = await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x - target.axis.x, z - target.axis.z) - 40) }), keep);
+    const viewFrom = (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x - target.axis.x, z - target.axis.z) - 40) });
+    const spot = (await clearAt(target, viewFrom)) ?? (await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, viewFrom, keep));
     if (!spot) return noClearView(target);
     enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
     setFine(true);
+    return true;
   } else if (target.kind === 'street') {
     const m = target.moment;
     const dx = m.view.b[0] - m.view.a[0];
@@ -193,7 +233,9 @@ export async function goViewHere(target) {
     if (!spot) return noClearView(target);
     enterEye(spot.x, spot.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
     setFine(true);
+    return true;
   }
+  return false;
 }
 
 let hoverFrame = 0;

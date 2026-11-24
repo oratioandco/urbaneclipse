@@ -1,3 +1,5 @@
+// Times as `/plan/` writes them: the device's own 12 or 24 hours, always Berlin's clock.
+import { formatClock } from '../../../miniature/time.js';
 import type { Body } from '../../../lib/bodyPosition.js';
 import type { OccultationKind } from '../../../lib/occultation.js';
 
@@ -25,3 +27,6 @@ export function coverageLabel(kind: OccultationKind, fraction: number): string {
   if (kind === 'partial') return `${Math.floor(fraction * 100)}% hidden`;
   return 'not behind the tower';
 }
+
+/** A time of day in Berlin, written as the planner writes it (src/miniature/time.js). */
+export const formatTime = (d: Date): string => formatClock(d.getTime());

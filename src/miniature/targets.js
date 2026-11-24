@@ -11,7 +11,7 @@
 import { landmarkHeight } from '../lib/landmarks.ts';
 import { MIN_ALTITUDE_DEG, QUADRIGA, VIKTORIA, discShare, minDistanceM } from '../lib/landmarkStands.ts';
 import { figureView, figureWord } from './landmarkShots.js';
-import { TOWER_TARGET } from './towerShots.js';
+import { TOWER_TARGET, towerSentence } from './towerShots.js';
 
 const distanceText = (m) => `${Math.round(m / 10) * 10} m`;
 
@@ -56,8 +56,9 @@ export const TARGETS = [
     heading: 'Behind the TV tower from here',
     none: 'Neither the sun nor the moon passes behind the tower from this spot in the next 12 months. Tower lines on the map show where they do.',
     stateText: {
-      sun: { hidden: 'Sun behind the sphere', ring: 'Ring of sun round the sphere', edge: 'Sun at the sphere’s edge', antenna: 'Sun behind the antenna' },
-      moon: { edge: 'Moon at the sphere’s edge', antenna: 'Moon behind the antenna' },
+      // The day list's own sentences (towerShots.js `towerSentence`): one event, one name.
+      sun: { hidden: towerSentence('sun', 'hidden'), ring: towerSentence('sun', 'ring'), edge: towerSentence('sun', 'edge'), antenna: towerSentence('sun', 'antenna') },
+      moon: { edge: towerSentence('moon', 'edge'), antenna: towerSentence('moon', 'antenna') },
     },
   },
   figure(QUADRIGA, -2153.0, 505.0),

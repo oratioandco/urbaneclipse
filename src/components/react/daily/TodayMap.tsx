@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { formatTime } from '../../../lib/berlinTime.js';
+import { formatTime } from './shared.js';
 import {
   MIN_MOON_ILLUMINATION,
   alignmentLine,

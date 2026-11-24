@@ -1,36 +1,67 @@
 /**
- * Finding 6: do `/map` and `/plan/` name the same tower shots for the same day? Reads the
- * "Best shots" rows of `/map` and the tower rows of `/plan/`'s day list (Europe/Berlin, 24-hour
- * clock so the two print times alike) and writes sameshots.json and a render of each.
+ * The same shots on `/plan/` and `/map`: both list a day from the one pipeline
+ * (src/miniature/dayShots.js), so for any day the two pages must name the same shots at the
+ * same times, written the same way (src/miniature/time.js).
+ *
+ *   node scripts/adversarial/sameshots.mjs                       # three days with every kind of row
+ *   node scripts/adversarial/sameshots.mjs 2026-11-25 2027-03-17
+ *
+ * `/plan/`'s rows are read off its day list ("1 day"): the time, the sentence, and for a henge
+ * the street. `/map`'s are read off "Best shots" (the tower, the antenna, the Siegessäule and
+ * the Brandenburger Tor: time and sentence) and "Streets today" (time and street). What each
+ * page says beside that (where to stand, "of the tower", the light) is its own and is not
+ * compared. Writes sameshots.json to OUT; exits 1 when a day differs.
  */
-import { open, shot, save, close, BASE } from './lib.mjs';
+import { open, plan, save, close, BASE } from './lib.mjs';
 
-const date = process.env.DATE ?? new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
-const out = { date };
-{
-  const { context, page } = await open({ size: 'desktop', forecast: 'fixed', timezone: 'Europe/Berlin', locale: 'de-DE' });
-  await page.goto(`${BASE}/map/#/?day=${date}`, { waitUntil: 'load' });
-  await page.waitForSelector('[data-testid=highlights] .ue-row', { timeout: 60_000 });
-  await page.waitForTimeout(3000);
-  out.map = await page.evaluate(() => [...document.querySelectorAll('[data-testid=highlights] > .ue-row')].map((r) => `${r.querySelector('.ue-row__time').innerText} ${r.querySelector('strong').innerText} | ${r.querySelector('small').innerText.split(' · ')[0]}`));
-  out.mapStreets = await page.evaluate(() => [...document.querySelectorAll('[data-testid=streets-today] > .ue-row')].map((r) => `${r.querySelector('.ue-row__time').innerText} ${r.querySelector('strong').innerText}`));
-  await page.evaluate(() => document.querySelector('.ue-sheet')?.setAttribute('data-expanded', 'true'));
-  await shot(page, 'sameshots-map');
-  await context.close();
-}
-{
-  const { context, page } = await open({ size: 'desktop', forecast: 'fixed', timezone: 'Europe/Berlin', locale: 'de-DE' });
-  await page.goto(`${BASE}/plan/?nointro&date=${date}&time=720`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => window.__ready === true, null, { timeout: 300_000 });
+const days = process.argv.slice(2).filter((a) => /^\d{4}-\d{2}-\d{2}$/.test(a));
+if (!days.length) days.push('2026-11-25', '2026-12-16', '2027-03-17');
+const result = {};
+let failed = 0;
+const only = (a, b) => a.filter((x) => !b.includes(x));
+
+for (const day of days) {
+  const { page, context } = await open({ size: 'desktop', forecast: 'fixed' });
+  await plan(page, `date=${day}&time=720`, { wait: 5000 });
+  await page.evaluate(() => document.querySelector('#viewbar [data-mode="shoot"]')?.click());
+  await page.waitForTimeout(1500);
+  const planRows = await page.evaluate(() =>
+    window.__mini.dayRows().map((row) => {
+      // The row's own card in the list gives the time as the page writes it.
+      const card = [...document.querySelectorAll('#daylist .shotcard')].find((el) => el.querySelector('.sc-title')?.textContent === row.title && el.querySelector('.sc-detail')?.textContent.startsWith(row.detail.split(' · ')[0]));
+      const time = card?.querySelector('.sc-time')?.textContent ?? row.detail.split(' · ')[0];
+      return row.kind === 'street' ? { list: 'street', line: `${time} ${row.moment.view.name}` } : { list: 'shot', line: `${time} ${row.title}` };
+    }),
+  );
+  await page.goto(`${BASE}/map/#/day=${day}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-testid="streets-today"] .ue-row', { timeout: 60_000 });
+  // The tower's and the landmarks' rows come once the building data is in.
+  await page.waitForFunction(() => !/Checking buildings/.test(document.querySelector('[data-testid="highlights"]')?.textContent ?? 'Checking buildings'), null, { timeout: 60_000 });
   await page.waitForTimeout(4000);
-  const rows = await page.evaluate(() => window.__mini.dayRows?.() ?? null);
-  out.plan = rows?.filter((r) => r.kind === 'tower').map((r) => `${new Date(r.t).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} ${r.title} | ${r.stand} of the tower`) ?? null;
-  out.planStreets = rows?.filter((r) => r.kind === 'street').map((r) => `${new Date(r.t).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit' })} ${r.moment?.view?.name ?? r.short}`) ?? null;
-  await shot(page, 'sameshots-plan');
+  const mapRows = await page.evaluate(() => {
+    const read = (row, list) => ({ list, line: `${row.querySelector('.ue-row__time')?.textContent ?? ''} ${row.querySelector('strong')?.textContent ?? ''}` });
+    const streets = [...document.querySelectorAll('[data-testid="streets-today"] > .ue-row')];
+    const shots = [...document.querySelectorAll('[data-testid="highlights"] > .ue-row')].filter((row) => !streets.includes(row));
+    return [...shots.map((row) => read(row, 'shot')), ...streets.map((row) => read(row, 'street'))];
+  });
+  const lines = (rows, list) => rows.filter((row) => row.list === list).map((row) => row.line.replace(/­/g, '')).sort();
+  const dayResult = {};
+  let same = true;
+  for (const list of ['shot', 'street']) {
+    const a = lines(planRows, list);
+    const b = lines(mapRows, list);
+    dayResult[list] = { plan: a.length, map: b.length, onlyPlan: only(a, b), onlyMap: only(b, a) };
+    if (dayResult[list].onlyPlan.length || dayResult[list].onlyMap.length) same = false;
+  }
+  result[day] = { same, ...dayResult };
+  if (!same) failed++;
+  console.log(`${same ? 'PASS' : 'FAIL'}  ${day}: ${dayResult.shot.plan} tower and landmark rows, ${dayResult.street.plan} street rows on /plan/; ${dayResult.shot.map} and ${dayResult.street.map} on /map`);
+  for (const list of ['shot', 'street']) {
+    for (const line of dayResult[list].onlyPlan) console.log(`      only on /plan/: ${line}`);
+    for (const line of dayResult[list].onlyMap) console.log(`      only on /map:   ${line}`);
+  }
   await context.close();
 }
-out.same = JSON.stringify(out.map) === JSON.stringify(out.plan);
-out.sameStreets = JSON.stringify(out.mapStreets) === JSON.stringify(out.planStreets);
-console.log(JSON.stringify(out, null, 1));
-save('sameshots.json', out);
+save('sameshots.json', result);
 await close();
+process.exit(failed ? 1 : 0);

@@ -82,6 +82,42 @@ it finds the day's row (`findShot`), searches for a confirmed clear spot and put
 card on the ticket. A link without `shot`, or one whose row the day does not have, opens at
 its own `at` and `look` as before. Home's cards link this way (`planLink` in `src/home/grid.js`).
 
+### A row opens onto its shot, or is not listed
+
+A row names a picture and a place. Three things keep the two together:
+
+- **Its own spots.** A tap or a `shot=` link flies to the row's spot and checks the sight line
+  there against the full-detail buildings (`pointer.js` `clearAt`). If that spot is blocked the
+  planner tries the row's other spots and nothing else: for the sphere the spots of other
+  minutes of the same pass (`alternates`, each with its own minute), for the antenna further
+  spots on the same line at the same minute (`standOthers`, all with the moon on the mast and
+  off the sphere). It no longer searches along the line, which found clear views of the tower
+  from which the sun stood on the antenna or the shaft. When none is clear it says so in a
+  toast; it used to say nothing.
+- **The scene mask.** The viewshed (LoD2 roofs over DGM1 ground) and the scene (the same roofs
+  as meshes over a terrain of 40 m cells) disagree in places. `public/viewshed/fernsehturm-scene.json`
+  lists the places the scene refused; `loadViewshed` blocks 25 m round each (`applySceneMask`),
+  so the pipeline offers another spot or drops the row. The list is measured:
+  `node scripts/adversarial/rows.mjs --kinds=antenna,sphere,landmark --mask=public/viewshed/fernsehturm-scene.json`
+  opens every row of a year and adds what fails; build and run again until none does. It holds
+  for the year it was run over: run it again when the pipeline's rules or the city data change.
+- **One name.** `towerSentence` (towerShots.js) words the tower's passes for the day list, the
+  ticket and "From here" (`targets.js` `stateText`); a sphere row's sentence is what
+  `bodyAgainstTower` sees from its spot at its instant, and "From here" classifies a pass at
+  its own instant too, not at the best whole minute. `litPercent` (spectacle.js) is the moon's
+  share at the shot's minute everywhere. `rowCheck.js` `rowSeen` says whether a row's promise
+  holds from an eye point: the sweep and the tests use it.
+
+### The few of a day
+
+"Next 3 days" shows three shots a day (`planmode.js`), chosen by `pickTop` (spectacle.js):
+henges of one body within twelve minutes down streets within 15° of each other are one sight
+(the best one, "and 2 more streets"), and a second shot of a kind and body counts 0.95 times,
+so close scores give different kinds. The moon by day loses along a ramp (`paleMoon`: nothing
+with the sun 3° down, all of it from 9° up, down to 0.7 for a full moon and 0.55 for a quarter),
+the same for every moon row and for "From here". A henge that runs across midnight is one
+moment, on the day of its peak (`streetMomentsOfDay`).
+
 ### The Siegessäule and the Brandenburger Tor
 
 The sun or moon behind the Viktoria on the column and the quadriga on the gate are rows of a

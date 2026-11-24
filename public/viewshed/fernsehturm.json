@@ -3,6 +3,7 @@
   "version": 1,
   "landmark": "fernsehturm",
   "binary": "fernsehturm.bin",
+  "sceneMask": "fernsehturm-scene.json",
   "byteLength": 1574661,
   "encoding": "one byte per run: value in the top 2 bits, length - 1 in the low 6",
   "width": 3800,

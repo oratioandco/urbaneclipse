@@ -201,6 +201,19 @@ export function bodyAgainstProfile(profile, x, z, topAGL, eye, base, body) {
 }
 
 /**
+ * The sentence for the sun or moon at the TV tower, by what `bodyAgainstTower` calls it. The
+ * one place that words it: the day's rows (dayShots.js), the ticket, and "From here"'s year of
+ * dates (targets.js `stateText`, which dates.js reads) all ask here, so one event has one name.
+ * `over` is how many times wider the disc is than the sphere (`discOverSphere`), for the moon.
+ */
+export function towerSentence(body, state, over = null) {
+  if (state === 'antenna') return `${body === 'moon' ? 'Moon' : 'Sun'} behind the TV tower\u2019s antenna`;
+  if (state === 'edge') return `${body === 'moon' ? 'Moon' : 'Sun'} at the edge of the TV tower\u2019s sphere`;
+  if (body === 'moon') return over ? `Big moon behind the TV tower, ${over.toFixed(1)}\u00d7 the sphere` : 'Big moon behind the TV tower';
+  return state === 'ring' ? 'Ring of sun round the TV tower\u2019s sphere' : 'Sun behind the TV tower\u2019s sphere';
+}
+
+/**
  * What is worth a photograph, per body: never the moon hidden behind the sphere or the shaft, and
  * never the sun behind the antenna. Its disc is about ten times the mast's width, so that is a thin
  * line across a glare that needs a solar filter; the sphere is the shot. The moon on the antenna
@@ -293,7 +306,17 @@ export function findShots({ eye, base, start, end, bodyAt: trueBodyAt, moonLit, 
       let current = null;
       let refinedTo = -Infinity;
       const close = () => {
-        if (current) shots.push({ ...current, align: alignmentMinute(bodyAt, body, targetAz, current.start, current.end) ?? current.peak });
+        if (current) {
+          const align = alignmentMinute(bodyAt, body, targetAz, current.start, current.end) ?? current.peak;
+          // What the pass is, is what it is at its own instant, not at the best whole minute:
+          // the sun crosses a small sphere in under a minute, so a ring seen to the second was
+          // called "at the edge" by a scan that only looked on the minute, while the day's row
+          // for the same spot said "behind the sphere".
+          const q = bodyAt(body, align);
+          const r = (q.trueAlt ?? q.alt) > 0 ? target.stateAt(eye, base, q) : null;
+          const better = r && wanted.includes(r.state) && target.rank[r.state] >= target.rank[current.state] && !(body === 'moon' && r.state === 'ring' && (r.ringRatio ?? 1) < 1.25);
+          shots.push({ ...current, ...(better ? { state: r.state, az: q.az, alt: q.alt } : {}), align });
+        }
         current = null;
       };
       for (let t = start; t < end; t += COARSE) {

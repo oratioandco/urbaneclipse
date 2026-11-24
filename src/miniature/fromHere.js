@@ -18,9 +18,8 @@ import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { FIGURE_TARGETS, discShare } from '../lib/landmarkStands.ts';
 import { LANDMARK_CAUTION, LANDMARK_CHECK, figureWord, landmarkScore, lensFor } from './landmarkShots.js';
+import { paleMoon } from './spectacle.js';
 import { discOverSphere } from './towerShots.js';
-// The pale moon by day: one pair of numbers for every list (spectacle.js).
-import { PALE_MOON, PALE_MOON_SUN_DEG } from './spectacle.js';
 
 const DAY_MS = 86_400_000;
 /** A shot scoring this much is worth going out for: the first card is the next of these. */
@@ -58,7 +57,8 @@ export const sideOf = (bearingDeg) => SIDES[Math.round((((bearingDeg % 360) + 36
  * list never has to weigh: the moon by day, which counts for less (`t` given).
  */
 export function spectacle({ kind, body, target = 'fernsehturm', state = 'hidden', distanceM = null, lengthM = null, t = null }) {
-  const pale = body === 'moon' && t !== null && sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon).alt > PALE_MOON_SUN_DEG ? PALE_MOON : 1;
+  // The moon by day: the day rows' own rule (spectacle.js).
+  const pale = t !== null ? paleMoon(body, t) : 1;
   return pale * picture({ kind, body, target, state, distanceM, lengthM });
 }
 

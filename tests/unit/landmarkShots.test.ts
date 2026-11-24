@@ -15,10 +15,15 @@ import { LANDMARK_CHECK, figureView, landmarkRows, landmarkScore, lensFor } from
 import { sceneFromLatLon } from '../../src/miniature/eye.js';
 import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { SPRITE } from '../../src/miniature/shotCard.js';
-import { PALE_MOON, PALE_MOON_SUN_DEG, paleMoon } from '../../src/miniature/spectacle.js';
+import { kindOf, moreStreets, paleMoon, paleMoonFactor, pickTop } from '../../src/miniature/spectacle.js';
 import { spectacle } from '../../src/miniature/fromHere.js';
 import { decodeStreets } from '../../src/lib/streets';
 import { formatClock } from '../../src/miniature/time.js';
+import { discOverSphere, towerSentence } from '../../src/miniature/towerShots.js';
+import { TARGETS } from '../../src/miniature/targets.js';
+import { rowSeen } from '../../src/miniature/rowCheck.js';
+import { litPercent } from '../../src/miniature/spectacle.js';
+import { streetMomentsOfDay } from '../../src/miniature/dayShots.js';
 
 const load = (id: string) => {
   const header = JSON.parse(readFileSync(`public/viewshed/${id}.json`, 'utf8'));
@@ -275,17 +280,44 @@ describe('at eye level: the open landmark shot seen in the planner’s scene (fi
 describe('one rule for the moon by day, and one form for a row’s small print', () => {
   const views = decodeStreets(JSON.parse(readFileSync('public/streets/berlin.json', 'utf8')));
 
-  it('a moon in a bright sky counts 0.6 times; the sun and a night moon count whole', () => {
+  it('the moon by day counts for less along a ramp, not at a step; the sun and a night moon count whole', () => {
     const noon = Date.UTC(2027, 2, 17, 11, 0);
     const night = Date.UTC(2027, 2, 17, 23, 0);
-    expect(sampleBody('sun', new Date(noon), FERNSEHTURM.lat, FERNSEHTURM.lon).alt).toBeGreaterThan(PALE_MOON_SUN_DEG);
-    expect(paleMoon('moon', noon)).toBe(PALE_MOON);
     expect(paleMoon('moon', night)).toBe(1);
     expect(paleMoon('sun', noon)).toBe(1);
-    // "From here" ranks a year of dates by the same two numbers (fromHere.js `spectacle`).
+    // The ramp: whole to 3° under the horizon, the floor from 9° up, monotone between.
+    expect(paleMoonFactor(-3, 1)).toBe(1);
+    expect(paleMoonFactor(-10, 0.3)).toBe(1);
+    expect(paleMoonFactor(9, 1)).toBeCloseTo(0.7, 9);
+    expect(paleMoonFactor(40, 1)).toBeCloseTo(0.7, 9);
+    expect(paleMoonFactor(40, 0.25)).toBeCloseTo(0.55, 9);
+    let last = 1;
+    for (let alt = -3; alt <= 9; alt += 0.25) {
+      const f = paleMoonFactor(alt, 0.8);
+      expect(f).toBeLessThanOrEqual(last);
+      // No cliff: a quarter of a degree of sun never costs more than 1.5% of a score.
+      expect(last - f).toBeLessThan(0.015);
+      last = f;
+    }
+    // A fuller moon holds its own better against the same sky.
+    expect(paleMoonFactor(6, 1)).toBeGreaterThan(paleMoonFactor(6, 0.3));
+    // The midday moon of that day (60% lit, sun 35° up) by the rule, and "From here" by the same.
+    expect(paleMoon('moon', noon)).toBeGreaterThan(0.55);
+    expect(paleMoon('moon', noon)).toBeLessThan(0.7);
     const found = { kind: 'street', body: 'moon', lengthM: 800 };
-    expect(spectacle({ ...found, t: noon }) / spectacle({ ...found, t: night })).toBeCloseTo(PALE_MOON, 9);
-    expect(spectacle({ ...found, t: noon })).toBeCloseTo(paleMoon('moon', noon) * 1, 9);
+    expect(spectacle({ ...found, t: noon })).toBeCloseTo(paleMoon('moon', noon), 9);
+    expect(spectacle({ ...found, t: night })).toBe(1);
+  });
+
+  it('25 November 2026: the big moon at 08:54 stays above the antenna’s moonset at 08:35 and above a henge', () => {
+    const rows: Row[] = dayShots(berlinDayStart('2026-11-25'), { shed: tower, views, sheds });
+    const big = rows.find((row) => /^Big moon behind the TV tower/.test(row.title))!;
+    const antenna = rows.find((row) => row.where === 'antenna' && row.t < big.t)!;
+    // Both lose to the morning sky, the later one a little more; the order of the two holds.
+    expect(big.score).toBeLessThan(2.4);
+    expect(antenna.score).toBeLessThan(2);
+    expect(big.score).toBeGreaterThan(antenna.score);
+    expect(big.score).toBeGreaterThan(1.6);
   });
 
   it('in a day’s rows a midday moon henge ranks under the evening sun on the Viktoria', () => {
@@ -298,7 +330,7 @@ describe('one rule for the moon by day, and one form for a row’s small print',
     expect(viktoria.score).toBeCloseTo(1.7, 9);
     const dayMoonStreets = rows.filter((row) => row.kind === 'street' && row.body === 'moon' && paleMoon('moon', row.t) < 1);
     expect(dayMoonStreets.length).toBeGreaterThan(0);
-    for (const row of dayMoonStreets) expect(row.score).toBeLessThanOrEqual(1.6 * PALE_MOON + 1e-9);
+    for (const row of dayMoonStreets) expect(row.score).toBeLessThan(1.6);
     // The three a day's cards show, by score: the night's big moon and moonset at the tower stay.
     const top = [...rows].sort((a, b) => b.score - a.score).slice(0, 3).map((row) => row.title);
     expect(top[0]).toMatch(/^Big moon behind the TV tower/);
@@ -313,5 +345,84 @@ describe('one rule for the moon by day, and one form for a row’s small print',
       expect(kinds.has('landmark') && kinds.has('street') && kinds.has('sphere')).toBe(true);
       for (const row of rows) expect(row.detail.startsWith(`${formatClock(row.t)} · `), row.title).toBe(true);
     }
+  });
+});
+
+describe('the few of a day (pickTop)', () => {
+  const street = (name: string, t: number, bearingDeg: number, score: number, body = 'sun') => ({ kind: 'street', body, t, score, title: name, moment: { view: { bearingDeg } } });
+  const t0 = Date.UTC(2027, 0, 14, 7, 0);
+
+  it('henges on parallel streets within minutes are one sight, the best standing for the rest', () => {
+    const rows = [street('A', t0, 120, 1.6), street('B', t0 + 3 * 60_000, 122, 1.6), street('C', t0 + 7 * 60_000, 118, 1.5), { kind: 'tower', where: 'sphere', body: 'sun', t: t0 + 3_600_000, score: 1.2, title: 'tower' }];
+    const top = pickTop(rows, 3);
+    expect(top.map((row: Row) => row.title)).toEqual(['A', 'tower']);
+    expect(top[0].more).toBe(2);
+    expect(moreStreets(top[0])).toBe('and 2 more streets');
+    expect(moreStreets(top[1])).toBe('');
+  });
+
+  it('a street across them, another body, or an hour later is its own sight', () => {
+    const rows = [street('A', t0, 120, 1.6), street('across', t0 + 60_000, 210, 1.5), street('moon', t0 + 60_000, 121, 1.4, 'moon'), street('later', t0 + 3_600_000, 120, 1.3)];
+    expect(pickTop(rows, 4).map((row: Row) => row.title)).toEqual(['A', 'across', 'moon', 'later']);
+    expect(pickTop(rows, 4).some((row: Row) => row.more)).toBe(false);
+  });
+
+  it('prefers another kind when scores are close, and never over a clearly better shot', () => {
+    const tower = { kind: 'tower', where: 'sphere', body: 'sun', t: t0, score: 1.5, title: 'tower' };
+    const far = (name: string, i: number, score: number) => street(name, t0 + i * 3_600_000, 40 * i, score);
+    // Three henges at 1.6 and a tower shot at 1.5: the tower comes third, not fourth.
+    expect(pickTop([far('a', 1, 1.6), far('b', 2, 1.6), far('c', 3, 1.6), tower], 3).map((row: Row) => row.title)).toEqual(['a', 'b', 'tower']);
+    // Against henges at 2.0 it waits its turn.
+    expect(pickTop([far('a', 1, 2), far('b', 2, 2), far('c', 3, 2), { ...tower, score: 1.2 }], 3).map((row: Row) => row.title)).toEqual(['a', 'b', 'c']);
+    expect(kindOf(tower)).toBe('sphere');
+    expect(kindOf({ kind: 'tower', target: 'siegessaeule', where: 'viktoria' })).toBe('landmark');
+  });
+
+  it('weighs by what it is given: a forecast can turn the order', () => {
+    const rows = [street('clear', t0, 10, 1.2), street('cloudy', t0 + 3_600_000, 100, 1.6)];
+    expect(pickTop(rows, 1, (row: Row) => row.score * (row.title === 'cloudy' ? 0.5 : 1))[0].title).toBe('clear');
+  });
+});
+
+describe('one event, one name, in the day list and in From here', () => {
+  it('the tower’s sentences are one function’s', () => {
+    expect(towerSentence('sun', 'hidden')).toBe('Sun behind the TV tower’s sphere');
+    expect(towerSentence('sun', 'ring')).toBe('Ring of sun round the TV tower’s sphere');
+    expect(towerSentence('sun', 'edge')).toBe('Sun at the edge of the TV tower’s sphere');
+    expect(towerSentence('moon', 'ring', 1.72)).toBe('Big moon behind the TV tower, 1.7× the sphere');
+    expect(towerSentence('moon', 'antenna')).toBe('Moon behind the TV tower’s antenna');
+    const fromHere = TARGETS.find((target: Row) => target.id === 'fernsehturm')!.stateText;
+    for (const state of ['hidden', 'ring', 'edge', 'antenna']) expect(fromHere.sun[state]).toBe(towerSentence('sun', state));
+    for (const state of ['edge', 'antenna']) expect(fromHere.moon[state]).toBe(towerSentence('moon', state));
+  });
+
+  it('a sphere row’s sentence is what stands there at its minute, and its lit share the moon’s of that minute', () => {
+    const views = decodeStreets(JSON.parse(readFileSync('public/streets/berlin.json', 'utf8')));
+    for (const date of ['2026-11-26', '2026-12-20', '2027-03-17']) {
+      const rows: Row[] = dayShots(berlinDayStart(date), { shed: tower, views, sheds });
+      for (const row of rows.filter((r) => r.kind === 'tower' && !r.target)) {
+        const seen = rowSeen(row, { x: sceneFromLatLon(row.at[0], row.at[1], FERNSEHTURM.lat, FERNSEHTURM.lon)[0], y: 1.6, z: sceneFromLatLon(row.at[0], row.at[1], FERNSEHTURM.lat, FERNSEHTURM.lon)[1] }, 0);
+        expect(seen.ok, `${date} ${row.title}: ${seen.sees}`).toBe(true);
+        if (row.where === 'antenna') {
+          expect(row.detail).toContain(`${litPercent(row.t)}% lit`);
+          expect(seen.sees).toBe('antenna');
+        } else expect(row.title).toBe(towerSentence(row.body, seen.sees, discOverSphere(row.distanceM)));
+      }
+    }
+  });
+});
+
+describe('a henge across midnight is one row, on the day of its peak', () => {
+  it('12 and 13 February 2027: no street at 23:59 one day and 00:00 the next', () => {
+    const views = decodeStreets(JSON.parse(readFileSync('public/streets/berlin.json', 'utf8')));
+    const a = berlinDayStart('2027-02-12');
+    const b = berlinDayStart('2027-02-13');
+    const first = streetMomentsOfDay(views, a);
+    const second = streetMomentsOfDay(views, b);
+    for (const m of [...first, ...second]) expect(m.peak >= (first.includes(m) ? a : b) && m.peak < (first.includes(m) ? b : b + 86_400_000)).toBe(true);
+    // One view of a street (two streets can share a name, and a street has two directions).
+    const key = (m: Row) => `${m.view.from.lat},${m.view.from.lon},${m.view.bearingDeg}|${m.body}`;
+    // The same street and body on both days only when the two moments are hours apart.
+    for (const m of first) for (const n of second.filter((x: Row) => key(x) === key(m))) expect(n.peak - m.peak).toBeGreaterThan(3 * 3_600_000);
   });
 });

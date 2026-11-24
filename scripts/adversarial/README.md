@@ -28,4 +28,6 @@ software rasteriser, which is about five times slower and draws the eye-level sk
 | `edges.mjs` | Forecast failing and slow, far dates, bad addresses, empty and full days, midnight, other time zones, 320 and 2560 px, keyboard, reduced motion, glass off, reload and back, deep links |
 | `dan.mjs` | Dan's three points as close-ups: marks, the direction arrow, the drone button and the tooltips |
 | `scrub.mjs` | Dragging the day view's thumb at normal speed and with the CPU slowed four times |
+| `rows.mjs` | Every row of the day list for a year, opened through its own `go`: does it arrive at eye level, and is the body where the row says (`__mini.rowSeen`)? With `--mask` it adds the places that fail to `public/viewshed/fernsehturm-scene.json`, which takes them out of the pipeline |
+| `sameshots.mjs` | `/plan/`'s day list and `/map`'s lists for the same days: the same shots at the same times, written the same way |
 | `probe.mjs`, `dump.mjs` | One state looked at by hand: a query, a few steps, a render and the panel's words |
