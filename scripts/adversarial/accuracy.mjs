@@ -99,8 +99,9 @@ if ((await page.getAttribute('#ticket-more', 'aria-expanded')) !== 'true') await
 await page.click('#dates-toggle');
 await page.waitForFunction(() => document.querySelector('#dates h3') && !document.getElementById('dates').innerText.includes('Searching'), null, { timeout: 180_000 });
 await page.waitForTimeout(2000);
-// The year's rows are shot cards (fromHereView.js); each says which search found it (data-heading).
-const listed = await page.$$eval('#dates .shotcard--row', (rows) => rows.map((r) => ({ body: r.dataset.body, heading: r.dataset.heading, title: r.querySelector('.sc-title').innerText, detail: r.querySelector('.sc-detail').innerText })));
+// The year's rows are shot cards (fromHereView.js); each says which search found it (data-heading)
+// and its date in full (data-when: under its month's name a row shows it without the year).
+const listed = await page.$$eval('#dates .shotcard--row', (rows) => rows.map((r) => ({ body: r.dataset.body, heading: r.dataset.heading, title: r.dataset.when, detail: r.querySelector('.sc-detail').textContent })));
 const notes = await page.$$eval('#dates .fh-notes p', (ps) => ps.map((p) => p.innerText));
 const sections = [...new Set(listed.map((r) => r.heading))].map((heading) => ({ heading, notes, rows: listed.filter((r) => r.heading === heading) }));
 out.datesSpot = (await shown()).at;
