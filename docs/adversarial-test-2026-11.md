@@ -246,6 +246,10 @@ or inferred.
 - File: `src/miniature/eyeLevel.js` (`enterEye` pushes no history entry), `src/miniature/sheet.js`.
 - Fix: push a history entry on entering eye level; Escape and back both return to the map; move
   focus to the ticket.
+- **Fixed on 2026-11-24** (`sheet.js`): eye level is its own history entry. Re-run with the
+  keyboard: Enter on a row opens the shot with the focus on "Map"; Escape returns to the map;
+  the browser's back returns to the map; the "Map" button returns and a further back leaves the
+  planner. Moving the map itself with keys is not added.
 
 ### 10. On a phone the map shows a time nobody states. Medium. Verified.
 
@@ -257,6 +261,10 @@ or inferred.
   `src/miniature/overlay.js`, `src/miniature/chrome.js`.
 - Fix: open at the present minute (or at the next shot), and put the time on the pill:
   "Sun 0° up · 4:00 PM".
+- **Fixed on 2026-11-24** (`clock.js`, `overlay.js`): without a time in the address, today
+  opens at the present minute (checked: 09:11 gave minute 551), another day at 16:00, and the
+  map's first pill carries the time. The grey of "Clouds on the map" on an overcast day is
+  unchanged.
 
 ### 11. A bad date in the address leaves an empty page for good. Low to medium. Verified.
 
@@ -267,6 +275,8 @@ or inferred.
 - File: `src/miniature/clock.js` (`dateInput.value = startAt`), `src/miniature/link.js`.
 - Fix: fall back to today when the date does not parse; say "This link's spot is outside the
   model" for a dropped `at`.
+- **Fixed on 2026-11-24** for the date (`berlinClock.js` `startDate`, tested): `?date=garbage`
+  opens today and the page builds. A dropped `at` is still dropped without a word.
 
 ### 12. Small phones: the picture at eye level shrinks to a stamp. Medium on 320 px, low on 390. Verified.
 
@@ -285,10 +295,10 @@ or inferred.
 | | Finding | State | File |
 |---|---|---|---|
 | a | `THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN` on every load of `/plan/`, all sizes | verified, `views.json` | suspected `landmarks.js` or `moleculeManShape.js`; find the geometry with NaN positions |
-| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight) | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
+| b | After midnight the day label still says "Today, Tue 24 Nov" (device clock faked across midnight). **Fixed on 2026-11-24**: the label is refreshed every minute (not re-run with a faked clock) | verified, `edges.json` day-change | `clock.js` `showDay` runs only on a day change by hand |
 | c | A failed forecast is not asked for again within 65 s and has no "try again" | verified, 3 requests then none | `weather.js`, `forecast.js` |
 | d | "+ 1 min" at 11:59 PM does nothing and is not disabled; typing "24:00" gives 11:59 PM; "noon" is ignored | verified | `dayview.js`, `time.js` |
-| e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back | verified, `edges.json` | `link.js` list of kept options |
+| e | `glass=off` is dropped from the address on the first frame, so a reload brings the glass back. **Fixed on 2026-11-24** (`link.js` keeps it) | verified, `edges.json` | `link.js` list of kept options |
 | f | "Next 3 days" lists a day's shots out of time order (tomorrow: 4:20 PM, 8:54 AM, 8:00 AM) with no word on why | verified | `planmode.js` |
 | g | Times are 12-hour in `/plan/` and on the landing page with an English device, 24-hour in `/map`, UTC in `/classic` | verified | `time.js`, `daily/`, `ControlPanel.tsx` |
 | h | The landing page says "Trees are not in the model"; `/plan/` has a Trees layer and draws them | verified, `crossview.json` | `src/pages/index.astro` |

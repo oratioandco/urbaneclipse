@@ -83,3 +83,10 @@ export function berlinDayStart(day) {
 export function berlinDayEnd(day) {
   return wallToInstant(new Date(utcMidnight(day) + 86_400_000).toISOString().slice(0, 10), 0);
 }
+
+/** The day to open at: `asked` when it is a real yyyy-mm-dd, else `fallback` (today). */
+export function startDate(asked, fallback) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asked ?? '')) return fallback;
+  const t = Date.parse(`${asked}T00:00:00Z`);
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === asked ? asked : fallback;
+}

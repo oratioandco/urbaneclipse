@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, berlinDate, berlinDay, dayEndOf, daysFrom, moonOfDay, phaseStops, wallMinute, wallShare } from '../../src/miniature/dayMath.js';
-import { wallToInstant } from '../../src/miniature/berlinClock.js';
+import { startDate, wallToInstant } from '../../src/miniature/berlinClock.js';
 import { shotSky } from '../../src/miniature/verdict.js';
 
 // The two days of 2027 on which Berlin's clocks change. 28 March: 02:00 CET becomes 03:00
@@ -90,3 +90,13 @@ describe('the moon header', () => {
     expect(moonOfDay('2027-01-14').set).toBeNull();
   });
 });
+
+describe('the day a link opens at', () => {
+  // Adversarial test 2026-11, finding 11: ?date=garbage left "Building Berlin" for ever.
+  it('is today when the address has no real date', () => {
+    for (const bad of ['garbage', '2027-02-30', '2027-13-01', '27-03-28', '', '2027-3-5']) expect(startDate(bad, '2026-11-24'), bad).toBe('2026-11-24');
+    expect(startDate('2027-03-28', '2026-11-24')).toBe('2027-03-28');
+    expect(startDate('2028-02-29', '2026-11-24')).toBe('2028-02-29');
+  });
+});
+

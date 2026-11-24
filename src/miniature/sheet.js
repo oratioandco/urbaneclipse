@@ -6,6 +6,7 @@
  * The rules for the heights are in sheetHeights.js; this file is the wiring.
  */
 import { params } from './config.js';
+import { exitEye } from './eyeLevel.js';
 import './glass.js';
 import { controls } from './render.js';
 import { parseHeight, sheetSizes, snapHeight, stepDown, stepUp, tapHeight } from './sheetHeights.js';
@@ -78,6 +79,24 @@ function show() {
 // entry, and lowering it to peek by hand takes that entry away again.
 let entry = false;
 let skipPop = false;
+// Eye level is a place of its own in the history: entering it adds an entry, the Map button
+// takes it away again, and the back button or Escape leaves through it.
+let eyeEntry = false;
+new MutationObserver(() => {
+  const eye = document.body.dataset.eye === 'true';
+  if (eye && !eyeEntry) {
+    history.pushState({ eye: true }, '');
+    eyeEntry = true;
+    // The keyboard's focus goes where eye level's controls are.
+    if (!document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected || document.activeElement.closest('#sheet-body')) document.getElementById('back').focus({ preventScroll: true });
+  } else if (!eye && eyeEntry) {
+    eyeEntry = false;
+    skipPop = true;
+    history.back();
+  }
+  // Back on the map, the focus returns to the panel's first control.
+  if (!eye && (document.activeElement === document.body || document.activeElement?.closest('.topleft'))) toggle.focus({ preventScroll: true });
+}).observe(document.body, { attributes: true, attributeFilter: ['data-eye'] });
 function syncHistory() {
   if (!isSheet()) return;
   if (height !== 'peek' && !entry) {
@@ -92,6 +111,12 @@ function syncHistory() {
 addEventListener('popstate', () => {
   if (skipPop) {
     skipPop = false;
+    return;
+  }
+  // Back at eye level returns to the map, not to the page before the planner.
+  if (eyeEntry) {
+    eyeEntry = false;
+    exitEye();
     return;
   }
   if (!entry) return;
@@ -208,7 +233,15 @@ grab.addEventListener('keydown', (event) => {
 });
 
 addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape' || event.defaultPrevented || !isSheet() || height === 'peek') return;
+  if (event.key !== 'Escape' || event.defaultPrevented) return;
+  // At eye level Escape goes back to the map, unless a menu, a dialog or a field wants it.
+  if (document.body.dataset.eye === 'true') {
+    if (document.querySelector('dialog[open]') || !document.getElementById('layers-menu').hidden || !document.getElementById('share-menu').hidden) return;
+    if (event.target instanceof HTMLElement && event.target.matches('input:not([type=range]), select, textarea')) return;
+    exitEye();
+    return;
+  }
+  if (!isSheet() || height === 'peek') return;
   // A dialog, a menu or a field has its own use for Escape.
   if (document.querySelector('dialog[open]') || !document.getElementById('layers-menu').hidden) return;
   if (event.target instanceof HTMLElement && event.target.matches('input, select, textarea')) return;

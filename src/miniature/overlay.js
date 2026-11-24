@@ -2,6 +2,7 @@
  * Everything that stays flat to the screen: street names, pills pointing to the sun and moon,
  * and where to stand on a lit-up street. A plain canvas redrawn when the view changes.
  */
+import { formatMinutes } from './time.js';
 import { drawMoon, drawSun } from './bodies.js';
 import { drawMark, drawNeedle } from './marks.js';
 
@@ -289,7 +290,8 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     const length = Math.hypot(dx, dy) || 1;
     const ux = dx / length;
     const uy = dy / length;
-    const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up`;
+    // The first pill says what time the map shows: on a phone the clock may be out of sight.
+    const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${pills.length ? '' : ` \u00b7 ${formatMinutes(Number(document.getElementById('time').value))}`}`;
     pills.push({ text, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body });
   }
   // Two bodies in nearly the same direction would otherwise stack.
