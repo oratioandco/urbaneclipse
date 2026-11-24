@@ -54,4 +54,4 @@ export function missingBridgeAt(lat, lon, marginM = 25) {
 }
 
 /** What the planner says there. */
-export const missingBridgeNote = (bridge) => `The ${bridge.name} is not in the model yet. You stand on the ground at it, not on its deck: heights and sightlines from the bridge itself will differ.`;
+export const missingBridgeNote = (bridge) => `The ${bridge.name} is not in the model yet. You stand on the ground beside or under it, not on its deck: heights and sightlines from the bridge itself will differ.`;
