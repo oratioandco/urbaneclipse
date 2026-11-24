@@ -565,3 +565,28 @@ headline. What still separates them is the scheme (1), the clip (13i) and the tr
   median, 50 ms at 99 %, 83 ms worst, nine long tasks of at most 93 ms, 569 ms in all over 16 s.
   Desktop layout at 4x: 17, 50, 100 ms. It stays responsive under the throttle; this is a Mac's
   GPU, so it says the JavaScript is not the bottleneck and no more.
+
+- **Scrubbing at eye level, measured on 2026-11-24** (`scripts/adversarial/eyescrub.mjs`, the
+  ticket's slider moved one step per frame for six seconds at an 8:33 sphere shot, 200 mm,
+  headless Chrome on this machine's GPU; numbers compare builds, not phones). Desktop
+  1280 x 800: median frame 33 to 50 ms, 95th percentile 50 to 83 ms over three runs. Phone
+  390 x 844: median 16.7 ms, 95th percentile 33 ms.
+  - **The main thread is not the cost.** A CPU profile on the dev server: 87 % idle; the page's
+    own script and three.js together 7.5 ms of a 59 ms frame (2.2 ms "program", 1.7 ms
+    `bufferSubData`, 1.2 ms three.js, 0.5 ms the frame loop, under 0.2 ms each for the
+    overlay, the horizon strip, the trees' update, the minimap).
+  - **The cost is triangles.** Desktop draws 10.4 to 12.5 million triangles in a frame at eye
+    level (137 to 161 calls), into a canvas the quality governor has already cut to
+    768 x 480; the phone layout draws 3.9 to 4.8 million. Shadows are redrawn every second
+    frame while the clock moves.
+  - **Switched off one at a time** (same scrub, desktop): glass, edge blur, the water mirror, a
+    1024 px shadow map, half the pixels, More and the minimap open or closed: no change
+    outside the run-to-run noise (33 ms median each). **Trees cut to one instance: 16.7 ms
+    median, 33 ms at the 95th percentile, 7.7 million triangles.** So the trees are the
+    largest single cost on desktop: 3 to 5 million triangles a frame, with their shadow pass.
+    Desktop allows 90,000 tree instances, the phone 30,000 (`trees.js` `BUDGET`).
+  - Nothing was changed. What would help, in order of risk: a lower tree budget or coarser
+    crowns for far trees at eye level (a telephoto frame shows a few hundred); shadows only
+    every third or fourth frame while scrubbing, since the sun moves 0.02 degrees in a 5 s
+    step; trees left out of the shadow pass beyond some distance. Each changes the picture and
+    wants a look before it ships.
