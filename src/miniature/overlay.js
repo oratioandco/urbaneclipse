@@ -402,6 +402,7 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
   const left = 10;
   const right = innerWidth - 60;
   const placed = [];
+  const wanted = [];
   const p = {};
   for (const ray of hourRays) {
     groundLine(ray.base, ray.far, project);
@@ -433,11 +434,22 @@ function drawHourRays(hourRays, project, night, taps, bottomInset) {
     if (project(ray.far.x, ray.far.y, ray.far.z, end) && end.x > left + 16 && end.x < right - 16 && end.y > top + 12 && end.y < bottom - 12) {
       label = { x: end.x + ux * 14, y: end.y + uy * 14 };
     }
-    if (!label || placed.some((q) => Math.hypot(q.x - label.x, q.y - label.y) < 24)) continue;
-    placed.push(label);
     const text = ray.label ?? String(ray.hour).padStart(2, '0');
     ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
     const width = ctx.measureText(text).width + 10;
+    wanted.push({ ray, label, text, width });
+  }
+  // Where two would lie on each other only one is shown: the hour nearest the clock's first,
+  // then outward from it, so the one being looked at always stays. "10 AM" is twice as wide as
+  // "10", and on a phone a ring of them was a heap; they are told apart by their boxes now.
+  const nowHour = Number(document.getElementById('time')?.value ?? 720) / 60;
+  const apart = (hour) => Math.min(Math.abs(hour - nowHour), 24 - Math.abs(hour - nowHour));
+  wanted.sort((a, b) => apart(a.ray.hour) - apart(b.ray.hour));
+  for (const { ray, label, text, width } of wanted) {
+    const box = { x0: label.x - width / 2 - 3, x1: label.x + width / 2 + 3, y0: label.y - 12, y1: label.y + 12 };
+    if (placed.some((q) => box.x0 < q.x1 && box.x1 > q.x0 && box.y0 < q.y1 && box.y1 > q.y0)) continue;
+    placed.push(box);
+    ctx.font = '700 10.5px ui-sans-serif, system-ui, sans-serif';
     ctx.fillStyle = night ? 'rgba(20, 23, 38, 0.86)' : 'rgba(255, 253, 249, 0.94)';
     ctx.beginPath();
     ctx.roundRect(label.x - width / 2, label.y - 9, width, 18, 9);
@@ -675,8 +687,9 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
       const at = pillAt(words, ux, uy, area);
       const half = pillHalfWidth(words);
       const onFrame = (x) => x + half > frame.x && x - half < frame.x + frame.w && at.y + PILL_H / 2 > frame.y && at.y - PILL_H / 2 < frame.y + frame.h;
-      // On the rim as it is, or slid along it into the margin on the body's side, then the other.
-      const sides = [at.x, ...(ux >= 0 ? [frame.x + frame.w + half + 4, frame.x - half - 4] : [frame.x - half - 4, frame.x + frame.w + half + 4])];
+      // On the rim as it is, or slid along it into the margin on the body's side. Never the
+      // other side: "94 degrees right" standing left of the picture points into it.
+      const sides = [at.x, ux >= 0 ? frame.x + frame.w + half + 4 : frame.x - half - 4];
       const x = sides.find((cx) => !onFrame(cx) && cx - half >= area.left && cx + half <= area.right);
       if (x !== undefined) {
         placed = { text: words, x, y: at.y };
@@ -696,22 +709,64 @@ function pillHalfWidth(text) {
 }
 
 /**
- * The needle alone, just outside the frame on the side the body lies; a tap on it turns to face
- * it. Shorter than a pill's needle, and kept inside the safe area, so that on a 320 px screen
- * it stands in the 20 px between the frame and the tool buttons and touches neither.
+ * Where no pill fits beside the frame: a small capsule with the body itself in it and a
+ * chevron toward where it lies, with the word ("left", "right", "up", "down") where there is
+ * room for one. A lone needle there read as a mouse cursor and lay on the tool buttons
+ * (release test, 2026-11-24). The capsule stands in the margin on the body's side, inside the
+ * safe area, upright where the margin is narrow (22 px at 320 px wide). A tap on it turns to
+ * face the body.
  */
-const EDGE_NEEDLE = 20;
 function drawEdgeNeedle({ frame, area, ux, uy, moon, night, body }) {
-  const cx = frame.x + frame.w / 2;
-  const cy = frame.y + frame.h / 2;
-  const reach = Math.min(Math.abs(ux) > 1e-3 ? frame.w / 2 / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-3 ? frame.h / 2 / Math.abs(uy) : Infinity) + EDGE_NEEDLE / 2 + 3;
-  const half = EDGE_NEEDLE / 2 + 1;
-  const x = Math.max(area.left + half, Math.min(area.right - half, cx + ux * reach));
-  const y = Math.max(area.top + half, Math.min(area.bottom + 30 - half, cy + uy * reach));
-  drawNeedle(ctx, x, y, Math.atan2(uy, ux), EDGE_NEEDLE, {
-    kind: moon ? 'moon' : 'sun',
-    ink: night ? '#ece8df' : '#24221f',
-    halo: night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)',
-  });
-  return { kind: 'pill', x: x - 22, y: y - 22, w: 44, h: 44, body };
+  const sideways = Math.abs(ux) >= Math.abs(uy);
+  const word = sideways ? (ux > 0 ? 'right' : 'left') : uy > 0 ? 'down' : 'up';
+  ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+  const long = 22 + ctx.measureText(word).width + 20;
+  const bottom = area.bottom + 30;
+  // The margin on the body's side, or for a body above or below, the wider of the two beside.
+  const toRight = sideways ? ux > 0 : area.right - (frame.x + frame.w) >= frame.x - area.left;
+  const room = toRight ? area.right - (frame.x + frame.w) : frame.x - area.left;
+  const upright = room < long + 6;
+  const w = upright ? 22 : long;
+  const h = upright ? 40 : 22;
+  const cx = toRight ? Math.min(area.right - w / 2, frame.x + frame.w + 4 + w / 2) : Math.max(area.left + w / 2, frame.x - 4 - w / 2);
+  const along = frame.y + frame.h / 2 + (sideways ? (uy / Math.max(1e-3, Math.abs(ux))) * (frame.w / 2) : uy * (frame.h / 2));
+  const cy = Math.max(Math.max(area.top, frame.y) + h / 2, Math.min(Math.min(bottom, frame.y + frame.h) - h / 2, along));
+  ctx.fillStyle = night ? 'rgba(20, 23, 38, 0.86)' : 'rgba(255, 253, 249, 0.92)';
+  ctx.beginPath();
+  ctx.roundRect(cx - w / 2, cy - h / 2, w, h, 11);
+  ctx.fill();
+  const ink = night ? '#ece8df' : '#24221f';
+  // The chevron: a plain open angle, pointing the way.
+  const chevron = (x, y) => {
+    const a = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[word];
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(a);
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-2, -4.5);
+    ctx.lineTo(2.5, 0);
+    ctx.lineTo(-2, 4.5);
+    ctx.stroke();
+    ctx.restore();
+  };
+  if (upright) {
+    drawBody(body, cx, cy - 8, 7);
+    chevron(cx, cy + 10);
+  } else {
+    // The body, the word, and the chevron on the side it points to.
+    const left = cx - w / 2;
+    const leading = word === 'left';
+    drawBody(body, leading ? left + 26 : left + 12, cy, 7);
+    ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+    ctx.fillStyle = ink;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(word, leading ? left + 37 : left + 23, cy + 0.5);
+    chevron(leading ? left + 9 : left + w - 9, cy);
+  }
+  return { kind: 'pill', x: cx - Math.max(22, w / 2), y: cy - 22, w: Math.max(44, w), h: 44, body };
 }
