@@ -105,7 +105,9 @@ function render() {
   state.hero = next;
   root.dataset.state = 'ready';
   root.dataset.forecast = forecast;
-  answerEl.textContent = answer(groups, forecast === 'none' ? 'failed' : forecast);
+  // Without the viewshed and the streets nothing is known: that is not "nothing lines up".
+  const blind = state.shed === null && state.views === null;
+  answerEl.textContent = blind ? 'The next shots could not be worked out.' : answer(groups, forecast === 'none' ? 'failed' : forecast);
 
   const skipped = groups.reduce((sum, g) => sum + g.skipped.length, 0);
   toggle.hidden = !skipped;
@@ -114,7 +116,9 @@ function render() {
 
   const nodes = [];
   // What could not be loaded is said in words, with a way to try again.
-  if (forecast === 'failed') {
+  if (blind) {
+    // The forecast has nothing to rate.
+  } else if (forecast === 'failed') {
     const note = el('p', 'home-note', 'The weather forecast could not be loaded, so these shots have no verdict: they line up, but nothing says whether the sky lets them through. ');
     note.append(button('Try again', loadForecasts));
     nodes.push(note);
@@ -122,14 +126,14 @@ function render() {
     nodes.push(el('p', 'home-note', 'The forecast reaches 16 days ahead, and these days are beyond it: the shots line up, without a verdict.'));
   }
   if (state.shed === null || state.views === null) {
-    const what = state.shed === null && state.views === null ? 'No shots could be worked out' : state.shed === null ? 'Shots behind the tower’s sphere are missing' : 'Street shots are missing';
-    const note = el('p', 'home-note', `${what}: the city data did not load. `);
+    const what = blind ? 'Where the tower can be seen from and which streets line up is worked out from city data, and that' : state.shed === null ? 'Shots behind the tower’s sphere are missing' : 'Street shots are missing';
+    const note = el('p', 'home-note', blind ? `${what} did not load. ` : `${what}: the city data did not load. `);
     note.append(button('Try again', loadCity));
     nodes.push(note);
   }
   if (next) nodes.push(card(next, next.day, { hero: true, now }));
 
-  for (const group of groups) {
+  for (const group of blind ? [] : groups) {
     const section = el('section', 'home-day');
     const heading = el('h3', 'home-day-name', group.name);
     const small = el('small', '', [group.name === group.weekday ? '' : group.weekday, countsLine(group)].filter(Boolean).join(' · '));
