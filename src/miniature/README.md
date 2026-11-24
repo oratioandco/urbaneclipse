@@ -67,19 +67,62 @@ sits at the bottom of the screen (zero for the side panel).
 ### The day's shots, for the planner and the home page
 
 `dayShots.js` works out a day's shots and is the only place that does: `computeDayPaths` (the
-tower's paths), `collectRows` (every shot, in time order) and `dayShots` (both, from the city
-data alone). It has no three.js and no DOM, so the home page (`src/home/`) loads it without
-the planner. In the planner, `plan.js` puts the paths into scene coordinates and `daylist.js`
-adds `go` to each row (fly to where to stand). A list of several days drops the 00:00 repeat
-of a pass that runs across midnight (`withoutContinued`): home's grid and the planner's
-"3 days" list do; the planner's "1 day" view keeps that row, since it is all that day has of
-the pass.
+tower's paths), `computeLandmarkPasses` (the Siegessäule's and the Brandenburger Tor's),
+`collectRows` (every shot, in time order) and `dayShots` (all of it, from the city data
+alone). It has no three.js and no DOM, so the home page (`src/home/`) loads it without
+the planner. In the planner, `plan.js` puts the paths into scene coordinates and keeps each
+day's landmark passes, and `daylist.js` adds `go` to each row (fly to where to stand). A list
+of several days drops the 00:00 repeat of a pass that runs across midnight
+(`withoutContinued`): home's grid and the planner's "3 days" list do; the planner's "1 day"
+view keeps that row, since it is all that day has of the pass.
 
 A link can name its shot: `?date=…&time=…&shot=sphere-sun` (or `sphere-moon`, `antenna-moon`,
-`street-sun:Sonnenallee`; `shotKey`). `link.js` then opens it as a tap on its card would:
+`viktoria-sun`, `quadriga-moon`, `street-sun:Sonnenallee`; `shotKey`). `link.js` then opens it as a tap on its card would:
 it finds the day's row (`findShot`), searches for a confirmed clear spot and puts the shot's
 card on the ticket. A link without `shot`, or one whose row the day does not have, opens at
 its own `at` and `look` as before. Home's cards link this way (`planLink` in `src/home/grid.js`).
+
+### The Siegessäule and the Brandenburger Tor
+
+The sun or moon behind the Viktoria on the column and the quadriga on the gate are rows of a
+day like the tower's (`landmarkShots.js`, hooked into `collectRows`): `kind: 'tower'`, their
+own `landmark` (the sprite) and `target` (the landmark's id), `where: 'viktoria' | 'quadriga'`,
+and `at`, `look`, `lens`, `openAt`, `stand`, `score` as a tower row has them. The list's
+Landmarks switch (`layers.landmarks`) is theirs; Tower is the TV tower's alone.
+
+The geometry is `src/lib/landmarkStands.ts`, and it is narrow by nature:
+
+- **Height.** The figures are 23 m and 63 m up (gate 20.3 m, quadriga's tip about 26 m; Viktoria
+  8.32 m on a monument of about 67 m: de.wikipedia). A 0.52° disc is as wide as half the figure
+  is tall from 314 m (gate) and 457 m (column); closer than that no shot is offered. So the body
+  stands 1° to 4° up for the gate and 2° to 8° for the column, and each minute has exactly one
+  stand point, which runs along the street at up to 40 m a minute.
+- **Where one may stand.** Only on strips of open ground whose axis runs through the landmark,
+  because the Tiergarten's woods are in no data here: Straße des 17. Juni east (to Platz des
+  18. März) and west (to the Stadtbahn viaduct) of the column, the same street west of the gate,
+  and the middle promenade of Unter den Linden east of it. Bearings and tree lines are from
+  OSM, ground heights from DGM1, measured 2026-11-24; each strip's numbers and limits are in
+  the file. So every row says a side: east of the landmark looking west (evening sun, setting
+  moon) or west of it looking east.
+- **Line of sight.** Each landmark has a viewshed like the tower's
+  (`public/viewshed/siegessaeule.*`, `brandenburger-tor.*`; `scripts/build_viewshed.py
+  --landmark <id>`), aimed at the middle of the figure. It also asks what stands behind: a cell
+  counts as visible only when the sight line, carried on past the figure, clears every LoD2
+  roof by the disc's radius (value 3, `VIEW_NO_SKY`, marks the rest). Without its viewshed a
+  landmark has no rows. Trees are not checked, and every row says so: "trees unchecked" on the
+  card (`caution`), "buildings checked, trees not" in its small print and its accessible name. The planner's fly-to
+  (`goViewHere`, kind `landmark`) confirms the sight line against the full-detail buildings and
+  stays within 45 m of the row's spot, since the alignment holds at that spot only.
+- **Rank.** `landmarkScore`: the larger the disc against the figure, the higher, and always
+  under the tower's best of the same kind (sun 1.1 or 1.5, moon up to 2.0).
+
+In the 365 days from 2026-11-24 the pipeline gives 48 sun and 27 moon rows for the column
+(sun: 27 from the east, 21 from the west) and 31 sun and 20 moon rows for the gate (sun: 12
+from Unter den Linden, 19 from Straße des 17. Juni); `tests/unit/landmarkShots.test.ts` pins
+March 2027. The sun's are two runs of days either side of each equinox.
+Not offered: the long shots of the column from Bismarckstraße and Kaiserdamm (the viaduct's
+height and the terrain west of the DGM1 sheets are not in the data), Pariser Platz itself (too
+close for the disc to count), and any stand point off the four strips.
 
 ### The shot card
 
@@ -99,11 +142,12 @@ card.addEventListener('click', () => openShot(shot, verdict));   // openShot is 
 | `shot.t` | the instant, ms | yes |
 | `shot.body` | `'sun'` or `'moon'` | yes |
 | `shot.kind` | `'tower'` or `'street'` | yes |
-| `shot.where` | `'sphere'` or `'antenna'`: what the disc is behind | tower shots |
+| `shot.where` | `'sphere'` or `'antenna'` (TV tower), `'viktoria'`, `'quadriga'`: what the disc is behind | tower shots |
 | `shot.landmark` | `fernsehturm` (default), `siegessaeule` or `brandenburger_tor`: a sprite in `public/landmark-sprites/` with an entry in `SPRITE` | no |
 | `shot.distanceM` | distance to the landmark: sizes the disc against the tower's sphere. For a street, its length: the longer, the narrower the gap at its far end | no |
 | `shot.title`, `shot.short` | the shot in a sentence; the place alone | one of them |
-| `shot.stand` | where to stand, short ("5.3 km SE") | no |
+| `shot.stand` | where to stand, short ("5.3 km SE"; "1.1 km east" at a landmark) | no |
+| `shot.caution` | what is not checked, in two words ("trees unchecked"): added to the card's line, where no small print shows | no |
 | `shot.detail` | the row's small print | rows |
 | `verdict` | what `shotVerdict` returns; its `sky` draws the frame's cloud and rain. `null`: no pill, clear sky | no |
 
