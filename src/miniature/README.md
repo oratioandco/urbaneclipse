@@ -31,6 +31,12 @@ shared), `nointro`, `mode` (top, iso, free), `height`, `shadow`, `budget`, `stat
 The panel's state can be opened from the address too, without storing it: `sheet=peek|half|full`
 (phone), `panel=rail` (900 px and wider), `more=open` and `minimap=open` (eye level).
 
+Every surface that floats on the map is the one `.surface` in `miniature.css`: frosted glass
+(`--glass`, `--glass-deep` for panes with small text, `--glass-blur`). A blur is redrawn whenever
+the map moves behind it, so `glass.js` watches the frames during drags and swaps it for
+near-opaque paper after three rough drags in a row (`glassBudget.js`, tested); `glass=off` starts
+without it. The landing page uses the same glass for its header.
+
 ## The panel
 
 One block of markup in `plan.astro` (`.bottom` > `.panel`), three shapes, all in `miniature.css`:

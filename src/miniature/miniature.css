@@ -79,6 +79,9 @@
         body:not([data-glass='off']) .surface { background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow), inset 0 0 0 0.5px var(--glass-rim), inset 0 1px 0 var(--glass-edge); }
         /* The panel carries small text over a busy map: a deeper pane. */
         body:not([data-glass='off']) .panel.surface, body:not([data-glass='off']) :is(.layers, .sharemenu, .intro).surface { background: var(--glass-deep); }
+        /* The intro's sticky footer stays solid: the text scrolls under it, and a blur nested in
+           a blurred pane does not hide it. */
+        body:not([data-glass='off']) .intro-actions { background: var(--surface-solid); }
         /* Controls inside a pane are glass too: lighter panes on the pane, hairline edges. */
         body:not([data-glass='off']) { --field: rgba(255, 255, 255, 0.62); --line: rgba(40, 34, 24, 0.14); }
         body[data-night='true']:not([data-glass='off']) { --field: rgba(236, 232, 223, 0.09); --line: rgba(236, 232, 223, 0.16); }
