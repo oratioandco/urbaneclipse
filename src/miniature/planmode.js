@@ -19,7 +19,7 @@ import { layers, switchedOff } from './chrome.js';
 import { dateDayStart, dateInput, dayStart, setDay, setMinute } from './clock.js';
 import { iconEl } from './icons.js';
 import { moonSvg } from './bodies.js';
-import { collectRows, emptyNote, openShot, renderDayList, shotRow } from './daylist.js';
+import { collectRows, emptyNote, filterHint, openShot, renderDayList, shotRow } from './daylist.js';
 import { computeDayPaths, getViewshed, landmarkShedCount } from './plan.js';
 import { renderPeek } from './peek.js';
 import { onPeek } from './sheet.js';
@@ -108,8 +108,15 @@ new MutationObserver(() => {
 /** The next shot of the three days, kept so the countdown can tick without the maths. */
 let next = null;
 let nextSentence = undefined;
+let peekDay = svDate(Date.now());
 function showPeek() {
   const now = Date.now();
+  // Past midnight "Wed 8:35 AM" is today's 8:35, and "Today" is another day: work it out anew
+  // at once, not at the next five-minute round.
+  if (svDate(now) !== peekDay) {
+    peekDay = svDate(now);
+    return renderPlanCards();
+  }
   if (next && next.row.t <= now) return renderPlanCards();
   renderPeek(next, now, nextSentence);
 }
@@ -284,5 +291,6 @@ export function renderPlanCards() {
       ...picks.map((row) => shotRow({ ...row, detail: row.detail + noteAt(day, from, row.t) }, row.verdict, () => flyTo(row, from))),
       ];
     }),
+    ...filterHint(),
   );
 }

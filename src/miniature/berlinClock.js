@@ -84,9 +84,15 @@ export function berlinDayEnd(day) {
   return wallToInstant(new Date(utcMidnight(day) + 86_400_000).toISOString().slice(0, 10), 0);
 }
 
-/** The day to open at: `asked` when it is a real yyyy-mm-dd, else `fallback` (today). */
+/** The first and last year a link may open at. */
+export const START_YEARS = [1950, 2100];
+/** The day to open at: `asked` when it is a real yyyy-mm-dd from 1950 to 2100, else `fallback` (today). */
 export function startDate(asked, fallback) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(asked ?? '')) return fallback;
   const t = Date.parse(`${asked}T00:00:00Z`);
-  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === asked ? asked : fallback;
+  if (!Number.isFinite(t) || new Date(t).toISOString().slice(0, 10) !== asked) return fallback;
+  // Years the sun and moon are computed for and a date field can show: 0000-01-01 and
+  // 9999-12-31 hung the page on a RangeError, and 0001-01-01 came up labelled 1901.
+  const year = Number(asked.slice(0, 4));
+  return year >= START_YEARS[0] && year <= START_YEARS[1] ? asked : fallback;
 }

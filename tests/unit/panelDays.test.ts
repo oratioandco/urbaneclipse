@@ -97,6 +97,10 @@ describe('the day a link opens at', () => {
     for (const bad of ['garbage', '2027-02-30', '2027-13-01', '27-03-28', '', '2027-3-5']) expect(startDate(bad, '2026-11-24'), bad).toBe('2026-11-24');
     expect(startDate('2027-03-28', '2026-11-24')).toBe('2027-03-28');
     expect(startDate('2028-02-29', '2026-11-24')).toBe('2028-02-29');
+    // Real dates the planner cannot compute or show: today instead of a page that never builds.
+    for (const far of ['0000-01-01', '0001-01-01', '9999-12-31', '1949-12-31', '2101-01-01']) expect(startDate(far, '2026-11-24'), far).toBe('2026-11-24');
+    expect(startDate('1950-01-01', '2026-11-24')).toBe('1950-01-01');
+    expect(startDate('2100-12-31', '2026-11-24')).toBe('2100-12-31');
   });
 });
 
