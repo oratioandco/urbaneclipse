@@ -1,6 +1,6 @@
 /** Standing in the street: arriving, which way to face, the lens and camera controls. */
 import * as THREE from 'three';
-import { attachLook, camera as cameraFormat, compassName, EYE_HEIGHT, FIXED_FORMATS, FORMATS, fovForLens, frameSize, lensRange, lookDirection, SENSOR_FORMATS, setFormat, setLens } from './eye.js';
+import { attachLook, camera as cameraFormat, compassName, EYE_HEIGHT, FIXED_FORMATS, FORMATS, fovForLens, frameSize, latLonFromScene, lensRange, lookDirection, SENSOR_FORMATS, setFormat, setLens } from './eye.js';
 import { renderHorizon, setPickHandler } from './horizon.js';
 import { orbitTo } from './camera.js';
 import { instant } from './clock.js';
@@ -11,6 +11,9 @@ import { app, invalidate, invalidateShadows, smooth } from './state.js';
 import { nudgeKeys, showFlight } from './walk.js';
 import { DISC_DEG, SPHERE_CENTRE_AGL, SPHERE_RADIUS_M } from './towerShots.js';
 import { landmarkCaption } from './landmarkView.js';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { missingBridgeAt, missingBridgeNote } from './bridgesMissing.js';
+import { toast } from './share.js';
 
 /** A full-frame focal length on the current format, for the same framing. */
 export const fullFrame = (mm) => (mm * cameraFormat.format.width) / 36;
@@ -67,6 +70,11 @@ export function enterEye(x, z, view = openView(x, z, chooseView(x, z))) {
   // On a bridge one stands on its deck, which the model draws above the terrain: `lift` is
   // the deck's height over it (sightlines.js `deckAt`).
   Object.assign(look, { x, y, z, lift: standLift(x, z), mode: 'walk', ...view, active: false });
+  // A bridge the model does not have: say so, rather than stand under it without a word.
+  if (look.mode !== 'drone' && deckAt(x, z) === null) {
+    const bridge = missingBridgeAt(...latLonFromScene(x, z, FERNSEHTURM.lat, FERNSEHTURM.lon));
+    if (bridge) toast(missingBridgeNote(bridge), 9000);
+  }
   app.liftAnimation = null;
   app.photographer = { x, y, z, heading: look.heading };
   app.orbitAnimation = null;

@@ -357,3 +357,13 @@ describe('glass budget', () => {
     expect(parseGlass('on')).toBe('on');
   });
 });
+
+describe('a drag of the clock', () => {
+  it('is going on for 200 ms after its last step, and not before the first', async () => {
+    const { noteScrub, scrubbing, SCRUB_REST_MS } = await import('../../src/miniature/scrub.js');
+    expect(scrubbing(1000)).toBe(false);
+    noteScrub(1000);
+    expect(scrubbing(1000 + SCRUB_REST_MS - 1)).toBe(true);
+    expect(scrubbing(1000 + SCRUB_REST_MS)).toBe(false);
+  });
+});

@@ -1,4 +1,5 @@
 /** The moment: the day and time inputs, and turning them into instants in Berlin time. */
+import { noteScrub } from './scrub.js';
 import { formatDay, formatMinutes, parseTime, uses12h } from './time.js';
 import { startDate, berlinDayEnd, berlinDayStart, isLaterReading, isSkipped, wallMinutesOf, wallToInstant } from './berlinClock.js';
 import { params } from './config.js';
@@ -168,6 +169,7 @@ showDay();
 // Scrubbing near a tower alignment snaps to its minute, so the disc lands behind the
 // sphere instead of a minute beside it. Fine timing is the photographer's hand, not a scrub.
 timeInput.addEventListener('input', () => {
+  noteScrub();
   if (!fine.on) {
     const snap = snapMinute(instantOfMinute(Number(timeInput.value)));
     // To the alignment itself, to five seconds, as a tap on its card sets it. Rounded to the

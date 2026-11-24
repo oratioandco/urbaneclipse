@@ -19,6 +19,8 @@ import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { FIGURE_TARGETS, discShare } from '../lib/landmarkStands.ts';
 import { LANDMARK_CAUTION, LANDMARK_CHECK, figureWord, landmarkScore, lensFor } from './landmarkShots.js';
 import { discOverSphere } from './towerShots.js';
+// The pale moon by day: one pair of numbers for every list (spectacle.js).
+import { PALE_MOON, PALE_MOON_SUN_DEG } from './spectacle.js';
 
 const DAY_MS = 86_400_000;
 /** A shot scoring this much is worth going out for: the first card is the next of these. */
@@ -27,9 +29,6 @@ export const DECENT = 1;
 const LATER_COSTS = 0.35;
 /** Dates of one kind this close together are one run (a henge comes back several days in a row). */
 const RUN_MS = 21 * DAY_MS;
-/** With the sun this high the moon is a pale disc in a blue sky: less of a picture. */
-const PALE_MOON_SUN_DEG = 6;
-const PALE_MOON = 0.6;
 /** Days of one run follow each other this closely (a pass comes back a day later, a little changed). */
 const NEXT_DAY_MS = 1.5 * DAY_MS;
 /** A forecast that says Skip halves a shot's rank; one that says Go lifts it a little. */

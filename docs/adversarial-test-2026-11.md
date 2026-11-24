@@ -590,3 +590,23 @@ headline. What still separates them is the scheme (1), the clip (13i) and the tr
     every third or fourth frame while scrubbing, since the sun moves 0.02 degrees in a 5 s
     step; trees left out of the shadow pass beyond some distance. Each changes the picture and
     wants a look before it ships.
+  - **A cheaper scene while the clock is dragged, added on 2026-11-24** (`scrub.js`, `main.js`,
+    `trees.js` `setTreeDetail`): during a drag and for 200 ms after its last step the shadow
+    map is redrawn on every third frame at most, the trees stay out of it, and the trees are
+    drawn in a quarter of their triangles (750,000 to 231,000 in the test view). At rest one
+    whole frame is drawn again. **The resting picture is unchanged: 0 % of pixels differ**
+    between a still before a drag and one after it (`scripts/adversarial/scrubstill.mjs`; the
+    control, two stills with nothing done, also 0 %); the in-drag still was looked at beside
+    them (crowns a little more angular, no tree shadows). **Measured once the machine was quiet again (load
+    average 5 to 13), same build, three rounds each, 1280 x 800:** a drag drawn whole
+    (`?scrub=full`) median 50 ms, 95th percentile 83 to 100 ms; the cheaper drag median
+    33.4 ms, 95th percentile 50 to 67 ms. **The target (16.7 and 33 ms) is not met.** What is
+    left is not the drag: a forced redraw with the clock standing still also takes 33 ms. An
+    A/B inside one page, each part hidden in turn for 1.5 s, four rounds: as built 35.7 ms
+    mean, trees hidden 30.0, no shadow light 34.1, bloom off 35.2, sky hidden 32.4,
+    **buildings hidden 25.7 (median 16.8)**. So the rest is the city itself: 355 building
+    tiles and 4 to 8 million triangles in view at eye level on a desktop screen, whose camera
+    sees far more than the viewfinder's crop. Getting under 16.7 ms means drawing fewer or
+    coarser buildings outside the frame, which changes the picture around the viewfinder and
+    was not attempted. (An hour earlier, at a load average of 288 from other test browsers,
+    every variant read 50 ms and nothing could be told apart; those numbers were thrown away.)

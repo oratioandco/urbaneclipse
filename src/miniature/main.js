@@ -43,8 +43,9 @@ import { clearView, deckAt, roadsNear, roofAt, sightline, standable } from './si
 import { app, invalidate, invalidateShadows, smooth, stats } from './state.js';
 import { loadLevel, loading, showLevel, tiles, updateLevels, viewFrustum, viewMatrix } from './tiles.js';
 import { clampToScreen, quality, sampleFrame } from './quality.js';
+import { scrubbing, SCRUB_SHADOW_EVERY } from './scrub.js';
 import { settleFooting, stepLift, stepWalk } from './walk.js';
-import { loadTrees, setTrees, updateTrees } from './trees.js';
+import { loadTrees, setTreeDetail, setTrees, treeMeshes, updateTrees } from './trees.js';
 import { loadBlossom } from './blossomForecast.js';
 import { liftOntoLandmarks } from './landmarks.js';
 import { updateClouds } from './clouds.js';
@@ -104,6 +105,12 @@ function updateViewArea() {
   if (document.body.dataset.dates !== 'open') panelTop = panel.getBoundingClientRect().top;
   const top = document.querySelector('.topleft').getBoundingClientRect().bottom;
   let area = { left: 0, top: top + 4, right: innerWidth, bottom: panelTop - 4 };
+  // On a wide screen the open Dates list stands tall at the left and covered the first 75 px
+  // of the viewfinder and the start of its caption: the frame keeps to the right of it.
+  if (document.body.dataset.eye === 'true' && document.body.dataset.dates === 'open' && innerWidth >= 900) {
+    const card = ticket.getBoundingClientRect();
+    if (card.right < innerWidth / 2) area.left = card.right + 8;
+  }
   // On a small phone the walk stick's row above the ticket takes a third of what is left, and
   // the picture shrinks to a stamp (87 x 131 px at 320 x 568 with More open). Where the frame
   // fits beside the stick and the minimap, it takes that room too, down to the credit line.
@@ -137,6 +144,9 @@ let lastMainMs = 0;
 let lastShadowed = false;
 // Frames drawn since the shadow map was.
 let sinceShadow = 99;
+let wasScrubbing = false;
+// `?scrub=full` draws every frame of a drag whole, to measure what the cheaper drag saves.
+const CHEAP_DRAG = params.get('scrub') !== 'full';
 
 function frame(now) {
   requestAnimationFrame(frame);
@@ -165,6 +175,18 @@ function frame(now) {
   }
   const moved = controls.enabled && controls.update();
   if (moved) app.shadowsDirty = true;
+  // A drag of the clock draws cheaper (quality.js); when it rests, one whole frame is owed.
+  const inScrub = CHEAP_DRAG && scrubbing(entered);
+  if (inScrub !== wasScrubbing) {
+    wasScrubbing = inScrub;
+    for (const mesh of treeMeshes) mesh.castShadow = !inScrub;
+    setTreeDetail(inScrub);
+    if (!inScrub) {
+      app.shadowsDirty = true;
+      app.dirty = true;
+      sinceShadow = 99;
+    }
+  }
   if (!app.dirty && !moved && !window.__forceRender) {
     lastFrame = now;
     return;
@@ -207,7 +229,7 @@ function frame(now) {
   lastShadowed = false;
   sinceShadow++;
   if (app.shadowsDirty && sun.intensity > 0) {
-    if (sinceShadow >= quality.shadowEvery) {
+    if (sinceShadow >= (wasScrubbing ? Math.max(quality.shadowEvery, SCRUB_SHADOW_EVERY) : quality.shadowEvery)) {
       fitShadow();
       app.shadowsDirty = false;
       lastShadowed = true;

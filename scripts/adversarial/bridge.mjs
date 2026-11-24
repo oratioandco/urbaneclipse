@@ -10,7 +10,10 @@
  *   C  any bridge: mid-span on a list of Berlin road bridges, "stand here" moves you less
  *      than 5 m; and the known not-a-deck places (under a rail viaduct) are not decks.
  *
- *   node scripts/adversarial/bridge.mjs [A] [B] [C] [census]     SIZES=phone,desktop
+ *   D  the five bridges the model lacks say "not in the model yet" where one stands at them,
+ *      and the two railway viaducts of the census are not decks.
+ *
+ *   node scripts/adversarial/bridge.mjs [A] [B] [C] [D] [census]     SIZES=phone,desktop
  *
  * `census` lists every place the rule calls a deck (a sample of the street points), with its
  * height over the terrain and coordinates, to look for roofs and viaducts taken for decks.
@@ -57,7 +60,7 @@ const BRIDGES = {
   'Weidendammer Bruecke': [52.52245, 13.388],
   Schlossbruecke: [52.5176, 13.3987],
 };
-const out = { A: {}, B: {}, C: {} };
+const out = { A: {}, B: {}, C: {}, D: {} };
 let failed = 0;
 const verdict = (ok, text) => {
   if (!ok) failed++;
@@ -159,6 +162,29 @@ if (want('C')) {
   }
   await context.close();
 }
+// D: the bridges the model does not have say so, and the railway viaducts are not stood on.
+if (want('D')) {
+  const { page, context } = await open({ size: 'phone', forecast: 'fixed' });
+  for (const name of ['Boesebruecke', 'Swinemuender Bruecke', 'Langenscheidtbruecke', 'Elsenbruecke', 'Oberbaumbruecke', 'Moltkebruecke']) {
+    const [lat, lon] = BRIDGES[name];
+    await plan(page, `date=2026-11-24&time=600&at=${lat},${lon}&look=280,1&lens=50`, { wait: 1500 });
+    const toast = await page.evaluate(() => (document.getElementById('toast').hidden ? '' : document.getElementById('toast').innerText));
+    out.D[name] = toast;
+    const said = /not in the model yet/.test(toast);
+    // Either one stands on its deck after all (the Swinemünder Brücke's middle is recognised
+    // at some detail levels), or the page says the bridge is not in the model.
+    const onDeck = await page.evaluate(() => window.__mini.deckAt(window.__mini.look.x, window.__mini.look.z) !== null);
+    verdict(name === 'Moltkebruecke' ? onDeck && !said : said !== onDeck, `D ${name}: ${onDeck ? 'stands on a deck' : 'not on a deck'}, ${toast ? `says "${toast.slice(0, 60)}\u2026"` : 'says nothing'}`);
+    if (name === 'Boesebruecke') await shot(page, 'bridge-D-boese');
+  }
+  await plan(page, 'date=2026-11-24&time=600');
+  for (const [lat, lon] of [[52.50465, 13.32633], [52.50509, 13.32914]]) {
+    const deck = await page.evaluate(([lat, lon, T]) => { const m = window.__mini; const [x, z] = m.sceneFromLatLon(lat, lon, T[0], T[1]); return [[0, 0], [8, 0], [-8, 0], [0, 8], [0, -8]].some(([dx, dz]) => m.deckAt(x + dx, z + dz) !== null); }, [lat, lon, TOWER]);
+    verdict(!deck, `D rail viaduct at ${lat},${lon}: ${deck ? 'still a deck' : 'not a deck'}`);
+  }
+  await context.close();
+}
+
 // Not run unless asked for (it takes minutes): every place the rule calls a deck, for a look
 // by hand at the ones high over the terrain. A false positive is a roof or a viaduct here.
 if (only.includes('census')) {

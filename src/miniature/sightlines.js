@@ -4,7 +4,9 @@
  */
 import * as THREE from 'three';
 import { deckTop } from './decks.js';
-import { EYE_HEIGHT, lookDirection } from './eye.js';
+import { railViaductAt } from './bridgesMissing.js';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { EYE_HEIGHT, latLonFromScene, lookDirection } from './eye.js';
 import { buildingMaterial, controls, raycaster, tower } from './render.js';
 import { app } from './state.js';
 import { loadLevel, tiles } from './tiles.js';
@@ -142,7 +144,8 @@ export function deckAt(x, z) {
   const key = `${Math.round(x / 3)},${Math.round(z / 3)}`;
   if (!deckMemo.has(key)) {
     if (deckMemo.size > 4000) deckMemo.clear();
-    deckMemo.set(key, app.roadXZ ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) !== null : false);
+    // Not the railway viaducts the rule is known to take for bridges (bridgesMissing.js).
+    deckMemo.set(key, app.roadXZ && !railViaductAt(...latLonFromScene(x, z, FERNSEHTURM.lat, FERNSEHTURM.lon)) ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) !== null : false);
   }
   if (!deckMemo.get(key)) return null;
   const top = roofAt(x, z);

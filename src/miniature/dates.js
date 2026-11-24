@@ -57,7 +57,11 @@ function search(job) {
   if (!worker) {
     worker = new Worker(new URL('./dates.worker.js', import.meta.url), { type: 'module' });
     // A worker whose file does not arrive (offline, blocked) only ever says so here.
-    worker.onerror = (event) => lost(event?.message || 'the search could not be loaded');
+    worker.onerror = (event) => {
+      // Handled here, in words on the list: not also an uncaught error on the page.
+      event?.preventDefault?.();
+      lost(event?.message || 'the search could not be loaded');
+    };
     worker.onmessageerror = () => lost('the search\u2019s answer could not be read');
   }
   const listen = () => {
@@ -151,6 +155,11 @@ async function refresh() {
   const streetJob = street
     ? search({ kind: 'street', view: { bearingDeg: street.bearingDeg, skylineDeg: street.skylineDeg, toleranceDeg: street.toleranceDeg, from: { lat, lon } }, start: now, end: now + YEAR_MS })
     : null;
+  // Their answers are read further down, after the buildings along the sightlines are loaded.
+  // A search that fails before then (the worker did not load) is told there, in words on the
+  // list; marked as looked after here, so it is not also an unhandled rejection on the page.
+  towerJob.catch(() => {});
+  streetJob?.catch(() => {});
 
   // Full detail for the checks: toward each landmark, and down the street.
   const direction = new THREE.Vector3();

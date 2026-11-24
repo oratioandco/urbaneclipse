@@ -4,9 +4,8 @@
  *
  * The moon by day. With the sun more than 6° up the moon is a pale disc in a blue sky: a street
  * henge or a tower pass with it is less of a picture than the same at dusk or at night, and
- * much less than the sun on a figure at golden hour. It counts 0.6 times. "From here" has had
- * this rule for its year of dates (fromHere.js `spectacle`, the same two numbers; a test keeps
- * them in step); a day's rows had none, so midday moon henges filled the three cards of a day.
+ * much less than the sun on a figure at golden hour. It counts 0.6 times. "From here" uses the
+ * same two numbers from here for its year of dates (fromHere.js `spectacle`).
  */
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';

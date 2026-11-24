@@ -36,15 +36,17 @@ const KINDS = [0, 1, 2, CHERRY_EARLY, CHERRY_ORNAMENTAL, CHERRY_LATE];
  * Unit trees, one unit tall and one crown wide, for each instance to scale to its own height and
  * crown. The trunk ends inside the crown.
  */
-function unitTree(kind) {
-  const trunk = new THREE.CylinderGeometry(0.035, 0.05, 0.5, 5, 1, true).translate(0, 0.25, 0);
+function unitTree(kind, coarse = false) {
+  // Coarse: the same tree in a quarter of the triangles (a three-sided trunk, an eight-faced
+  // crown), for the frames drawn while the clock is dragged (`setTreeDetail`).
+  const trunk = new THREE.CylinderGeometry(0.035, 0.05, 0.5, coarse ? 3 : 5, 1, true).translate(0, 0.25, 0);
   let crown;
   if (kind === 1) {
-    crown = new THREE.ConeGeometry(0.5, 0.85, 7, 1).translate(0, 0.575, 0);
+    crown = new THREE.ConeGeometry(0.5, 0.85, coarse ? 4 : 7, 1).translate(0, 0.575, 0);
   } else if (kind === 2) {
-    crown = new THREE.DodecahedronGeometry(0.5, 0).scale(1, 1.5, 1).translate(0, 0.62, 0);
+    crown = (coarse ? new THREE.OctahedronGeometry(0.5, 0) : new THREE.DodecahedronGeometry(0.5, 0)).scale(1, 1.5, 1).translate(0, 0.62, 0);
   } else {
-    crown = new THREE.DodecahedronGeometry(0.5, 0).scale(1, 1.1, 1).translate(0, 0.7, 0);
+    crown = (coarse ? new THREE.OctahedronGeometry(0.5, 0) : new THREE.DodecahedronGeometry(0.5, 0)).scale(1, 1.1, 1).translate(0, 0.7, 0);
   }
   for (const g of [trunk, crown]) {
     g.deleteAttribute('uv');
@@ -242,3 +244,17 @@ export function updateTrees() {
 }
 
 export const treeMeshes = kinds;
+
+const fullGeometry = kinds.map((mesh) => mesh.geometry);
+let coarseGeometry = null;
+/**
+ * The trees in fewer triangles (`coarse`) or as they are. Only the shape each instance is drawn
+ * with changes: places, sizes and colours stay, so switching back gives the same picture.
+ */
+export function setTreeDetail(coarse) {
+  if (coarse && !coarseGeometry) {
+    const broad = unitTree(0, true);
+    coarseGeometry = KINDS.map((kind) => (kind >= 3 ? broad : unitTree(kind, true)));
+  }
+  kinds.forEach((mesh, i) => (mesh.geometry = coarse ? coarseGeometry[i] : fullGeometry[i]));
+}

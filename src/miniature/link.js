@@ -19,6 +19,8 @@ import { eyeCamera } from './render.js';
 import { app } from './state.js';
 import { showFlight } from './walk.js';
 import { toast } from './share.js';
+import { shotSeenFrom } from './linkShot.js';
+import { deckAt, roofAt, standable } from './sightlines.js';
 
 // Shared links open the same view: ?date=2027-03-22&time=1020&at=52.5,13.4&look=268,2&lens=200&cam=ff
 let lastLink = '';
@@ -90,7 +92,11 @@ async function nameLinkedShot(key) {
   }
   for (let i = 0; i < 40 && !(app.dayReady && getViewshed() && landmarksSettled()); i++) await new Promise((resolve) => setTimeout(resolve, 150));
   const row = findShot(currentRows(), key, instant().getTime());
-  if (row) showTicket(row, dayVerdict(row));
+  // Only where the link's place can be that shot (linkShot.js): a card over a view of
+  // something else says what is not so.
+  const at = (params.get('at') ?? '').split(',').map(Number);
+  const fits = at.length !== 2 || !at.every(Number.isFinite) || (row && shotSeenFrom(row, at[0], at[1]));
+  if (row && fits) showTicket(row, dayVerdict(row));
 }
 
 /**
@@ -126,7 +132,20 @@ export async function openLinkedView() {
   const lens = THREE.MathUtils.clamp(Number(params.get('lens')) || 50, lensMin, lensMax);
   // A drone link opens in the air, at its height (the EU open category's 120 m at most).
   const fly = Math.min(120, Math.max(0, Number(params.get('fly')) || 0));
-  enterEye(x, z, { heading: Number.isFinite(heading) ? heading : 0, pitch: Number.isFinite(pitch) ? pitch : 0, lens, ...(params.has('fly') ? { mode: 'drone', lift: fly } : {}) });
+  // Nobody is left inside a building or under a bridge's span: on foot, the nearest place one
+  // can stand, and a word about it. (A bridge the model lacks says so itself, eyeLevel.js.)
+  let [sx, sz] = [x, z];
+  // Only a point with something built over it that is not a bridge's deck: a point in a
+  // narrow street is where the link put it and stays there.
+  if (!params.has('fly') && roofAt(x, z) > -Infinity && deckAt(x, z) === null) {
+    const spot = standable(new THREE.Vector3(x, app.groundAt(x, z), z));
+    const moved = Math.hypot(spot.x - x, spot.z - z);
+    if (moved > 3) {
+      [sx, sz] = [spot.x, spot.z];
+      toast(`This link\u2019s standing point is inside or under something built. You stand at the nearest street, ${Math.round(moved)} m from it.`, 8000);
+    }
+  }
+  enterEye(sx, sz, { heading: Number.isFinite(heading) ? heading : 0, pitch: Number.isFinite(pitch) ? pitch : 0, lens, ...(params.has('fly') ? { mode: 'drone', lift: fly } : {}) });
   if (params.has('fly')) showFlight();
   // A time to the second came from fine timing; open it that way.
   if (!Number.isInteger(Number(params.get('time')))) setFine(true);

@@ -38,9 +38,29 @@ import '../styles/global.css';
     <script is:inline src="/cesium/Cesium.js"></script>
   </head>
   <body class="m-0 h-full w-full overflow-hidden bg-neutral-100">
-    <div class="fixed inset-0">
+    <div class="fixed inset-0 classic-scene">
       <CesiumViewer client:only="react" />
     </div>
+    <!-- This is the earlier view, kept as it was. It says so, and on a narrow screen, where its
+         panels lie off the screen, it points to the planner instead of showing them cut off. -->
+    <a class="classic-legacy" href="/plan/" data-plan-link>Legacy view <span>Open the planner</span></a>
+    <div class="classic-narrow" role="note">
+      <div class="classic-card">
+        <img src="/brand/mark-64.png" width="40" height="40" alt="" />
+        <h1>The classic view is built for large screens</h1>
+        <p>On a phone its panels do not fit. The planner shows the same sun, moon and tower, and is made for this size.</p>
+        <a class="classic-go" href="/plan/" data-plan-link>Open the planner</a>
+      </div>
+    </div>
+    <script is:inline>
+      // The planner opens on the day this view was asked for, when the address names one.
+      (function () {
+        var asked = new URLSearchParams(location.search).get('date') || '';
+        var day = /^\d{4}-\d{2}-\d{2}/.exec(asked);
+        if (!day) return;
+        document.querySelectorAll('[data-plan-link]').forEach(function (a) { a.href = '/plan/?date=' + day[0]; });
+      })();
+    </script>
   </body>
 </html>
 
@@ -56,6 +76,77 @@ import '../styles/global.css';
     inset: 0;
     width: 100%;
     height: 100%;
+  }
+  /* The planner's paper, ink and pills (src/miniature/miniature.css), by hand: this page loads none of it. */
+  .classic-legacy {
+    position: fixed;
+    z-index: 30;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 253, 249, 0.92);
+    box-shadow: 0 1px 2px rgba(40, 34, 24, 0.12), 0 6px 20px rgba(40, 34, 24, 0.12);
+    color: #6f6a62;
+    font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+    text-decoration: none;
+  }
+  .classic-legacy span {
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: #24221f;
+    color: #fffdf9;
+  }
+  .classic-narrow {
+    display: none;
+  }
+  @media (max-width: 760px) {
+    .classic-scene,
+    .classic-legacy {
+      display: none;
+    }
+    .classic-narrow {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: #f6f3ee;
+      color: #24221f;
+      font: 400 16px/1.45 ui-sans-serif, system-ui, sans-serif;
+    }
+    .classic-card {
+      max-width: 340px;
+      display: grid;
+      gap: 12px;
+      justify-items: start;
+    }
+    .classic-card h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+    .classic-card p {
+      margin: 0;
+      color: #6f6a62;
+    }
+    .classic-go {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 20px;
+      border-radius: 999px;
+      background: #24221f;
+      color: #fffdf9;
+      font-weight: 600;
+      text-decoration: none;
+    }
   }
   :global(.cesium-viewer-bottom) {
     /* Keep the plaster void uncluttered; credit/toolbar hidden by widget flags too. */

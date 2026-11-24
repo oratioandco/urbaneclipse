@@ -52,10 +52,20 @@ function openMenu(open) {
   directions.href = apple ? `https://maps.apple.com/?daddr=${lat},${lon}&dirflg=w` : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=walking`;
   document.getElementById('directions-app').textContent = `${apple ? 'Apple Maps' : 'Google Maps'}, on foot`;
   const t = instant().getTime();
-  document.getElementById('calendar-what').textContent = `${formatDay(t)} \u00b7 ${formatClock(t)}, with an alarm an hour before`;
+  // What the shot's card says is not checked ("trees unchecked") goes with it into the calendar's line.
+  const caution = ticketShotRow()?.caution;
+  document.getElementById('calendar-what').textContent = `${formatDay(t)} \u00b7 ${formatClock(t)}, with an alarm an hour before${caution ? ` \u00b7 ${caution}` : ''}`;
   copyLabel.textContent = canShare ? 'Share link\u2026' : 'Copy link';
 }
 button.addEventListener('click', () => openMenu(menu.hidden));
+// Escape closes the menu and nothing else: at eye level it would otherwise go back to the map.
+addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || menu.hidden) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  openMenu(false);
+  button.focus({ preventScroll: true });
+}, true);
 addEventListener('pointerdown', (event) => {
   if (!menu.hidden && !menu.contains(event.target) && !button.contains(event.target)) openMenu(false);
 });
