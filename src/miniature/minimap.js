@@ -3,6 +3,9 @@
  * holds nearby. North is up, so it reads like the big map. Drawn from the painted ground map,
  * so it costs one image draw a frame.
  */
+import { drawMoon, drawSun } from './bodies.js';
+import { drawMark } from './marks.js';
+
 const RADIUS_M = 450;
 const PATH_CSS = { sun: '#f26a12', moon: '#5b82ff' };
 
@@ -129,13 +132,7 @@ export function drawMinimap({ look, fov, paths, rays, spots, bodies, night }) {
   ctx.globalAlpha = 1;
   for (const spot of spots) {
     const [x, y] = toMap(spot.x, spot.z);
-    ctx.fillStyle = '#fff';
-    ctx.strokeStyle = PATH_CSS[spot.body];
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    drawMark(ctx, `tower-${spot.body}`, x, y, 15);
   }
   // The tower, pinned to the rim when it is out of range so you can always find it.
   {
@@ -191,10 +188,9 @@ export function drawMinimap({ look, fov, paths, rays, spots, bodies, night }) {
     const ux = Math.cos(a);
     const uy = Math.sin(a);
     const reach = (r - 7) / Math.max(Math.abs(ux), Math.abs(uy));
-    ctx.fillStyle = body.moon ? PATH_CSS.moon : PATH_CSS.sun;
-    ctx.beginPath();
-    ctx.arc(r + ux * reach, r + uy * reach, 4.5, 0, Math.PI * 2);
-    ctx.fill();
+    // The canonical sun and moon of this minute (bodies.js), small.
+    if (body.moon) drawMoon(ctx, r + ux * reach, r + uy * reach, 5, { fraction: body.moon.fraction, waxing: body.moon.waxing ?? body.moon.phase < 0.5, altitudeDeg: body.alt, sunAltitudeDeg: body.sunAlt, glow: false });
+    else drawSun(ctx, r + ux * reach, r + uy * reach, 5, body.alt, { glow: false });
   }
   ctx.font = '700 10px ui-sans-serif, system-ui, sans-serif';
   ctx.textAlign = 'center';
