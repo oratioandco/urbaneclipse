@@ -11,6 +11,9 @@ const hourOnly = new Intl.DateTimeFormat(undefined, { hour: uses12h ? 'numeric' 
 
 /** An instant, as a Berlin wall-clock time. */
 export const formatClock = (t) => clock.format(new Date(t));
+const clockSeconds = new Intl.DateTimeFormat(undefined, { hour: uses12h ? 'numeric' : '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Berlin' });
+/** The same to the second, for the moment of a pass. */
+export const formatSeconds = (t) => clockSeconds.format(new Date(t));
 /** Minutes after local midnight, with seconds on request. */
 export const formatMinutes = (minutes, seconds = false) =>
   (seconds ? dayClockSeconds : dayClock).format(new Date(Date.UTC(2000, 0, 1) + Math.round(minutes * 60) * 1000));

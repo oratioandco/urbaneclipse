@@ -11,7 +11,8 @@ import { formatHour } from './time.js';
 import { sceneFromLatLon } from './eye.js';
 import { antennaRange, visibleMoon } from './towerShots.js';
 import { layers, shownBody } from './chrome.js';
-import { dayStart, instant, showPhases } from './clock.js';
+import { dayEnd, dayStart, instant, showPhases } from './clock.js';
+import { dayEndOf } from './dayMath.js';
 import { renderDayList } from './daylist.js';
 import { renderDayView } from './dayview.js';
 import { renderPlanCards } from './planmode.js';
@@ -42,7 +43,7 @@ export function updateHighlights(t) {
 
 export function updateDay() {
   const from = dayStart();
-  const to = from + 86_400_000;
+  const to = dayEnd();
   showPhases();
   app.moments = [
     ...streetMoments(app.views, 'sun', from, to, FERNSEHTURM.lat, FERNSEHTURM.lon),
@@ -77,7 +78,7 @@ export const getViewshed = () => viewshed;
  * viewshed is in — the same pipeline the selected day runs, kept pure so the plan's three
  * days can share it. */
 export function computeDayPaths(from, shed = viewshed) {
-  const to = from + 86_400_000;
+  const to = dayEndOf(from);
   return ['sun', 'moon']
     .map((body) => computeDayPath({ body, start: new Date(from), end: new Date(to), landmark: FERNSEHTURM }))
     .filter((path) => path.body === 'sun' || path.illumination >= MIN_MOON_ILLUMINATION)
