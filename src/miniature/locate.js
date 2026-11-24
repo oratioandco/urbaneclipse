@@ -8,7 +8,7 @@ import { EYE_HEIGHT, sceneFromLatLon } from './eye.js';
 import { enterEye, fullFrame } from './eyeLevel.js';
 import { cityUniforms } from './shading.js';
 import { toast } from './share.js';
-import { standable } from './sightlines.js';
+import { deckAt, standable, standY } from './sightlines.js';
 import { app } from './state.js';
 import { SPHERE_CENTRE_AGL } from './towerShots.js';
 
@@ -26,10 +26,10 @@ function standHere(position) {
   const spot = standable(new THREE.Vector3(x, app.groundAt(x, z), z));
   const distance = Math.hypot(spot.x, spot.z) || 1;
   const heading = (THREE.MathUtils.radToDeg(Math.atan2(-spot.x, spot.z)) + 360) % 360;
-  const pitch = THREE.MathUtils.radToDeg(Math.atan2(app.groundAt(0, 0) + SPHERE_CENTRE_AGL - app.groundAt(spot.x, spot.z) - EYE_HEIGHT, distance));
+  const pitch = THREE.MathUtils.radToDeg(Math.atan2(app.groundAt(0, 0) + SPHERE_CENTRE_AGL - standY(spot.x, spot.z) - EYE_HEIGHT, distance));
   enterEye(spot.x, spot.z, { heading, pitch, lens: fullFrame(50) });
   const moved = Math.hypot(spot.x - x, spot.z - z);
-  toast(moved > 15 ? `Standing in the open street nearest you, ${Math.round(moved)} m away` : accuracy > 40 ? `Standing where you are, give or take ${Math.round(accuracy)} m` : 'Standing where you are, facing the TV tower');
+  toast(moved > 15 ? `Standing in the open street nearest you, ${Math.round(moved)} m away` : deckAt(spot.x, spot.z) !== null ? 'Standing where you are, on the bridge, facing the TV tower' : accuracy > 40 ? `Standing where you are, give or take ${Math.round(accuracy)} m` : 'Standing where you are, facing the TV tower');
 }
 
 button.addEventListener('click', () => {

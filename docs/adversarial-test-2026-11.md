@@ -94,6 +94,21 @@ or inferred.
   "building" is a bridge, or a short list of decks starting with the vantages in
   `src/lib/vantages.ts`). Until then, do not say "Buildings hide it": say the spot is on a
   structure the model cannot stand on, and offer take-off at deck height.
+- **Fixed on 2026-11-24** (`src/miniature/decks.js`, `sightlines.js` `deckAt`, `eyeLevel.js`,
+  `walk.js`, `locate.js`; tests in `tests/unit/decks.test.ts`). Cause, measured in the page: the
+  deck is a surface of the building model 2 to 5 m above the bare-earth terrain (terrain 4.6 to
+  7.5, deck 8.2 to 10.1 in scene metres at the six points), so `roofAt` took it for a roof,
+  `standable` moved the photographer to the nearest street and `enterEye` stood them on the
+  terrain inside the bridge. A deck is now told from a roof for any bridge: a built surface
+  with a street on it whose points run on, without a step, to plain ground. A viaduct or a
+  house over the street steps down by its clearance and is not a deck. Re-run: all six points
+  of `src/lib/vantages.ts` and the default spot of `/classic` stand where they are (moved 0 m);
+  "My location" at nord-mitte says "Standing where you are, on the bridge, facing the TV
+  tower"; the view shows the tower 6.2 km off (`bridge-classic-link.png`); Dates lists passes
+  behind the tower from there. Walking onto and along a deck works by the same rule.
+  Not checked: that the list equals panel 05's 203 windows, and the model's deck height against
+  the surveyed 47.7 to 48.2 m (the scene's vertical datum was not tied down here; the deck may
+  sit a few metres low in the model, which moves a pass by seconds, not minutes).
 
 ### 2. Clock-change days: the day view sets and reads the time one hour off. High on two days a year. Verified.
 

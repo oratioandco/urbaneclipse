@@ -3,6 +3,7 @@
  * along a line, confirmed in full detail before anyone is put there.
  */
 import * as THREE from 'three';
+import { deckTop } from './decks.js';
 import { EYE_HEIGHT, lookDirection } from './eye.js';
 import { buildingMaterial, controls, raycaster, tower } from './render.js';
 import { app } from './state.js';
@@ -10,7 +11,7 @@ import { loadLevel, tiles } from './tiles.js';
 
 /** How far one can see along a heading from a spot, up to `far` metres. */
 export function sightline(x, z, heading, far = 300) {
-  const eye = new THREE.Vector3(x, app.groundAt(x, z) + EYE_HEIGHT, z);
+  const eye = new THREE.Vector3(x, standY(x, z) + EYE_HEIGHT, z);
   raycaster.set(eye, lookDirection(heading, 0));
   raycaster.far = far;
   const meshes = tiles.filter((tile) => tile.mesh && tile.center.distanceTo(eye) < tile.radius + far).map((tile) => tile.mesh);
@@ -68,8 +69,66 @@ function underRoof(x, z) {
   return roofAt(x, z) > -Infinity;
 }
 
-/** Somewhere to stand: out in the open, with a view at least one way. */
-const roomy = (x, z) => !underRoof(x, z) && [0, 90, 180, 270].some((heading) => sightline(x, z, heading, 120) >= 80);
+// Bridges (decks.js). The city model draws a bridge's deck as a built surface above the bare-earth terrain
+// (the river, the rail cutting), so to the roof test a deck looks like a building, and a
+// photographer on Berlin's bridges was moved to the street below and stood inside the bridge
+// (docs/adversarial-test-2026-11.md, finding 1). A deck is told from a roof by what runs over
+// it: a street. Follow the street's points away from the spot; if their surface (the built top
+// where there is one, the terrain where not) carries on without a step until it is plain
+// ground, the built top is a deck that the street comes onto from the ground. A street that
+// passes UNDER something (a rail viaduct, a house over a passage) steps down by the clearance
+// as it comes out, and is not taken for a deck.
+const DECK_CELL_M = 64;
+
+let roadCells = null;
+/** The street points, by cell, for looking up the ones near a spot. */
+function roadsNear(x, z, radius) {
+  if (!app.roadXZ) return [];
+  if (!roadCells || roadCells.source !== app.roadXZ) {
+    roadCells = { source: app.roadXZ, cells: new Map() };
+    for (let i = 0; i < app.roadXZ.length; i += 2) {
+      const px = app.roadXZ[i] / 2;
+      const pz = app.roadXZ[i + 1] / 2;
+      const key = `${Math.floor(px / DECK_CELL_M)},${Math.floor(pz / DECK_CELL_M)}`;
+      let cell = roadCells.cells.get(key);
+      if (!cell) roadCells.cells.set(key, (cell = []));
+      cell.push(px, pz);
+    }
+  }
+  const found = [];
+  for (let cx = Math.floor((x - radius) / DECK_CELL_M); cx <= Math.floor((x + radius) / DECK_CELL_M); cx++) {
+    for (let cz = Math.floor((z - radius) / DECK_CELL_M); cz <= Math.floor((z + radius) / DECK_CELL_M); cz++) {
+      const cell = roadCells.cells.get(`${cx},${cz}`);
+      if (!cell) continue;
+      for (let i = 0; i < cell.length; i += 2) if (Math.hypot(cell[i] - x, cell[i + 1] - z) <= radius) found.push([cell[i], cell[i + 1]]);
+    }
+  }
+  return found;
+}
+
+const deckMemo = new Map();
+/**
+ * The top of a bridge deck at a point, as a scene height, or null where the point is on plain
+ * ground, on a building, or under something (the rule is decks.js `deckTop`).
+ */
+export function deckAt(x, z) {
+  const key = `${Math.round(x / 3)},${Math.round(z / 3)}`;
+  if (!deckMemo.has(key)) {
+    if (deckMemo.size > 4000) deckMemo.clear();
+    deckMemo.set(key, app.roadXZ ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) : null);
+  }
+  return deckMemo.get(key);
+}
+
+/** The height one stands at: a bridge's deck where there is one, the ground everywhere else. */
+export function standY(x, z) {
+  return deckAt(x, z) ?? app.groundAt(x, z);
+}
+/** How far above the terrain one stands at a point: a deck's height over it, or 0. */
+export const standLift = (x, z) => Math.max(0, standY(x, z) - app.groundAt(x, z));
+
+/** Somewhere to stand: out in the open or on a bridge, with a view at least one way. */
+const roomy = (x, z) => (!underRoof(x, z) || deckAt(x, z) !== null) && [0, 90, 180, 270].some((heading) => sightline(x, z, heading, 120) >= 80);
 
 /** The spot itself if it is roomy, else the nearest roomy point on a street. */
 export function standable(point) {
@@ -130,8 +189,12 @@ export async function confirmedSpotAlong(x, z, ux, uz, viewFrom, keep = () => tr
 app.lastBlock = null;
 /** Whether nothing built stands between an eye at (x, z) and a point along a direction. */
 export function clearView(x, z, direction, distance, lift = 0) {
-  // Up in the air, being over a roof is no obstacle.
-  if (lift < 1 && underRoof(x, z)) return false;
+  // Up in the air, being over a roof is no obstacle; on the ground, a bridge's deck is where
+  // one stands.
+  if (lift < 1) {
+    lift = standLift(x, z);
+    if (lift < 1 && underRoof(x, z)) return false;
+  }
   const origin = new THREE.Vector3(x, app.groundAt(x, z) + EYE_HEIGHT + lift, z);
   raycaster.set(origin, direction);
   raycaster.near = 2;
