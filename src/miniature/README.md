@@ -126,7 +126,23 @@ The geometry is `src/lib/landmarkStands.ts`, and it is narrow by nature:
   (`goViewHere`, kind `landmark`) confirms the sight line against the full-detail buildings and
   stays within 45 m of the row's spot, since the alignment holds at that spot only.
 - **Rank.** `landmarkScore`: the larger the disc against the figure, the higher, and always
-  under the tower's best of the same kind (sun 1.1 or 1.5, moon up to 2.0).
+  under the tower's best of the same kind. The sun runs from 1.1 at half the figure to 1.7 once
+  it is as wide as the figure is tall (over the longest street's 1.6, under the tower's ring at
+  1.8); the moon up to 2.0. One rule holds for every row of a day, whatever its kind
+  (`spectacle.js`, applied in `collectRows`): the moon by day, with the sun more than 6° up,
+  counts 0.6 times. "From here" ranks its year by the same two numbers. Before it, midday moon
+  henges at 1.6 filled the three cards a day has in "Next 3 days".
+- **Where the caution shows.** "trees unchecked" (`caution`) is on the card, on the eye-level
+  ticket (a part of its own, so it wraps whole), under "View from here" on the day view's
+  selected card, in the calendar entry's text and on `/map`'s row; the list rows and every
+  accessible name have the long form.
+- **`/map`** lists the same rows under "Best shots" (they open in `/plan/`, since its own
+  preview knows only the tower), marks each stand point with the minute and the landmark, and
+  has a Landmarks chip (`TodayScreen.tsx`, `TodayMap.tsx`).
+
+Every row's small print starts with its own minute, then the stretch it belongs to where it has
+one ("5:49 PM · 5:47 PM–5:50 PM · on Straße des 17. Juni, …"), for tower, antenna, landmark and
+street rows alike.
 
 In the 365 days from 2026-11-24 the pipeline gives 48 sun and 27 moon rows for the column
 (sun: 27 from the east, 21 from the west) and 31 sun and 20 moon rows for the gate (sun: 12
@@ -290,6 +306,9 @@ checkout's `data/streets/osm` download plus a fetched `areas.json`. Credit OSM (
 - **Water:** a half-resolution mirror render of buildings near water. Skipped in Top view.
 - **Windows:** procedural; merge into larger patches with distance instead of a flat tone.
 - **Light shafts:** a pool on the street plus a curtain of lit air, brightest at the body's end.
+  The pool is drawn 1.6 m up and once more through the buildings, for the map. At eye level
+  (`ribbonUniforms.uEye`) it lies on the road and the see-through copy is off: at the eye's own
+  height it had laid a pale slab over the lower half of any view down a lit street.
 - **Tower:** one window row and red lights. Light heights are read off photos, and the flash
   rhythm is the German "Feuer W, rot" (1 s on, 0.5 off, 1 on, 1.5 off), not confirmed for this tower.
 
