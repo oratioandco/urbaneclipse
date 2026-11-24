@@ -11,6 +11,15 @@ import { shotKey, withoutContinued } from '../miniature/dayShots.js';
 import { berlinDayStart, wallMinutesOf } from '../miniature/berlinClock.js';
 
 export const DAYS = 3;
+
+/**
+ * Night in Berlin: the sun more than 3 degrees under the horizon, the planner's own line
+ * (src/miniature/lighting.js `app.night`). Both pages are dark by it and by nothing else: the
+ * planner at the minute its clock shows, this page now. The device's dark setting is not asked,
+ * so the two never disagree at noon. `sunAltitudeDeg` is the sun's altitude at the instant.
+ */
+export const NIGHT_BELOW_DEG = -3;
+export const isNight = (sunAltitudeDeg) => sunAltitudeDeg < NIGHT_BELOW_DEG;
 const ZONE = 'Europe/Berlin';
 
 /** The Berlin date of an instant, as 2026-11-24. */

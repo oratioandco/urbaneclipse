@@ -280,6 +280,16 @@ and the script that produces the numbers) is in `docs/performance-2026-11.md`.
 Real phones, Safari, and memory use. Trees and water are not in the data. Ground heights
 partly come from building bases, so they are estimates away from the DGM1 strip.
 
+## Light and dark: one rule for both pages
+
+A page is dark when it is night in Berlin, and for no other reason: the sun more than 3 degrees
+under the horizon. The planner goes by the minute its clock shows (`lighting.js`, `app.night`,
+`body[data-night]`), the home page by now (`src/home/grid.js` `isNight`, set as
+`html[data-theme]` by a few lines in `src/pages/index.astro` before the first paint and then by
+`src/home/home.js` from the ephemeris). The device's dark setting is not asked on either, so the
+home page is not dark at noon beside a planner in daylight. `/map` is always dark and
+`/classic` always light; they are not part of this rule.
+
 ## Map, light and night (second pass)
 
 `scripts/build_map.py` builds roads, names, water and parks from OpenStreetMap, using the

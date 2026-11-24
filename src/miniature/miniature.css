@@ -100,8 +100,10 @@
       [data-tip]::before { content: attr(data-tip); position: absolute; z-index: 1; padding: 5px 9px; border-radius: 8px; background: var(--ink); color: var(--surface-solid); font: 600 12px/1.2 ui-sans-serif, system-ui, sans-serif; white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.12s 0.25s; }
       .tools [data-tip]::before { right: calc(100% + 8px); top: 50%; transform: translateY(-50%); }
       .topleft [data-tip]::before { left: 0; top: calc(100% + 6px); }
-      [data-tip]:focus-visible::before { opacity: 1; visibility: visible; }
-      .tools [data-tip], .topleft [data-tip] { -webkit-touch-callout: none; }
+      [data-tip]:focus-visible:not([data-tip-quiet])::before { opacity: 1; visibility: visible; }
+      /* The ticket's corner button: its tip stands over it, inside the card. */
+      .ticket-head [data-tip]::before { right: 0; bottom: calc(100% + 6px); }
+      .tools [data-tip], .topleft [data-tip], .ticket-head [data-tip] { -webkit-touch-callout: none; }
       /* On a touch screen: shown by a tap or a long press (tips.js). */
       [data-tip][data-tip-shown]::before { opacity: 1; visibility: visible; }
       @media (hover: hover) { [data-tip]:hover::before { opacity: 1; visibility: visible; } }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { addDays, answer, berlinDate, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
+import { addDays, answer, berlinDate, isNight, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
 import { collectRows, computeDayPaths, dayShots, findShot, shotKey, shotStillHeld, streetStatus } from '../../src/miniature/dayShots.js';
 import { decodeStreets, streetMoments } from '../../src/lib/streets';
 import { FERNSEHTURM } from '../../src/lib/landmarks';
@@ -284,6 +284,18 @@ describe('a tower row\u2019s minute', () => {
     const rows = collectRows(computeDayPaths(berlinDayStart('2027-03-28'), shed), [], berlinDayStart('2027-03-28')).filter((r: { where?: string }) => r.where === 'sphere');
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) expect(row.t % 1000).toBe(0);
+  });
+});
+
+describe('light and dark', () => {
+  it('is night with the sun more than 3 degrees down, the planner\u2019s line', () => {
+    expect(isNight(-3.1)).toBe(true);
+    expect(isNight(-2.9)).toBe(false);
+    expect(isNight(20)).toBe(false);
+    // The planner's own line, so the two pages turn together.
+    expect(readFileSync(new URL('../../src/miniature/lighting.js', import.meta.url), 'utf8')).toMatch(/app\.night = sunAt\.alt < -3;/);
+    // And the home page does not ask the device.
+    expect(readFileSync(new URL('../../src/home/home.js', import.meta.url), 'utf8')).toMatch(/dataset\.theme = isNight\(/);
   });
 });
 
