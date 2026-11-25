@@ -118,7 +118,8 @@ A row names a picture and a place. Three things keep the two together:
 
 `pointer.js` `clearAt` no longer asks one ray to the disc's centre. `shotVisibility.js` casts
 five rays to the disc (centre and rim) and five to the outline of what it stands behind (the
-sphere, the stretch of mast under the moon, the figure) through the full-detail buildings; a
+sphere, the stretch of mast the moon crosses and a disc's width of mast below it, the figure)
+through the full-detail buildings; a
 spot is clear when the centre is seen and at most one ray in five of each is hidden. The
 hand-built landmarks (`landmarks.js`: the towers at Alexanderplatz, the Estrel, the domes) are
 no city tiles, so `clearView` does not see them; `shotVisibility.js` casts its rays through
@@ -126,25 +127,74 @@ them too. Before, rows opened onto a tower block's wall and called it clear (19 
 2:10 PM, the sphere from 520 m NNE).
 
 Trees are a second, softer measure, against the city's tree register (`trees.js`: each tree a
-crown of its listed height and width, in full leaf whatever the date; woods inside parks are
-not in it). Among a row's own spots the planner takes the first that is clear of buildings and
-of the register's trees, else the first clear of buildings. The lists know it too:
-`public/viewshed/trees-in-the-way.json` holds the spots from which the register's trees hide
-more than a fifth of a listed shot (measured in the scene by `rows.mjs --trees`); the pipeline
-prefers another minute or spot of the same pass (`treesAt`), and where there is none the row
-says "street trees in the way" on the card, the ticket and in the calendar entry, "street trees
-in the way here, per the tree register: look for a gap" in its small print, and counts half, so
-it does not make a day's three. Every other tower and street row says "trees unchecked".
-Streets are measured by the sweep but not flagged: their own trees line them, and a ray from
-the near end does not say whether the gap at the far end is open.
+crown of its listed height and width; woods inside parks are not in it). The measure is of the
+trees as the scene draws them (`shotVisibility.js` `treesAlong`, `treeInRay`): each crown an
+ellipsoid of the drawn size and its trunk under it, from the eye itself outward, so a tree at
+arm's length counts (20 June 2027, the antenna: the frame was foliage and the row said only
+"trees unchecked").
+
+**The leaf season is one rule, in `src/lib/season.ts`:** broadleaf trees are in full leaf from
+May to October, bare from December to March, and turn through April and November; they count
+as in leaf from mid-April to mid-November. The scene draws a bare crown at 18 % of its width
+(conifers keep theirs), the measure uses the same width, and the words follow:
+
+- In leaf, a spot from which the trees hide more than one ray in five of the disc or of the
+  target has "street trees in the way" on the card, the ticket, in "From here" and in the
+  calendar entry, "street trees in the way here, per the tree register: look for a gap" in its
+  small print, and counts half, so it does not make a day's three.
+- Out of leaf the same spot has "bare trees in the frame" and loses nothing, unless the bare
+  trees still hide more than half of the disc or of the target: then it is "street trees in
+  the way" and half, as in leaf.
+- Every other row says "trees unchecked".
+
+Among a row's own spots the planner takes the first that is clear of buildings and of that
+day's trees, else the first clear of buildings, and the pipeline does the same from the list:
+`public/viewshed/trees-in-the-way.json` holds the measured places, in full leaf (`spots`) and
+bare (`bare`).
+
+A street is held to the same rule. Its own trees line it, and which of them cross a low sun
+depends on where one stands: the planner starts at the street's near end and, when trees cross
+the disc from there, tries every 60 m along the street up to 600 m either way for a place from
+which they do not (`pointer.js` `streetStand`). What is left is measured and said like any
+other shot. A street's entry in the list is its place and how high the body stands down it, to
+the degree, since the same street has the sun at one degree one week and at four the next.
+Trees are asked for 1.5 km down a street, buildings for 600 m.
+
+### The days the shots are checked for
+
+The mask and the tree list are measured for a stretch of days and say which
+(`covered: { from, to }` in both files; `loadViewshed` puts it on the tower's viewshed). The
+spots of a row are worked out anew for each day, so past the last covered day the lists know
+nothing about them: 7 of 316 tower rows did not open there and 131 of 156 with trees across
+the shot did not say so. So no shots are listed outside the covered days (`dayShots.js`
+`dayCovered`, in `collectRows`): the day list, the three days, the home page and `/map` are
+empty there, "From here" searches no further, and the date fields stop at the last day, with
+the line "Shots are checked up to 27 Jan 2028" once the chosen day is within a month of it.
+
+`npm run build` warns in the console when the last covered day is under 60 days away
+(`astro.config.mjs`). To move it on, with a build served (`npx astro preview --port 4471`):
+
+```sh
+FROM=<today> DAYS=430 FRESH=1 BASE=http://localhost:4471 CACHE=<dir> npx vitest run -c scripts/adversarial/vitest.config.ts
+npm run build        # the lists are part of the build
+node scripts/adversarial/rows.mjs --from=<today> --days=430 --mask=public/viewshed/fernsehturm-scene.json --trees=public/viewshed/trees-in-the-way.json
+```
+
+The first takes about an hour and a half and writes both files; the second opens every row
+through the planner (about an hour) and must end with no failing row. Build and repeat the
+second if it added places. `FRESH=1` starts both lists over, which a change to the pipeline's
+rules or to the city data needs; without it the crawl extends what is there.
 
 ### A row's words
 
 A sphere row is one pass from one spot: its instant is the one nearest the middle of a clear
 stretch of the path (ended by any building in the way for more than three minutes), its spot is
 worked out for that instant (not read off the path's drawn points, which lie metres off), and
-its stretch is the minutes the disc is on the sphere from that spot. "other spots 3:43 PM-6:48
-PM" follows when the path offers more. An antenna row names the distance of the spot it opens
+its stretch is the whole minutes the disc is on the sphere from that spot, as "From here"
+counts them from there. "other spots 3:43 PM-6:48 PM" follows when the path offers more. Two
+rows that are one pass told twice (the same body, the same words for the place, stretches that
+touch: a blocked minute or two between them, thirty metres apart) are one row, which keeps
+both rows' spots and says the stretch they serve as its other spots (`joinNeighbours`). An antenna row names the distance of the spot it opens
 at ("6.3 km ESE"), with the stretch of the line in brackets. A landmark row's stretch is the
 minutes the disc is on the figure from its spot, which is what "From here" lists for the same
 place. A bearing between two path points goes the short way round north (`dailyPaths.ts`

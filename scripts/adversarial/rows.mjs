@@ -47,7 +47,7 @@ await page.waitForFunction(() => window.__mini.treeShareAt({ body: 'sun', kind: 
 await page.waitForFunction(() => window.__mini.dayRows().some((row) => row.kind === 'tower') || true, null, { timeout: 30_000 });
 await page.waitForTimeout(4000);
 
-const result = { from, days, kinds, counts: {}, failures: [], treeRows: [], treeOthers: [] };
+const result = { from, days, kinds, counts: {}, failures: [], treeRows: [] };
 /** Up to one ray in five may be hidden (shotVisibility.js). */
 const MAY_HIDE = 0.2;
 const started = Date.now();
@@ -103,12 +103,11 @@ for (let i = 0; i < days; i += step) {
         // buildings and by the tree register's trees (src/miniature/shotVisibility.js). And the
         // trees from the row's own spot, which is what the row's words are about.
         const share = shareNow;
-        const treesHere = row.at ? m.treeShareAt(row, row.at) : null;
-        // And from each of the row's other spots: the pipeline will stand the row on the first
-        // the list leaves clear, so the list has to know them all at once.
-        const blocked = (share) => share !== null && Math.max(share.disc, share.target) > 0.2 + 1e-9;
-        const treeSpots = row.kind === 'street' ? [] : [...(row.alternates ?? []).map((a) => ({ at: a.at, t: a.t })), ...(row.standOthers ?? []).map((at) => ({ at, t: row.openAt }))].filter((c) => blocked(m.treeShareAt({ ...row, openAt: c.t, t: c.t }, c.at))).map((c) => c.at);
-        out.push({ kind, t: row.t, title: row.title, detail: row.detail, opened, seen, toast, error, spots, share, treesHere, treeSpots, elsewhere, at: row.at, treesSaid: row.trees === true, score: row.score });
+        // What the row's words about trees should be from where it opened (shotVisibility.js
+        // `treeLevel`: 2 in the way, 1 bare in the frame, 0 none), and what they are.
+        const wants = opened ? m.treeLevelHere(row) : null;
+        const says = row.trees ? 2 : row.bareTrees ? 1 : 0;
+        out.push({ kind, t: row.t, title: row.title, detail: row.detail, opened, seen, toast, error, spots, share, wants, says, tag: row.treeTag, elsewhere, at: row.at, treesSaid: row.trees === true, score: row.score });
       }
       return out;
     },
@@ -127,12 +126,12 @@ for (let i = 0; i < days; i += step) {
     if (trees !== null) count.trees[bucket(trees)]++;
     if (row.treesSaid) count.treesSaid++;
     row.builtHidden = built !== null && (built > MAY_HIDE + 1e-9 || row.share.centre);
-    // Trees from the row's own spot, for the list of places with trees in the way (`--trees`).
-    row.treesAtRow = row.treesHere ? Math.max(row.treesHere.disc, row.treesHere.target) > MAY_HIDE + 1e-9 : false;
     if (!row.opened || !row.seen?.ok || row.builtHidden || (row.elsewhere && row.kind !== 'landmark')) result.failures.push({ date, ...row });
     if (row.elsewhere) count.elsewhere = (count.elsewhere ?? 0) + 1;
-    if (row.treesAtRow && row.kind !== 'street') result.treeRows.push({ date, kind: row.kind, title: row.title, at: row.at, said: row.treesSaid });
-    for (const at of row.treeSpots ?? []) result.treeOthers.push(at);
+    // A row that opened at its own spot: its words about trees against the measure there.
+    if (row.wants && row.at && !(row.elsewhere && row.kind !== 'street')) {
+      if (row.wants.level > 0 || row.says > 0) result.treeRows.push({ date, kind: row.kind, title: row.title, at: row.at, tag: row.tag, wants: row.wants, says: row.says, said: row.says === row.wants.level });
+    }
     if (verbose) console.log(date, row.kind, row.opened ? 'opened' : 'NOT OPENED', row.seen ? `${row.seen.says} -> ${row.seen.sees}` : '', row.title, '|', row.detail, row.toast ? `| said: ${row.toast}` : '', row.error);
   }
   if ((i + 1) % 20 === 0 || i === days - 1) console.log(`${date}: ${i + 1}/${days} days, ${Math.round((Date.now() - started) / 1000)} s`, JSON.stringify(result.counts), 'failures', result.failures.length);
@@ -151,23 +150,27 @@ if (maskFile) {
       added++;
     }
   }
-  writeFileSync(maskFile, `${JSON.stringify({ note: 'Places the viewshed calls visible from which the planner\u2019s scene, in full detail, does not show the row\u2019s shot. Measured by scripts/adversarial/rows.mjs --mask; applied by src/lib/viewshed.ts applySceneMask.', spots: had.spots })}\n`);
+  writeFileSync(maskFile, `${JSON.stringify({ ...had, spots: had.spots })}\n`);
   console.log(`mask: ${added} places added, ${had.spots.length} in all, in ${maskFile}`);
 }
-// Places from which the register's trees stand in a row's frame (src/lib/viewshed.ts `treeTest`).
+// Places from which the register's trees stand across a row's shot (src/lib/viewshed.ts
+// `treeTest`): in full leaf (`spots`) and bare (`bare`); a street's entry carries its tag.
 let treesAdded = 0;
 if (treeFile) {
-  const had = existsSync(treeFile) ? JSON.parse(readFileSync(treeFile, 'utf8')) : { spots: [] };
-  const seen = new Set(had.spots.map((p) => p.join(',')));
-  for (const at of [...result.treeRows.filter((row) => !row.said).map((row) => row.at), ...result.treeOthers]) {
-    const spot = [Number(at[0].toFixed(6)), Number(at[1].toFixed(6))];
-    if (seen.has(spot.join(','))) continue;
-    seen.add(spot.join(','));
-    had.spots.push(spot);
-    treesAdded++;
+  const had = existsSync(treeFile) ? JSON.parse(readFileSync(treeFile, 'utf8')) : { spots: [], bare: [] };
+  had.bare ??= [];
+  const sets = { spots: new Set(had.spots.map(String)), bare: new Set(had.bare.map(String)) };
+  for (const row of result.treeRows.filter((row) => !row.said)) {
+    const spot = [Number(row.at[0].toFixed(6)), Number(row.at[1].toFixed(6)), ...(row.tag === undefined ? [] : [row.tag])];
+    for (const [list, on] of [['spots', row.wants.leaf], ['bare', row.wants.bare]]) {
+      if (!on || sets[list].has(String(spot))) continue;
+      sets[list].add(String(spot));
+      had[list].push(spot);
+      treesAdded++;
+    }
   }
-  writeFileSync(treeFile, `${JSON.stringify({ note: 'Places from which the tree register\u2019s trees hide more than two ninths of a listed shot\u2019s disc or target, in full leaf. Measured in the planner\u2019s scene by scripts/adversarial/rows.mjs --trees; asked through src/lib/viewshed.ts treeTest.', spots: had.spots })}\n`);
-  console.log(`trees: ${treesAdded} places added, ${had.spots.length} in all, in ${treeFile}`);
+  writeFileSync(treeFile, `${JSON.stringify(had)}\n`);
+  console.log(`trees: ${treesAdded} places added, ${had.spots.length} in leaf and ${had.bare.length} bare in all, in ${treeFile}`);
 }
 result.errors = log.filter((l) => l.type === 'pageerror').map((l) => l.text);
 save('rows.json', result);
@@ -176,8 +179,12 @@ console.log(JSON.stringify(result.counts), 'failures', result.failures.length, '
 await close();
 console.log('hidden share of the shot where it opens, by kind: [none, up to 1/5, up to 1/2, more]');
 for (const [kind, c] of Object.entries(result.counts)) console.log(`  ${kind.padEnd(9)} buildings ${JSON.stringify(c.built)}  trees ${JSON.stringify(c.trees)}  rows that say trees are in the way: ${c.treesSaid}`);
-console.log(`rows with trees in the way from their own spot: ${result.treeRows.length}, of which ${result.treeRows.filter((r) => r.said).length} say so`);
-// 1: a row fails; 2: none fails, but a row has trees in the way from its spot and does not say so
-// (its places are in the list now: build and sweep again).
-const unsaid = result.treeRows.filter((row) => !row.said).length;
-process.exit(result.failures.length ? 1 : unsaid ? 2 : 0);
+const wrong = result.treeRows.filter((row) => !row.said);
+console.log(`rows with the register's trees across the shot where they open, or that say so: ${result.treeRows.length}; whose words differ from the measure: ${wrong.length} (${wrong.filter((r) => r.says < r.wants.level).length} say too little, ${wrong.filter((r) => r.says > r.wants.level).length} too much)`);
+for (const kind of ['street', 'antenna', 'sphere', 'landmark']) {
+  const mine = result.treeRows.filter((r) => r.kind === kind);
+  if (mine.length) console.log(`  ${kind.padEnd(9)} in the way ${mine.filter((r) => r.says === 2).length}, bare in the frame ${mine.filter((r) => r.says === 1).length}, words differ ${mine.filter((r) => !r.said).length}`);
+}
+// 1: a row fails; 2: none fails, but a row's words about trees differ from the measure where it
+// opened (with --trees its place is in the list now: build and sweep again).
+process.exit(result.failures.length ? 1 : wrong.length ? 2 : 0);
