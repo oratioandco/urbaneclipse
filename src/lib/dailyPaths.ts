@@ -185,7 +185,9 @@ function interpolate(a: PathPoint, b: PathPoint, f: number): PathPoint {
     lat: mix(a.lat, b.lat),
     lon: mix(a.lon, b.lon),
     distanceM: mix(a.distanceM, b.distanceM),
-    bearingDeg: mix(a.bearingDeg, b.bearingDeg),
+    // The short way round: between 359° and 1° lies north, not south. A plain mix gave 180° and
+    // the day list "350 m S of the tower" for a spot 352 m north of it (4 March 2027, 12:15).
+    bearingDeg: (a.bearingDeg + (((((b.bearingDeg - a.bearingDeg) % 360) + 540) % 360) - 180) * f + 360) % 360,
     bodyAlt: mix(a.bodyAlt, b.bodyAlt),
     kind: f < 0.5 ? a.kind : b.kind,
     coveredFraction: mix(a.coveredFraction, b.coveredFraction),
