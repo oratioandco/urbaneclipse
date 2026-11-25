@@ -3,6 +3,19 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import vitePluginCesium from 'vite-plugin-cesium';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
+
+// The shots are checked against the scene for a stretch of days (public/viewshed/
+// fernsehturm-scene.json `covered`: scripts/adversarial/crawl.test.ts writes it). Past its end
+// the site lists no shots, so a build near the end says so.
+try {
+  const { covered } = JSON.parse(readFileSync(new URL('./public/viewshed/fernsehturm-scene.json', import.meta.url), 'utf8'));
+  const left = covered ? Math.floor((Date.parse(`${covered.to}T12:00:00Z`) - Date.now()) / 86_400_000) : null;
+  if (left === null) console.warn('[urbaneclipse] The scene mask names no covered days: shots are listed for any date, unchecked. Run scripts/adversarial/crawl.test.ts.');
+  else if (left < 60) console.warn(`[urbaneclipse] Shots are checked up to ${covered.to}: ${left < 0 ? 'that has passed and no shots are listed' : `${left} days from now`}. Re-crawl: see scripts/adversarial/README.md (crawl.test.ts, under an hour).`);
+} catch (error) {
+  console.warn('[urbaneclipse] Could not read the scene mask\u2019s covered days:', String(error));
+}
 
 // Plaster Void — Astro + React + Cesium scaffold.
 //

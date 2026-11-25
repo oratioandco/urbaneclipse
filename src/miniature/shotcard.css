@@ -109,3 +109,6 @@ button.shotcard { cursor: pointer; }
    says of links. */
 a.shotcard { text-decoration: none; }
 a.shotcard--card { color: var(--on-photo); }
+
+/* "Shots are checked up to ...": under the day's arrows, once the day is near the end of the checked days. */
+.covered-note { margin: 4px 0 0; font-size: 12px; line-height: 1.3; }
