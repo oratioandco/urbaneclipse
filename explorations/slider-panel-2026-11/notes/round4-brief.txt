@@ -1,0 +1,51 @@
+You are a data-visualisation designer working on Urban Eclipse, a 3D Berlin photography-planning app. It renders a clay-style miniature city; its forecast strip ("sparkstrip") helps a photographer find hours when direct sun (or moonlight) will actually work. Context: winter in Berlin — direct sunlight is scarce, so the strip's whole job is making the hours that WORK impossible to miss, and staying quiet where hours fail.
+
+You are designing ROUND 4 of a sketch iteration. History you must learn from:
+- Round 1 (8 sketches) and Round 2 (8 fusions) were criticised: "all of them have a big bar… I fail to see any meaningful difference".Variants must differ in MECHANISM, not decoration.
+- Round 3 restructured per explicit user direction: three cloud-deck strata in the sky, rain as glossy clay droplets, ONE shared light/phase axis at the card bottom (drawn once for all days), a solid per-day status strip, and opportunity standing out LOUDLY.
+- The user has now picked variant D ("Framed windows") as closest to right, and asked for this round. VERBATIM feedback: "the drops are too large and it should be more representative of the type and intensity of rain, the window approach is good but we need it for sun and moon, no? and new moon would be out because there is no moon, right."
+
+Read the existing sketch page for full context: /tmp/claude-sketch/weather-strip-sketches.html
+(see the drawRound3 function, variant 'D', and the helpers deckSky/drops/chip, constants H3/STY/STH/TV).
+
+## D's anatomy (keep this skeleton)
+- Sky area 46 units tall: three cloud decks as grey strata — high (top third, weight 0.6), mid (middle, 0.68), low (bottom, 0.78); opacity = cover × weight.
+- A thin 4px status line at the strip's bottom edge (y=STY+4): green/amber/red per lit hour, dark navy for night.
+- THE idea: every shootable window gets a glowing rounded frame around the WHOLE day column (sky + status line), like a ticket for the times that will work. Soft glow stroke (width 4, blurred, opacity .2) + crisp stroke (width 1.4, opacity .9), rx 7.
+- Hover: a synced crosshair across the three days of a card + text readout.
+- One shared phase axis per card below the days (night navy → blue hour → golden → cream day → golden → blue → night) with 00/06/12/18 labels.
+
+## What Round 4 must fix
+1. RAIN. The clay teardrops are too large and say nothing about intensity. Design rain that reads as TYPE and INTENSITY: drizzle vs steady rain vs shower vs downpour. The data per hour is probability (0–100) and mm (depth). Think: density, drop size, clustering, duration continuity across hours — showers punctuate, fronts persist. Keep it clay-style (soft, glossy, tactile) but SMALL. Snow is not in the data; ignore it.
+2. MOON WINDOWS. Frames must exist for the moon too. A moon window = night hour where the moon is up, sufficiently illuminated (phase), and the sky is clear enough. New moon → NO window at all (there is no moon in the sky — this is a hard rule the user stated). Moon frames must be visually distinct from sun frames but siblings of the same idea (think: sun frames warm/green-gold, moon frames cool/silver-blue). The shared phase axis at the bottom must also carry moonrise/moonset or moonlight information somehow — the axis is the once-per-card place for what every day shares, but moon timing differs per day, so decide where moon up-time lives (per-day row vs axis).
+3. Keep: lit-hours gate for sun status ink (minutes 428–943), loud window frames, the shared axis, the deck strata, hover. The status line may shrink or change form if the frames carry more of the load — but the day still needs an honest hour-by-hour verdict somewhere.
+
+## Sketch data available (24-hour arrays per day)
+Each day d has: d.low[d.mid[d.high (cloud cover 0–1 per deck), d.rainP[h] (0–100), d.rainMm[h] (mm).
+For the moon, ADD this shape (I will integrate it):
+  d.moon = { illum: 0..1, up: [[startHour, endHour], ...] }   // e.g. [[20.5, 24], [0, 3.5]] for an overnight moon
+Give the three mock days these moons: Today illum 0.58 up 20:30–03:30; Tomorrow illum 0.47 up 21:00–04:30; Saturday illum 0.22 (thin waning crescent, near its last quarter — dim) up 22:30–05:30.
+gradeAt(d,h): rainP>=80 or cover>0.75 → 'poor'; rainP>=50 or cover>0.5 → 'fair'; else 'good'.
+litH(h): h*60 in [428, 943] — sun status ink only here.
+
+## Deliverable
+Write /tmp/claude-sketch/round4-designs.md containing FOUR variants that are genuinely different machines, all built on D's skeleton. For each variant give:
+- Name + one-paragraph concept (what it trades away, what it wins).
+- Exact geometry: every y, height, size, opacity in the 240×64 viewBox (STY=48, STH=12, TV=64, PX=10 = one hour).
+- A complete JS drawing function `drawRound4X(svg, d)` using ONLY these helpers, which exist:
+    el(tag, attrs) -> DOM element; svg.append(node)
+    deckSky(svg, d, ground?) — draws the three strata (0..46)
+    chip(svg, h, fill, extra?) — rounded status chip at y=48 h=12
+    runsOf(indices) -> [[startH, endH], ...] — merges consecutive hours
+    litH(h), gradeAt(d, h), x(h) = (h+0.5)*10
+    radial/linear gradients and gaussian-blur filters may be referenced by id (I will register whatever ids you use — list them explicitly: id, type (linear/radial), stops with offsets/colors/opacities).
+  Use raw el() calls for anything else. Keep strokes with 'vector-effect':'non-scaling-stroke'.
+- One line: how hover's readout should change for this variant.
+
+Design constraints:
+- Status colours: good #3aa65b, fair #e2a53f, poor #c7503d (light mode); decks grey; rain teal (#2aa5a2 family). Moon silver-blue must clear these.
+- Night previously carried no ink; moon frames now live there — make sure they don't fight the phase axis or read as "bad".
+- Rain may no longer be three identical teardrops per hour. Each variant should solve intensity differently (e.g. one variant: a rain GROUND — a teal fog whose height and darkness = mm/h; another: stipple fields; another: shower clusters vs front sheets; another: a cumulative "wetness" line).
+- The window frame must still be the loudest element. Sun window and moon window should be readable apart at arm's length, and a day with no windows should look EMPTY, not red.
+- Accessibility: opportunity must not be hue-alone (frame + glyph or frame + position distinguishes sun/moon).
+Return only the file write; keep the markdown tight and implementation-ready.
