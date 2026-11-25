@@ -18,6 +18,10 @@ import { setDay, setFine, setMinute } from './clock.js';
 import * as fromHere from './fromHereView.js';
 import { look, turnTo } from './eyeLevel.js';
 import { TARGETS } from './targets.js';
+import { berlinDayEnd } from './berlinClock.js';
+import { coveredBy } from './dayShots.js';
+import { getViewshed } from './plan.js';
+import { treeLevel, treeMeasures } from './shotVisibility.js';
 import { clearView, fineAlong } from './sightlines.js';
 import { app, toDirection } from './state.js';
 
@@ -151,9 +155,12 @@ async function refresh() {
   // The sun and moon are worked out where you stand, from true north; the scene's north is
   // the tower's, so the search is told how far the two differ here.
   const northOffsetDeg = gridConvergenceDeg(lat, lon, FERNSEHTURM.lon);
-  const towerJob = search({ kind: 'tower', eye, base, lat, lon, northOffsetDeg, start: now, end: now + YEAR_MS });
+  // No further than the days the shots are checked for (dayShots.js `coveredBy`), as every list.
+  const covered = coveredBy(getViewshed());
+  const searchEnd = covered ? Math.min(now + YEAR_MS, berlinDayEnd(covered.to)) : now + YEAR_MS;
+  const towerJob = search({ kind: 'tower', eye, base, lat, lon, northOffsetDeg, start: now, end: searchEnd });
   const streetJob = street
-    ? search({ kind: 'street', view: { bearingDeg: street.bearingDeg, skylineDeg: street.skylineDeg, toleranceDeg: street.toleranceDeg, from: { lat, lon } }, start: now, end: now + YEAR_MS })
+    ? search({ kind: 'street', view: { bearingDeg: street.bearingDeg, skylineDeg: street.skylineDeg, toleranceDeg: street.toleranceDeg, from: { lat, lon } }, start: now, end: searchEnd })
     : null;
   // Their answers are read further down, after the buildings along the sightlines are loaded.
   // A search that fails before then (the worker did not load) is told there, in words on the
@@ -221,7 +228,8 @@ async function refresh() {
           const what = s.body === 'moon' && s.state === 'ring' && target.id === 'fernsehturm' ? `Big moon behind the TV tower, ${discOverSphere(flat).toFixed(1)}× the sphere` : target.stateText[s.body][s.state];
           box.append(
             row({
-              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end, fromDeg: (THREE.MathUtils.radToDeg(Math.atan2(-dx, dz)) + 360) % 360, at: [lat, lon], look: [s.az, Math.max(0, s.alt)] },
+              // The tree register's trees from this very spot on that date, as a day's row says them (shotVisibility.js).
+              shot: { kind: 'tower', target: target.id, state: s.state, what, altDeg: s.alt, until: s.end, trees: treeLevel(treeMeasures({ body: s.body, kind: 'tower', where: s.state === 'antenna' ? 'antenna' : 'sphere', ...(target.figure ? { target: target.id } : {}), t: s.align ?? s.peak }, eye, base, s.align ?? s.peak), s.peak), fromDeg: (THREE.MathUtils.radToDeg(Math.atan2(-dx, dz)) + 360) % 360, at: [lat, lon], look: [s.az, Math.max(0, s.alt)] },
               body: s.body,
               t: s.peak,
               // A pass lasts two to four minutes: the row says so, and gives the moment the

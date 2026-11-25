@@ -21,6 +21,7 @@ import * as THREE from 'three';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FIGURE_TARGETS } from '../lib/landmarkStands.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
+import { crownShare, inLeaf, leafOn } from '../lib/season.ts';
 import { sceneFromLatLon } from './eye.js';
 import { landmarks } from './landmarks.js';
 import { clearView } from './sightlines.js';
@@ -48,10 +49,13 @@ export function shotRays(row, eye, base, t = row.openAt ?? row.t) {
   const reach = row.kind === 'street' ? 600 : Math.max(50, flat - 40);
   const alt = Math.max(0, body.alt);
   const r = DISC_DEG / 2;
-  const disc = [{ direction: direction(body.az, alt), distance: reach }];
+  // Down a street the buildings are asked for 600 m and the trees for as far as a crown can
+  // stand in a low sun's way.
+  const far = row.kind === 'street' ? { trees: 1500 } : {};
+  const disc = [{ direction: direction(body.az, alt), distance: reach, ...far }];
   for (let i = 0; i < 4; i++) {
     const a = (i * Math.PI) / 2;
-    disc.push({ direction: direction(body.az + (r * Math.sin(a)) / Math.cos(rad(alt)), Math.max(0, alt + r * Math.cos(a))), distance: reach });
+    disc.push({ direction: direction(body.az + (r * Math.sin(a)) / Math.cos(rad(alt)), Math.max(0, alt + r * Math.cos(a))), distance: reach, ...far });
   }
   const origin = new THREE.Vector3(eye.x, eye.y, eye.z);
   const to = (x, y, z) => {
@@ -69,7 +73,10 @@ export function shotRays(row, eye, base, t = row.openAt ?? row.t) {
     for (const k of [-1.5, 1.5]) target.push(to(axis.x + side.x * k, ground + (figure.fromAgl + figure.toAgl) / 2, axis.z + side.z * k));
   } else if (row.where === 'antenna') {
     // The stretch of mast the moon stands on: its heights across the disc.
-    for (const d of [-1, -0.5, 0, 0.5, 1]) target.push(to(0, eye.y + flat * Math.tan(rad(alt + d * r)), 0));
+    // And a disc's width of mast under the moon, down to the sphere's top: a moon on the tip
+    // alone, the rest of the tower behind a roof, is not the shot (20 March 2027, 4:45 AM).
+    const sphereTop = base + SPHERE_CENTRE_AGL + SPHERE_RADIUS_M + 2;
+    for (const d of [-4, -3, -2, -1, 0, 1]) target.push(to(0, Math.max(sphereTop, eye.y + flat * Math.tan(rad(alt + d * r))), 0));
   } else {
     // The sphere: its centre and four points just inside its outline.
     const centre = new THREE.Vector3(0, base + SPHERE_CENTRE_AGL, 0);
@@ -106,11 +113,13 @@ const CROWN = { 1: [0.575, 0.425], 2: [0.62, 0.75] };
 const BROADLEAF = [0.7, 0.55];
 
 /**
- * The register's trees along a look from the eye: those within `reach` metres ahead and near
- * enough to the line to stand in a ray up to a degree off it. Gathered once per shot, since
- * all of a shot's rays run within half a degree of each other; null when no trees are loaded.
+ * The register's trees along a look from the eye, as the scene draws them for a leaf amount
+ * (src/lib/season.ts: a bare broadleaf crown is 18 % of its width; conifers keep theirs): those
+ * from the eye itself to `reach` metres ahead and near enough to the line to stand in a ray up
+ * to a degree off it. Gathered once per shot, since all of a shot's rays run within half a
+ * degree of each other; null when no trees are loaded.
  */
-export function treesAlong(eye, dir, reach) {
+export function treesAlong(eye, dir, reach, leaf = 1) {
   const data = treeData();
   if (!data) return null;
   const flat = Math.hypot(dir.x, dir.z) || 1;
@@ -124,58 +133,84 @@ export function treesAlong(eye, dir, reach) {
       const tx = data.x[i] / 2;
       const tz = data.z[i] / 2;
       const s = (tx - eye.x) * ux + (tz - eye.z) * uz;
-      if (s < 3 || s > reach) continue;
-      const half = data.c[i] / 10;
-      if (Math.abs((tx - eye.x) * uz - (tz - eye.z) * ux) > half + 8 + s * 0.02) continue;
-      const [middle, tall] = CROWN[data.kind[i]] ?? BROADLEAF;
+      const listed = data.c[i] / 10;
+      // From the eye itself: a tree at arm's length walls the frame (20 June 2027, the antenna).
+      if (s < -listed - 1 || s > reach) continue;
+      if (Math.abs((tx - eye.x) * uz - (tz - eye.z) * ux) > listed + 8 + Math.max(0, s) * 0.02) continue;
+      const kind = data.kind[i];
+      const [middle, tall] = CROWN[kind] ?? BROADLEAF;
       const height = data.h[i] / 5;
-      found.push({ x: tx, z: tz, half: Math.max(half, 0.1), middle: app.groundAt(tx, tz) - 0.2 + middle * height, tall: tall * height });
+      const half = Math.max(0.05, listed * (kind === 1 ? 1 : crownShare(leaf)));
+      const ground = app.groundAt(tx, tz) - 0.2;
+      // The crown, and the trunk under it: a tenth of the crown's half width, half the tree high.
+      found.push({ x: tx, z: tz, half, middle: ground + middle * height, tall: tall * height, trunk: half * 0.1, ground, trunkTop: ground + 0.5 * height });
     }
   }
   return found;
 }
 
 /**
- * Whether one of `trees` (`treesAlong`) stands in a ray from the eye. Looked for only as far
- * as a tree could reach up into the ray (45 m).
+ * Whether one of `trees` (`treesAlong`) stands in a ray from the eye within `distance`: the ray
+ * through the crown's ellipsoid or through the trunk's cylinder, from the eye on (an eye inside
+ * a crown sees nothing).
  */
 export function treeInRay(eye, dir, distance, trees) {
-  const flat = Math.hypot(dir.x, dir.z);
-  if (flat < 1e-6) return false;
-  const ux = dir.x / flat;
-  const uz = dir.z / flat;
-  const slope = dir.y / flat;
-  const reach = Math.min(distance * flat, slope > 0.01 ? 45 / slope : 1500, 1500);
+  const reach = Math.min(distance, 1500);
   for (const tree of trees) {
-    const s = (tree.x - eye.x) * ux + (tree.z - eye.z) * uz;
-    if (s < 3 || s > reach) continue;
-    const dx = Math.abs((tree.x - eye.x) * uz - (tree.z - eye.z) * ux) / tree.half;
-    if (dx > 1) continue;
-    const dy = (eye.y + s * slope - tree.middle) / tree.tall;
-    if (dx * dx + dy * dy <= 1) return true;
+    // The crown: a sphere once its axes are scaled away.
+    const ox = (eye.x - tree.x) / tree.half;
+    const oy = (eye.y - tree.middle) / tree.tall;
+    const oz = (eye.z - tree.z) / tree.half;
+    const dx = dir.x / tree.half;
+    const dy = dir.y / tree.tall;
+    const dz = dir.z / tree.half;
+    const a = dx * dx + dy * dy + dz * dz;
+    const b = ox * dx + oy * dy + oz * dz;
+    const c = ox * ox + oy * oy + oz * oz - 1;
+    const disc = b * b - a * c;
+    if (disc >= 0) {
+      const root = Math.sqrt(disc);
+      const near = (-b - root) / a;
+      const far = (-b + root) / a;
+      if (far >= 0 && near <= reach) return true;
+    }
+    // The trunk: a circle seen from above, then its height where the ray crosses it.
+    const fx = eye.x - tree.x;
+    const fz = eye.z - tree.z;
+    const a2 = dir.x * dir.x + dir.z * dir.z;
+    if (a2 < 1e-9) continue;
+    const b2 = fx * dir.x + fz * dir.z;
+    const c2 = fx * fx + fz * fz - tree.trunk * tree.trunk;
+    const disc2 = b2 * b2 - a2 * c2;
+    if (disc2 < 0) continue;
+    const u = (-b2 - Math.sqrt(disc2)) / a2;
+    if (u < 0 || u > reach) continue;
+    const y = eye.y + u * dir.y;
+    if (y >= tree.ground && y <= tree.trunkTop) return true;
   }
   return false;
 }
 
 /** The trees a shot's rays could meet: along its first ray, as far as any of them goes. */
-function treesOfShot(eye, rays) {
+function treesOfShot(eye, rays, leaf) {
   const all = [...rays.disc, ...rays.target];
-  return treesAlong(eye, rays.disc[0].direction, Math.min(1500, Math.max(...all.map((ray) => ray.distance))));
+  return treesAlong(eye, rays.disc[0].direction, Math.min(1500, Math.max(...all.map((ray) => ray.trees ?? ray.distance))), leaf);
 }
 
 /**
  * The hidden share of a row's disc and target from an eye point: by buildings and by trees.
- * `trees` shares are null when the register is not loaded. `centre` says whether the ray to
- * the disc's centre is hidden by buildings.
+ * Trees are the scene's of that day (`leaf`: by default the leaf of the instant's date; 1 asks
+ * for full leaf, 0 for bare). `trees` shares are null when the register is not loaded.
+ * `centre` says whether the ray to the disc's centre is hidden by buildings.
  */
-export function shotShare(row, eye, base, t = row.openAt ?? row.t) {
+export function shotShare(row, eye, base, t = row.openAt ?? row.t, leaf = leafOn(new Date(t))) {
   const rays = shotRays(row, eye, base, t);
   const origin = { x: eye.x, y: eye.y, z: eye.z };
   const count = (list, hit) => (list.length ? list.filter(hit).length / list.length : 0);
   const built = (ray) => !clearView(eye.x, eye.z, ray.direction, ray.distance) || landmarkInRay(eye, ray);
-  const trees = treesOfShot(origin, rays);
+  const trees = treesOfShot(origin, rays, leaf);
   const loaded = trees !== null;
-  const treed = (ray) => treeInRay(origin, ray.direction, ray.distance, trees);
+  const treed = (ray) => treeInRay(origin, ray.direction, ray.trees ?? ray.distance, trees);
   return {
     disc: { buildings: count(rays.disc, built), trees: loaded ? count(rays.disc, treed) : null },
     target: { buildings: count(rays.target, built), trees: loaded ? count(rays.target, treed) : null },
@@ -183,12 +218,12 @@ export function shotShare(row, eye, base, t = row.openAt ?? row.t) {
   };
 }
 
-/** The share of a row's disc and target the register's trees hide from an eye point, or null when they are not loaded. */
-export function treeShare(row, eye, base, t = row.openAt ?? row.t) {
+/** The share of a row's disc and target the register's trees hide from an eye point for a leaf amount, or null when they are not loaded. */
+export function treeShare(row, eye, base, t = row.openAt ?? row.t, leaf = leafOn(new Date(t))) {
   const rays = shotRays(row, eye, base, t);
-  const trees = treesOfShot(eye, rays);
+  const trees = treesOfShot(eye, rays, leaf);
   if (trees === null) return null;
-  const count = (list) => (list.length ? list.filter((ray) => treeInRay(eye, ray.direction, ray.distance, trees)).length / list.length : 0);
+  const count = (list) => (list.length ? list.filter((ray) => treeInRay(eye, ray.direction, ray.trees ?? ray.distance, trees)).length / list.length : 0);
   return { disc: count(rays.disc), target: count(rays.target) };
 }
 
@@ -196,3 +231,23 @@ export function treeShare(row, eye, base, t = row.openAt ?? row.t) {
 export const shotClear = (share) => !share.centre && share.disc.buildings <= MAY_HIDE + 1e-9 && share.target.buildings <= MAY_HIDE + 1e-9;
 /** The register's trees leave the shot, by the same measure (true when the trees are not loaded: nothing is known). */
 export const treesClear = (share) => (share.disc.trees ?? 0) <= MAY_HIDE + 1e-9 && (share.target.trees ?? 0) <= MAY_HIDE + 1e-9;
+
+/** Bare trees are in the way only when they still hide most of the disc or of the target. */
+export const BARE_HIDES = 0.5;
+/**
+ * What the register's trees do to a row's shot from an eye point, measured both ways: in full
+ * leaf (`leaf`: more than one ray in five of the disc or the target hidden) and bare (`bare`:
+ * most of either hidden). These two are what the tree list keeps for a place
+ * (public/viewshed/trees-in-the-way.json: `spots` and `bare`); null when no trees are loaded.
+ */
+export function treeMeasures(row, eye, base, t = row.openAt ?? row.t) {
+  const full = treeShare(row, eye, base, t, 1);
+  if (full === null) return null;
+  const none = treeShare(row, eye, base, t, 0);
+  return { leaf: Math.max(full.disc, full.target) > MAY_HIDE + 1e-9, bare: Math.max(none.disc, none.target) > BARE_HIDES + 1e-9 };
+}
+/**
+ * The level a row's words go by at an instant (src/lib/viewshed.ts `treeTest` gives the same
+ * from the list): 2 trees in the way, 1 bare trees in the frame, 0 none.
+ */
+export const treeLevel = (measures, t) => (!measures ? 0 : inLeaf(t) ? (measures.leaf ? 2 : 0) : measures.bare ? 2 : measures.leaf ? 1 : 0);

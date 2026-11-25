@@ -18,7 +18,7 @@ import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { FIGURE_TARGETS, discShare } from '../lib/landmarkStands.ts';
 import { LANDMARK_CAUTION, LANDMARK_CHECK, figureWord, landmarkScore, lensFor } from './landmarkShots.js';
-import { paleMoon } from './spectacle.js';
+import { paleMoon, TREES_BARE, TREES_BARE_NOTE, TREES_IN_WAY, TREES_IN_WAY_NOTE, TREES_IN_WAY_SCORE } from './spectacle.js';
 import { discOverSphere } from './towerShots.js';
 
 const DAY_MS = 86_400_000;
@@ -141,6 +141,13 @@ export function asShot(found) {
     if (shot.distanceM) Object.assign(shot, { discShare: share, lens: lensFor(figure, shot.distanceM), standDistanceM: shot.distanceM });
     if (Number.isFinite(found.fromDeg)) Object.assign(shot, { side: sideOf(found.fromDeg), standBearingDeg: found.fromDeg });
     if (shot.side && shot.distanceM) shot.stand = `${distanceText(shot.distanceM)} ${shot.side}`;
+  }
+  // The tree register's trees across the shot from the spot searched from (`found.trees`:
+  // shotVisibility.js `treeLevel`), in a day row's own words and at its own cost (dayShots.js).
+  if (found.trees === 2) {
+    Object.assign(shot, { caution: TREES_IN_WAY, trees: true, detail: `${shot.detail} · ${TREES_IN_WAY_NOTE}`, brief: `${shot.brief} · ${TREES_IN_WAY}`, score: shot.score * TREES_IN_WAY_SCORE });
+  } else if (found.trees === 1) {
+    Object.assign(shot, { caution: TREES_BARE, bareTrees: true, detail: `${shot.detail} · ${TREES_BARE_NOTE}`, brief: `${shot.brief} · ${TREES_BARE}` });
   }
   return shot;
 }

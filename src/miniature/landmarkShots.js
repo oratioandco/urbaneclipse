@@ -149,7 +149,8 @@ export function landmarkRows(passes, flags = {}) {
     // crowns in the frame; the nearest of all when it shows them from every one.
     // (Its own spots: up to nine minutes of the pass, which the sweep measures.)
     const byMiddle = [...pass.points].sort((a, b) => Math.abs(a.acrossM) - Math.abs(b.acrossM)).slice(0, 9);
-    const best = byMiddle.find((p) => !treesAt?.(p.lat, p.lon)) ?? byMiddle[0];
+    const treed = (p) => treesAt?.(p.lat, p.lon, p.t) ?? 0;
+    const best = byMiddle.find((p) => treed(p) === 0) ?? byMiddle.find((p) => treed(p) === 1) ?? byMiddle[0];
     // The stretch is the one from that spot, as every list gives it; the strip's own minutes,
     // each with its own spot, are the pass.
     const { start: firstT, end: lastT } = figureWindow(target, body, best);
@@ -192,7 +193,7 @@ export function landmarkRows(passes, flags = {}) {
       // to try when its full-detail check finds this one blocked or behind trees (pointer.js).
       alternates: byMiddle
         .filter((p) => p !== best)
-        .sort((a, b) => Number(Boolean(treesAt?.(a.lat, a.lon))) - Number(Boolean(treesAt?.(b.lat, b.lon))))
+        .sort((a, b) => treed(a) - treed(b))
         .slice(0, 8)
         .map((p) => ({ t: p.t, at: [p.lat, p.lon] })),
       standBearingDeg: best.bearingDeg,

@@ -61,13 +61,19 @@ export function moonShows(t) {
  * (measured in the planner's scene by scripts/adversarial/rows.mjs, kept in
  * public/viewshed/trees-in-the-way.json, asked through src/lib/treeSpots.ts) the row says the
  * stronger thing and counts half, so it does not make a day's three. The register has street
- * and park trees with their listed height and crown; it says nothing of the season, and
- * neither do these words.
+ * and park trees with their listed height and crown, and nothing of the season: that is one
+ * rule for all of them (src/lib/season.ts), which the scene draws and these words follow.
  */
 export const TREES_UNCHECKED = 'trees unchecked';
 export const TREES_IN_WAY = 'street trees in the way';
 export const TREES_IN_WAY_NOTE = 'street trees in the way here, per the tree register: look for a gap';
 export const TREES_IN_WAY_SCORE = 0.5;
+/**
+ * Out of leaf (src/lib/season.ts: mid-November to mid-April) the same trees are bare: they are
+ * in the frame, said, and cost nothing, unless bare they still cover most of the disc.
+ */
+export const TREES_BARE = 'bare trees in the frame';
+export const TREES_BARE_NOTE = 'bare trees in the frame here, per the tree register';
 
 /** How much a forecast's grade weighs a score, and how many shots a day shows in a short list. */
 export const GRADE_WEIGHT = { good: 1.25, fair: 1, poor: 0.55 };
