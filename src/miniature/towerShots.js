@@ -315,7 +315,9 @@ export function findShots({ eye, base, start, end, bodyAt: trueBodyAt, moonLit, 
           const q = bodyAt(body, align);
           const r = (q.trueAlt ?? q.alt) > 0 ? target.stateAt(eye, base, q) : null;
           const better = r && wanted.includes(r.state) && target.rank[r.state] >= target.rank[current.state] && !(body === 'moon' && r.state === 'ring' && (r.ringRatio ?? 1) < 1.25);
-          shots.push({ ...current, ...(better ? { state: r.state, az: q.az, alt: q.alt } : {}), align });
+          // Then its instant is that one too: a card that said 8:34 for the best whole minute
+          // stood beside the day's row for the same spot at 8:33.
+          shots.push({ ...current, ...(better ? { state: r.state, az: q.az, alt: q.alt, peak: Math.round(align / 1000) * 1000 } : {}), align });
         }
         current = null;
       };

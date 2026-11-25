@@ -28,6 +28,8 @@ import { frameRect, sceneFromLatLon, setViewArea } from './eye.js';
 import { DISC_RADIUS_DEG } from './towerShots.js';
 import { orbitTo, stepFlight, stepOrbit } from './camera.js';
 import { rowSeen } from './rowCheck.js';
+import { shotRays, shotShare, treeShare } from './shotVisibility.js';
+import { fineAlong, standLift } from './sightlines.js';
 import { EYE_HEIGHT } from './towerShots.js';
 import { landmarkItems, layers, needle, tiltButton, towerItems } from './chrome.js';
 import { CITY, CITY_VERSION, REFLECTION_REACH_M, isPhone, params } from './config.js';
@@ -51,7 +53,7 @@ import { loadTrees, setTreeDetail, setTrees, treeMeshes, updateTrees } from './t
 import { loadBlossom } from './blossomForecast.js';
 import { liftOntoLandmarks } from './landmarks.js';
 import { updateClouds } from './clouds.js';
-import { dayStart } from './clock.js';
+import { dayStart, instant } from './clock.js';
 
 const statsEl = document.getElementById('stats');
 app.base = null;
@@ -434,4 +436,15 @@ updateSun();
 requestAnimationFrame(frame);
 start().then(openLinkedView);
 window.__sky = skyUniforms;
-window.__mini = { dayRows: () => currentRows(), rowSeen: (row) => rowSeen(row, { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z }, app.groundAt(0, 0)), bodies: () => app.bodies, roadsNear, sightline, frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), deckAt: (x, z) => deckAt(x, z), standable: (x, z) => standable({ x, y: 0, z }), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, shadowEvery: () => quality.shadowEvery, get camera() { return app.camera; }, get controls() { return controls; }, renderer };
+window.__mini = { dayRows: () => currentRows(), shotShareAt: async (row, at, t = row.openAt ?? row.t) => {
+    // What a row's shot would be from another place and minute, in full detail: for asking
+    // whether a pass the list dropped has a usable spot after all.
+    const [x, z] = sceneFromLatLon(at[0], at[1], 52.520815, 13.409419);
+    const eye = { x, y: app.groundAt(x, z) + EYE_HEIGHT + standLift(x, z), z };
+    const ray = shotRays(row, eye, app.groundAt(0, 0), t).disc[0];
+    await fineAlong(x, z, ray.direction, ray.distance);
+    return { share: shotShare(row, eye, app.groundAt(0, 0), t), seen: rowSeen(row, eye, app.groundAt(0, 0), t) };
+  }, treeShareAt: (row, at) => {
+    const [x, z] = sceneFromLatLon(at[0], at[1], 52.520815, 13.409419);
+    return treeShare(row, { x, y: app.groundAt(x, z) + EYE_HEIGHT + standLift(x, z), z }, app.groundAt(0, 0));
+  }, shotShare: (row) => app.lastShare?.row === row ? app.lastShare.share : shotShare(row, { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z }, app.groundAt(0, 0), instant().getTime()), rowSeen: (row) => rowSeen(row, { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z }, app.groundAt(0, 0), instant().getTime()), bodies: () => app.bodies, roadsNear, sightline, frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), deckAt: (x, z) => deckAt(x, z), standable: (x, z) => standable({ x, y: 0, z }), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, shadowEvery: () => quality.shadowEvery, get camera() { return app.camera; }, get controls() { return controls; }, renderer };

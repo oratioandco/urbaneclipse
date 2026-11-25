@@ -44,6 +44,46 @@ export function paleMoon(body, t) {
   return paleMoonFactor(sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon).alt, getMoonIllumination(new Date(t)).fraction);
 }
 
+/**
+ * Whether a moon shot is one at all at instant `t`: by day a thin moon low over the roofs is
+ * not seen. In a dark sky a quarter lit is enough (dailyPaths.ts `MIN_MOON_ILLUMINATION`); with
+ * the sun up it takes more, along the same ramp the score falls on: 0.6 lit from a sun 9° up.
+ * (10 June 2027, 12:13: a 39% moon "behind the quadriga" at noon was listed as a shot.)
+ */
+export function moonShows(t) {
+  const sunAlt = sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon).alt;
+  return getMoonIllumination(new Date(t)).fraction >= 0.25 + 0.35 * smooth(PALE_MOON_SUN_DEG[0], PALE_MOON_SUN_DEG[1], sunAlt);
+}
+
+/**
+ * Trees. No list knows whether a tree stands in a sight line: every tower and street shot says
+ * "trees unchecked". Where the city's tree register puts crowns in the frame from a row's spot
+ * (measured in the planner's scene by scripts/adversarial/rows.mjs, kept in
+ * public/viewshed/trees-in-the-way.json, asked through src/lib/treeSpots.ts) the row says the
+ * stronger thing and counts half, so it does not make a day's three. The register has street
+ * and park trees with their listed height and crown; it says nothing of the season, and
+ * neither do these words.
+ */
+export const TREES_UNCHECKED = 'trees unchecked';
+export const TREES_IN_WAY = 'street trees in the way';
+export const TREES_IN_WAY_NOTE = 'street trees in the way here, per the tree register: look for a gap';
+export const TREES_IN_WAY_SCORE = 0.5;
+
+/** How much a forecast's grade weighs a score, and how many shots a day shows in a short list. */
+export const GRADE_WEIGHT = { good: 1.25, fair: 1, poor: 0.55 };
+export const PER_DAY = 3;
+
+/**
+ * The next shot: the earliest still to come among the few each day shows (`pickTop`). One rule
+ * for the home page's "Up next", the planner's one line and the first row of its list, which
+ * had three answers at 00:30 on 20 December 2026 (3:05, 3:15, 3:26). `days` is a list of days,
+ * each a list of `{ row, grade }` not graded Skip; `now` an instant.
+ */
+export function dayPicks(rated, n = PER_DAY) {
+  const grade = new Map(rated.map((r) => [r.row, r.grade]));
+  return pickTop(rated.map((r) => r.row), n, (row) => GRADE_WEIGHT[grade.get(row) ?? 'fair'] * row.score, true);
+}
+
 /** What a row is, for telling kinds apart: a street, a landmark's figure, the tower's sphere or antenna. */
 export const kindOf = (row) => (row.kind === 'street' ? 'street' : row.target && row.target !== 'fernsehturm' ? 'landmark' : (row.where ?? 'sphere'));
 
@@ -70,9 +110,11 @@ const SAME_KIND = 0.95;
  *   already chosen makes the next of that kind and body count 0.95 times, so a tower shot at 1.5
  *   comes before a third henge at 1.6, and never before a henge at 2 or a second moonrise at 1.7.
  *
- * Returns copies of the rows, `more` set on a henge that stands for others.
+ * Returns copies of the rows, in time order when `byTime` is set (a list reads by the clock;
+ * its first row is then the next shot), with `more` (how many) and `others` (the rows) on a
+ * henge that stands for others.
  */
-export function pickTop(rows, n, value = (row) => row.score) {
+export function pickTop(rows, n, value = (row) => row.score, byTime = false) {
   const sorted = [...rows].sort((a, b) => value(b) - value(a) || a.t - b.t);
   const sights = [];
   for (const row of sorted) {
@@ -84,8 +126,10 @@ export function pickTop(rows, n, value = (row) => row.score) {
             return s.row.kind === 'street' && s.row.body === row.body && Number.isFinite(other) && Math.abs(s.row.t - row.t) <= SAME_SIGHT_MS && Math.abs(((((bearing - other) % 360) + 540) % 360) - 180) <= PARALLEL_DEG;
           })
         : null;
-    if (same) same.more++;
-    else sights.push({ row, more: 0 });
+    if (same) {
+      same.more++;
+      same.others.push(row);
+    } else sights.push({ row, more: 0, others: [] });
   }
   const picked = [];
   const taken = {};
@@ -95,9 +139,9 @@ export function pickTop(rows, n, value = (row) => row.score) {
     for (let i = 1; i < sights.length; i++) if (worth(sights[i]) > worth(sights[best])) best = i;
     const [sight] = sights.splice(best, 1);
     taken[pictureOf(sight.row)] = (taken[pictureOf(sight.row)] ?? 0) + 1;
-    picked.push(sight.more ? { ...sight.row, more: sight.more } : { ...sight.row });
+    picked.push(sight.more ? { ...sight.row, more: sight.more, others: sight.others.sort((a, b) => a.t - b.t), source: sight.row } : { ...sight.row, source: sight.row });
   }
-  return picked;
+  return byTime ? picked.sort((a, b) => a.t - b.t) : picked;
 }
 
 /** "and 2 more streets", for a henge that stands for others in a short list; '' for none. */

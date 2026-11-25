@@ -96,11 +96,17 @@ A row names a picture and a place. Three things keep the two together:
   toast; it used to say nothing.
 - **The scene mask.** The viewshed (LoD2 roofs over DGM1 ground) and the scene (the same roofs
   as meshes over a terrain of 40 m cells) disagree in places. `public/viewshed/fernsehturm-scene.json`
-  lists the places the scene refused; `loadViewshed` blocks 25 m round each (`applySceneMask`),
-  so the pipeline offers another spot or drops the row. The list is measured:
-  `node scripts/adversarial/rows.mjs --kinds=antenna,sphere,landmark --mask=public/viewshed/fernsehturm-scene.json`
-  opens every row of a year and adds what fails; build and run again until none does. It holds
-  for the year it was run over: run it again when the pipeline's rules or the city data change.
+  lists the places the scene refused; `loadViewshed` blocks 8 m round each (`applySceneMask`:
+  the spot's 5 m cell and the ones touching it), so the pipeline offers another spot or drops
+  the row. It was 25 m, and one refused spot took the next minutes' spots of the same pass
+  with it, untested: 478 of 778 passes that had left the year's list had a usable spot. The
+  list is measured in two steps. `scripts/adversarial/crawl.test.ts` asks the scene about every
+  tower row's own spots (`__mini.shotShareAt`) and repeats until the year's list is stable,
+  about fifteen rounds in under an hour; then
+  `node scripts/adversarial/rows.mjs --kinds=antenna,sphere,landmark --mask=public/viewshed/fernsehturm-scene.json --trees=public/viewshed/trees-in-the-way.json`
+  opens every row of the year through the planner and adds what still fails; build and run
+  again until none does. Both hold for the year they were run over: run them again when the
+  pipeline's rules or the city data change.
 - **One name.** `towerSentence` (towerShots.js) words the tower's passes for the day list, the
   ticket and "From here" (`targets.js` `stateText`); a sphere row's sentence is what
   `bodyAgainstTower` sees from its spot at its instant, and "From here" classifies a pass at
@@ -108,7 +114,51 @@ A row names a picture and a place. Three things keep the two together:
   share at the shot's minute everywhere. `rowCheck.js` `rowSeen` says whether a row's promise
   holds from an eye point: the sweep and the tests use it.
 
+### What "clear" means, and trees
+
+`pointer.js` `clearAt` no longer asks one ray to the disc's centre. `shotVisibility.js` casts
+five rays to the disc (centre and rim) and five to the outline of what it stands behind (the
+sphere, the stretch of mast under the moon, the figure) through the full-detail buildings; a
+spot is clear when the centre is seen and at most one ray in five of each is hidden. The
+hand-built landmarks (`landmarks.js`: the towers at Alexanderplatz, the Estrel, the domes) are
+no city tiles, so `clearView` does not see them; `shotVisibility.js` casts its rays through
+them too. Before, rows opened onto a tower block's wall and called it clear (19 February 2027,
+2:10 PM, the sphere from 520 m NNE).
+
+Trees are a second, softer measure, against the city's tree register (`trees.js`: each tree a
+crown of its listed height and width, in full leaf whatever the date; woods inside parks are
+not in it). Among a row's own spots the planner takes the first that is clear of buildings and
+of the register's trees, else the first clear of buildings. The lists know it too:
+`public/viewshed/trees-in-the-way.json` holds the spots from which the register's trees hide
+more than a fifth of a listed shot (measured in the scene by `rows.mjs --trees`); the pipeline
+prefers another minute or spot of the same pass (`treesAt`), and where there is none the row
+says "street trees in the way" on the card, the ticket and in the calendar entry, "street trees
+in the way here, per the tree register: look for a gap" in its small print, and counts half, so
+it does not make a day's three. Every other tower and street row says "trees unchecked".
+Streets are measured by the sweep but not flagged: their own trees line them, and a ray from
+the near end does not say whether the gap at the far end is open.
+
+### A row's words
+
+A sphere row is one pass from one spot: its instant is the one nearest the middle of a clear
+stretch of the path (ended by any building in the way for more than three minutes), its spot is
+worked out for that instant (not read off the path's drawn points, which lie metres off), and
+its stretch is the minutes the disc is on the sphere from that spot. "other spots 3:43 PM-6:48
+PM" follows when the path offers more. An antenna row names the distance of the spot it opens
+at ("6.3 km ESE"), with the stretch of the line in brackets. A landmark row's stretch is the
+minutes the disc is on the figure from its spot, which is what "From here" lists for the same
+place. A bearing between two path points goes the short way round north (`dailyPaths.ts`
+`interpolate`): a spot 352 m north of the tower read "350 m S". Under an open tower row the
+eye-level line says the row's own sentence while the body is on that part of the tower. A moon
+the sky of its minute does not show is not listed (`moonShows`), nor a street whose near end
+lies outside the 9 km of the model.
+
 ### The few of a day
+
+The next shot is the earliest of the few each day shows (`dayPicks`): the home page's "Up
+next", the planner's one line and the first row of its list (which reads by the clock) are one
+rule. A henge that stands for others carries them (`others`): "and 2 more streets" is a button
+under its row and under its card on the ticket.
 
 "Next 3 days" shows three shots a day (`planmode.js`), chosen by `pickTop` (spectacle.js):
 henges of one body within twelve minutes down streets within 15° of each other are one sight

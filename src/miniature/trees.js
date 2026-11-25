@@ -70,6 +70,8 @@ const kinds = KINDS.map((kind) => {
 });
 
 let data = null;
+/** The register's trees once loaded (x and z in half metres, h and c in fifths of a metre, by 500 m cell), or null: for sight-line checks (shotVisibility.js). */
+export const treeData = () => data;
 let shownKey = '';
 let leaf = 1;
 let autumn = 0;

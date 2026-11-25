@@ -30,6 +30,27 @@ export interface ViewshedHeader {
 export interface Viewshed {
   header: ViewshedHeader;
   cells: Uint8Array;
+  /**
+   * Whether the city's tree register puts crowns in the frame of a shot taken from a place
+   * (`treeTest`); set on the tower's viewshed when its list of such places has loaded. It
+   * covers the whole model, whatever the shot is of.
+   */
+  treesAt?: (lat: number, lon: number) => boolean;
+}
+
+/**
+ * A test for "trees in the way here" from a list of places where they were found to be
+ * (public/viewshed/trees-in-the-way.json: measured in the planner's scene against the tree
+ * register by scripts/adversarial/rows.mjs --trees). A place counts when it is a listed one, to
+ * a metre: the pipeline's spots are worked out the same way every time, and each of a row's own
+ * spots is measured, so nothing has to be guessed for the spot next door. (Counting the cells
+ * round a listed place said "trees in the way" of 318 rows a year whose own spot was clear.)
+ */
+export function treeTest(spots: ReadonlyArray<readonly [number, number]>): (lat: number, lon: number) => boolean {
+  // The list keeps six decimals: round to those first, so a spot and its own entry always agree.
+  const key = (lat: number, lon: number) => `${Math.round(Number(lat.toFixed(6)) * 1e5)},${Math.round(Number(lon.toFixed(6)) * 1e5)}`;
+  const listed = new Set(spots.map(([lat, lon]) => key(lat, lon)));
+  return (lat, lon) => listed.has(key(lat, lon));
 }
 
 /** Expand the packed runs: one byte each, value in the top 2 bits, length - 1 below. */
@@ -60,8 +81,13 @@ export function sampleViewshed(view: Viewshed, lat: number, lon: number): ViewSt
   return cells[row * header.width + col] as ViewState;
 }
 
-/** How far round a spot the scene's verdict is taken to hold, metres. */
-const SCENE_MASK_M = 25;
+/**
+ * How far round a spot the scene's verdict is taken to hold, metres: its own 5 m cell and the
+ * ones touching it. It was 25 m, and one refused spot took the next minutes' spots of the same
+ * pass with it untested: 478 of the 778 passes that left the year's list had a spot the scene
+ * shows the shot from.
+ */
+export const SCENE_MASK_M = 8;
 
 /**
  * Spots the viewshed calls visible from which the planner's own scene, in full detail, finds
@@ -106,13 +132,16 @@ export function loadViewshed(landmark = 'fernsehturm'): Promise<Viewshed> {
     pending = (async () => {
       const headerResponse = await fetch(`/viewshed/${landmark}.json`);
       if (!headerResponse.ok) throw new Error(`viewshed header: HTTP ${headerResponse.status}`);
-      const header = (await headerResponse.json()) as ViewshedHeader & { binary: string; sceneMask?: string };
+      const header = (await headerResponse.json()) as ViewshedHeader & { binary: string; sceneMask?: string; treeSpots?: string };
       const dataResponse = await fetch(`/viewshed/${header.binary}`);
       if (!dataResponse.ok) throw new Error(`viewshed data: HTTP ${dataResponse.status}`);
       const view = decodeViewshed(header, new Uint8Array(await dataResponse.arrayBuffer()));
       // What the planner's scene refuses, where there is such a list (the tower has one).
-      const mask = header.sceneMask ? await fetch(`/viewshed/${header.sceneMask}`).then((r) => (r.ok ? r.json() : null), () => null) : null;
-      return mask?.spots ? applySceneMask(view, mask.spots) : view;
+      const list = (name?: string) => (name ? fetch(`/viewshed/${name}`).then((r) => (r.ok ? r.json() : null), () => null) : null);
+      const [mask, trees] = await Promise.all([list(header.sceneMask), list(header.treeSpots)]);
+      if (mask?.spots) applySceneMask(view, mask.spots);
+      if (trees?.spots) view.treesAt = treeTest(trees.spots);
+      return view;
     })().catch((err: unknown) => {
       loading.delete(landmark);
       throw err;

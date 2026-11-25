@@ -11,7 +11,8 @@ import { phaseName } from '../lib/moonPhase.ts';
 import { getMoonIllumination } from 'suncalc';
 import { dayEndOf, daysFrom, moonOfDay, wallMinute } from './dayMath.js';
 import { streetMomentsOfDay, withoutContinued } from './dayShots.js';
-import { moreStreets, pickTop } from './spectacle.js';
+import { GRADE_WEIGHT, moreStreets, PER_DAY, pickTop } from './spectacle.js';
+import { shotCard } from './shotCard.js';
 import { formatClock, weekdayShort } from './time.js';
 import { params } from './config.js';
 import { cloudsAt, cloudsFor, forecastReach, visibilityAt } from './weather.js';
@@ -32,8 +33,6 @@ const strip = document.getElementById('sparkstrip');
 const planHead = document.getElementById('plan-head');
 const tabs = document.querySelectorAll('.tabs [data-mode]');
 const DAYS = 3;
-const PER_DAY = 3;
-const GRADE_WEIGHT = { good: 1.25, fair: 1, poor: 0.55 };
 
 /** The days the plan speaks of, in the city's time: real today, not the day being explored. */
 const svDate = (from) => new Date(from).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
@@ -241,7 +240,9 @@ export function renderPlanCards() {
         .filter((row) => row.grade !== 'poor'),
       PER_DAY,
       (row) => GRADE_WEIGHT[row.grade ?? 'fair'] * row.score,
-    ).map((row) => (row.more ? { ...row, detail: `${row.detail} \u00b7 ${moreStreets(row)}` } : row));
+      // By the clock: the list's first row is then the next shot, as the one line above it says.
+      true,
+    );
     total += picks.length;
     blocks.push({ from, to, i, picks, day, rows: rows.length, name: dayName(from, i), now: i === 0 ? now : null, cards: picks.length > 0 });
   }
@@ -290,7 +291,20 @@ export function renderPlanCards() {
       heading.dataset.date = svDate(from);
       return [
         heading,
-      ...picks.map((row) => shotRow({ ...row, detail: row.detail + noteAt(day, from, row.t) }, row.verdict, () => flyTo(row, from))),
+      ...picks.flatMap((row) => {
+        const item = shotRow({ ...row, detail: row.detail + noteAt(day, from, row.t) }, row.verdict, () => flyTo(row, from));
+        if (!row.others?.length) return [item];
+        // A henge that stands for others on parallel streets: the others are a tap away.
+        const more = Object.assign(document.createElement('button'), { type: 'button', className: 'more-streets', textContent: moreStreets(row) });
+        more.setAttribute('aria-expanded', 'false');
+        const list = Object.assign(document.createElement('div'), { className: 'more-streets-list', hidden: true });
+        more.addEventListener('click', () => {
+          if (!list.childElementCount) list.append(...row.others.map((other) => shotRow({ ...other, detail: other.detail + noteAt(day, from, other.t) }, verdictAt(day, from, other), () => flyTo({ ...other, verdict: verdictAt(day, from, other) }, from))));
+          list.hidden = !list.hidden;
+          more.setAttribute('aria-expanded', String(!list.hidden));
+        });
+        return [item, more, list];
+      }),
       ];
     }),
     ...filterHint(),

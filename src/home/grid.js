@@ -9,6 +9,7 @@
  */
 import { shotKey, withoutContinued } from '../miniature/dayShots.js';
 import { berlinDayStart, wallMinutesOf } from '../miniature/berlinClock.js';
+import { dayPicks } from '../miniature/spectacle.js';
 
 export const DAYS = 3;
 
@@ -87,7 +88,13 @@ export function groupDay(day, shots, rate, now) {
 
 /** The next shot worth taking across the days, or null. */
 export function nextWorth(groups) {
-  return groups.flatMap((g) => g.worth.map((r) => ({ ...r, day: g }))).sort((a, b) => a.shot.t - b.shot.t)[0] ?? null;
+  // The planner's rule (spectacle.js `dayPicks`): the earliest of the few each day shows, not
+  // the earliest of everything, so "Up next" here and the planner's one line name one shot.
+  return (
+    groups
+      .flatMap((g) => dayPicks(g.worth.map((r) => ({ row: r.shot, grade: r.verdict?.grade }))).map((pick) => ({ ...g.worth.find((r) => r.shot === pick.source), day: g })))
+      .sort((a, b) => a.shot.t - b.shot.t)[0] ?? null
+  );
 }
 
 /** Words joined as a list: "rain likely", "rain likely and overcast", "fog, haze and overcast". */

@@ -35,7 +35,7 @@ import MoonGlyph from './MoonGlyph.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, formatTime, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
-import { collectRows, computeDayPaths, computeLandmarkPasses, streetMomentsOfDay, towerSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
+import { collectRows, computeDayPaths, computeLandmarkPasses, streetMomentsOfDay, towerSeenFrom, treesSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
 import { FIGURE_TARGETS } from '../../../lib/landmarkStands.js';
 import { planLink } from '../../../home/grid.js';
 
@@ -159,7 +159,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         view ? computeDayPaths(bounds.start.getTime(), view) : [],
         allMoments,
         bounds.start.getTime(),
-        { seesTower: towerSeenFrom(view) },
+        { seesTower: towerSeenFrom(view), treesAt: treesSeenFrom(view) },
         computeLandmarkPasses(bounds.start.getTime(), sheds),
       ),
     [bounds, view, allMoments, sheds],
