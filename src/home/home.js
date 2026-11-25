@@ -161,7 +161,11 @@ function render() {
       section.append(grid);
       if (shown.length > best.length || open) {
         const more = el('p', 'home-line home-more');
-        more.append(button(open ? 'Show the best only' : `Show all ${shown.length} shots of ${group.name === group.weekday ? group.weekday : group.name.toLowerCase()}`, () => {
+        // The day's whole count, the "Up next" card included, so it agrees with the line above
+        // ("10 go"); it said 9 when the tenth was the hero.
+        const total = (state.showSkipped ? group.all : group.worth).length;
+        const upNext = shown.length < total ? ', one of them up next' : '';
+        more.append(button(open ? 'Show the best only' : `Show all ${total} shots of ${group.name === group.weekday ? group.weekday : group.name.toLowerCase()}${upNext}`, () => {
           if (open) state.openDays.delete(group.date);
           else state.openDays.add(group.date);
           render();
