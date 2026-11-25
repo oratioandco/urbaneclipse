@@ -3,6 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { formatTime } from './shared.js';
+import { formatHour } from '../../../miniature/time.js';
+
+const hourOf = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: 'Europe/Berlin' });
+/** The hour on Berlin's clock at an instant, 0 to 23. */
+const berlinHour = (t: number) => Number(hourOf.format(t));
 import {
   MIN_MOON_ILLUMINATION,
   alignmentLine,
@@ -344,7 +349,8 @@ export default function TodayMap({
           if (placed.some((other) => other.distanceTo(at) < LABEL_ROOM_PX)) continue;
           placed.push(at);
           L.marker([p.lat, p.lon], {
-            icon: label(formatTime(new Date(p.t)).slice(0, 2), `ue-map-hour ue-map-hour--${path.body}`),
+            // The whole hour as the planner writes it ("9 AM", "09"): its first two characters read "9:".
+            icon: label(formatHour(berlinHour(p.t)), `ue-map-hour ue-map-hour--${path.body}`),
             interactive: false,
           }).addTo(layer);
         }
@@ -410,7 +416,8 @@ export default function TodayMap({
       if (!p) continue;
       L.marker([p.lat, p.lon], {
         icon: L.divIcon({
-          className: `ue-map-now ue-map-now--${path.body}`,
+          // Its words go on the side away from the tower, so they never lie on the tower's name.
+          className: `ue-map-now ue-map-now--${path.body} ue-map-now--${p.lat >= FERNSEHTURM.lat ? 'above' : 'below'}`,
           iconSize: [0, 0],
           html: '<i></i><span>Stand here</span>',
         }),

@@ -22,9 +22,10 @@ export interface SpotTarget {
 }
 
 export function coverageLabel(kind: OccultationKind, fraction: number): string {
-  if (kind === 'full') return 'fully hidden';
-  // Rounded down: a sliver of visible disc must not read as fully hidden.
-  if (kind === 'partial') return `${Math.floor(fraction * 100)}% hidden`;
+  // Behind the tower's sphere: the shot. "Fully hidden" read as "blocked" (release test).
+  if (kind === 'full') return 'wholly behind the sphere';
+  // Rounded down: a sliver of visible disc must not read as wholly behind it.
+  if (kind === 'partial') return `${Math.floor(fraction * 100)}% behind the sphere`;
   return 'not behind the tower';
 }
 

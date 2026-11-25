@@ -33,6 +33,7 @@ import type { Body } from '../../../lib/bodyPosition.js';
 import LightRibbon, { LightLegend } from './LightRibbon.js';
 import MoonGlyph from './MoonGlyph.js';
 import ShotRows from './ShotRows.js';
+import { formatDistance } from '../../../miniature/time.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, formatTime, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
@@ -50,7 +51,7 @@ interface Props {
 const BODY_NAME: Record<Body, string> = { sun: 'Sun', moon: 'Moon' };
 
 function placeLabel(p: { distanceM: number; bearingDeg: number }): string {
-  return `${(p.distanceM / 1000).toFixed(1)} km ${compassPoint(p.bearingDeg)} of the tower`;
+  return `${formatDistance(p.distanceM)} ${compassPoint(p.bearingDeg)} of the tower`;
 }
 
 /** The stretches of the day with a usable view, for the bars above the time slider. */
