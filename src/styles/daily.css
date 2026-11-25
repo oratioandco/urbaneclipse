@@ -219,3 +219,40 @@ a.ue-row { box-sizing: border-box; color: inherit; text-decoration: none; }
   .ue-stage { bottom: 44dvh; }
   .ue-map .leaflet-control-zoom { display: none; }
 }
+
+/*
+ * One product (release test, 2026-11-24): the sheet, its headings, rows and chips in the
+ * planner's own terms. The map keeps its night look: its lines are drawn as light on dark.
+ *
+ * Light and dark by the planner's rule (src/miniature/README.md): the sheet is paper while the
+ * sun is up in Berlin and dark at night, set as html[data-theme] by src/pages/map.astro.
+ * The headings are the planner's sans, bold, not a serif. A row is the shared shot card
+ * (src/miniature/shotcard.css) and opens that shot in /plan/.
+ */
+:root { --ue-serif: var(--ue-sans); }
+.ue-title { font-weight: 700; font-size: 28px; letter-spacing: 0; }
+.ue-today__head .ue-title { font-size: 26px; }
+.ue-time__value output { font-weight: 700; font-size: 24px; }
+.ue-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.ue-sheet { --ink: var(--ue-text); --muted: var(--ue-muted); --line: var(--ue-line); --accent: #d9772b; --field: rgba(255, 255, 255, 0.09); border-radius: 14px; }
+.ue-chip { min-height: 32px; border-radius: 16px; font-weight: 600; }
+.ue-daynav button, .ue-daynav__pick { border-radius: 14px; }
+.ue-row__go { background: var(--ue-text); color: var(--ue-bg); }
+.ue-shotrows { display: grid; }
+.ue-shotrows .shotcard { color: var(--ue-text); text-decoration: none; padding: 8px 0; border-top: 1px solid var(--ue-line); }
+.ue-shotrows .shotcard[data-past='true'] { opacity: 0.5; }
+:root[data-theme='light'] .ue-sheet {
+  --ue-bg: #f6f3ee;
+  --ue-surface: rgba(255, 253, 249, 0.94);
+  --ue-surface-solid: #fffdf9;
+  --ue-line: rgba(40, 34, 24, 0.14);
+  --ue-text: #24221f;
+  --ue-muted: #6f6a62;
+  --ue-sun: #f26a12;
+  --ue-moon: #5b82ff;
+  --field: #fff;
+  color: var(--ue-text);
+}
+:root[data-theme='light'] .ue-sheet .ue-chip[aria-pressed='true'] { background: #fff; box-shadow: 0 1px 2px rgba(40, 34, 24, 0.14); }
+:root[data-theme='light'] .ue-sheet .ue-row--cta:hover, :root[data-theme='light'] .ue-sheet .ue-daynav__pick:hover { background: rgba(40, 34, 24, 0.06); }
+:root[data-theme='light'] .ue-sheet .ue-daynav__pick input { color-scheme: light; }

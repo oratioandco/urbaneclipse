@@ -4,7 +4,7 @@
  */
 import * as THREE from 'three';
 import { deckTop } from './decks.js';
-import { railViaductAt } from './bridgesMissing.js';
+import { missingBridgeAt, railViaductAt } from './bridgesMissing.js';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { EYE_HEIGHT, latLonFromScene, lookDirection } from './eye.js';
 import { buildingMaterial, controls, raycaster, tower } from './render.js';
@@ -145,7 +145,11 @@ export function deckAt(x, z) {
   if (!deckMemo.has(key)) {
     if (deckMemo.size > 4000) deckMemo.clear();
     // Not the railway viaducts the rule is known to take for bridges (bridgesMissing.js).
-    deckMemo.set(key, app.roadXZ && !railViaductAt(...latLonFromScene(x, z, FERNSEHTURM.lat, FERNSEHTURM.lon)) ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) !== null : false);
+    // Nor the bridges listed as not in the model: the Swinemünder Brücke's middle passed for a
+    // deck at one level of detail and not at another, so a phone stood on it without a word and
+    // a desktop was moved off it with one. Listed means not stood on, everywhere.
+    const [lat, lon] = latLonFromScene(x, z, FERNSEHTURM.lat, FERNSEHTURM.lon);
+    deckMemo.set(key, app.roadXZ && !railViaductAt(lat, lon) && !missingBridgeAt(lat, lon, 0) ? deckTop(x, z, { roofAt, groundAt: app.groundAt, roadsNear }) !== null : false);
   }
   if (!deckMemo.get(key)) return null;
   const top = roofAt(x, z);

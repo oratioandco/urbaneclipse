@@ -42,9 +42,10 @@ body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > 
    height), and no chevron, so a row is three lines at most. */
 #dates .fh-brief { display: none; grid-area: detail; color: var(--muted); font-size: var(--text-s); }
 @media (max-width: 359px) {
-  /* The five switches on two lines, all in sight: on one line the fifth lay off the screen. */
-  #dates .shotfilter { gap: 4px; }
-  #dates .shotfilter button { padding: 0 8px; }
+  /* The five switches on one line, all in sight: smaller words, no rule between the pairs. */
+  #dates .shotfilter { flex-wrap: nowrap; gap: 3px; }
+  #dates .shotfilter button { flex: none; padding: 0 5px; font-size: 12px; }
+  #dates .shotfilter .sep { display: none; }
   #dates { --half: clamp(282px, 34dvh, 300px); }
   #dates .shotcard--row { column-gap: 8px; }
   #dates .shotcard--row :is(.sc-detail, .chev, .fh-weekday) { display: none; }
@@ -55,11 +56,12 @@ body[data-eye='true'][data-dates='open'][data-dates-size='full'] .camera-rows > 
   #dates .fh-size { display: none; }
 }
 /* A short phone (320 x 568): with the list open the ticket took 74 % of the screen. The list
-   starts lower (one row of cards is in sight, the rest scrolls), and the ticket's first line
-   (the status and More) waits while the list is open: the Dates button closes it. */
+   starts lower (the top of the cards is in sight, the rest scrolls). */
 @media (max-height: 600px) {
-  #dates { --half: 200px; }
-  body[data-eye='true'][data-dates='open'] .ticket-head { display: none; }
+  #dates { --half: 170px; }
+  /* The credit line has no row of its own here: it lay on the viewfinder's caption. It is on
+     the map and on the ticket whenever the list is closed. */
+  body[data-eye='true'][data-dates='open'] .credit { display: none; }
 }
 /* With the list open the walk stick is away and the credit line has the row to itself: it
    stops short of the tool buttons instead of running under them. */

@@ -20,7 +20,7 @@ import { answer, countsLine, dayLine, dayLink, groupDay, nextWorth, parseNow, pl
 import { dayShots } from '../miniature/dayShots.js';
 import { sampleBody } from '../lib/bodyPosition.ts';
 import { FERNSEHTURM } from '../lib/landmarks.ts';
-import { isNight } from './grid.js';
+import { bestOf, isNight } from './grid.js';
 
 const root = document.getElementById('next-shots');
 const answerEl = root.querySelector('[data-answer]');
@@ -40,6 +40,7 @@ setInterval(showNight, 60_000);
 
 /** What is known so far: the data the shots are computed from, the shots, and the forecasts. */
 const state = {
+  openDays: new Set(), // dates whose every shot is shown, not the best few
   days: [],
   shots: new Map(), // date -> rows of dayShots
   forecasts: new Map(), // date -> the day's forecast, null (failed), or 'none' (out of reach)
@@ -152,9 +153,21 @@ function render() {
     // The shot that is "Up next" above is not shown a second time as its day's first card.
     const shown = (state.showSkipped ? group.all : group.worth).filter((rated) => rated.shot !== next?.shot);
     if (shown.length) {
+      // The day's best few; the rest behind "Show all", a day at a time.
+      const open = state.openDays.has(group.date);
+      const best = open ? shown : bestOf(shown);
       const grid = el('div', 'home-grid');
-      grid.append(...shown.map((rated) => card(rated, group)));
+      grid.append(...best.map((rated) => card(rated, group)));
       section.append(grid);
+      if (shown.length > best.length || open) {
+        const more = el('p', 'home-line home-more');
+        more.append(button(open ? 'Show the best only' : `Show all ${shown.length} shots of ${group.name === group.weekday ? group.weekday : group.name.toLowerCase()}`, () => {
+          if (open) state.openDays.delete(group.date);
+          else state.openDays.add(group.date);
+          render();
+        }));
+        section.append(more);
+      }
     }
     const line = dayLine(group, state.showSkipped);
     if (line) {

@@ -202,6 +202,9 @@ export default function TodayMap({
       zoom: 12,
       minZoom: 10,
       zoomControl: false,
+      // Tiles show as they arrive. Their fade-in runs on the clock, and a test that holds the
+      // clock still (the release tests do) left every tile transparent: a blank map.
+      fadeAnimation: false,
     });
     mapRef.current = map;
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

@@ -163,7 +163,9 @@ if (want('C')) {
     out.C[name] = r;
     const worst = Math.max(...r.map((p) => p.moved));
     const noDeck = r.every((p) => p.above === null);
-    verdict(worst < 5, `C ${name}: moved up to ${worst} m (${r.map((p) => `${p.above ?? 'open'}${p.deck ? ' deck' : ''}`).join(', ')})${noDeck ? ' — no deck in the model: one stands on the terrain under the bridge' : ''}`);
+    // The decision for these two: not stood on, and said (check D). Moving is then expected.
+    const listed = ['Boesebruecke', 'Swinemuender Bruecke'].includes(name);
+    verdict(listed ? r.every((p) => !p.deck) : worst < 5, `C ${name}${listed ? ' (listed as not in the model: no deck expected)' : ''}: moved up to ${worst} m (${r.map((p) => `${p.above ?? 'open'}${p.deck ? ' deck' : ''}`).join(', ')})${noDeck ? ' — no deck in the model: one stands on the terrain under the bridge' : ''}`);
   }
   await context.close();
 }
@@ -179,7 +181,7 @@ if (want('D')) {
     // Either one stands on its deck after all (the Swinemünder Brücke's middle is recognised
     // at some detail levels), or the page says the bridge is not in the model.
     const onDeck = await page.evaluate(() => window.__mini.deckAt(window.__mini.look.x, window.__mini.look.z) !== null);
-    verdict(name === 'Moltkebruecke' ? onDeck && !said : said !== onDeck, `D ${name}: ${onDeck ? 'stands on a deck' : 'not on a deck'}, ${toast ? `says "${toast.slice(0, 60)}\u2026"` : 'says nothing'}`);
+    verdict(name === 'Moltkebruecke' ? onDeck && !said : said && !onDeck, `D ${name}: ${onDeck ? 'stands on a deck' : 'not on a deck'}, ${toast ? `says "${toast.slice(0, 60)}\u2026"` : 'says nothing'}`);
     if (name === 'Boesebruecke') await shot(page, 'bridge-D-boese');
   }
   await plan(page, 'date=2026-11-24&time=600');

@@ -463,6 +463,8 @@
       #airspace[data-inside='true'] { background: #fde8e4; color: #b4321f; }
       body[data-night='true'] #airspace[data-inside='true'] { background: #4a2228; color: #ffb3a6; }
       /* Touch screens walk with the stick; a keyboard walks with keys. */
+      /* A phone-sized screen has no room for them either, whatever points at it. */
+      @media (max-width: 899px) { .keys { display: none; } }
       @media (pointer: coarse), (hover: none) {
         .keys { display: none; }
         body[data-eye='true'] .walkpad { display: grid; }

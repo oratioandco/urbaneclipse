@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { addDays, answer, berlinDate, isNight, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
+import { addDays, answer, bestOf, berlinDate, isNight, countsLine, dayLine, groupDay, nextWorth, parseNow, planLink, skipReasons, threeDays, withoutContinued } from '../../src/home/grid.js';
 import { collectRows, computeDayPaths, dayShots, findShot, shotKey, shotStillHeld, streetStatus } from '../../src/miniature/dayShots.js';
 import { decodeStreets, streetMoments } from '../../src/lib/streets';
 import { FERNSEHTURM } from '../../src/lib/landmarks';
@@ -284,6 +284,20 @@ describe('a tower row\u2019s minute', () => {
     const rows = collectRows(computeDayPaths(berlinDayStart('2027-03-28'), shed), [], berlinDayStart('2027-03-28')).filter((r: { where?: string }) => r.where === 'sphere');
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) expect(row.t % 1000).toBe(0);
+  });
+});
+
+describe('the home grid: a day\u2019s best few', () => {
+  const rated = (t: number, score: number) => ({ shot: { t, score }, verdict: null });
+  it('keeps the highest scores, in the day\u2019s order', () => {
+    const day = [rated(1, 0.4), rated(2, 2.0), rated(3, 0.9), rated(4, 1.6), rated(5, 0.2), rated(6, 1.6), rated(7, 1.1)];
+    expect(bestOf(day, 4).map((r) => r.shot.t)).toEqual([2, 4, 6, 7]);
+    // A tie goes to the earlier shot.
+    expect(bestOf([rated(1, 1), rated(2, 1), rated(3, 1)], 2).map((r) => r.shot.t)).toEqual([1, 2]);
+  });
+  it('leaves a short day as it is', () => {
+    const day = [rated(1, 0.4), rated(2, 2.0)];
+    expect(bestOf(day, 4)).toBe(day);
   });
 });
 

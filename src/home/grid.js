@@ -171,5 +171,18 @@ export function planLink(shot) {
   return `/plan/?${query}`;
 }
 
+/** How many cards a day shows before "Show all": the page was 47 to 58 cards, 13,000 px on a phone. */
+export const DAY_BEST = 4;
+/**
+ * A day's best few, in time order: the `count` highest scores (a shot's `score` is its
+ * spectacle, dayShots.js), a later one winning a tie no more than an earlier one. All of them
+ * when there are no more than `count`.
+ */
+export function bestOf(rated, count = DAY_BEST) {
+  if (rated.length <= count) return rated;
+  const kept = new Set([...rated].sort((a, b) => (b.shot.score ?? 0) - (a.shot.score ?? 0) || a.shot.t - b.shot.t).slice(0, count));
+  return rated.filter((r) => kept.has(r));
+}
+
 /** The address that opens a day in `/plan/`, at noon. */
 export const dayLink = (date) => `/plan/?date=${date}&time=720`;

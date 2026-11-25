@@ -114,6 +114,15 @@ export function setCloudHint(heavy) {
   cloudHeavy = heavy;
   refreshCloudHint();
 }
+// Escape closes the menu, and only the menu.
+addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape' || layersMenu.hidden) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  layersMenu.hidden = true;
+  layersButton.setAttribute('aria-expanded', 'false');
+  layersButton.focus({ preventScroll: true });
+}, true);
 layersButton.addEventListener('click', () => {
   layersMenu.hidden = !layersMenu.hidden;
   layersButton.setAttribute('aria-expanded', String(!layersMenu.hidden));
