@@ -32,6 +32,8 @@ export function formatDay(day) {
   const year = part({ year: 'numeric' });
   return `${weekdayShort(date)}, ${part({ day: 'numeric' })} ${part({ month: 'short' })}${Number(year) === new Date().getFullYear() ? '' : ` ${year}`}`;
 }
+/** A distance as the cards write it: 710 m under a kilometre (to 10 m), 1.3 km above. */
+export const formatDistance = (m) => (m < 995 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`);
 /** A whole hour, short: 07 or 7 AM. */
 export const formatHour = (hour) => hourOnly.format(new Date(Date.UTC(2000, 0, 1, hour))).replace(/\s?Uhr$/, '');
 

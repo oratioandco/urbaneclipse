@@ -4,15 +4,19 @@
  *      the calendar's line must stay;
  *   2  walk off (about 130 m): all three must go;
  *   3  open it again and move the clock 30 minutes on: all three must go.
- * Writes stale.json and stale-<step>.png.
+ * Runs at every size by default: desktop 1280 x 800, phone 390 x 844 and narrow 320 x 568
+ * (lib.mjs SIZES). Writes stale.json and stale-<size>-<step>.png.
  *
- *   node scripts/adversarial/stale.mjs [yyyy-mm-dd]
+ *   node scripts/adversarial/stale.mjs [yyyy-mm-dd] [desktop,phone,narrow]
  */
 import { open, plan, shot, save, close } from './lib.mjs';
 
-const date = process.argv[2] ?? '2026-11-26';
-// SIZE=phone runs it on the phone layout (the walk is by keys either way).
-const { page } = await open({ size: process.env.SIZE ?? 'desktop', forecast: 'fixed' });
+const date = process.argv.slice(2).find((a) => /^\d{4}-\d{2}-\d{2}$/.test(a)) ?? '2026-11-26';
+const sizes = (process.argv.slice(2).find((a) => /^[a-z,]+$/.test(a)) ?? process.env.SIZE ?? 'desktop,phone,narrow').split(',');
+const out = {};
+let failed = 0;
+for (const size of sizes) {
+const { page, context } = await open({ size, forecast: 'fixed' });
 const snap = async () => {
   const s = await page.evaluate(() => ({ clock: document.getElementById('clock').value, ticket: document.getElementById('ticket-shot').hidden ? '' : document.getElementById('ticket-shot').innerText.replace(/\n/g, ' / '), status: document.getElementById('eclipse').innerText, url: location.search }));
   await page.click('#share');
@@ -33,14 +37,12 @@ const openShot = async () => {
   await page.waitForTimeout(3000);
 };
 const setClock = (by) => page.$eval('#time', (el, by) => { el.value = String(Number(el.value) + by); el.dispatchEvent(new Event('input', { bubbles: true })); }, by);
-const out = {};
-let failed = 0;
 const check = (name, s, held) => {
   const named = { ticket: s.ticket !== '', address: /[?&]shot=/.test(s.url) };
   const ok = named.ticket === held && named.address === held;
   if (!ok) failed++;
-  out[name] = { ...s, ok };
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}: clock ${s.clock}; ticket "${s.ticket}"; address ${named.address ? 'names the shot' : 'names no shot'}; calendar "${s.calendar}"`);
+  out[`${size} ${name}`] = { ...s, ok };
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${size} ${name}: clock ${s.clock}; ticket "${s.ticket}"; address ${named.address ? 'names the shot' : 'names no shot'}; calendar "${s.calendar}"`);
 };
 
 await openShot();
@@ -48,7 +50,7 @@ check('opened', await snap(), true);
 await setClock(2);
 await page.waitForTimeout(1200);
 check('two minutes on, same spot', await snap(), true);
-await shot(page, 'stale-1-held');
+await shot(page, `stale-${size}-1-held`);
 await page.keyboard.down('Shift');
 await page.keyboard.down('a');
 await page.waitForTimeout(9000);
@@ -56,13 +58,15 @@ await page.keyboard.up('a');
 await page.keyboard.up('Shift');
 await page.waitForTimeout(1500);
 check('walked off', await snap(), false);
-await shot(page, 'stale-2-walked');
+await shot(page, `stale-${size}-2-walked`);
 
 await openShot();
 await setClock(30);
 await page.waitForTimeout(1500);
 check('30 minutes on', await snap(), false);
-await shot(page, 'stale-3-later');
+await shot(page, `stale-${size}-3-later`);
+await context.close();
+}
 save('stale.json', out);
 console.log(failed ? `${failed} FAILED` : 'all passed');
 await close();

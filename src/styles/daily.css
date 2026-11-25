@@ -256,3 +256,36 @@ a.ue-row { box-sizing: border-box; color: inherit; text-decoration: none; }
 :root[data-theme='light'] .ue-sheet .ue-chip[aria-pressed='true'] { background: #fff; box-shadow: 0 1px 2px rgba(40, 34, 24, 0.14); }
 :root[data-theme='light'] .ue-sheet .ue-row--cta:hover, :root[data-theme='light'] .ue-sheet .ue-daynav__pick:hover { background: rgba(40, 34, 24, 0.06); }
 :root[data-theme='light'] .ue-sheet .ue-daynav__pick input { color-scheme: light; }
+
+/* An hour is one word: "9 AM" broke onto two lines. */
+.ue-map-label span { white-space: nowrap; }
+/* "Stand here" on the side away from the tower's name, on a little paper of its own, so an
+   hour label beside it never makes it unreadable (it is drawn above them). */
+.ue-map-now span { padding: 1px 6px; border-radius: 8px; background: var(--ue-bg); text-shadow: none; font-weight: 600; }
+.ue-map-now--above span { left: 0; top: -28px; transform: translateX(-50%); }
+.ue-map-now--below span { left: 0; top: 12px; transform: translateX(-50%); }
+
+/* The map by Berlin's day: light tiles in the planner's warm grey, labels in ink on paper,
+   the lines of light blended so they show on light ground. By night it is as it was. */
+:root[data-theme='light'] .ue-map {
+  --ue-bg: #f6f3ee;
+  --ue-surface-solid: #fffdf9;
+  --ue-line: rgba(40, 34, 24, 0.14);
+  --ue-text: #24221f;
+  --ue-muted: #6f6a62;
+  --ue-sun: #f26a12;
+  --ue-moon: #5b82ff;
+  background: #ece8e1;
+}
+:root[data-theme='light'] .ue-map .leaflet-tile-pane { filter: grayscale(1) sepia(0.14) brightness(1.03) contrast(0.86); }
+:root[data-theme='light'] .ue-map :is(.ue-map-tower, .ue-map-viewpoint, .ue-map-now, .ue-map-body) span { text-shadow: 0 0 3px #fffdf9, 0 0 6px #fffdf9, 0 0 10px #fffdf9; }
+:root[data-theme='light'] .ue-map .ue-map-tower i { box-shadow: 0 0 0 4px rgba(36, 34, 31, 0.15); }
+:root[data-theme='light'] .ue-map :is(.leaflet-ue-body-glow-pane, .leaflet-ue-street-glow-wide-pane, .leaflet-ue-street-glow-tight-pane) { mix-blend-mode: multiply; }
+:root[data-theme='light'] .ue-map .leaflet-control-attribution { background: rgba(255, 253, 249, 0.85); }
+
+/* The sheet is solid: the map's names and the sun showed through it. */
+.ue-sheet { background: var(--ue-surface-solid); }
+/* On a phone the map's credit goes to the top, clear of the sheet and its buttons. */
+@media (max-width: 760px) {
+  .ue-map .leaflet-bottom.leaflet-right { top: 0; bottom: auto; }
+}

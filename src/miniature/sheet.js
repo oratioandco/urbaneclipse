@@ -82,9 +82,23 @@ let skipPop = false;
 // Eye level is a place of its own in the history: entering it adds an entry, the Map button
 // takes it away again, and the back button or Escape leaves through it.
 let eyeEntry = false;
+// Opened at eye level from another page of the site (a row on /map, a card on the home page):
+// that first eye level is the page the link went to, not a step inside it, so it adds no
+// entry and the browser's back goes back to that page. Before, it went to the planner's map.
+let cameAtEyeLevel = (() => {
+  if (!params.has('at') && !params.has('shot')) return false;
+  try {
+    const from = new URL(document.referrer);
+    return from.origin === location.origin && !from.pathname.startsWith('/plan');
+  } catch {
+    return false;
+  }
+})();
 new MutationObserver(() => {
   const eye = document.body.dataset.eye === 'true';
-  if (eye && !eyeEntry) {
+  if (eye && cameAtEyeLevel) {
+    cameAtEyeLevel = false;
+  } else if (eye && !eyeEntry) {
     history.pushState({ eye: true }, '');
     eyeEntry = true;
     // The keyboard's focus goes where eye level's controls are.

@@ -7,3 +7,4 @@ export function weekdayShort(t: number | Date): string;
 export function formatDay(day: number | string | Date): string;
 export function formatHour(hour: number): string;
 export function parseTime(text: string): number | null;
+export function formatDistance(metres: number): string;

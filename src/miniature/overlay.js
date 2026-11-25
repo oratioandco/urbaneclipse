@@ -77,11 +77,22 @@ function drawBody(body, x, y, radius) {
   else drawSun(ctx, x, y, radius, body.alt, { glow: false });
 }
 
+/**
+ * How high a body stands, in words: "9\u00b0 up", "on the horizon", "1\u00b0 below the horizon".
+ * A pill showed "Moon -1\u00b0 up" for a moon just set (pills show it down to 1\u00b0 under).
+ */
+export function altitudeWords(alt) {
+  const deg = Math.round(alt);
+  if (deg > 0) return `${deg}\u00b0 up`;
+  if (deg === 0) return 'on the horizon';
+  return `${-deg}\u00b0 below the horizon`;
+}
+
 const PILL_H = 30;
 /** The direction needle beside a pill: its length, and the gap between it and the pill's rim. */
 /** The beak on a pill's rim that points to its body: how far it stands out, and half its root. */
-const BEAK = 11;
-const BEAK_HALF = 7;
+const BEAK = 15;
+const BEAK_HALF = 9;
 
 /**
  * A compass pill, not a sun in the scene: the arrow says which way the body lies, whereas a
@@ -114,7 +125,9 @@ function drawPill({ text, moon, x, y, ux, uy, night, body }) {
     ctx.strokeStyle = night ? 'rgba(20, 23, 38, 0.92)' : 'rgba(255, 253, 249, 0.96)';
     ctx.lineWidth = 3;
     ctx.stroke();
-    ctx.fillStyle = PATH_CSS[moon ? 'moon' : 'sun'];
+    // In the pill's ink, dark on the day pill and light on the night pill: the body's own
+    // colour (blue on the night pill) was legible but faint. The disc in the pill says which body.
+    ctx.fillStyle = night ? '#ece8df' : '#24221f';
     ctx.fill();
   }
   ctx.fillStyle = night ? 'rgb(20, 23, 38)' : 'rgb(255, 253, 249)';
@@ -308,7 +321,7 @@ export function drawOverlay({ camera, target, night, bodies, stands, bottomInset
     const ux = dx / length;
     const uy = dy / length;
     // The first pill says what time the map shows: on a phone the clock may be out of sight.
-    const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${pills.length ? '' : ` \u00b7 ${formatMinutes(Number(document.getElementById('time').value))}`}`;
+    const text = `${body.moon ? 'Moon' : 'Sun'} ${altitudeWords(body.alt)}${pills.length ? '' : ` \u00b7 ${formatMinutes(Number(document.getElementById('time').value))}`}`;
     pills.push({ text, moon: body.moon, ...pillAt(text, ux, uy, area), ux, uy, night, body });
   }
   // Two bodies in nearly the same direction would otherwise stack.
@@ -712,12 +725,12 @@ function drawEyePills({ camera, night, bodies, bottomInset, eye, taps }) {
     const ux = yaw / length;
     const uy = -rise / length;
     const side = Math.abs(yaw) < 2 ? '' : ` \u00b7 ${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
-    const text = `${body.moon ? 'Moon' : 'Sun'} ${Math.round(body.alt)}\u00b0 up${side}`;
+    const text = `${body.moon ? 'Moon' : 'Sun'} ${altitudeWords(body.alt)}${side}`;
     // A pill never lies on the picture. Where the full one would (a small phone: the frame
     // fills the width between the buttons), a shorter one beside the frame is tried, and where
     // nothing fits beside it, the needle alone stands at the frame's edge, pointing the way.
     const frame = frameRect();
-    const short = Math.abs(yaw) < 2 ? `${Math.round(body.alt)}\u00b0 up` : `${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
+    const short = Math.abs(yaw) < 2 ? altitudeWords(body.alt) : `${Math.round(Math.abs(yaw))}\u00b0 ${yaw > 0 ? 'right' : 'left'}`;
     let placed = null;
     for (const words of [text, short]) {
       const at = pillAt(words, ux, uy, area);
