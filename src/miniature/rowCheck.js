@@ -23,10 +23,11 @@ const PROMISED = {
  * @param row a row of `collectRows` (dayShots.js)
  * @param eye { x, y, z } the eye in scene metres (y is the eye's own height)
  * @param base the scene's ground height at the tower's foot
+ * @param t the instant looked at: the row's own, or the clock's when the planner opened the
+ *   row at another minute of its pass (each minute has its own spot)
  * @returns { says, sees, ok }: what the row promises, what stands there, and whether they agree
  */
-export function rowSeen(row, eye, base = 0) {
-  const t = row.openAt ?? row.t;
+export function rowSeen(row, eye, base = 0, t = row.openAt ?? row.t) {
   const body = sampleBody(row.body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon);
   if (row.kind === 'street') {
     const view = row.moment.view;

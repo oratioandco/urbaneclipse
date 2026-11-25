@@ -14,9 +14,12 @@
  */
 import { getMoonIllumination } from 'suncalc';
 import { MIN_MOON_ILLUMINATION } from '../lib/dailyPaths.ts';
+import { sampleBody } from '../lib/bodyPosition.ts';
 import { DISC_DEG, FIGURE_TARGETS, figureHeight, figurePasses } from '../lib/landmarkStands.ts';
+import { FERNSEHTURM } from '../lib/landmarks.ts';
 import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
+import { sceneFromLatLon } from './eye.js';
 import { litPercent } from './spectacle.js';
 import { formatClock } from './time.js';
 
@@ -116,14 +119,42 @@ export const landmarkScore = (body, share) => (body === 'moon' ? Math.min(2, 1.2
  * default). A row's minute is the one whose stand point is nearest the middle of the strip; its
  * small print gives the whole stretch, since every minute of it has a stand point of its own.
  */
+/**
+ * The minutes round `t` in which the disc is on the figure from one spot: the stretch a
+ * photographer standing there has, and what "From here" lists for the same spot (targets.js
+ * asks `figureView` too). In the planner's scene, as the eye-level line and "From here" judge
+ * it: the scene's north is the TV tower's, three hundredths of a degree off the Siegessäule's
+ * own, which is ten seconds of the sun's way and moved a stretch's last minute (17 March 2027:
+ * the row said 5:47-5:50, the line and "From here" 5:47-5:51).
+ */
+export function figureWindow(target, body, point) {
+  const [ax, az] = sceneFromLatLon(target.landmark.lat, target.landmark.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const [ex, ez] = sceneFromLatLon(point.lat, point.lon, FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const eye = { x: ex, y: point.groundM - SCENE_ZERO_M + 1.6, z: ez };
+  const on = (t) => figureView(target, eye, { x: ax, z: az }, sampleBody(body, new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon)).covered;
+  let start = point.t;
+  let end = point.t;
+  while (point.t - start < 20 * 60_000 && on(start - 60_000)) start -= 60_000;
+  while (end - point.t < 20 * 60_000 && on(end + 60_000)) end += 60_000;
+  return { start, end };
+}
+
 export function landmarkRows(passes, flags = {}) {
-  const { sun = true, moon = true } = flags;
+  const { sun = true, moon = true, treesAt = null } = flags;
   const rows = [];
   for (const pass of passes) {
     if (pass.body === 'moon' ? !moon : !sun) continue;
-    const { target, body, corridor, best } = pass;
-    const first = pass.points[0];
-    const last = pass.points[pass.points.length - 1];
+    const { target, body, corridor } = pass;
+    // The minute nearest the middle of the strip from whose spot the tree register shows no
+    // crowns in the frame; the nearest of all when it shows them from every one.
+    // (Its own spots: up to nine minutes of the pass, which the sweep measures.)
+    const byMiddle = [...pass.points].sort((a, b) => Math.abs(a.acrossM) - Math.abs(b.acrossM)).slice(0, 9);
+    const best = byMiddle.find((p) => !treesAt?.(p.lat, p.lon)) ?? byMiddle[0];
+    // The stretch is the one from that spot, as every list gives it; the strip's own minutes,
+    // each with its own spot, are the pass.
+    const { start: firstT, end: lastT } = figureWindow(target, body, best);
+    const first = { t: firstT };
+    const last = { t: lastT };
     const big = best.discShare >= 1.25;
     const place = `${target.short}’s ${figureWord(target)}`;
     rows.push({
@@ -157,6 +188,13 @@ export function landmarkRows(passes, flags = {}) {
       at: [best.lat, best.lon],
       look: [best.bodyAz, Math.max(0, best.bodyAlt)],
       lens: lensFor(target, best.distanceM),
+      // Other minutes of the pass, each with its own spot, tree-clear ones first: for the planner
+      // to try when its full-detail check finds this one blocked or behind trees (pointer.js).
+      alternates: byMiddle
+        .filter((p) => p !== best)
+        .sort((a, b) => Number(Boolean(treesAt?.(a.lat, a.lon))) - Number(Boolean(treesAt?.(b.lat, b.lon))))
+        .slice(0, 8)
+        .map((p) => ({ t: p.t, at: [p.lat, p.lon] })),
       standBearingDeg: best.bearingDeg,
       standDistanceM: best.distanceM,
     });

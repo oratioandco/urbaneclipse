@@ -91,6 +91,13 @@ button.shotcard { cursor: pointer; }
 .shotcard--ticket .sc-time { flex: none; }
 .shotcard--ticket .sc-name { font-weight: 600; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .shotcard--ticket .sc-what { font-size: var(--text-s); color: var(--muted); min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+/* "and 2 more streets": the others on parallel streets, a tap away (planmode.js, daylist.js). */
+.more-streets { display: inline-flex; align-items: center; min-height: var(--control-s, 32px); margin: 2px 0 6px; padding: 0 12px; border: 1px solid var(--line, rgba(0, 0, 0, 0.15)); border-radius: 999px; background: none; color: inherit; font: inherit; font-size: var(--text-s, 13px); font-weight: 600; cursor: pointer; }
+.more-streets::after { content: '\203a'; margin-left: 6px; transition: transform 0.15s; }
+.more-streets[aria-expanded='true']::after { transform: rotate(90deg); }
+.more-streets-list { display: grid; gap: 4px; margin-bottom: 6px; }
+.more-streets-list[hidden] { display: none; }
+.more-streets-list .shotcard--ticket { width: 100%; padding: 4px 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .shotcard--ticket .sc-caution { font-size: var(--text-s); color: var(--muted); white-space: nowrap; }
 .shotcard--ticket .sc-caution::before { content: '\00b7\00a0'; }
 .shotcard--ticket .sc-verdict { order: 2; flex: none; }

@@ -14,7 +14,10 @@ import { instant, setFine, setMinute } from './clock.js';
 import { BODY_NAME, face } from './eclipse.js';
 import { enterEye, fullFrame, look } from './eyeLevel.js';
 import { controls, eyeCamera, overview, renderer } from './render.js';
-import { clearView, confirmedSpotAlong, fineAlong, groundUnder, standable } from './sightlines.js';
+import { clearView, confirmedSpotAlong, fineAlong, groundUnder, standable, standLift } from './sightlines.js';
+import { shotClear, shotShare, treesClear } from './shotVisibility.js';
+import { params } from './config.js';
+import { EYE_HEIGHT } from './towerShots.js';
 import { toast } from './share.js';
 import { app, invalidate, toDirection } from './state.js';
 
@@ -170,14 +173,30 @@ viewHere.addEventListener('click', () => {
  */
 async function clearAt(target, viewFrom) {
   // The row's spot, then the others it names: for the antenna further spots on the same line
-  // at the same minute, for the sphere the spots of other minutes of the same pass (each minute
-  // has its own spot, and its own direction to the body).
+  // at the same minute, for the sphere and the figures the spots of other minutes of the same
+  // pass (each minute has its own spot, and its own direction to the body).
+  // Clear is the shot, not a ray: the disc's rim and the target's outline against the
+  // buildings in full detail (shotVisibility.js). Among the clear spots the first from which
+  // the tree register's trees leave the frame too; the first clear one when trees stand in all.
+  let behindTrees = null;
   for (const { x, z, t } of [target, ...(target.others ?? [])]) {
     const view = viewFrom(x, z, t ?? target.t);
     await fineAlong(x, z, view.direction, view.distance);
-    if (clearView(x, z, view.direction, view.distance)) return { x, z, t: t ?? target.t };
+    const spot = { x, z, t: t ?? target.t };
+    if (!target.row || params.get('shotcheck') === 'centre') {
+      if (clearView(x, z, view.direction, view.distance)) return spot;
+      continue;
+    }
+    const share = shotShare(target.row, { x, y: app.groundAt(x, z) + EYE_HEIGHT + standLift(x, z), z }, app.groundAt(0, 0), spot.t);
+    if (!shotClear(share)) continue;
+    // Kept for whoever asks what was seen on arrival (the sweep: scripts/adversarial/rows.mjs).
+    spot.share = share;
+    app.lastShare = { row: target.row, share };
+    if (treesClear(share)) return spot;
+    behindTrees ??= spot;
   }
-  return null;
+  if (behindTrees) app.lastShare = { row: target.row, share: behindTrees.share };
+  return behindTrees;
 }
 
 export async function goViewHere(target) {
@@ -218,9 +237,14 @@ export async function goViewHere(target) {
     const dz = target.z - target.axis.z;
     const length = Math.hypot(dx, dz) || 1;
     const keep = (x, z) => Math.hypot(x - target.x, z - target.z) <= 45;
-    const viewFrom = (x, z) => ({ direction: towards, distance: Math.max(50, Math.hypot(x - target.axis.x, z - target.axis.z) - 40) });
+    const viewFrom = (x, z, t = target.t) => ({ direction: t === target.t ? towards : towardsAt(t), distance: Math.max(50, Math.hypot(x - target.axis.x, z - target.axis.z) - 40) });
     const spot = (await clearAt(target, viewFrom)) ?? (await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, viewFrom, keep));
     if (!spot) return noClearView(target);
+    // Another minute of the pass has its own spot: the clock goes with it.
+    if (spot.t && spot.t !== target.t) {
+      setMinute(spot.t);
+      p = sampleBody(target.body, new Date(spot.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+    }
     enterEye(spot.x, spot.z, { heading: p.az, pitch: Math.max(0, p.alt), lens: fullFrame(target.lens ?? 200) });
     setFine(true);
     return true;

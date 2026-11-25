@@ -1,6 +1,7 @@
 /** The day as a list in the panel's planning: tower alignments and street henges, each a tap away. */
 import { shotCard } from './shotCard.js';
-import { collectRows as collectShots, shotStillHeld, towerSeenFrom } from './dayShots.js';
+import { moreStreets } from './spectacle.js';
+import { collectRows as collectShots, shotStillHeld, towerSeenFrom, treesSeenFrom } from './dayShots.js';
 import { icon } from './icons.js';
 import { layers, showAllShots, switchedOff } from './chrome.js';
 import { dayStart, instant } from './clock.js';
@@ -29,10 +30,11 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
     dayPaths.map((path) => path.source ?? path),
     moments,
     from,
-    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false, seesTower: towerSeenFrom(getViewshed()) },
+    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false, seesTower: towerSeenFrom(getViewshed()), treesAt: treesSeenFrom(getViewshed()) },
     landmarkPassesFor(from),
   );
-  for (const row of rows) row.go = () => goViewHere(flightTo(row));
+  // The row goes with its flight: the check on arrival is of the row's own shot (pointer.js).
+  for (const row of rows) row.go = () => goViewHere({ ...flightTo(row), row });
   return rows;
 }
 
@@ -43,13 +45,13 @@ function flightTo(row) {
     // Behind a figure on the Siegessäule or the Brandenburger Tor: the one spot it lines up
     // from at that minute, and the landmark's axis, which the sight line is checked up to.
     const landmark = FIGURE_TARGETS.find((target) => target.id === row.target).landmark;
-    return { kind: 'landmark', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }), axis: toScene(landmark), lens: row.lens };
+    return { kind: 'landmark', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }), axis: toScene(landmark), lens: row.lens, others: (row.alternates ?? []).map((p) => ({ ...toScene({ lat: p.at[0], lon: p.at[1] }), t: p.t })) };
   }
   if (row.where === 'antenna') {
     // The middle of the antenna stretch; the search finds a clear view near it.
     const a = (row.standBearingDeg * Math.PI) / 180;
     const at = (d) => ({ x: Math.sin(a) * d, z: -Math.cos(a) * d });
-    return { kind: 'tower', body: 'moon', t: row.openAt, ...at(row.standDistanceM), lens: row.lens, range: row.standRange, exact: true, others: (row.standOthers ?? []).map(([lat, lon]) => toScene({ lat, lon })) };
+    return { kind: 'tower', body: 'moon', t: row.openAt, ...(row.at ? toScene({ lat: row.at[0], lon: row.at[1] }) : at(row.standDistanceM)), lens: row.lens, range: row.standRange, exact: true, others: (row.standOthers ?? []).map(([lat, lon]) => toScene({ lat, lon })) };
   }
   // The sphere: the row's spot at its minute, then the spots of other minutes of the same pass.
   return { kind: 'tower', body: row.body, t: row.t, ...toScene({ lat: row.at[0], lon: row.at[1] }), exact: true, others: (row.alternates ?? []).map((p) => ({ ...toScene({ lat: p.at[0], lon: p.at[1] }), t: p.t })) };
@@ -105,8 +107,32 @@ export function showTicket(row, verdict) {
   // For the status line and the caption, which speak of the open shot's landmark (landmarkView.js).
   app.ticketShot = row;
   ticketStood = null;
-  ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }));
+  ticketShot.replaceChildren(shotCard(row, verdict, { size: 'ticket', tag: 'div' }), ...otherStreets(row));
   ticketShot.hidden = false;
+}
+/**
+ * Under the card of a henge that stands for others on parallel streets ("and 2 more streets",
+ * spectacle.js `pickTop`): a button that lists them, each a tap from standing there.
+ */
+function otherStreets(row) {
+  if (!row.others?.length) return [];
+  const more = Object.assign(document.createElement('button'), { type: 'button', className: 'more-streets', textContent: moreStreets(row) });
+  more.setAttribute('aria-expanded', 'false');
+  const list = Object.assign(document.createElement('div'), { className: 'more-streets-list', hidden: true });
+  more.addEventListener('click', () => {
+    if (!list.childElementCount) {
+      list.append(
+        ...row.others.map((other) => {
+          const item = shotCard(other, dayVerdict(other), { size: 'ticket', tag: 'button' });
+          item.addEventListener('click', () => openShot(other, dayVerdict(other)));
+          return item;
+        }),
+      );
+    }
+    list.hidden = !list.hidden;
+    more.setAttribute('aria-expanded', String(!list.hidden));
+  });
+  return [more, list];
 }
 export function openShot(row, verdict) {
   showTicket(row, verdict);

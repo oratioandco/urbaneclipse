@@ -249,6 +249,19 @@ describe('at eye level: the open landmark shot seen in the planner’s scene (fi
     return figureView(target, eye, { x, z }, sampleBody('sun', new Date(t), FERNSEHTURM.lat, FERNSEHTURM.lon));
   };
 
+  it('the stretch in a row’s words is the minutes the scene has the disc on the figure from its spot', () => {
+    // The row, the eye-level line and "From here" give one stretch: before, the row measured
+    // in the landmark's own frame and said 5:47-5:50 where the other two said 5:47-5:51.
+    for (const row of cases) {
+      const [, first, last] = row.detail.match(/· (\S+ [AP]M)–(\S+ [AP]M) ·/)!;
+      const on: number[] = [];
+      for (let t = row.t - 15 * 60_000; t <= row.t + 15 * 60_000; t += 60_000) if (seen(row, t).covered) on.push(t);
+      expect(formatClock(on[0])).toBe(first);
+      expect(formatClock(on[on.length - 1])).toBe(last);
+    }
+    expect(cases.find((row) => row.where === 'viktoria')!.detail).toContain('5:47 PM–5:51 PM');
+  });
+
   it('at the row’s spot and minute the disc is on the figure', () => {
     expect(cases).toHaveLength(2);
     for (const row of cases) {
@@ -329,7 +342,7 @@ describe('one rule for the moon by day, and one form for a row’s small print',
     expect(viktoria.title).toMatch(/^Big sun behind the Siegessäule’s Viktoria, 1\.4× the figure$/);
     expect(viktoria.score).toBeCloseTo(1.7, 9);
     const dayMoonStreets = rows.filter((row) => row.kind === 'street' && row.body === 'moon' && paleMoon('moon', row.t) < 1);
-    expect(dayMoonStreets.length).toBeGreaterThan(0);
+    // (Those the midday sky does not show at all are not listed: spectacle.js `moonShows`.)
     for (const row of dayMoonStreets) expect(row.score).toBeLessThan(1.6);
     // The three a day's cards show, by score: the night's big moon and moonset at the tower stay.
     const top = [...rows].sort((a, b) => b.score - a.score).slice(0, 3).map((row) => row.title);

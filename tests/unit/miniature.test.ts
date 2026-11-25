@@ -206,7 +206,10 @@ describe('passes behind the tower from a spot', () => {
       (s: { body: string }) => s.body === 'sun',
     );
     expect(sun).toBeDefined();
-    expect(Math.abs(sun.peak - sun.align)).toBeGreaterThan(60_000);
+    // The pass's instant is its alignment, when the body is on the tower then as well as at the
+    // best-scoring minute: one instant for the card, the row and the clock (the score's own
+    // minute used to stand as `peak`, more than a minute away).
+    expect(sun.peak).toBe(Math.round(sun.align / 1000) * 1000);
     // The azimuth is closest to the bearing at the stretch's end: align follows the azimuth,
     // not the separation.
     expect(Math.abs(sun.align - sun.end)).toBeLessThanOrEqual(60_000);

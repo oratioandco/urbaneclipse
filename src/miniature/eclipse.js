@@ -139,6 +139,18 @@ export function showEclipseStatus(now) {
       const metres = covering.flat * Math.tan(THREE.MathUtils.degToRad(Math.max(0, here.radiusDeg - Math.abs(covering.signedOff))));
       text = `Moon hidden behind the sphere: step ${Math.max(1, Math.round(metres))} m left or right, or move further away`;
     }
+    // Under a tower row's own card the line says the row's own sentence, while the body is on
+    // the part of the tower the row is of: "Sun behind the TV tower's sphere" opened to "Sun at
+    // the edge of the sphere now" (a few metres of ground decide between the two), "Big moon
+    // behind the TV tower" to "Sphere in front of the moon now".
+    const open = ticketShotRow();
+    if (open?.kind === 'tower' && !open.target && open.body === body && state !== 'warn') {
+      const part = open.where === 'antenna' ? ['antenna'] : ['hidden', 'ring', 'edge'];
+      if (part.includes(covering.state)) {
+        state = 'now';
+        text = `${open.title} now`;
+      }
+    }
     // The same look Dates takes (dates.js): from the eye toward the body, as far as the tower.
     // The line said "Sun at the edge of the sphere now" where Dates, rightly, said a building
     // hides it (nord-mitte on the Lichtenberger Brücke, 8 April 2027, 19:36).

@@ -76,14 +76,15 @@ describe('applySceneMask: what the planner’s scene refuses is taken out of the
   };
   const at = (row: number, col: number, view: ReturnType<typeof grid>): [number, number] => [view.header.latMin + (row + 0.5) * view.header.dLat, view.header.lonMin + (col + 0.5) * view.header.dLon];
 
-  it('blocks 25 m round each spot and leaves the rest, and a building a building', () => {
+  it('blocks 8 m round each spot (its cell and the ones touching it) and leaves the rest, and a building a building', () => {
     const view = grid();
     applySceneMask(view, [at(20, 20, view)]);
     expect(sampleViewshed(view, ...at(20, 20, view))).toBe(VIEW_BLOCKED);
-    expect(sampleViewshed(view, ...at(20, 24, view))).toBe(VIEW_BLOCKED); // 20 m east
-    expect(sampleViewshed(view, ...at(24, 20, view))).toBe(VIEW_BLOCKED); // 20 m north
-    expect(sampleViewshed(view, ...at(20, 27, view))).toBe(VIEW_VISIBLE); // 35 m east
-    expect(sampleViewshed(view, ...at(24, 24, view))).toBe(VIEW_VISIBLE); // 28 m, across the corner
+    expect(sampleViewshed(view, ...at(20, 21, view))).toBe(VIEW_BLOCKED); // 5 m east
+    expect(sampleViewshed(view, ...at(21, 20, view))).toBe(VIEW_BLOCKED); // 5 m north
+    expect(sampleViewshed(view, ...at(21, 21, view))).toBe(VIEW_BLOCKED); // 7 m, across the corner
+    expect(sampleViewshed(view, ...at(22, 20, view))).toBe(VIEW_VISIBLE); // 10 m north
+    expect(sampleViewshed(view, ...at(20, 18, view))).toBe(VIEW_VISIBLE); // 10 m west
     expect(sampleViewshed(view, ...at(20, 22, view))).toBe(VIEW_BUILDING);
   });
 

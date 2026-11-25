@@ -370,6 +370,8 @@ def encode(state: np.ndarray, target_lat: float, target_lon: float, name: str = 
     # measured by scripts/adversarial/rows.mjs --mask and applied when the viewshed is loaded.
     if (OUT / f"{name}-scene.json").exists():
         header["sceneMask"] = f"{name}-scene.json"
+    if name == "fernsehturm" and (OUT / "trees-in-the-way.json").exists():
+        header["treeSpots"] = "trees-in-the-way.json"
     if spec["sky"]:
         header["values"]["noSky"] = NO_SKY
         header["rangeM"] = spec["range"]
