@@ -166,6 +166,9 @@ export function bodySvg({ kind = 'sun', ...options } = {}) {
 }
 
 function drawGlow(ctx, x, y, radius, look) {
+  // A disc with no size is not drawn: a canvas arc throws on a negative radius (a body scaled
+  // through zero while the view turns).
+  if (!(radius > 0)) return;
   const reach = radius * GLOW_REACH;
   const halo = ctx.createRadialGradient(x, y, 0, x, y, reach);
   const at = glowAtLimb(look);
@@ -181,6 +184,9 @@ function drawGlow(ctx, x, y, radius, look) {
 
 /** The same sun on a 2D canvas: centre x, y and the disc's radius in canvas units. */
 export function drawSun(ctx, x, y, radius, altitudeDeg, { glow = true } = {}) {
+  // A disc with no size is not drawn: a canvas arc throws on a negative radius (a body scaled
+  // through zero while the view turns).
+  if (!(radius > 0)) return;
   const look = sunLook(altitudeDeg);
   ctx.save();
   if (glow) drawGlow(ctx, x, y, radius, look);
@@ -202,6 +208,9 @@ export function drawSun(ctx, x, y, radius, altitudeDeg, { glow = true } = {}) {
 
 /** The same moon on a 2D canvas. Takes the options of `moonFragment`. */
 export function drawMoon(ctx, x, y, radius, { fraction = 1, waxing = true, altitudeDeg = 30, sunAltitudeDeg = -18, rotateDeg = 0, glow = true } = {}) {
+  // A disc with no size is not drawn: a canvas arc throws on a negative radius (a body scaled
+  // through zero while the view turns).
+  if (!(radius > 0)) return;
   const lit = clamp01(fraction);
   const look = moonLook(altitudeDeg, sunAltitudeDeg, lit);
   ctx.save();
