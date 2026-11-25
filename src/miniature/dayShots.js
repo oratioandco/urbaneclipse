@@ -29,7 +29,8 @@ import { sampleViewshed, VIEW_VISIBLE } from '../lib/viewshed.ts';
 import { dayEndOf } from './dayMath.js';
 import { formatClock } from './time.js';
 import { computeLandmarkPasses, landmarkRows } from './landmarkShots.js';
-import { litPercent, moonShows, paleMoon, TREES_IN_WAY, TREES_IN_WAY_NOTE, TREES_IN_WAY_SCORE, TREES_UNCHECKED } from './spectacle.js';
+import { berlinDayStart } from './berlinClock.js';
+import { litPercent, moonShows, paleMoon, TREES_BARE, TREES_BARE_NOTE, TREES_IN_WAY, TREES_IN_WAY_NOTE, TREES_IN_WAY_SCORE, TREES_UNCHECKED } from './spectacle.js';
 import { bodyAgainstTower, discOverSphere, EYE_HEIGHT, SPHERE_CENTRE_AGL, SPHERE_TOP_AGL, TIP_AGL, towerSentence, visibleMoon } from './towerShots.js';
 
 export { computeLandmarkPasses };
@@ -48,6 +49,21 @@ const bodyAt = (body, t) => sampleBody(body, new Date(t), FERNSEHTURM.lat, FERNS
 /** Whether the tower is seen from a place, by the viewshed; null without one (nothing is known). */
 /** Whether the tree register puts crowns in a shot's frame from a place; null when that is not known. */
 export const treesSeenFrom = (shed) => shed?.treesAt ?? null;
+/**
+ * The days a viewshed's scene mask and tree list were measured for, or null: `{ from, to }`,
+ * Berlin days. Past `to` the lists know nothing of a row's spots, so rows there would open
+ * onto unchecked places; none are listed (`collectRows`, flag `covered`).
+ */
+export const coveredBy = (shed) => shed?.covered ?? null;
+/** Whether the day that starts at `from` lies within a covered range (true when there is none). */
+export const dayCovered = (from, covered) => !covered || (from >= berlinDayStart(covered.from) - 3_600_000 && from <= berlinDayStart(covered.to) + 3_600_000);
+/**
+ * A tag for a street's entry in the tree list: how high the body stands down it (to half a
+ * degree) and how far off the street's line (to a quarter). The same street has the sun at one
+ * degree one week and at four the next, and a quarter of a degree to the side is a different
+ * row of crowns: by height alone, 5 of 60 rows on a contact sheet said the wrong thing.
+ */
+export const streetTreeTag = (bodyAlt, offDeg) => `${Math.round(bodyAlt * 2) / 2}:${Math.round(offDeg * 4) / 4}`;
 export const towerSeenFrom = (shed) => (shed ? (lat, lon) => sampleViewshed(shed, lat, lon) === VIEW_VISIBLE : null);
 
 export function computeDayPaths(from, shed = null) {
@@ -72,7 +88,8 @@ export function computeDayPaths(from, shed = null) {
  * two of them apart.
  */
 export function collectRows(paths, moments, from, flags = {}, passes = []) {
-  const { tower = true, streets = true, sun = true, moon = true, landmarks = true, seesTower = null, treesAt = null } = flags;
+  const { tower = true, streets = true, sun = true, moon = true, landmarks = true, seesTower = null, treesAt = null, covered = null } = flags;
+  if (!dayCovered(from, covered)) return [];
   const shown = (item) => (item.body === 'moon' ? moon : sun);
   const rows = [];
   if (tower) {
@@ -119,7 +136,8 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
         // row stands on the first of them the tree register leaves clear; the planner tries the
         // rest; the sweep measures them all (scripts/adversarial/rows.mjs).
         const own = spots.filter((spot, i, all) => all.findIndex((o) => Math.abs(o.t - spot.t) < 60_000) === i).slice(0, 11);
-        const mid = own.find((spot) => !treesAt?.(spot.lat, spot.lon)) ?? own[0];
+        const treed = (spot) => treesAt?.(spot.lat, spot.lon, spot.t) ?? 0;
+        const mid = own.find((spot) => treed(spot) === 0) ?? own.find((spot) => treed(spot) === 1) ?? own[0];
         const align = mid.t;
         const over = discOverSphere(mid.distanceM);
         const sky = mid.sky;
@@ -130,10 +148,14 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
         const seen = bodyAgainstTower(mid.eye, 0, sky).state;
         const state = ['hidden', 'ring', 'edge'].includes(seen) && !(path.body === 'moon' && seen === 'hidden') ? seen : path.body === 'moon' || over > 1 ? 'ring' : 'hidden';
         // The stretch from that spot: the minutes the disc is on the sphere.
-        let start = align;
-        let end = align;
-        while (align - start < 30 * 60_000 && touches(mid, start - 20_000)) start -= 20_000;
-        while (end - align < 30 * 60_000 && touches(mid, end + 20_000)) end += 20_000;
+        // In whole minutes, as "From here" counts them from the same spot: the first and the
+        // last whole minute the disc is on it (26 November 2026: the row began 8:29, at some
+        // second of that minute, where "From here" began 8:30).
+        const minute = Math.round(align / 60_000) * 60_000;
+        let start = touches(mid, minute) ? minute : align;
+        let end = start;
+        while (align - start < 30 * 60_000 && touches(mid, start - 60_000)) start -= 60_000;
+        while (end - align < 30 * 60_000 && touches(mid, end + 60_000)) end += 60_000;
         // Other spots serve other minutes: said when the stretch of them is long.
         const others = lastPoint.t - first.t > 20 * 60_000 ? ` · other spots ${formatClock(first.t)}–${formatClock(lastPoint.t)}` : '';
         rows.push({
@@ -164,8 +186,10 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           // time, when its full-detail check finds the row's own spot blocked (pointer.js).
           alternates: own
             .filter((spot) => spot !== mid)
-            .sort((a, b) => Number(Boolean(treesAt?.(a.lat, a.lon))) - Number(Boolean(treesAt?.(b.lat, b.lon))))
+            .sort((a, b) => treed(a) - treed(b))
             .map((spot) => ({ t: spot.t, at: [spot.lat, spot.lon] })),
+          // For joining neighbours (below): the stretch of minutes its spots serve.
+          span: [first.t, lastPoint.t],
         });
       }
     }
@@ -217,13 +241,14 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           // antenna" (bodyAgainstTower), with the ground there taken 10 m either way since the
           // row does not know it. A spot near the stretch's inner end had the moon's edge on
           // the sphere: the row said antenna, the line "at the edge of the sphere".
-          const onMast = (d) => {
-            const x = Math.sin(rad(bearing)) * d;
-            const z = -Math.cos(rad(bearing)) * d;
+          const onMast = (d, side = 0) => {
+            const x = Math.sin(rad(bearing)) * d + Math.cos(rad(bearing)) * side;
+            const z = -Math.cos(rad(bearing)) * d + Math.sin(rad(bearing)) * side;
             return [-10, 0, 10].every((lift) => bodyAgainstTower({ x, y: EYE_HEIGHT + lift, z }, 0, sample).state === 'antenna');
           };
           // From the middle of the stretch outward both ways, so the moon sits well on the mast.
           const spots = [];
+          const aside = [];
           // Every 10 m: the places the tower shows from are often a gap a house wide, and at
           // 40 m the pass of 18 November 2027 (moonrise, 9:20 PM, 2.6 km WSW) had none.
           const STEP_M = 10;
@@ -233,8 +258,17 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
               if (!onMast(d)) continue;
               const spot = place(d);
               if (!seesTower || seesTower(spot.lat, spot.lon)) spots.push({ d, spot });
+              // And five metres to either side of the line, where the moon still sits on the
+              // mast: the gap the tower shows through is often beside the line, not on it
+              // (18 November 2027, moonrise). Tried after the line's own.
+              for (const side of [-5, 5]) {
+                if (!onMast(d, side)) continue;
+                const beside = offsetGeodetic(spot.lat, spot.lon, 0, (bearing + 90) % 360, side);
+                if (!seesTower || seesTower(beside.lat, beside.lon)) aside.push({ d, spot: beside });
+              }
             }
           }
+          spots.push(...aside);
           if (!spots.length) continue;
           // The row's own spots: the one nearest the middle and up to eleven others, well
           // apart. The row stands on the first of them the tree register leaves clear; the
@@ -244,7 +278,10 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
           for (const c of spots.slice(1)) {
             if (own.length < 12 && own.every((o) => Math.abs(o.d - c.d) >= 120)) own.push(c);
           }
-          own.sort((a, b) => Number(Boolean(treesAt?.(a.spot.lat, a.spot.lon))) - Number(Boolean(treesAt?.(b.spot.lat, b.spot.lon))));
+          // With few on the line, the ones beside it too.
+          for (const c of aside) if (own.length < 6 && !own.includes(c) && own.every((o) => Math.hypot(o.d - c.d, 0) >= 30 || o === c)) own.push(c);
+          const treed = (c) => treesAt?.(c.spot.lat, c.spot.lon, sample.t) ?? 0;
+          own.sort((a, b) => treed(a) - treed(b));
           const ds = spots.map((c) => c.d);
           stand = { sample, bearing, range: [Math.min(...ds), Math.max(...ds)], out: own[0].d, spot: own[0].spot, others: own.slice(1) };
           break;
@@ -313,11 +350,13 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
         openAt: m.peak,
         at: m.view.from ? [m.view.from.lat, m.view.from.lon] : null,
         look: [m.view.bearingDeg, clamp(m.bodyAlt * 0.9, 0, 12)],
+        treeTag: streetTreeTag(m.bodyAlt, ((((bodyAt(m.body, m.peak).az - m.view.bearingDeg) % 360) + 540) % 360) - 180),
         lens: 85,
         moment: m,
       });
     }
   }
+  joinNeighbours(rows);
   const listed = rows.filter((row) => {
     // A moon the sky of its minute does not show is not a shot (spectacle.js `moonShows`).
     if (row.body === 'moon' && !moonShows(row.t)) return false;
@@ -329,18 +368,50 @@ export function collectRows(paths, moments, from, flags = {}, passes = []) {
   for (const row of listed) {
     // The moon by day counts for less, whatever it is behind or down (spectacle.js).
     row.score *= paleMoon(row.body, row.t);
-    // Trees: unchecked everywhere; where the register shows crowns in the frame, said and scored.
-    // (Not for a street: its own trees line it, and whether they close the gap at its far end
-    // is not what a ray from its near end measures. A street says "trees unchecked".)
-    if (row.kind !== 'street' && row.at && treesAt?.(row.at[0], row.at[1])) {
+    // Trees: unchecked everywhere; where the register shows them across the shot, said, and in
+    // leaf scored down. A street too: its own trees line it, and whether they cross the sun
+    // from where the planner would stand is measured like any other shot (keyed by how high
+    // the body stands down it). Out of leaf they are bare: said, and not scored, unless bare
+    // they still cover most of the disc (src/lib/season.ts).
+    const level = row.at ? (treesAt?.(row.at[0], row.at[1], row.openAt ?? row.t, row.treeTag) ?? 0) : 0;
+    if (level === 2) {
       row.caution = TREES_IN_WAY;
       row.trees = true;
       row.detail = `${row.detail} \u00b7 ${TREES_IN_WAY_NOTE}`;
       row.score *= TREES_IN_WAY_SCORE;
+    } else if (level === 1) {
+      row.caution = TREES_BARE;
+      row.bareTrees = true;
+      row.detail = `${row.detail} \u00b7 ${TREES_BARE_NOTE}`;
     } else if (!row.caution) row.caution = TREES_UNCHECKED;
   }
   listed.sort((a, b) => a.t - b.t);
   return listed;
+}
+
+/**
+ * Two sphere rows that are one pass told twice: the same body, the same words for the place,
+ * and stretches that touch. They arise where a minute or two between them is blocked, thirty
+ * metres apart (1 November 2027: 11:31 and 11:45, both "500 m N"). One row stays: the one that
+ * scores higher, else the earlier; the other's spots become its alternates and the stretch of
+ * minutes they serve between them is said as its "other spots".
+ */
+function joinNeighbours(rows) {
+  const spheres = rows.filter((row) => row.where === 'sphere').sort((a, b) => a.t - b.t);
+  for (let i = 0; i + 1 < spheres.length; i++) {
+    const a = spheres[i];
+    const b = spheres[i + 1];
+    if (a.body !== b.body || a.stand !== b.stand || a.state !== b.state) continue;
+    if (b.start > a.until + 5 * 60_000) continue;
+    const [keep, drop] = b.score > a.score ? [b, a] : [a, b];
+    keep.alternates = [...(keep.alternates ?? []), { t: drop.openAt, at: drop.at }, ...(drop.alternates ?? [])];
+    keep.span = [Math.min(keep.span[0], drop.span[0]), Math.max(keep.span[1], drop.span[1])];
+    const others = ` \u00b7 other spots ${formatClock(keep.span[0])}\u2013${formatClock(keep.span[1])}`;
+    keep.detail = keep.detail.includes(' \u00b7 other spots ') ? keep.detail.replace(/ \u00b7 other spots [^\u00b7]*$/, others) : `${keep.detail}${others}`;
+    rows.splice(rows.indexOf(drop), 1);
+    spheres.splice(spheres.indexOf(drop), 1);
+    i--;
+  }
 }
 
 /** The model reaches 9 km from the tower each way (scripts/miniature/build_city.mjs). */
@@ -446,7 +517,7 @@ export function streetMomentsOfDay(views, from) {
  * nothing says where a landmark can be seen from, so no rows are given for it: an unchecked
  * standing point is not offered as a shot.
  */
-export function dayShots(from, { shed = null, views = [], sheds = {}, treesAt = treesSeenFrom(shed) } = {}) {
+export function dayShots(from, { shed = null, views = [], sheds = {}, treesAt = treesSeenFrom(shed), covered = coveredBy(shed) } = {}) {
   const moments = streetMomentsOfDay(views, from);
-  return collectRows(shed ? computeDayPaths(from, shed) : [], moments, from, { seesTower: towerSeenFrom(shed), treesAt }, computeLandmarkPasses(from, sheds));
+  return collectRows(shed ? computeDayPaths(from, shed) : [], moments, from, { seesTower: towerSeenFrom(shed), treesAt, covered }, computeLandmarkPasses(from, sheds));
 }

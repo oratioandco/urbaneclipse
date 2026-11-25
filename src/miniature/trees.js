@@ -14,6 +14,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CITY, CITY_VERSION, isPhone, params } from './config.js';
 import { autumnOn, blossomAmount, CHERRY_EARLY, CHERRY_ORNAMENTAL, CHERRY_LATE } from './blossom.js';
+import { crownShare, leafOn } from '../lib/season.ts';
 import { scene } from './render.js';
 import { shadeFoliage } from './shading.js';
 import { app, invalidateShadows } from './state.js';
@@ -80,15 +81,8 @@ let visible = true;
 const cellSphere = new THREE.Sphere();
 const cellPoint = new THREE.Vector3();
 
-/** 1 in leaf, 0 bare: December to March bare, ramping through April and November. */
-export function leafOn(date) {
-  const month = date.getUTCMonth();
-  const day = date.getUTCDate() / 30;
-  if (month >= 4 && month <= 9) return 1;
-  if (month === 3) return day;
-  if (month === 10) return 1 - day;
-  return 0;
-}
+// The season's one rule: src/lib/season.ts.
+export { leafOn };
 
 export async function loadTrees() {
   const [info, buffer] = await Promise.all([
@@ -216,7 +210,7 @@ export function updateTrees() {
       const height = data.h[t] / 5;
       let crown = data.c[t] / 5;
       // Bare in winter: the crown shrinks to a twiggy remnant the trunk still carries.
-      if (kind !== 1) crown *= 0.18 + 0.82 * leaf;
+      if (kind !== 1) crown *= crownShare(leaf);
       // A steady turn and tint per tree, from its position, so the rows do not look stamped.
       const seed = Math.abs(Math.sin(data.x[t] * 12.9898 + data.z[t] * 78.233) * 43758.5453) % 1;
       position.set(data.x[t] / 2, cell.ground[i] - 0.2, data.z[t] / 2);

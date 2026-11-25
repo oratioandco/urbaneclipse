@@ -4,6 +4,8 @@
  * Built offline by scripts/build_viewshed.py from the LoD2 buildings. It knows nothing
  * about trees or street furniture, so "visible" means no building is in the way.
  */
+import { inLeaf } from './season';
+
 export const VIEW_BLOCKED = 0;
 export const VIEW_VISIBLE = 1;
 export const VIEW_BUILDING = 2;
@@ -31,11 +33,14 @@ export interface Viewshed {
   header: ViewshedHeader;
   cells: Uint8Array;
   /**
-   * Whether the city's tree register puts crowns in the frame of a shot taken from a place
-   * (`treeTest`); set on the tower's viewshed when its list of such places has loaded. It
-   * covers the whole model, whatever the shot is of.
+   * What the city's tree register puts in the frame of a shot taken from a place at an instant
+   * (`treeTest`): 0 nothing, 1 bare trees that leave the shot, 2 trees in the way. Set on the
+   * tower's viewshed when its list of such places has loaded; it covers the whole model,
+   * whatever the shot is of.
    */
-  treesAt?: (lat: number, lon: number) => boolean;
+  treesAt?: (lat: number, lon: number, t: number, tag?: string | number) => 0 | 1 | 2;
+  /** The days the scene mask and the tree list were measured for (`YYYY-MM-DD`, Berlin days), when the mask says. */
+  covered?: { from: string; to: string };
 }
 
 /**
@@ -46,11 +51,24 @@ export interface Viewshed {
  * spots is measured, so nothing has to be guessed for the spot next door. (Counting the cells
  * round a listed place said "trees in the way" of 318 rows a year whose own spot was clear.)
  */
-export function treeTest(spots: ReadonlyArray<readonly [number, number]>): (lat: number, lon: number) => boolean {
+export function treeTest(
+  spots: ReadonlyArray<ReadonlyArray<number | string>>,
+  bare: ReadonlyArray<ReadonlyArray<number | string>> = [],
+): (lat: number, lon: number, t: number, tag?: string | number) => 0 | 1 | 2 {
   // The list keeps six decimals: round to those first, so a spot and its own entry always agree.
-  const key = (lat: number, lon: number) => `${Math.round(Number(lat.toFixed(6)) * 1e5)},${Math.round(Number(lon.toFixed(6)) * 1e5)}`;
-  const listed = new Set(spots.map(([lat, lon]) => key(lat, lon)));
-  return (lat, lon) => listed.has(key(lat, lon));
+  // A third entry tags a place whose answer depends on more than the place: a street's, on how
+  // high the sun stands down it.
+  const key = (lat: number, lon: number, tag?: string | number) => `${Math.round(Number(lat.toFixed(6)) * 1e5)},${Math.round(Number(lon.toFixed(6)) * 1e5)}${tag === undefined ? '' : `,${tag}`}`;
+  const set = (list: ReadonlyArray<ReadonlyArray<number | string>>) => new Set(list.map(([lat, lon, tag]) => key(Number(lat), Number(lon), tag)));
+  const inLeafList = set(spots);
+  const bareList = set(bare);
+  // In leaf (src/lib/season.ts) a listed place has trees in the way. Out of leaf it has bare
+  // trees in the frame, and they are in the way only where the bare trees were found to be.
+  return (lat, lon, t, tag) => {
+    const k = key(lat, lon, tag);
+    if (inLeaf(t)) return inLeafList.has(k) ? 2 : 0;
+    return bareList.has(k) ? 2 : inLeafList.has(k) ? 1 : 0;
+  };
 }
 
 /** Expand the packed runs: one byte each, value in the top 2 bits, length - 1 below. */
@@ -140,7 +158,8 @@ export function loadViewshed(landmark = 'fernsehturm'): Promise<Viewshed> {
       const list = (name?: string) => (name ? fetch(`/viewshed/${name}`).then((r) => (r.ok ? r.json() : null), () => null) : null);
       const [mask, trees] = await Promise.all([list(header.sceneMask), list(header.treeSpots)]);
       if (mask?.spots) applySceneMask(view, mask.spots);
-      if (trees?.spots) view.treesAt = treeTest(trees.spots);
+      if (trees?.spots) view.treesAt = treeTest(trees.spots, trees.bare ?? []);
+      if (mask?.covered) view.covered = mask.covered;
       return view;
     })().catch((err: unknown) => {
       loading.delete(landmark);

@@ -187,11 +187,34 @@ Promise.allSettled(
   invalidate();
 });
 
+/**
+ * The days the shots are checked for (the scene mask and the tree list: src/lib/viewshed.ts
+ * `covered`): the date field stops at the last of them, and a line says so once the chosen day
+ * is within a month of it or past it. Past it no shots are listed (dayShots.js `dayCovered`).
+ */
+function showCovered(covered) {
+  const input = document.getElementById('date');
+  const note = document.getElementById('covered-note');
+  if (!covered || !input || !note) return;
+  input.max = covered.to;
+  const last = new Date(`${covered.to}T12:00:00Z`);
+  note.textContent = `Shots are checked up to ${last.toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })}`;
+  const show = () => {
+    const chosen = Date.parse(`${input.value}T12:00:00Z`);
+    note.hidden = !(chosen > last.getTime() - 30 * 86_400_000);
+    document.getElementById('next-day').disabled = chosen >= last.getTime();
+  };
+  // The day changes by the field, the arrows, a link and a card: its label is where all of them show.
+  new MutationObserver(show).observe(document.getElementById('day-label'), { childList: true, characterData: true, subtree: true });
+  show();
+}
+
 // Safari drops a request now and then while the first load is busy; try again a few times.
 function loadVisibility(attempt = 0) {
   loadViewshed().then(
     (loaded) => {
       viewshed = loaded;
+      showCovered(loaded.covered);
       if (dayPlanned) buildPaths();
       invalidate();
     },

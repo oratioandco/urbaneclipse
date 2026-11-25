@@ -28,7 +28,8 @@ import { frameRect, sceneFromLatLon, setViewArea } from './eye.js';
 import { DISC_RADIUS_DEG } from './towerShots.js';
 import { orbitTo, stepFlight, stepOrbit } from './camera.js';
 import { rowSeen } from './rowCheck.js';
-import { shotRays, shotShare, treeShare } from './shotVisibility.js';
+import { shotRays, shotShare, treeLevel, treeMeasures, treeShare } from './shotVisibility.js';
+import { streetStand } from './pointer.js';
 import { fineAlong, standLift } from './sightlines.js';
 import { EYE_HEIGHT } from './towerShots.js';
 import { landmarkItems, layers, needle, tiltButton, towerItems } from './chrome.js';
@@ -438,13 +439,29 @@ start().then(openLinkedView);
 window.__sky = skyUniforms;
 window.__mini = { dayRows: () => currentRows(), shotShareAt: async (row, at, t = row.openAt ?? row.t) => {
     // What a row's shot would be from another place and minute, in full detail: for asking
-    // whether a pass the list dropped has a usable spot after all.
+    // about a row's own spots (scripts/adversarial/crawl.test.ts). `trees` is what the tree
+    // list keeps for the place: in the way in full leaf, and bare.
     const [x, z] = sceneFromLatLon(at[0], at[1], 52.520815, 13.409419);
     const eye = { x, y: app.groundAt(x, z) + EYE_HEIGHT + standLift(x, z), z };
     const ray = shotRays(row, eye, app.groundAt(0, 0), t).disc[0];
     await fineAlong(x, z, ray.direction, ray.distance);
-    return { share: shotShare(row, eye, app.groundAt(0, 0), t), seen: rowSeen(row, eye, app.groundAt(0, 0), t) };
-  }, treeShareAt: (row, at) => {
-    const [x, z] = sceneFromLatLon(at[0], at[1], 52.520815, 13.409419);
-    return treeShare(row, { x, y: app.groundAt(x, z) + EYE_HEIGHT + standLift(x, z), z }, app.groundAt(0, 0));
+    return { share: shotShare(row, eye, app.groundAt(0, 0), t), seen: rowSeen(row, eye, app.groundAt(0, 0), t), trees: treeMeasures(row, eye, app.groundAt(0, 0), t) };
+  }, streetShareAt: async (street) => {
+    // A street's shot where the planner would stand for it, in full leaf and bare: `street` is
+    // `{ body, t, a, b, bearingDeg, toleranceDeg, bodyAlt }` (a and b in scene metres).
+    const moment = { view: { a: street.a, b: street.b, bearingDeg: street.bearingDeg, toleranceDeg: street.toleranceDeg }, bodyAlt: street.bodyAlt };
+    const row = { kind: 'street', body: street.body, t: street.t, openAt: street.t, moment };
+    const out = { opened: false, leaf: false, bare: false };
+    for (const [key, leaf, limit] of [['leaf', 1, 0.2], ['bare', 0, 0.5]]) {
+      const spot = await streetStand({ kind: 'street', body: street.body, t: street.t, x: street.a[0], z: street.a[1], moment, row, leaf });
+      if (!spot) return out;
+      out.opened = true;
+      out[key] = Math.max(spot.share.disc.trees ?? 0, spot.share.target.trees ?? 0) > limit + 1e-9;
+    }
+    return out;
+  }, treeLevelHere: (row) => {
+    // The level the row's words should have from where one stands now (rows.mjs).
+    const eye = { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z };
+    const measures = treeMeasures(row, eye, app.groundAt(0, 0), instant().getTime());
+    return { level: treeLevel(measures, instant().getTime()), leaf: Boolean(measures?.leaf), bare: Boolean(measures?.bare) };
   }, shotShare: (row) => app.lastShare?.row === row ? app.lastShare.share : shotShare(row, { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z }, app.groundAt(0, 0), instant().getTime()), rowSeen: (row) => rowSeen(row, { x: look.x, y: look.y + EYE_HEIGHT + (look.lift ?? 0), z: look.z }, app.groundAt(0, 0), instant().getTime()), bodies: () => app.bodies, roadsNear, sightline, frame: () => frameRect(), get lastBlock() { return app.lastBlock; }, get rays() { return app.rays; }, clearView: (x, z, d, dist) => clearView(x, z, d, dist), get tiles() { return tiles; }, roofAt: (x, z) => roofAt(x, z), groundAt: (x, z) => app.groundAt(x, z), deckAt: (x, z) => deckAt(x, z), standable: (x, z) => standable({ x, y: 0, z }), cityUniforms, sun, sky, bloom, scene, groundMaterial, enterEye, exitEye, look, sceneFromLatLon, views: () => app.views, face, orbitTo, invalidate, invalidateShadows, stats, getHistory: () => frameTimes, quality: () => quality.ratio, shadowEvery: () => quality.shadowEvery, get camera() { return app.camera; }, get controls() { return controls; }, renderer };

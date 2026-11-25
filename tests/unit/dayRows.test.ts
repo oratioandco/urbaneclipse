@@ -9,13 +9,14 @@ import { sampleBody } from '../../src/lib/bodyPosition';
 import { applyView, compassPoint, type DayPath } from '../../src/lib/dailyPaths';
 import { FERNSEHTURM } from '../../src/lib/landmarks';
 import { decodeStreets } from '../../src/lib/streets';
-import { decodeViewshed, treeTest } from '../../src/lib/viewshed';
+import { applySceneMask as applySceneMaskFor, decodeViewshed, treeTest } from '../../src/lib/viewshed';
 import { nextWorth } from '../../src/home/grid.js';
 import { berlinDayStart } from '../../src/miniature/berlinClock.js';
-import { collectRows, dayShots } from '../../src/miniature/dayShots.js';
+import { collectRows, coveredBy, dayCovered, dayShots } from '../../src/miniature/dayShots.js';
 import { sceneFromLatLon } from '../../src/miniature/eye.js';
 import { rowSeen } from '../../src/miniature/rowCheck.js';
-import { dayPicks, moonShows, pickTop, TREES_IN_WAY, TREES_IN_WAY_NOTE, TREES_UNCHECKED } from '../../src/miniature/spectacle.js';
+import { crownShare, inLeaf, leafOn } from '../../src/lib/season';
+import { dayPicks, moonShows, pickTop, TREES_BARE, TREES_BARE_NOTE, TREES_IN_WAY, TREES_IN_WAY_NOTE, TREES_UNCHECKED } from '../../src/miniature/spectacle.js';
 import { bodyAgainstTower, discOverSphere, towerSentence } from '../../src/miniature/towerShots.js';
 
 type Row = Record<string, any>;
@@ -158,41 +159,95 @@ describe('the moon the sky does not show is not a shot', () => {
 });
 
 describe('trees', () => {
-  it('every tower, landmark and street row says trees are unchecked, or the stronger thing', () => {
-    for (const row of day('2027-03-17')) expect([TREES_UNCHECKED, TREES_IN_WAY]).toContain(row.caution);
+  const SUMMER = Date.parse('2027-07-01T10:00:00Z');
+  const WINTER = Date.parse('2027-01-15T10:00:00Z');
+
+  it('one rule for the leaf season: in leaf from mid-April to mid-November, as the scene draws it', () => {
+    expect(inLeaf(Date.parse('2027-04-14T12:00:00Z'))).toBe(false);
+    expect(inLeaf(Date.parse('2027-04-16T12:00:00Z'))).toBe(true);
+    expect(inLeaf(SUMMER)).toBe(true);
+    expect(inLeaf(Date.parse('2027-11-14T12:00:00Z'))).toBe(true);
+    expect(inLeaf(Date.parse('2027-11-16T12:00:00Z'))).toBe(false);
+    expect(inLeaf(WINTER)).toBe(false);
+    expect(leafOn(new Date(SUMMER))).toBe(1);
+    expect(leafOn(new Date(WINTER))).toBe(0);
+    // A bare crown is drawn, and measured, at 18 % of its width.
+    expect(crownShare(0)).toBeCloseTo(0.18, 6);
+    expect(crownShare(1)).toBe(1);
+  });
+
+  it('every tower, landmark and street row says trees are unchecked, or one of the two stronger things', () => {
+    for (const row of day('2027-03-17')) expect([TREES_UNCHECKED, TREES_IN_WAY, TREES_BARE]).toContain(row.caution);
   });
 
   it('a spot the tree register closes is avoided within the pass, or said and scored down', () => {
-    const plain = day('2027-03-17');
+    const plain = day('2027-06-17', { treesAt: () => 0 });
     const sphere = plain.filter((row) => row.where === 'sphere').sort((a, b) => b.alternates.length - a.alternates.length)[0];
     expect(sphere.alternates.length).toBeGreaterThan(0);
     // Trees at the row's own spot only: the row moves to another minute of the same pass.
-    const moved = day('2027-03-17', { treesAt: treeTest([sphere.at]) });
+    const moved = day('2027-06-17', { treesAt: treeTest([sphere.at]) });
     const same = moved.find((row) => row.where === 'sphere' && Math.abs(row.t - sphere.t) < 15 * 60_000)!;
     expect(same.at).not.toEqual(sphere.at);
     expect(same.caution).toBe(TREES_UNCHECKED);
     expect(same.score).toBeCloseTo(sphere.score, 6);
-    // Trees everywhere: the row stays, says so wherever it is shown, and counts half.
-    const all = day('2027-03-17', { treesAt: () => true });
+    // Trees from every spot of the tower's rows: the row stays, says so wherever it is shown, and counts half.
+    const all = day('2027-06-17', { treesAt: (_lat: number, _lon: number, _t: number, tag?: string | number) => (tag === undefined ? 2 : 0) });
     const said = all.find((row) => row.where === 'sphere' && Math.abs(row.t - sphere.t) < 15 * 60_000)!;
     expect(said.caution).toBe(TREES_IN_WAY);
     expect(said.trees).toBe(true);
     expect(said.detail.endsWith(TREES_IN_WAY_NOTE)).toBe(true);
     expect(said.score).toBeCloseTo(sphere.score / 2, 6);
-    // A street keeps "trees unchecked": its own trees line it.
-    for (const row of all.filter((r) => r.kind === 'street')) expect(row.caution).toBe(TREES_UNCHECKED);
     // And such a row does not make the day's three.
     const top = pickTop(all, 3);
     expect(top.some((row: Row) => row.trees && row.kind === 'tower')).toBe(false);
   });
 
+  it('a street is held to the same rule: trees across the sun are said and cost half', () => {
+    const plain = day('2027-06-17', { treesAt: () => 0 }).filter((row) => row.kind === 'street');
+    expect(plain.length).toBeGreaterThan(3);
+    const street = plain[0];
+    // Its entry in the list is its place and how high the body stands down it.
+    const listed = day('2027-06-17', { treesAt: treeTest([[street.at[0], street.at[1], street.treeTag]]) }).filter((row) => row.kind === 'street');
+    const said = listed.find((row) => row.title === street.title && row.t === street.t)!;
+    expect(said.caution).toBe(TREES_IN_WAY);
+    expect(said.score).toBeCloseTo(street.score / 2, 6);
+    for (const row of listed.filter((r) => r !== said && (r.at[0] !== street.at[0] || r.treeTag !== street.treeTag))) expect(row.caution).toBe(TREES_UNCHECKED);
+    // The same place with the body elsewhere down it is another entry.
+    expect(street.treeTag).toMatch(/^-?\d+(\.5)?:-?\d+(\.\d+)?$/);
+    const other = day('2027-06-17', { treesAt: treeTest([[street.at[0], street.at[1], `9${street.treeTag}`]]) }).find((row) => row.title === street.title && row.t === street.t)!;
+    expect(other.caution).toBe(TREES_UNCHECKED);
+  });
+
+  it('out of leaf the same trees are bare: said, and not scored, unless bare they still cover the shot', () => {
+    const plain = day('2027-01-20', { treesAt: () => 0 });
+    const sphere = plain.find((row) => row.where === 'sphere')!;
+    const bare = day('2027-01-20', { treesAt: () => 1 }).find((row) => row.where === 'sphere' && row.t === sphere.t)!;
+    expect(bare.caution).toBe(TREES_BARE);
+    expect(bare.bareTrees).toBe(true);
+    expect(bare.trees).toBeUndefined();
+    expect(bare.detail.endsWith(TREES_BARE_NOTE)).toBe(true);
+    expect(bare.score).toBeCloseTo(sphere.score, 6);
+    // The list: a place listed in leaf only is level 1 in winter and 2 in summer; one listed bare too is 2 in both.
+    const test = treeTest([[52.515, 13.38], [52.52, 13.39]], [[52.52, 13.39]]);
+    expect(test(52.515, 13.38, SUMMER)).toBe(2);
+    expect(test(52.515, 13.38, WINTER)).toBe(1);
+    expect(test(52.52, 13.39, SUMMER)).toBe(2);
+    expect(test(52.52, 13.39, WINTER)).toBe(2);
+    expect(test(52.53, 13.39, WINTER)).toBe(0);
+  });
+
   it('treeTest: a listed place, to a metre, and nothing round it', () => {
     const test = treeTest([[52.515, 13.38]]);
-    expect(test(52.515, 13.38)).toBe(true);
-    expect(test(52.515003, 13.380004)).toBe(true); // a third of a metre off: the same spot
-    expect(test(52.51508, 13.38005)).toBe(false); // about 10 m off: another spot, measured for itself
-    expect(test(52.5154, 13.38)).toBe(false);
-    expect(treeTest([])(52.515, 13.38)).toBe(false);
+    expect(test(52.515, 13.38, SUMMER)).toBe(2);
+    expect(test(52.515003, 13.380004, SUMMER)).toBe(2); // a third of a metre off: the same spot
+    expect(test(52.51508, 13.38005, SUMMER)).toBe(0); // about 10 m off: another spot, measured for itself
+    expect(test(52.5154, 13.38, SUMMER)).toBe(0);
+    expect(treeTest([])(52.515, 13.38, SUMMER)).toBe(0);
+    // A tagged entry answers only for its tag.
+    const tagged = treeTest([[52.515, 13.38, 3]]);
+    expect(tagged(52.515, 13.38, SUMMER, 3)).toBe(2);
+    expect(tagged(52.515, 13.38, SUMMER, 4)).toBe(0);
+    expect(tagged(52.515, 13.38, SUMMER)).toBe(0);
   });
 
   it('the list of places is a list of places in the model', () => {
@@ -257,4 +312,56 @@ describe('collectRows without the checks is as before', () => {
     const rows: Row[] = collectRows([], [], berlinDayStart('2027-03-17'));
     for (const row of rows) expect(row.caution).toBe(TREES_UNCHECKED);
   });
+});
+
+describe('the days the shots are checked for', () => {
+  const covered = { from: '2026-11-24', to: '2027-11-24' };
+
+  it('no row is listed after the last covered day, or before the first', () => {
+    expect(day('2027-11-24', { covered }).length).toBeGreaterThan(0);
+    for (const date of ['2027-11-25', '2027-12-01', '2028-06-21', '2026-11-23']) expect(day(date, { covered }), date).toHaveLength(0);
+    expect(day('2026-11-24', { covered }).length).toBeGreaterThan(0);
+    // Without a range (no list loaded) nothing is held back.
+    expect(day('2028-06-21', { covered: null }).length).toBeGreaterThan(0);
+    expect(dayCovered(berlinDayStart('2027-03-28'), covered)).toBe(true);
+    expect(dayCovered(berlinDayStart('2027-10-31'), covered)).toBe(true);
+  });
+
+  it('the mask and the tree list say which days they were measured for, the same ones, and a viewshed carries them', () => {
+    const mask = JSON.parse(readFileSync('public/viewshed/fernsehturm-scene.json', 'utf8'));
+    const trees = JSON.parse(readFileSync('public/viewshed/trees-in-the-way.json', 'utf8'));
+    expect(mask.covered.from).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(mask.covered.to > mask.covered.from).toBe(true);
+    expect(trees.covered).toEqual(mask.covered);
+    expect(Array.isArray(trees.bare)).toBe(true);
+    // More than a year from its first day, so the cap is not met on the day of the release.
+    expect(Date.parse(mask.covered.to) - Date.parse(mask.covered.from)).toBeGreaterThan(400 * 86_400_000);
+    expect(coveredBy({ ...shed, covered: mask.covered } as any)).toEqual(mask.covered);
+    // With the lists as shipped: rows on the last covered day, none the day after.
+    const real = { ...shed, covered: mask.covered } as any;
+    const after = new Date(Date.parse(`${mask.covered.to}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+    expect(dayShots(berlinDayStart(mask.covered.to), { shed: real, views, sheds }).length).toBeGreaterThan(0);
+    expect(dayShots(berlinDayStart(after), { shed: real, views, sheds })).toHaveLength(0);
+  });
+});
+
+describe('neighbouring rows that are one pass told twice', () => {
+  // With the scene mask as shipped: its holes are what split a pass in two (1 November 2027:
+  // 11:31 and 11:45, both "500 m N"; ten such pairs in the year).
+  const masked = applySceneMaskFor(load('fernsehturm'), JSON.parse(readFileSync('public/viewshed/fernsehturm-scene.json', 'utf8')).spots);
+  it('no two sphere rows of a day share body, place words and touching stretches', () => {
+    let pairs = 0;
+    let rows = 0;
+    for (let i = 0; i < 365; i += 3) {
+      const spheres = (dayShots(berlinDayStart(addDays('2026-11-24', i)), { shed: masked }) as Row[]).filter((row) => row.where === 'sphere').sort((a, b) => a.t - b.t);
+      rows += spheres.length;
+      for (let k = 0; k + 1 < spheres.length; k++) {
+        const [a, b] = [spheres[k], spheres[k + 1]];
+        if (a.body === b.body && a.stand === b.stand && a.state === b.state && b.start <= a.until + 5 * 60_000) pairs++;
+      }
+    }
+    expect(rows).toBeGreaterThan(500);
+    expect(pairs).toBe(0);
+  }, 240_000);
+
 });

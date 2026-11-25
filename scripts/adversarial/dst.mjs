@@ -7,12 +7,16 @@
  */
 import { open, plan, shot, save, close } from './lib.mjs';
 
-// Each: the day, and the time on a card to pick (as the card prints it).
-const CASES = [
-  { date: '2027-03-28', cards: ['7:22 AM', '7:08 PM'], set: [442, 1148] },
-  { date: '2027-10-31', cards: ['7:17 AM', '4:15 PM'], set: [437, 975] },
-  { date: '2027-06-21', cards: ['6:38 AM'], set: [398] }, // a plain day, as the control
-];
+// The days: the two clock changes and a plain day as the control. The cards are read off the
+// page (the first of the morning and the last of the evening), not written here: a card's
+// minute moves when the pipeline does, and what is tested is that clock, slider and card agree.
+const CASES = ['2027-03-28', '2027-10-31', '2027-06-21'];
+/** "7:12 PM" as wall-clock minutes. */
+const minutesOf = (text) => {
+  const [, h, m, half] = text.match(/^(\d+):(\d+) ([AP]M)$/);
+  return (Number(h) % 12) * 60 + Number(m) + (half === 'PM' ? 720 : 0);
+};
+let mismatches = 0;
 const { page } = await open({ size: 'desktop', forecast: 'fixed' });
 const state = () =>
   page.evaluate(() => {
@@ -32,11 +36,14 @@ const state = () =>
     };
   });
 const out = [];
-for (const { date, cards, set } of CASES) {
+for (const date of CASES) {
   await plan(page, `date=${date}`);
   await page.click('.tabs [data-mode="shoot"]');
   await page.waitForFunction(() => document.querySelectorAll('#shots-row .shotcard').length > 0, null, { timeout: 60_000 });
   await page.waitForTimeout(1500);
+  const times = await page.$$eval('#shots-row .shotcard .sc-time', (els) => els.map((el) => el.innerText.trim()));
+  const cards = [...new Set([times[0], times[times.length - 1]])];
+  const set = cards.map(minutesOf);
   for (const [i, time] of cards.entries()) {
     const card = page.locator('#shots-row .shotcard', { has: page.locator('.sc-time', { hasText: new RegExp(`^${time}$`) }) }).first();
     const detail = await card.locator('.sc-detail').innerText();
@@ -49,7 +56,13 @@ for (const { date, cards, set } of CASES) {
     await page.$eval('#time', (el, v) => { el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); }, set[i]);
     await page.waitForTimeout(1500);
     const afterSet = await state();
-    out.push({ date, card: time, detail, afterCard, setTo: set[i], afterSet });
+    // The card's minute is the clock's and the slider's; set by hand, the same card is current.
+    const agree = afterCard.clock.replace(/:\d\d (?=[AP]M)/, ' ').startsWith(time.replace(' ', ':').slice(0, time.indexOf(' '))) && afterCard.clock.endsWith(time.slice(-2)) && Math.floor(afterCard.slider) === set[i] && (afterSet.currentCard ?? '').startsWith(time);
+    if (!agree) {
+      mismatches++;
+      console.log('MISMATCH', date, 'card', time, 'clock', afterCard.clock, 'slider', afterCard.slider, 'wanted', set[i], 'current after setting by hand:', afterSet.currentCard);
+    }
+    out.push({ date, card: time, detail, afterCard, setTo: set[i], afterSet, agree });
     console.log(date, 'card', time, '->', afterCard.clock, '| light alt', afterCard.sceneLightAltDeg, '| readout:', afterCard.readout.replace(/\n/g, ' '), '|| slider', set[i], '->', afterSet.clock, 'light alt', afterSet.sceneLightAltDeg, '| current card:', afterSet.currentCard, '| readout:', afterSet.readout.replace(/\n/g, ' '));
   }
   // The Shot buttons step through the same list.
@@ -66,3 +79,5 @@ for (const { date, cards, set } of CASES) {
 }
 save('dst.json', out);
 await close();
+console.log(mismatches ? `${mismatches} card(s) whose clock, slider and card disagree` : 'clock, slider and card agree on every card tried');
+process.exit(mismatches ? 1 : 0);

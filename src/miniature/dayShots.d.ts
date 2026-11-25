@@ -36,7 +36,9 @@ export interface ShotFlags {
   moon?: boolean;
   seesTower?: ((lat: number, lon: number) => boolean) | null;
   /** Whether the tree register puts crowns in a shot's frame from a place (`treesSeenFrom`). */
-  treesAt?: ((lat: number, lon: number) => boolean) | null;
+  treesAt?: Viewshed['treesAt'] | null;
+  /** The days the shots are checked for (`coveredBy`): outside them no rows are given. */
+  covered?: { from: string; to: string } | null;
 }
 export const BODY_NAME: Record<Body, string>;
 export function computeDayPaths(from: number, shed?: Viewshed | null): DayPath[];
@@ -45,7 +47,9 @@ export type LandmarkPass = { readonly body: Body };
 export function computeLandmarkPasses(from: number, sheds?: Record<string, Viewshed>): LandmarkPass[];
 export function collectRows(paths: DayPath[], moments: StreetMoment[], from: number, flags?: ShotFlags, passes?: LandmarkPass[]): ShotRow[];
 export function streetMomentsOfDay(views: readonly StreetView[], from: number): StreetMoment[];
-export function treesSeenFrom(shed?: Viewshed | null): ((lat: number, lon: number) => boolean) | null;
+export function treesSeenFrom(shed?: Viewshed | null): Viewshed['treesAt'] | null;
+export function coveredBy(shed?: Viewshed | null): { from: string; to: string } | null;
+export function dayCovered(from: number, covered?: { from: string; to: string } | null): boolean;
 export function withoutContinued(rows: ShotRow[], from: number, dayBefore?: ShotRow[]): ShotRow[];
 export function shotKey(row: ShotRow): string;
 export function findShot(rows: ShotRow[], key: string, t: number): ShotRow | null;

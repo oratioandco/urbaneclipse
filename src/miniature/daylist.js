@@ -1,7 +1,7 @@
 /** The day as a list in the panel's planning: tower alignments and street henges, each a tap away. */
 import { shotCard } from './shotCard.js';
 import { moreStreets } from './spectacle.js';
-import { collectRows as collectShots, shotStillHeld, towerSeenFrom, treesSeenFrom } from './dayShots.js';
+import { collectRows as collectShots, coveredBy, shotStillHeld, towerSeenFrom, treesSeenFrom } from './dayShots.js';
 import { icon } from './icons.js';
 import { layers, showAllShots, switchedOff } from './chrome.js';
 import { dayStart, instant } from './clock.js';
@@ -30,7 +30,7 @@ export function collectRows(dayPaths, moments, from, flags = {}) {
     dayPaths.map((path) => path.source ?? path),
     moments,
     from,
-    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false, seesTower: towerSeenFrom(getViewshed()), treesAt: treesSeenFrom(getViewshed()) },
+    { ...flags, sun: layers.sun !== false, moon: flags.moon !== false && layers.moon !== false, landmarks: layers.landmarks !== false, seesTower: towerSeenFrom(getViewshed()), treesAt: treesSeenFrom(getViewshed()), covered: coveredBy(getViewshed()) },
     landmarkPassesFor(from),
   );
   // The row goes with its flight: the check on arrival is of the row's own shot (pointer.js).

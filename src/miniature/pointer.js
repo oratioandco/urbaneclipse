@@ -199,6 +199,44 @@ async function clearAt(target, viewFrom) {
   return behindTrees;
 }
 
+/**
+ * Where to stand for a street's shot: the clear spot nearest the row's own along the street,
+ * and, when the register's trees stand across the disc from there, the nearest other place on
+ * the street (every 60 m, up to 600 m either way, within its ends) from which they do not.
+ * The street's own trees line it; which of them cross a low sun depends on where one stands.
+ * Returns `{ x, z, share }` (share: shotVisibility.js, when the target carries its row), or null.
+ */
+export async function streetStand(target) {
+  const m = target.moment;
+  const dx = m.view.b[0] - m.view.a[0];
+  const dz = m.view.b[1] - m.view.a[1];
+  const length = Math.hypot(dx, dz) || 1;
+  const ux = dx / length;
+  const uz = dz / length;
+  const p = sampleBody(target.body, new Date(target.t), FERNSEHTURM.lat, FERNSEHTURM.lon);
+  const towards = toDirection(new THREE.Vector3(), p.az, Math.max(0, p.alt));
+  const first = await confirmedSpotAlong(target.x, target.z, ux, uz, () => ({ direction: towards, distance: 600 }));
+  if (!first || !target.row) return first;
+  // `target.leaf` asks for a season other than the date's (the crawl measures both).
+  const shareAt = (x, z) => shotShare(target.row, { x, y: app.groundAt(x, z) + EYE_HEIGHT + standLift(x, z), z }, app.groundAt(0, 0), target.t, ...(target.leaf === undefined ? [] : [target.leaf]));
+  const spot = { x: first.x, z: first.z, share: shareAt(first.x, first.z) };
+  if (treesClear(spot.share)) return spot;
+  for (let k = 1; k <= 10; k++) {
+    for (const sign of [1, -1]) {
+      const x = first.x + ux * 60 * k * sign;
+      const z = first.z + uz * 60 * k * sign;
+      // Within the street's ends, and room ahead for the view.
+      const along = (x - m.view.a[0]) * ux + (z - m.view.a[1]) * uz;
+      if (along < 0 || along > length - 150) continue;
+      await fineAlong(x, z, towards, 600);
+      if (!clearView(x, z, towards, 600)) continue;
+      const share = shareAt(x, z);
+      if (shotClear(share) && treesClear(share)) return { x, z, share };
+    }
+  }
+  return spot;
+}
+
 export async function goViewHere(target) {
   viewHere.hidden = true;
   setMinute(target.t);
@@ -253,8 +291,9 @@ export async function goViewHere(target) {
     const dx = m.view.b[0] - m.view.a[0];
     const dz = m.view.b[1] - m.view.a[1];
     const length = Math.hypot(dx, dz) || 1;
-    const spot = await confirmedSpotAlong(target.x, target.z, dx / length, dz / length, () => ({ direction: towards, distance: 600 }));
+    const spot = await streetStand(target);
     if (!spot) return noClearView(target);
+    if (spot.share) app.lastShare = { row: target.row, share: spot.share };
     enterEye(spot.x, spot.z, { heading: m.view.bearingDeg, pitch: THREE.MathUtils.clamp(m.bodyAlt * 0.9, 0, 12), lens: fullFrame(85) });
     setFine(true);
     return true;

@@ -37,7 +37,7 @@ import { formatDistance } from '../../../miniature/time.js';
 import TodayMap from './TodayMap.js';
 import { coverageLabel, formatTime, type SpotTarget } from './shared.js';
 // The day's shots are the planner's own rows: one list for `/map`, `/plan/` and the home page.
-import { collectRows, computeDayPaths, computeLandmarkPasses, streetMomentsOfDay, towerSeenFrom, treesSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
+import { collectRows, computeDayPaths, computeLandmarkPasses, coveredBy, streetMomentsOfDay, towerSeenFrom, treesSeenFrom, type ShotRow } from '../../../miniature/dayShots.js';
 import { FIGURE_TARGETS } from '../../../lib/landmarkStands.js';
 import { planLink } from '../../../home/grid.js';
 
@@ -161,7 +161,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
         view ? computeDayPaths(bounds.start.getTime(), view) : [],
         allMoments,
         bounds.start.getTime(),
-        { seesTower: towerSeenFrom(view), treesAt: treesSeenFrom(view) },
+        { seesTower: towerSeenFrom(view), treesAt: treesSeenFrom(view), covered: coveredBy(view) },
         computeLandmarkPasses(bounds.start.getTime(), sheds),
       ),
     [bounds, view, allMoments, sheds],
@@ -289,6 +289,7 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
               <input
                 type="date"
                 value={day}
+                max={view?.covered?.to}
                 data-testid="date-picker"
                 onChange={(e) => {
                   if (e.currentTarget.value) onDay(e.currentTarget.value);
@@ -300,9 +301,14 @@ export default function TodayScreen({ day, onDay, onOpenSpot, active }: Props): 
                 Today
               </button>
             )}
-            <button type="button" aria-label="Next day" onClick={() => onDay(shiftDay(day, 1))}>›</button>
+            <button type="button" aria-label="Next day" disabled={Boolean(view?.covered && day >= view.covered.to)} onClick={() => onDay(shiftDay(day, 1))}>›</button>
           </div>
         </header>
+        {view?.covered && Date.parse(`${day}T12:00:00Z`) > Date.parse(`${view.covered.to}T12:00:00Z`) - 30 * 86_400_000 && (
+          <p className="ue-covered" data-testid="covered-note">
+            Shots are checked up to {new Date(`${view.covered.to}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        )}
 
         <div className="ue-time">
           <div className="ue-time__value">
